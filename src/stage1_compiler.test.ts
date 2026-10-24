@@ -17,6 +17,25 @@ const builtinParts = [
   "less_than_or_equal",
 ].map((name) => ({ id: name, expression: { Compiler: name } }));
 
+/** テスト用の `apply(f, x) = f(x: x)`. 関数の引数にはラムダ式を書く */
+const applyPart = {
+  id: "apply",
+  expression: {
+    Function: {
+      parameters: [
+        { parameter_id: 100, parameter_name: "f" },
+        { parameter_id: 101, parameter_name: "x" },
+      ],
+      body: {
+        Call: {
+          function: { Variable: { variable_id: 100 } },
+          arguments: [{ name: "x", value: { Variable: { variable_id: 101 } } }],
+        },
+      },
+    },
+  },
+};
+
 /** コンパイラ組み込みのパーツ (ID は {@link builtinParts}) の呼び出し */
 function builtinCall(
   name: string,
@@ -70,10 +89,10 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const compiler = createStage1Compiler(
       new WebAssembly.Module(fs.readFileSync("wasm/stage1.wasm")),
     );
-    /** `(fn(x) => x * factor)(x: value)`. 引数に関数を入れて, 関数の番号の数え方を確かめる */
-    const scaled = (id: number, factor: number, value: number): unknown => ({
-      Call: {
-        function: {
+    /** `apply(f: (x) => x * factor, x: value)`. 引数に関数を入れて, 関数の番号の数え方を確かめる */
+    const scaled = (id: number, factor: number, value: number): unknown =>
+      builtinCall("apply", {
+        f: {
           Function: {
             parameters: [{ parameter_id: id, parameter_name: "x" }],
             body: builtinCall("multiply", {
@@ -82,22 +101,85 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
             }),
           },
         },
-        arguments: [{ name: "x", value: { Number: { value } } }],
-      },
-    });
+        x: { Number: { value } },
+      });
     // minus(right: 1 * 3, left: 5 * 10) = 50 - 3
     const ast = builtinCall("minus", {
       right: scaled(1, 3, 1),
       left: scaled(2, 10, 5),
     });
     expect(
-      await evaluateCompiledWasm(compiler.compile(ast, builtinParts)),
+      await evaluateCompiledWasm(
+        compiler.compile(ast, [...builtinParts, applyPart]),
+      ),
     ).toBe(47);
     // core.expression では組み込みのパーツの式は builtin, 呼び出しは他のパーツと同じ call
     expect(definyAstToSelfHostedAst({ Compiler: "minus" })).toEqual({
       Variant: {
         tag: "builtin",
         payload: { String: { value: "minus" } },
+      },
+    });
+  });
+
+  it("呼び出せるのはパーツ・関数型の引数・レコードの関数のフィールドだけ (ラムダ式の即時呼び出しは書けない)", () => {
+    const immediate = {
+      Call: {
+        function: {
+          Function: {
+            parameters: [{ parameter_id: 0, parameter_name: "x" }],
+            body: { Variable: { variable_id: 0 } },
+          },
+        },
+        arguments: [{ name: "x", value: { Number: { value: 1 } } }],
+      },
+    };
+    expect(() => definyAstToSelfHostedAst(immediate)).toThrow(
+      SelfHostedAstConversionError,
+    );
+    // 呼び出しの結果をさらに呼ぶこともできない
+    const callOfCall = {
+      Call: {
+        function: builtinCall("plus", {}),
+        arguments: [],
+      },
+    };
+    expect(() => definyAstToSelfHostedAst(callOfCall)).toThrow(
+      SelfHostedAstConversionError,
+    );
+    // core.callee の値は core.expression の同じ名前のバリアントと同じ形
+    expect(
+      definyAstToSelfHostedAst({
+        Call: { function: { Variable: { variable_id: 3 } }, arguments: [] },
+      }),
+    ).toEqual({
+      Variant: {
+        tag: "call",
+        payload: {
+          TypeLiteral: {
+            items: [
+              {
+                key: "function",
+                value: {
+                  Variant: {
+                    tag: "variable",
+                    payload: {
+                      TypeLiteral: {
+                        items: [
+                          {
+                            key: "variable_id",
+                            value: { Number: { value: 3 } },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+              { key: "arguments", value: { ListLiteral: { items: [] } } },
+            ],
+          },
+        },
       },
     });
   });

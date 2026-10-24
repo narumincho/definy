@@ -261,6 +261,87 @@ describe("self-hosted type check (stage1)", () => {
     expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
   }, 600_000);
 
+  it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const mapperType = {
+      function: {
+        parameters: [
+          {
+            name: "f",
+            type: {
+              function: {
+                parameters: [{ name: "item", type: "number" }],
+                return_type: "number",
+              },
+            },
+          },
+        ],
+        return_type: { list: "number" },
+      },
+    };
+    const mapWith = async (f: unknown): Promise<PartToCheck> => ({
+      partType: mapperType,
+      expression: {
+        Function: {
+          parameters: [{ parameter_id: 0, parameter_name: "f" }],
+          body: await coreCall("list-map", {
+            f,
+            xs: { ListLiteral: { items: [{ Number: { value: 1 } }] } },
+          }),
+        },
+      },
+    });
+    const plusReference = (
+      (await coreCall("plus", {})) as {
+        readonly Call: { readonly function: unknown };
+      }
+    ).Call.function;
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // 関数型の引数をそのまま渡す
+        await mapWith({ Variable: { variable_id: 0 } }),
+        // ラムダ式で包んで渡す
+        await mapWith({
+          Function: {
+            parameters: [{ parameter_id: 1, parameter_name: "item" }],
+            body: {
+              Call: {
+                function: { Variable: { variable_id: 0 } },
+                arguments: [
+                  { name: "item", value: { Variable: { variable_id: 1 } } },
+                ],
+              },
+            },
+          },
+        }),
+        // 関数のパーツを呼ばずに値にする
+        {
+          partType: "number",
+          expression: {
+            Let: {
+              bindings: [
+                { variable_id: 0, variable_name: "g", value: plusReference },
+              ],
+              body: { Number: { value: 1 } },
+            },
+          },
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[0]).toMatchObject({
+      tag: "function_not_called",
+      expression: expressionToSelfHostedValue({ Variable: { variable_id: 0 } }),
+    });
+    expect(outcomes[2]).toMatchObject({ tag: "function_not_called" });
+  }, 600_000);
+
   it("未入力 (probe) の位置で期待する型を返す", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);
@@ -382,9 +463,6 @@ describe("self-hosted type check (stage1)", () => {
     expect(await typeAt([])).toBe("expected (n: number) -> number");
     expect(await typeAt(["functionBody"])).toBe("inferred number");
     expect(await typeAt(left)).toBe("inferred number");
-    expect(await typeAt([...left, "callFunction"])).toBe(
-      "inferred (x: number) -> number",
-    );
     expect(await typeAt([...left, { kind: "callArgument", index: 0 }])).toBe(
       "inferred number",
     );

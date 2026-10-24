@@ -77,7 +77,7 @@
           }
         },
         "function": {
-          "$ref": "#/definitions/Expression"
+          "$ref": "#/definitions/Callee"
         }
       }
     },
@@ -976,6 +976,47 @@
           ]
         }
       }
+    },
+    "Callee": {
+      "description": "呼び出す関数. 関数は値として書けず呼び出すだけなので, 呼べるのはパーツ (PartReference), 関数型の引数 (Variable), レコードの関数のフィールド (RecordGet) だけ",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "PartReference"
+          ],
+          "properties": {
+            "PartReference": {
+              "$ref": "#/definitions/PartReferenceExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Variable"
+          ],
+          "properties": {
+            "Variable": {
+              "$ref": "#/definitions/VariableExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "RecordGet"
+          ],
+          "properties": {
+            "RecordGet": {
+              "$ref": "#/definitions/RecordGetExpression"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

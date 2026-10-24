@@ -101,7 +101,9 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 に対応する場所だけで有効です。 これはパーツ定義直下の関数本体（curried function
 は宣言された関数戻り値型に沿って束ねる）と、 関数型 parameter を受け取る Call
 引数です。`((x) => ...)(arg)` のように lambda 自体を callee
-にする即時適用は許可しません。関数の呼び出し先はパーツ参照または型環境上の変数にします。
+にする即時適用は許可しません。関数の呼び出し先はパーツ参照・関数型の引数 (変数)・レコードの関数のフィールドに限り
+(`core.callee`), 関数を値として書くこと (関数型の引数をそのまま別の関数に渡すなど) は型エラーにします
+([call-syntax.md](call-syntax.md))。
 
 `number` などのパーツ形状も式 node ではなく、パーツ定義の `part_type` metadata
 に宣言します。 その宣言型が式 root の期待型になり、`core.validate-part`

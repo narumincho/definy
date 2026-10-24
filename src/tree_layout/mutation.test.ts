@@ -97,15 +97,6 @@ describe("applySelection", () => {
         parameterNamesOf,
       ),
     ).toEqual(expected);
-    // 呼び出しの関数の位置で選んだときは参照だけを置き換える
-    expect(
-      applySelection(
-        expr,
-        ["callFunction"],
-        `ref:part:${lessThanOrEqualHash}`,
-        parameterNamesOf,
-      ),
-    ).toEqual(expected);
   });
 
   it("let は式全体で使われていない変数 ID で作る", () => {
@@ -168,7 +159,7 @@ describe("partParameterNames", () => {
 });
 
 describe("パーツの呼び出しの表示", () => {
-  it("呼び出すパーツと引数名ごとの式を子に持つ", () => {
+  it("呼び出すパーツの名前と引数名ごとの式を子に持つ. 名前は呼び出しと同じパス (式ではない)", () => {
     const node = expressionToLayoutNode({
       Call: {
         function: {
@@ -188,10 +179,52 @@ describe("パーツの呼び出しの表示", () => {
       "index:",
     ]);
     expect(node.children.map((c) => c.path)).toEqual([
-      ["callFunction"],
+      [],
       [{ kind: "callArgument", index: 0 }],
       [{ kind: "callArgument", index: 1 }],
     ]);
+    expect(node.children[0]?.scopeVariables).toBeUndefined();
+  });
+
+  it("関数型の引数の呼び出し・レコードの関数のフィールドの呼び出しは名前で出す", () => {
+    const node = expressionToLayoutNode({
+      Function: {
+        parameters: [
+          { parameter_id: 0, parameter_name: "f" },
+          { parameter_id: 1, parameter_name: "clock" },
+        ],
+        body: {
+          ListLiteral: {
+            items: [
+              {
+                Call: {
+                  function: { Variable: { variable_id: 0 } },
+                  arguments: [],
+                },
+              },
+              {
+                Call: {
+                  function: {
+                    RecordGet: {
+                      record: { Variable: { variable_id: 1 } },
+                      key: "now",
+                    },
+                  },
+                  arguments: [],
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+    const labels: Array<string> = [];
+    const walk = (n: typeof node): void => {
+      if (n.id.endsWith(".fn")) labels.push(n.label);
+      n.children.forEach(walk);
+    };
+    walk(node);
+    expect(labels).toEqual(["f", "clock.now"]);
   });
 });
 

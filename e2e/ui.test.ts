@@ -142,9 +142,11 @@ test.describe("definy UI E2E", () => {
     await expect(valueTree).toBeVisible({ timeout: 15000 });
 
     // core.minus(left: 0, right: x) の呼び出し (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る
-    // (期待する型が number と分かる). 1 つ目の呼び出しは match の対象の core.less-than
-    const subtract = valueTree.locator(".tree-badge", { hasText: /^call$/ });
-    await subtract.nth(1).click();
+    // (期待する型が number と分かる). 呼び出す関数の名前は呼び出しの一部なので, 名前を押すと呼び出しを選ぶ
+    const subtract = valueTree.locator(".tree-badge", {
+      hasText: /^core\.minus$/,
+    });
+    await subtract.click();
     // 検索欄には今の式の名前が入っているので, 空にして全ての選択肢を出す
     await page.locator(".dropdown-search-input").fill("");
     await expect(
@@ -184,8 +186,7 @@ test.describe("definy UI E2E", () => {
 
     // パーツの呼び出しは, 呼び出すパーツの名前・説明と, 呼び出しの結果の型
     await valueTree
-      .locator(".tree-badge", { hasText: /^call$/ })
-      .nth(1)
+      .locator(".tree-badge", { hasText: /^core\.minus$/ })
       .hover();
     await expect(card).toContainText("core.minus", { timeout: 15000 });
     await expect(card).toContainText("数値の減算");

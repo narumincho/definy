@@ -465,7 +465,7 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
       return selfHostedVariant(
         "call",
         selfHostedRecord([
-          ["function", convert(node.function)],
+          ["function", calleeToSelfHostedAst(node.function, convert)],
           [
             "arguments",
             selfHostedList(
@@ -542,6 +542,26 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
   }
   throw new SelfHostedAstConversionError(
     `core.expression cannot represent ${key || JSON.stringify(ast)}`,
+  );
+}
+
+/**
+ * 呼び出しの関数の位置 (`Call.function`) を `core.callee` の値にする.
+ * 関数は呼び出すもので値として書けないので, 呼び出せるのはパーツ (`PartReference`), 関数型の引数 (`Variable`),
+ * レコードの関数のフィールド (`RecordGet`) だけ. 他の式 (ラムダ式の即時呼び出し・呼び出しの結果の呼び出しなど) は
+ * `SelfHostedAstConversionError` を投げる. `core.callee` のバリアントは `core.expression` の同じ名前のバリアントと同じ形
+ */
+function calleeToSelfHostedAst(
+  callee: unknown,
+  convert: (child: unknown) => unknown,
+): unknown {
+  const key =
+    callee && typeof callee === "object" ? (Object.keys(callee)[0] ?? "") : "";
+  if (key === "PartReference" || key === "Variable" || key === "RecordGet") {
+    return convert(callee);
+  }
+  throw new SelfHostedAstConversionError(
+    `A call can only call a part, a function parameter or a function field of a record, not ${key || JSON.stringify(callee)}`,
   );
 }
 

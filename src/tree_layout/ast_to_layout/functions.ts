@@ -182,12 +182,18 @@ export function tryBuildFunctionNode(
       function?: unknown;
       arguments?: ReadonlyArray<{ name?: unknown; value?: unknown }>;
     };
-    const fnChild = buildLayoutNode(
-      callNode.function,
-      `${idPrefix}.fn`,
-      childPath(currentPath, "callFunction"),
-      context,
-    );
+    // 呼び出す関数は式ではなく呼び出しの一部 (呼び出しは必ずパーツ名か関数型の引数で始まる).
+    // 名前のノードは呼び出しと同じパスにして, 名前を選ぶと呼び出し全体を選ぶ
+    const fnChild: LayoutNode = {
+      id: `${idPrefix}.fn`,
+      path: currentPath,
+      label: calleeLabel(callNode.function, idPrefix, context, buildLayoutNode),
+      kind: "identifier",
+      children: [],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
     const args = callNode.arguments ?? [];
     const argChildren: ReadonlyArray<LayoutNode> = args.map((arg, idx) => {
       const argPath = childPath(currentPath, {
@@ -227,4 +233,27 @@ export function tryBuildFunctionNode(
   }
 
   return null;
+}
+
+/**
+ * 呼び出す関数の名前. パーツはパーツ名, 関数型の引数は引数名, レコードの関数のフィールドは `clock.now` のように出す
+ */
+function calleeLabel(
+  callee: unknown,
+  idPrefix: string,
+  context: ScopeContext,
+  buildLayoutNode: BuildLayoutNodeFn,
+): string {
+  const recordGet = (
+    callee as {
+      readonly RecordGet?: {
+        readonly record?: unknown;
+        readonly key?: unknown;
+      };
+    } | null
+  )?.RecordGet;
+  if (recordGet !== undefined) {
+    return `${calleeLabel(recordGet.record, idPrefix, context, buildLayoutNode)}.${String(recordGet.key ?? "")}`;
+  }
+  return buildLayoutNode(callee, `${idPrefix}.fn`, [], context).label;
 }

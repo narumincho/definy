@@ -195,10 +195,8 @@ export function applySelection(
         part_definition_event_hash: base64ToBytes(partHash),
       },
     };
-    const parameterNames =
-      path.at(-1) === "callFunction" ? undefined : parameterNamesOf(partHash);
     return updateExpressionAtPath(expr, path, (current) =>
-      partSelection(reference, parameterNames, current),
+      partSelection(reference, parameterNamesOf(partHash), current),
     );
   } else {
     return expr;
