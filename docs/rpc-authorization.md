@@ -46,8 +46,6 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 管理者か `DEFINY_HTTP_PROXY_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウントに限る。誰でも使えると
 オープンプロキシになるため。署名が無ければ 401, 許可されていないアカウントなら 403。
 
-以前の `DeployService` (サーバーの `CLOUDFLARE_API_TOKEN` を使うデプロイ) は削除した。
-
 管理者は Worker の環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウント ID。
 アカウント ID は Base64URL なので大文字小文字を区別する。未設定なら誰も管理者ではない。
 

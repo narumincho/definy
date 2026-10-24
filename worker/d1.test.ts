@@ -39,7 +39,6 @@ it("Cloudflare D1 persistence survives WorkerStore isolate restart", async () =>
 
   const envWithD1: Env = {
     DB: d1,
-    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
         const url =
@@ -106,7 +105,6 @@ it("Cloudflare D1 persistence survives WorkerStore isolate restart", async () =>
   });
   const envColdStart: Env = {
     DB: d1,
-    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
   };
 
   // Verify both seeded event and submitted event are persisted in D1
@@ -190,7 +188,6 @@ it("D1 seeding does not re-run when env.DB is a new wrapper per request or on st
 
   const makeEnv = (): Env => ({
     DB: createFreshD1Binding(),
-    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
         const url =
@@ -353,7 +350,6 @@ it("D1 replaces the old seed when the seed bundle changes, keeping other account
   // 新しい seed が入る. 他のアカウントのイベントは残る
   const env: Env = {
     DB: d1,
-    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
     ASSETS: {
       fetch(): Promise<Response> {
         return Promise.resolve(

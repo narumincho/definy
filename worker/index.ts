@@ -81,24 +81,6 @@ export function isHttpProxyAccount(
   );
 }
 
-/**
- * ルートドメインを決定する
- */
-export function getRootDomain(env: Env, requestUrl: URL): string {
-  if (env.DEFINY_ROOT_DOMAIN && env.DEFINY_ROOT_DOMAIN.trim().length > 0) {
-    return env.DEFINY_ROOT_DOMAIN.trim();
-  }
-  const hostname = requestUrl.hostname.toLowerCase();
-  if (
-    hostname === "definy.narumincho.com" ||
-    hostname.endsWith("-definy.narumincho.com") ||
-    hostname.endsWith(".definy.narumincho.com")
-  ) {
-    return "definy.narumincho.com";
-  }
-  return requestUrl.host || "definy.narumincho.com";
-}
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,

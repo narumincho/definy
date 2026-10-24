@@ -62,9 +62,6 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 name = "definy"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "definy-db"

@@ -47,7 +47,6 @@ export type Env = {
   readonly DB?: D1Database;
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
-  readonly DEFINY_ROOT_DOMAIN?: string;
   /**
    * システムアカウントの公開鍵 (URL-safe base64). 型検査でコンパイラ組み込みのパーツを置けるモジュールを見分けるのに使う.
    * 未設定なら開発用の鍵 (docs/system-account.md)

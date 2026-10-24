@@ -80,8 +80,7 @@ sample.deploy-self-hosted-definy-server =
 
 以前はパーツの式の中の `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` をサーバーが探し,
 `DeployService/DeployCloudflare` が Worker 内の stage1 で handler をコンパイルしてデプロイしていた。デプロイ履歴を
-D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた。これらと `ListCloudflareWorkers`,
-`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_API_BASE_URL` などのサーバーの環境変数は削除した。
+D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた。これらと `ListCloudflareWorkers` は削除した。
 さらに前の Rust 版の `DeployCloudflare` は, 任意の JavaScript (`custom_script`)・パーツ (`part_id`)・CAS の Wasm (`wasm_hash`)
 のどれでも配備できる汎用 API で, 既定の `worker.js` が Wasm の線形メモリの値を読んで HTML や JSON (`/api/eval`) で返していた。
 
