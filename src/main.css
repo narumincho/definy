@@ -140,7 +140,6 @@
   --titlebar-height: 38px;
   --activitybar-width: 48px;
   --sidebar-width: 260px;
-  --statusbar-height: 24px;
 }
 
 * {
@@ -434,15 +433,12 @@ textarea {
   display: grid;
   grid-template-areas:
     "titlebar titlebar titlebar"
-    "activity sidebar editor"
-    "status status status";
+    "activity sidebar editor";
   grid-template-columns: var(--activitybar-width) var(--sidebar-width) minmax(
       0,
       1fr
     );
-  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) var(
-      --statusbar-height
-    );
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr);
   height: 100vh;
   height: 100dvh;
   width: 100%;
@@ -577,6 +573,42 @@ button.header-title:hover {
   gap: 0.35rem;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+/* --- 接続状態 (タイトルバー右側) --- */
+
+.connection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 26px;
+  padding: 0 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.connection-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.connection-status-connected .connection-status-dot {
+  background: var(--green);
+}
+
+.connection-status-connecting .connection-status-dot {
+  background: var(--yellow);
+}
+
+.connection-status-offline,
+.connection-status-error {
+  background: var(--red-bg);
+  color: var(--red-text);
 }
 
 /* ヘッダー右側のコントロール (言語・ログインなど) の高さと文字サイズを揃える */
@@ -1295,33 +1327,6 @@ body.sidebar-resizing {
 .shortcut-list-or {
   color: var(--text-muted);
   font-size: 0.74rem;
-}
-
-/* --- ステータスバー --- */
-
-.status-bar {
-  grid-area: status;
-  display: flex;
-  align-items: stretch;
-  min-width: 0;
-  padding: 0 0.35rem;
-  background: var(--bg-chrome);
-  border-top: 1px solid var(--border);
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  overflow: hidden;
-}
-
-.status-bar-spacer {
-  flex: 1;
-}
-
-.status-bar-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.55rem;
-  white-space: nowrap;
 }
 
 /* ===================================================================
@@ -3020,10 +3025,6 @@ a.account-card {
       "activity";
     grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto !important;
-  }
-
-  .status-bar {
-    display: none;
   }
 
   .workbench-sidebar {

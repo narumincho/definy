@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { ConnectionStatus } from "./ConnectionStatus.tsx";
 import { Link } from "./Link.tsx";
 import {
   RedoIcon,
@@ -109,6 +110,8 @@ export function Header(): JSX.Element {
       </div>
 
       <div className="header-actions">
+        <ConnectionStatus />
+
         <button
           type="button"
           className={`titlebar-icon-button run-panel-toggle ${runPanelOpen ? "active" : ""}`}
