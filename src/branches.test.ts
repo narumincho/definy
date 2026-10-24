@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   commitTarget,
   displayedBranch,
-  moduleBranches,
+  sortBranches,
+  summarizeBranches,
+  type BranchCommit,
+  type BranchSummary,
   unusedBranchName,
 } from "./branches.ts";
 
@@ -52,7 +55,25 @@ const commits = [
   },
 ];
 
-describe("moduleBranches", () => {
+/** モジュール `moduleName` のブランチ (main が先頭) */
+function moduleBranches(
+  commits: ReadonlyArray<BranchCommit>,
+  moduleName: string,
+): ReadonlyArray<BranchSummary> {
+  return sortBranches(
+    summarizeBranches(commits)
+      .filter((branch) => branch.moduleName === moduleName)
+      .map((branch) => ({
+        name: branch.name,
+        creatorAccountId: branch.creatorAccountId,
+        latestEventHash: branch.latestEventHash,
+        latestTimeMs: branch.latestTimeMs,
+        commitCount: branch.commitCount,
+      })),
+  );
+}
+
+describe("summarizeBranches", () => {
   it("main を先頭にブランチをまとめ, 作成者は最初のコミットのアカウント", () => {
     expect(moduleBranches(commits, "app")).toEqual([
       {

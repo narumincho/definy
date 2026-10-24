@@ -11,7 +11,7 @@ import { verifyEventRecord } from "../signed_event.ts";
 import { pickLatestCommitPerModule } from "../latest_commits.ts";
 import {
   displayedBranch,
-  moduleBranches,
+  sortBranches,
   type BranchSummary,
 } from "../branches.ts";
 import type { LatestPart } from "../self_hosted_type_check.ts";
@@ -69,6 +69,10 @@ export function latestParts(
 }
 
 export type EventsState = {
+  /**
+   * 読んだイベント (新しい順). 全イベントではなく, 最新の 100 件, 各モジュールの各ブランチの最新のコミット,
+   * 全アカウントの作成, `loadEvent` で読んだもの
+   */
   readonly events: ReadonlyArray<EventRecord>;
   readonly refreshEvents: () => Promise<void>;
   readonly connectionStatus: ConnectionStatus;
@@ -85,6 +89,8 @@ export type EventsState = {
   readonly displayedBranches: ReadonlyMap<string, string>;
   /** モジュール `moduleName` で表示するブランチを選ぶ (localStorage に残す) */
   readonly selectBranch: (moduleName: string, branch: string) => void;
+  /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
+  readonly loadEvent: (eventHash: string) => Promise<boolean>;
 };
 
 const STORAGE_KEY_SELECTED_BRANCHES = "definy.selected_branches.v1";
@@ -116,45 +122,172 @@ function saveSelectedBranches(selected: ReadonlyMap<string, string>): void {
   }
 }
 
+/** サーバーの `GetEvents` / `GetEvent` / `GetModuleBranches` が返すイベント 1 件 (検証前) */
+type ServerEvent = Omit<EventRecord, "verification">;
+
+/** タイムラインに出す最新のイベントの数 */
+const RECENT_EVENTS_LIMIT = 100;
+/** アカウントの作成イベントを読む 1 ページの数 (全件読む) */
+const ACCOUNT_EVENTS_PAGE_SIZE = 500;
+
+/** モジュールのブランチ (`GetModuleBranches`). 最新のコミットのイベントは `events` に入れる */
+type BranchHead = {
+  readonly moduleName: string;
+  readonly branch: string;
+  readonly creatorAccountId: string;
+  readonly commitCount: number;
+  readonly latestEventHash: string;
+};
+
+/** サーバーが HTTP のエラーを返した (届かなかったのではない) */
+class RpcHttpError extends Error {}
+
+async function postRpc<T>(method: string, body: unknown): Promise<T> {
+  const res = await fetch(`/definy.v1.EventService/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new RpcHttpError(`${method} failed: ${res.status}`);
+  }
+  return (await res.json()) as T;
+}
+
+/** 全アカウントの作成イベント (アカウント名に使う. 小さいので全件読む) */
+async function fetchAllAccountEvents(): Promise<ReadonlyArray<ServerEvent>> {
+  const all: ServerEvent[] = [];
+  for (let offset = 0; ; offset += ACCOUNT_EVENTS_PAGE_SIZE) {
+    const page =
+      (
+        await postRpc<{ readonly events?: ReadonlyArray<ServerEvent> }>(
+          "GetEvents",
+          {
+            eventType: "create_account",
+            limit: ACCOUNT_EVENTS_PAGE_SIZE,
+            offset,
+          },
+        )
+      ).events ?? [];
+    all.push(...page);
+    if (page.length < ACCOUNT_EVENTS_PAGE_SIZE) {
+      return all;
+    }
+  }
+}
+
+/**
+ * イベントハッシュ → 検証の結果. イベントは変わらないので 1 度だけ検証する
+ * (seed の core のコミットは数 MB あり, 読み直すたびに検証すると重い)
+ */
+const verificationCache = new Map<string, Promise<EventRecord>>();
+
+function verifyCached(ev: ServerEvent): Promise<EventRecord> {
+  const key = `${ev.eventHash}:${ev.accountId}:${ev.eventType}:${ev.timeMs}:${ev.signedEventBytes.length}`;
+  let verified = verificationCache.get(key);
+  if (verified === undefined) {
+    // サーバーを信用せず、表示前に署名・ハッシュ・メタデータを検証する
+    verified = verifyEventRecord(ev).then((verification) => ({
+      ...ev,
+      verification,
+    }));
+    verificationCache.set(key, verified);
+  }
+  return verified;
+}
+
+/** 検証したイベント → デコードしたコミット. `loadEvent` でイベントが増えるたびに全部デコードし直さない */
+const decodedCommitCache = new WeakMap<
+  EventRecord,
+  DecodedCommitEvent | null
+>();
+
 export function useEvents(): EventsState {
-  const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
+  /** サーバーから読んだイベント (最新のもの, 各ブランチの最新のコミット, 全アカウントの作成, 個別に読んだもの) */
+  const [eventMap, setEventMap] = useState<ReadonlyMap<string, EventRecord>>(
+    () => new Map(),
+  );
+  const [branchHeads, setBranchHeads] = useState<ReadonlyArray<BranchHead>>([]);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
 
-  // Fetch events from worker backend
+  const addEvents = useCallback((records: ReadonlyArray<EventRecord>) => {
+    setEventMap((prev) => {
+      const next = new Map(prev);
+      for (const record of records) {
+        next.set(record.eventHash, record);
+      }
+      return next;
+    });
+  }, []);
+
+  // モジュールの状態は全イベントを読まずに, 各ブランチの最新のコミットから作る (docs/branch.md)
   const refreshEvents = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch("/definy.v1.EventService/GetEvents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: 100, offset: 0 }),
-      });
-      if (!res.ok) {
-        setConnectionStatus("error");
-        return;
-      }
-      const data = (await res.json()) as {
-        readonly events?: ReadonlyArray<Omit<EventRecord, "verification">>;
-      };
-      if (data.events) {
-        // サーバーを信用せず、表示前に署名・ハッシュ・メタデータを検証する
-        const verified = await Promise.all(
-          data.events.map(async (ev): Promise<EventRecord> => ({
-            ...ev,
-            verification: await verifyEventRecord(ev),
-          })),
-        );
-        setEvents(verified);
-        setConnectionStatus("connected");
-      }
-    } catch {
-      setConnectionStatus("offline");
+      const [recent, branches, accounts] = await Promise.all([
+        postRpc<{ readonly events?: ReadonlyArray<ServerEvent> }>("GetEvents", {
+          limit: RECENT_EVENTS_LIMIT,
+          offset: 0,
+        }),
+        postRpc<{
+          readonly branches?: ReadonlyArray<
+            Omit<BranchHead, "latestEventHash"> & {
+              readonly latestEvent: ServerEvent;
+            }
+          >;
+        }>("GetModuleBranches", {}),
+        fetchAllAccountEvents(),
+      ]);
+      const verified = await Promise.all(
+        [
+          ...(recent.events ?? []),
+          ...(branches.branches ?? []).map((b) => b.latestEvent),
+          ...accounts,
+        ].map(verifyCached),
+      );
+      addEvents(verified);
+      setBranchHeads(
+        (branches.branches ?? []).map((b) => ({
+          moduleName: b.moduleName,
+          branch: b.branch,
+          creatorAccountId: b.creatorAccountId,
+          commitCount: Number(b.commitCount),
+          latestEventHash: b.latestEvent.eventHash,
+        })),
+      );
+      setConnectionStatus("connected");
+    } catch (e) {
+      setConnectionStatus(e instanceof RpcHttpError ? "error" : "offline");
     }
-  }, []);
+  }, [addEvents]);
+
+  /** 読んでいないイベント (古いコミットなど) を 1 件読む. 見つからなければ `false` */
+  const loadEvent = useCallback(
+    async (eventHash: string): Promise<boolean> => {
+      try {
+        const { event } = await postRpc<{ readonly event?: ServerEvent }>(
+          "GetEvent",
+          { eventHash },
+        );
+        if (event === undefined) return false;
+        addEvents([await verifyCached(event)]);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [addEvents],
+  );
 
   useEffect(() => {
     void refreshEvents();
   }, [refreshEvents]);
+
+  /** 新しい順 */
+  const events = useMemo(
+    () => [...eventMap.values()].sort((a, b) => b.timeMs - a.timeMs),
+    [eventMap],
+  );
 
   // 署名の検証に通ったイベントだけを、モジュール・パーツ・アカウント名の導出に使う
   const validEvents = useMemo(
@@ -181,8 +314,13 @@ export function useEvents(): EventsState {
     () =>
       validEvents.flatMap((event) => {
         if (event.eventType !== "module_commit") return [];
-        const commit = extractModuleCommit(event.signedEventBytes);
-        return commit === null ? [] : [{ event, commit }];
+        let decoded = decodedCommitCache.get(event);
+        if (decoded === undefined) {
+          const commit = extractModuleCommit(event.signedEventBytes);
+          decoded = commit === null ? null : { event, commit };
+          decodedCommitCache.set(event, decoded);
+        }
+        return decoded === null ? [] : [decoded];
       }),
     [validEvents],
   );
@@ -205,33 +343,42 @@ export function useEvents(): EventsState {
   // モジュールごとのブランチと, 表示するブランチ (docs/branch.md)
   const { branchesByModule, displayedBranches, displayedCommits } =
     useMemo(() => {
-      const branchCommits = decodedCommits.map(({ event, commit }) => ({
-        accountId: event.accountId,
-        moduleName: commit.moduleName,
-        branch: commit.branch,
-        eventHash: event.eventHash,
-        timeMs: event.timeMs,
-      }));
-      const branchesMap = new Map<string, ReadonlyArray<BranchSummary>>();
+      const branchesMap = new Map<string, BranchSummary[]>();
+      for (const head of branchHeads) {
+        const latest = eventMap.get(head.latestEventHash);
+        if (latest?.verification.status !== "valid") continue;
+        const list = branchesMap.get(head.moduleName) ?? [];
+        list.push({
+          name: head.branch,
+          creatorAccountId: head.creatorAccountId,
+          latestEventHash: head.latestEventHash,
+          latestTimeMs: latest.timeMs,
+          commitCount: head.commitCount,
+        });
+        branchesMap.set(head.moduleName, list);
+      }
+      const sortedMap = new Map<string, ReadonlyArray<BranchSummary>>();
       const displayedMap = new Map<string, string>();
-      for (const moduleName of new Set(
-        decodedCommits.map(({ commit }) => commit.moduleName),
-      )) {
-        const branches = moduleBranches(branchCommits, moduleName);
-        branchesMap.set(moduleName, branches);
-        displayedMap.set(
-          moduleName,
-          displayedBranch(branches, selectedBranches.get(moduleName)),
+      const displayedHashes = new Set<string>();
+      for (const [moduleName, branches] of branchesMap) {
+        const sorted = sortBranches(branches);
+        sortedMap.set(moduleName, sorted);
+        const displayed = displayedBranch(
+          sorted,
+          selectedBranches.get(moduleName),
         );
+        displayedMap.set(moduleName, displayed);
+        const head = sorted.find((b) => b.name === displayed);
+        if (head !== undefined) displayedHashes.add(head.latestEventHash);
       }
       return {
-        branchesByModule: branchesMap,
+        branchesByModule: sortedMap,
         displayedBranches: displayedMap,
-        displayedCommits: decodedCommits.filter(
-          ({ commit }) => displayedMap.get(commit.moduleName) === commit.branch,
+        displayedCommits: decodedCommits.filter(({ event }) =>
+          displayedHashes.has(event.eventHash),
         ),
       };
-    }, [decodedCommits, selectedBranches]);
+    }, [branchHeads, eventMap, decodedCommits, selectedBranches]);
 
   // 表示するブランチのコミットから, モジュールとパーツを導出する
   const { modules, parts, partNames, partsByIdHash } = useMemo(() => {
@@ -329,5 +476,6 @@ export function useEvents(): EventsState {
     branchesByModule,
     displayedBranches,
     selectBranch,
+    loadEvent,
   };
 }

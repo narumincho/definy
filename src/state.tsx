@@ -70,6 +70,8 @@ export type DefinyContextValue = {
   readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
   /** モジュール `moduleName` で表示するブランチを選ぶ. モジュール・パーツ・型環境はそのブランチのものになる */
   readonly selectBranch: (moduleName: string, branch: string) => void;
+  /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
+  readonly loadEvent: (eventHash: string) => Promise<boolean>;
   /**
    * `moduleName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
    * definy 製の型チェッカーで検査する. ログインしていなければ空
@@ -182,6 +184,7 @@ export function DefinyProvider({
       commitWorkingChanges: working.commitWorkingChanges,
       commitTargetFor: working.commitTargetFor,
       selectBranch: events.selectBranch,
+      loadEvent: events.loadEvent,
       checkCommitTypes: typeCheck.checkCommitTypes,
       partTypeCheckResults: typeCheck.partTypeCheckResults,
       checkPartType: typeCheck.checkPartType,
@@ -238,6 +241,7 @@ export function DefinyProvider({
       working.commitWorkingChanges,
       working.commitTargetFor,
       events.selectBranch,
+      events.loadEvent,
       typeCheck.checkCommitTypes,
       typeCheck.partTypeCheckResults,
       typeCheck.checkPartType,

@@ -1,6 +1,9 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { checkSubmittedEvent } from "./event_check.ts";
-import { checkSubmittedModuleCommit } from "./type_check.ts";
+import {
+  checkSubmittedModuleCommit,
+  loadModuleBranchHeads,
+} from "./type_check.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
@@ -10,9 +13,11 @@ import type {
   GetContentRequest,
   GetEventRequest,
   GetEventsRequest,
+  GetModuleBranchesResponse,
   HttpProxyFetchRequest,
   HttpProxyFetchResponse,
   HttpProxyHeader,
+  ModuleBranchItem,
   SubmitEventRequest,
   UploadContentRequest,
 } from "./types.ts";
@@ -310,6 +315,26 @@ async function handleRpc(
     case "/definy.v1.EventService/GetEvents": {
       const req = parseJsonBody<GetEventsRequest>(body);
       return jsonResponse({ events: await store.getEvents(req, env) });
+    }
+
+    case "/definy.v1.EventService/GetModuleBranches": {
+      const heads = await loadModuleBranchHeads(store, env);
+      const branches: Array<ModuleBranchItem> = [];
+      for (const head of heads) {
+        const latestEvent = await store.getEvent(head.latestEventHash, env);
+        if (latestEvent !== undefined) {
+          branches.push({
+            moduleName: head.moduleName,
+            branch: head.name,
+            creatorAccountId: head.creatorAccountId,
+            commitCount: head.commitCount,
+            latestEvent,
+          });
+        }
+      }
+      return jsonResponse({
+        branches,
+      } satisfies GetModuleBranchesResponse);
     }
 
     case "/definy.v1.EventService/GetEvent": {

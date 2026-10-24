@@ -1,4 +1,4 @@
-import type { JSX, ReactNode } from "react";
+import { useEffect, useState, type JSX, type ReactNode } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
 import {
@@ -16,9 +16,27 @@ import type { EventRecord, LanguageCode } from "../../src/types.ts";
 
 export default function EventDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const { language, events, connectionStatus, decodedCommits } = useDefiny();
+  const { language, events, connectionStatus, decodedCommits, loadEvent } =
+    useDefiny();
 
   const event = events.find((e) => e.eventHash === id);
+  // 全イベントは読まないので, 読んでいないイベントはここで読む
+  const [lookup, setLookup] = useState<"idle" | "loading" | "not_found">(
+    "idle",
+  );
+  const needsLoad =
+    event === undefined && connectionStatus === "connected" && id !== undefined;
+  useEffect(() => {
+    if (!needsLoad) return;
+    let cancelled = false;
+    setLookup("loading");
+    void loadEvent(id).then((found) => {
+      if (!cancelled) setLookup(found ? "idle" : "not_found");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsLoad, id, loadEvent]);
   const breadcrumb = (current: string): JSX.Element => (
     <div className="breadcrumb">
       <Link href="/" className="breadcrumb-link">
@@ -34,7 +52,8 @@ export default function EventDetailPage(): JSX.Element {
       <div className="event-detail-view">
         {breadcrumb((id ?? "").slice(0, 16))}
         <div className="empty-state">
-          {connectionStatus === "connecting" ? (
+          {connectionStatus === "connecting" ||
+          (connectionStatus === "connected" && lookup !== "not_found") ? (
             <>
               <span className="spinner" />
               <p>
@@ -206,11 +225,8 @@ function CommitSection({
   readonly commit: DecodedCommitEvent;
   readonly language: LanguageCode;
 }): JSX.Element {
-  const { events, decodedCommits } = useDefiny();
+  const { decodedCommits } = useDefiny();
   const { moduleName, parentCommitHash, message, parts } = commit.commit;
-  const parentFound =
-    parentCommitHash !== null &&
-    events.some((e) => e.eventHash === parentCommitHash);
   const children = decodedCommits.filter(
     (c) => c.commit.parentCommitHash === commit.event.eventHash,
   );
@@ -243,17 +259,14 @@ function CommitSection({
                 "Neniu (unua enmeto)",
               )}
             </span>
-          ) : parentFound ? (
+          ) : (
+            // 読んでいない親コミットもイベントのページが読む
             <Link
               href={`/event/${parentCommitHash}`}
               className="meta-link font-mono"
             >
               {parentCommitHash.slice(0, 16)}
             </Link>
-          ) : (
-            <code className="font-mono text-muted" title={parentCommitHash}>
-              {parentCommitHash.slice(0, 16)}
-            </code>
           )}
         </MetaItem>
         {children.length > 0 && (

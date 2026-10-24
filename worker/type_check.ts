@@ -22,6 +22,10 @@ import {
 } from "../src/self_hosted_type_check.ts";
 import { pickLatestCommitPerModule } from "../src/latest_commits.ts";
 import {
+  summarizeBranches,
+  type ModuleBranchSummary,
+} from "../src/branches.ts";
+import {
   BUILTIN_PARAMETERS,
   compilerBuiltinName,
 } from "../src/stage1_compiler.ts";
@@ -140,6 +144,7 @@ type CachedCommit = {
   readonly eventHash: string;
   readonly accountId: string;
   readonly moduleId: string;
+  readonly moduleName: string;
   readonly branch: string;
   readonly timeMs: number;
   /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
@@ -173,6 +178,7 @@ async function decodeCommit(item: {
       eventHash: item.eventHash,
       accountId: decoded.meta.accountId,
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
+      moduleName: commit.moduleName,
       branch: commit.branch,
       timeMs: decoded.meta.timeMs,
       // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
@@ -210,6 +216,14 @@ async function loadCommits(
     }
   }
   return commits;
+}
+
+/** ストアの全モジュールの全ブランチ (`GetModuleBranches`). ブラウザはこれでモジュールの今の状態を知る (全イベントを読まなくてよい) */
+export async function loadModuleBranchHeads(
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyArray<ModuleBranchSummary>> {
+  return summarizeBranches(await loadCommits(store, env));
 }
 
 /** モジュールごとの main ブランチの最新のコミット (キーはモジュール ID) */
