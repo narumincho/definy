@@ -6,6 +6,7 @@ import {
   ChangesIcon,
   EventsIcon,
   HistoryIcon,
+  KeyboardIcon,
   ModuleIcon,
   PartsIcon,
   SearchIcon,
@@ -19,7 +20,10 @@ export type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
-  readonly href: string;
+  /** 選んだときの動作. ページを開くか, ページを開かずにコマンドを実行する */
+  readonly target:
+    | { readonly type: "page"; readonly href: string }
+    | { readonly type: "command"; readonly run: () => void };
   readonly icon: IconComponent;
 };
 
@@ -116,6 +120,7 @@ export function CommandPalette(): JSX.Element | null {
     modules,
     commandPaletteOpen,
     setCommandPaletteOpen,
+    setShortcutListOpen,
   } = useDefiny();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -158,76 +163,94 @@ export function CommandPalette(): JSX.Element | null {
 
   const pageDetail = label(language, "Page", "ページ", "Paĝo");
   const moduleDetail = label(language, "Module", "モジュール", "Modulo");
+  const commandDetail = label(language, "Command", "コマンド", "Komando");
 
   const items: ReadonlyArray<PaletteItem> = [
     {
       id: "page-events",
       label: label(language, "Events", "イベント一覧", "Eventoj"),
       detail: pageDetail,
-      href: "/",
+      target: { type: "page", href: "/" },
       icon: EventsIcon,
     },
     {
       id: "page-parts",
       label: label(language, "Parts", "パーツ一覧", "Partoj"),
       detail: pageDetail,
-      href: "/parts",
+      target: { type: "page", href: "/parts" },
       icon: PartsIcon,
     },
     {
       id: "page-modules",
       label: label(language, "Modules", "モジュール一覧", "Moduloj"),
       detail: pageDetail,
-      href: "/modules",
+      target: { type: "page", href: "/modules" },
       icon: ModuleIcon,
     },
     {
       id: "page-changes",
       label: label(language, "Changes", "変更", "Ŝanĝoj"),
       detail: pageDetail,
-      href: "/changes",
+      target: { type: "page", href: "/changes" },
       icon: ChangesIcon,
     },
     {
       id: "page-history",
       label: label(language, "History", "履歴", "Historio"),
       detail: pageDetail,
-      href: "/history",
+      target: { type: "page", href: "/history" },
       icon: HistoryIcon,
     },
     {
       id: "page-accounts",
       label: label(language, "Accounts", "アカウント一覧", "Kontoj"),
       detail: pageDetail,
-      href: "/accounts",
+      target: { type: "page", href: "/accounts" },
       icon: AccountsIcon,
     },
     {
       id: "page-about",
       label: label(language, "About definy", "definy について", "Pri definy"),
       detail: pageDetail,
-      href: "/about",
+      target: { type: "page", href: "/about" },
       icon: AboutIcon,
     },
     {
       id: "page-settings",
       label: label(language, "Settings", "設定", "Agordoj"),
       detail: pageDetail,
-      href: "/settings",
+      target: { type: "page", href: "/settings" },
       icon: SettingsIcon,
     },
-    ...modules.map((m) => ({
+    {
+      id: "command-shortcut-list",
+      label: label(
+        language,
+        "Keyboard Shortcuts",
+        "ショートカットキー一覧",
+        "Klavkombinoj",
+      ),
+      detail: commandDetail,
+      target: {
+        type: "command",
+        run: () => {
+          setShortcutListOpen(true);
+        },
+      },
+      icon: KeyboardIcon,
+    },
+    ...modules.map((m): PaletteItem => ({
       id: `module-${m.moduleId}`,
       label: m.name,
       detail: moduleDetail,
-      href: `/module/${m.moduleId}`,
+      target: { type: "page", href: `/module/${m.moduleId}` },
       icon: ModuleIcon,
     })),
-    ...parts.map((p) => ({
+    ...parts.map((p): PaletteItem => ({
       id: `part-${p.partId}`,
       label: `${p.moduleName}.${p.name}`,
       detail: localizedText(p.description, language).slice(0, 36) || "Part",
-      href: `/part/${p.partId}`,
+      target: { type: "page", href: `/part/${p.partId}` },
       icon: ModuleIcon,
     })),
   ];
@@ -241,7 +264,11 @@ export function CommandPalette(): JSX.Element | null {
 
   function handleSelect(item: PaletteItem): void {
     setCommandPaletteOpen(false);
-    router.visit(withLanguage(item.href, language));
+    if (item.target.type === "page") {
+      router.visit(withLanguage(item.target.href, language));
+    } else {
+      item.target.run();
+    }
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
@@ -332,12 +359,16 @@ export function CommandPalette(): JSX.Element | null {
               const isSelected = idx === selectedIndex;
               return (
                 <a
-                  key={item.href}
+                  key={item.id}
                   id={`command-palette-item-${idx}`}
                   className="command-palette-item"
                   role="option"
                   aria-selected={isSelected ? "true" : "false"}
-                  href={withLanguage(item.href, language)}
+                  href={
+                    item.target.type === "page"
+                      ? withLanguage(item.target.href, language)
+                      : undefined
+                  }
                   style={{ textDecoration: "none", cursor: "pointer" }}
                   onClick={(e) => {
                     e.preventDefault();
