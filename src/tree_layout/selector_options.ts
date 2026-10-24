@@ -181,13 +181,6 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     category: "Type",
     returnType: "any",
   },
-  {
-    value: "expr:hole",
-    name: "□",
-    detail: "型指定なし",
-    category: "Syntax",
-    returnType: "any",
-  },
 ];
 
 /** 型のパーツ (partType が `type`) の選択肢. 型の行で `reference({ part_hash: ID })` として参照する */
