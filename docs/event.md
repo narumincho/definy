@@ -23,6 +23,7 @@ core.event-content = union {
 }
 core.module-commit = {
   module_name: string,
+  branch: string,                 // docs/branch.md
   module_description: list<core.localized-text>,
   message: string,
   parent_commit_hash: option<string>,
@@ -44,6 +45,7 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 {
   "#module_commit": {
     "module_name": "math",
+    "branch": "main",
     "module_description": [{ "language": "en", "text": "Math" }],
     "message": "Add answer",
     "parent_commit_hash": { "#none": null },
@@ -81,25 +83,32 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 
 ```text
 core.check-event(content: core.event-content, state: core.event-check-state) -> list<core.event-rejection>
-core.event-check-state = { account_created: boolean, latest_commit_hash: option<string> }
+core.event-check-state = {
+  account_created: boolean,
+  branch_latest_commit_hash: option<string>,  // コミット先のブランチの最新のコミット
+  is_branch_creator: boolean,                 // このアカウントがコミット先のブランチを作ったか
+  module_has_commits: boolean,
+  parent_in_module: boolean,                  // parent_commit_hash がそのモジュールのコミットか
+}
 ```
 
 返した理由が空なら受け付ける。今の規則:
 
-| イベント         | 規則                                                                                | 理由 (`core.event-rejection`)                  |
-| :--------------- | :---------------------------------------------------------------------------------- | :--------------------------------------------- |
-| `create_account` | 同じアカウントで 2 回作れない                                                       | `account_already_created`                      |
-| `create_account` | 名前は空にできない                                                                  | `empty_account_name`                           |
-| `module_commit`  | 先にアカウントを作る                                                                | `account_not_created`                          |
-| `module_commit`  | モジュール名は空にできない                                                          | `empty_module_name`                            |
-| `module_commit`  | `parent_commit_hash` はそのモジュールの最新のコミット (新しいモジュールなら `none`) | `parent_commit_mismatch`                       |
-| `module_commit`  | パーツ名は空にできず, 重複できない (`core.check-event-part-names`)                  | `empty_part_name`, `duplicate_part_name(name)` |
+| イベント         | 規則                                                               | 理由 (`core.event-rejection`)                                               |
+| :--------------- | :----------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `create_account` | 同じアカウントで 2 回作れない                                      | `account_already_created`                                                   |
+| `create_account` | 名前は空にできない                                                 | `empty_account_name`                                                        |
+| `module_commit`  | 先にアカウントを作る                                               | `account_not_created`                                                       |
+| `module_commit`  | モジュール名は空にできない                                         | `empty_module_name`                                                         |
+| `module_commit`  | ブランチ名は空にできない                                           | `empty_branch_name`                                                         |
+| `module_commit`  | ブランチの規則 (`core.check-event-branch`. [branch.md](branch.md)) | `first_branch_must_be_main`, `not_branch_creator`, `parent_commit_mismatch` |
+| `module_commit`  | パーツ名は空にできず, 重複できない (`core.check-event-part-names`) | `empty_part_name`, `duplicate_part_name(name)`                              |
 
-- モジュールは今はアカウントとモジュール名で決まる (`deriveModuleIdBytes`)。他のアカウントの同じ名前のモジュールは別のモジュールなので,
-  その最新のコミットを親にはできない。ブラウザは自分のアカウントのそのモジュールの最新のコミットを親にする (`latestOwnCommitHash`, `src/latest_commits.ts`)
+- モジュールはモジュール名だけで決まり (`deriveModuleIdBytes`), ブランチを持つ。ブラウザは表示しているブランチから
+  コミット先のブランチと親を決める (`commitTarget`, `src/branches.ts`. [branch.md](branch.md))
 - 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerModule`)。同じ秒の 2 つのコミットは先のものが最新のままになる
 - 規則は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` (コミットしない) で動く。
-  Worker は `?module` で取り込み (`worker/event_check.ts`), TypeScript 側は規則が使う状態 (アカウントを作ったか, 最新のコミット) を
+  Worker は `?module` で取り込み (`worker/event_check.ts`), TypeScript 側は規則が使う状態 (アカウントを作ったか, コミット先のブランチの最新のコミットと作成者など) を
   ストアから集めて渡し, 返った理由を英語のメッセージにするだけ (`src/event_check.ts`)。拒否は Connect-RPC の `invalid_argument` (400)
 - 規則は式を見ないので, モジュールのコミットはパーツ名だけにしてから線形メモリに書く (core のコミットは式で数 MB ある)
 - 型検査 (`checkSubmittedModuleCommit`) はこの規則に通ってから行う
@@ -117,7 +126,6 @@ core.event-check-state = { account_created: boolean, latest_commit_hash: option<
 ## 今後
 
 - 受け付ける規則は `core.check-event` にした (上)。形の検査 (`conformsToTypeDeclaration`) や, 規則が使う状態を集めること
-  (アカウントを作ったか・最新のコミット) も definy へ移す ([self-hosting.md](self-hosting.md) の「service host 境界」)。
-- モジュールをアカウントから切り離し, ブランチだけで編集する (フォークは無い. 誰でもブランチを作れ, コミットはブランチの作成者だけ.
-  2026-10-24 の決定, issue #765)。規則は `core.check-event` に足す。
+  (アカウントを作ったか・ブランチの状態) も definy へ移す ([self-hosting.md](self-hosting.md) の「service host 境界」)。
+- モジュールはアカウントから切り離し, ブランチだけで編集するようにした ([branch.md](branch.md))。ブランチの取り込み (マージ) は今後。
 - 封筒 (署名・時刻) も definy の値で表すか。

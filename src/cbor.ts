@@ -414,7 +414,9 @@ export type DecodedPart = {
 
 export type DecodedModuleCommit = {
   readonly moduleName: string;
-  /** モジュール ID (アカウントとモジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
+  /** コミット先のブランチ (docs/branch.md) */
+  readonly branch: string;
+  /** モジュール ID (モジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
   readonly moduleIdHash: string | null;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
@@ -458,6 +460,7 @@ export function extractModuleCommit(
       : null;
     return {
       moduleName: commit.moduleName,
+      branch: commit.branch,
       moduleIdHash: moduleIdBytes
         ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
         : null,

@@ -11,8 +11,12 @@ import {
 } from "../working_changes_storage.ts";
 import { createSignedModuleCommitEvent, submitSignedEvent } from "../auth.ts";
 import type { DecodedPart } from "../cbor.ts";
-import { latestOwnCommitHash } from "../latest_commits.ts";
-import type { DecodedCommitEvent } from "./useEvents.ts";
+import {
+  commitTarget,
+  type BranchSummary,
+  type CommitTarget,
+} from "../branches.ts";
+import { MAIN_BRANCH } from "../event_content.ts";
 
 const STORAGE_KEY_CHANGES = "definy.working_changes.v4";
 
@@ -35,13 +39,19 @@ function saveStoredChanges(changes: WorkingChanges): void {
 export type CommitWorkingChangesParams = {
   readonly moduleName: string;
   readonly message: string;
+  /** 表示しているブランチが他のアカウントのものなら, 作る新しいブランチの名前 (docs/branch.md) */
+  readonly newBranchName?: string;
 };
 
 export type WorkingChangesParams = {
   readonly currentAccount: AccountState | null;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
-  /** 署名の正しいモジュールのコミット. コミットの親 (自分のモジュールの最新のコミット) を決めるのに使う */
-  readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
+  /** モジュール名 → ブランチ. コミット先のブランチと親を決めるのに使う */
+  readonly branchesByModule: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
+  /** モジュール名 → 表示しているブランチ. 変更はこのブランチに重ねる */
+  readonly displayedBranches: ReadonlyMap<string, string>;
+  /** 新しいブランチにコミットしたら, そのブランチを表示する */
+  readonly selectBranch: (moduleName: string, branch: string) => void;
   readonly refreshEvents: () => Promise<void>;
 };
 
@@ -58,12 +68,16 @@ export type WorkingChangesOperations = {
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
   ) => Promise<string>;
+  /** `moduleName` へコミットする先 (docs/branch.md). ログインしていなければ `null` */
+  readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
 };
 
 export function useWorkingChanges({
   currentAccount,
   modules,
-  decodedCommits,
+  branchesByModule,
+  displayedBranches,
+  selectBranch,
   refreshEvents,
 }: WorkingChangesParams): WorkingChangesOperations {
   const [workingChanges, setWorkingChanges] = useState<WorkingChanges>(() => ({
@@ -157,10 +171,24 @@ export function useWorkingChanges({
     [modules, workingChanges],
   );
 
+  const commitTargetFor = useCallback(
+    (moduleName: string): CommitTarget | null =>
+      currentAccount === null
+        ? null
+        : commitTarget(
+            branchesByModule.get(moduleName) ?? [],
+            displayedBranches.get(moduleName) ?? MAIN_BRANCH,
+            currentAccount.accountId,
+            currentAccount.accountName,
+          ),
+    [currentAccount, branchesByModule, displayedBranches],
+  );
+
   const commitWorkingChanges = useCallback(
     async ({
       moduleName,
       message,
+      newBranchName,
     }: CommitWorkingChangesParams): Promise<string> => {
       if (!currentAccount || !currentAccount.secretKeyBase64) {
         throw new Error("You must be logged in to commit changes");
@@ -171,18 +199,31 @@ export function useWorkingChanges({
       if (partsList.length === 0) {
         throw new Error(`No parts found to commit for module '${moduleName}'`);
       }
-      // 親は自分のアカウントのこのモジュールの最新のコミット. 他のアカウントの同じ名前のモジュールは
-      // サーバーでは別のモジュールなので親にしない (docs/event.md「受け付ける規則」)
-      const parentCommitHash = latestOwnCommitHash(
-        decodedCommits.map(({ event, commit }) => ({
-          accountId: event.accountId,
-          moduleName: commit.moduleName,
-          eventHash: event.eventHash,
-          timeMs: event.timeMs,
-        })),
-        currentAccount.accountId,
-        moduleName,
-      );
+      // 表示しているブランチが自分のものならそこへ, 他のアカウントのものならそこから新しいブランチを作る
+      // (他のアカウントのブランチにはコミットできない. docs/branch.md)
+      const target = commitTargetFor(moduleName);
+      if (target === null) {
+        throw new Error("You must be logged in to commit changes");
+      }
+      const branch =
+        target.kind === "new_module"
+          ? MAIN_BRANCH
+          : target.kind === "own_branch"
+            ? target.branch
+            : (newBranchName ?? target.suggestedName).trim();
+      if (branch === "") {
+        throw new Error("The branch name is empty");
+      }
+      if (
+        target.kind === "new_branch" &&
+        (branchesByModule.get(moduleName) ?? []).some((b) => b.name === branch)
+      ) {
+        throw new Error(
+          `The branch '${branch}' already exists and was created by another account`,
+        );
+      }
+      const parentCommitHash =
+        target.kind === "new_module" ? null : target.parentCommitHash;
 
       const { signedEventBytes, eventHash } =
         await createSignedModuleCommitEvent({
@@ -192,6 +233,7 @@ export function useWorkingChanges({
             secretKeyBase64: currentAccount.secretKeyBase64,
           },
           moduleName,
+          branch,
           moduleDescription: existingModule?.description ?? [],
           message,
           parentCommitHash,
@@ -213,10 +255,20 @@ export function useWorkingChanges({
         return next;
       });
 
+      if (target.kind === "new_branch") {
+        selectBranch(moduleName, branch);
+      }
       await refreshEvents();
       return eventHash;
     },
-    [currentAccount, buildCommitParts, decodedCommits, refreshEvents],
+    [
+      currentAccount,
+      buildCommitParts,
+      commitTargetFor,
+      branchesByModule,
+      selectBranch,
+      refreshEvents,
+    ],
   );
 
   return {
@@ -226,5 +278,6 @@ export function useWorkingChanges({
     discardAllWorkingChanges,
     buildCommitParts,
     commitWorkingChanges,
+    commitTargetFor,
   };
 }

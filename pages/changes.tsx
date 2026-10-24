@@ -18,6 +18,7 @@ export default function ChangesPage(): JSX.Element {
     currentAccount,
     setAccountModalOpen,
     commitWorkingChanges,
+    commitTargetFor,
     checkCommitTypes,
   } = useDefiny();
 
@@ -41,6 +42,14 @@ export default function ChangesPage(): JSX.Element {
   // 選んでいなければ, 変更のあるモジュールの先頭を使う
   const [chosenModule, setSelectedModule] = useState<string | null>(null);
   const selectedModule = chosenModule ?? affectedModules[0] ?? "core";
+
+  // コミット先のブランチ (docs/branch.md). 他のアカウントのブランチからは新しいブランチを作るので名前を決める
+  const target = commitTargetFor(selectedModule);
+  const [newBranchName, setNewBranchName] = useState<string | null>(null);
+  const branchName =
+    target?.kind === "new_branch"
+      ? (newBranchName ?? target.suggestedName)
+      : null;
 
   // コミットする前に, サーバーと同じ definy 製の型チェッカーで検査する.
   // 変更・対象モジュール・取得済みのイベントが変わったら 300ms 待ってから検査し直す
@@ -95,16 +104,18 @@ export default function ChangesPage(): JSX.Element {
         const hash = await commitWorkingChanges({
           moduleName: selectedModule || "core",
           message: commitMessage.trim(),
+          ...(branchName === null ? {} : { newBranchName: branchName }),
         });
         setCommittedHash(hash);
         setCommitMessage("");
+        setNewBranchName(null);
       } catch (err) {
         setCommitError(err instanceof Error ? err.message : String(err));
       } finally {
         setCommitting(false);
       }
     },
-    [commitMessage, selectedModule, commitWorkingChanges],
+    [commitMessage, selectedModule, branchName, commitWorkingChanges],
   );
 
   return (
@@ -319,6 +330,50 @@ export default function ChangesPage(): JSX.Element {
                       disabled={committing}
                       required
                     />
+                  )}
+                </div>
+
+                <div className="form-group commit-branch">
+                  <label htmlFor="commit-branch-input">
+                    {label(language, "Branch", "ブランチ", "Branĉo")}
+                  </label>
+                  {target?.kind === "new_branch" ? (
+                    <>
+                      <input
+                        id="commit-branch-input"
+                        type="text"
+                        value={branchName ?? ""}
+                        onChange={(e) => {
+                          setNewBranchName(e.target.value);
+                        }}
+                        disabled={committing}
+                        required
+                      />
+                      <p className="text-muted">
+                        {label(
+                          language,
+                          `The branch '${target.fromBranch}' was created by another account, so a new branch is created from it.`,
+                          `ブランチ「${target.fromBranch}」は他のアカウントが作ったので, そこから新しいブランチを作ります。`,
+                          `La branĉo '${target.fromBranch}' estis kreita de alia konto, do nova branĉo estas kreita el ĝi.`,
+                        )}
+                      </p>
+                    </>
+                  ) : (
+                    <p id="commit-branch-input" className="text-muted">
+                      {target?.kind === "own_branch"
+                        ? label(
+                            language,
+                            `Commit to your branch '${target.branch}'`,
+                            `自分のブランチ「${target.branch}」にコミットします`,
+                            `Enmeti al via branĉo '${target.branch}'`,
+                          )
+                        : label(
+                            language,
+                            "Create the module with the branch 'main'",
+                            "モジュールを作り, ブランチ「main」にコミットします",
+                            "Krei la modulon kun la branĉo 'main'",
+                          )}
+                    </p>
                   )}
                 </div>
 

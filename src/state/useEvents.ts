@@ -9,6 +9,11 @@ import type {
 import { extractCreateAccount, extractModuleCommit } from "../cbor.ts";
 import { verifyEventRecord } from "../signed_event.ts";
 import { pickLatestCommitPerModule } from "../latest_commits.ts";
+import {
+  displayedBranch,
+  moduleBranches,
+  type BranchSummary,
+} from "../branches.ts";
 import type { LatestPart } from "../self_hosted_type_check.ts";
 
 /** 署名の正しいモジュールコミットのイベントと, その中身 */
@@ -74,7 +79,42 @@ export type EventsState = {
   readonly accountNames: ReadonlyMap<string, string>;
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
+  /** モジュール名 → そのモジュールのブランチ (main が先頭) */
+  readonly branchesByModule: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
+  /** モジュール名 → 表示しているブランチ (選んでいなければ main) */
+  readonly displayedBranches: ReadonlyMap<string, string>;
+  /** モジュール `moduleName` で表示するブランチを選ぶ (localStorage に残す) */
+  readonly selectBranch: (moduleName: string, branch: string) => void;
 };
+
+const STORAGE_KEY_SELECTED_BRANCHES = "definy.selected_branches.v1";
+
+function loadSelectedBranches(): ReadonlyMap<string, string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SELECTED_BRANCHES);
+    if (raw === null) return new Map();
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== "object") return new Map();
+    return new Map(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+  } catch {
+    return new Map();
+  }
+}
+
+function saveSelectedBranches(selected: ReadonlyMap<string, string>): void {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY_SELECTED_BRANCHES,
+      JSON.stringify(Object.fromEntries(selected)),
+    );
+  } catch {
+    // 保存できなくても表示は変わらない
+  }
+}
 
 export function useEvents(): EventsState {
   const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
@@ -147,7 +187,53 @@ export function useEvents(): EventsState {
     [validEvents],
   );
 
-  // Derive module and part snapshots from events and working changes
+  const [selectedBranches, setSelectedBranches] = useState<
+    ReadonlyMap<string, string>
+  >(() => new Map());
+  useEffect(() => {
+    setSelectedBranches(loadSelectedBranches());
+  }, []);
+  const selectBranch = useCallback((moduleName: string, branch: string) => {
+    setSelectedBranches((prev) => {
+      const next = new Map(prev);
+      next.set(moduleName, branch);
+      saveSelectedBranches(next);
+      return next;
+    });
+  }, []);
+
+  // モジュールごとのブランチと, 表示するブランチ (docs/branch.md)
+  const { branchesByModule, displayedBranches, displayedCommits } =
+    useMemo(() => {
+      const branchCommits = decodedCommits.map(({ event, commit }) => ({
+        accountId: event.accountId,
+        moduleName: commit.moduleName,
+        branch: commit.branch,
+        eventHash: event.eventHash,
+        timeMs: event.timeMs,
+      }));
+      const branchesMap = new Map<string, ReadonlyArray<BranchSummary>>();
+      const displayedMap = new Map<string, string>();
+      for (const moduleName of new Set(
+        decodedCommits.map(({ commit }) => commit.moduleName),
+      )) {
+        const branches = moduleBranches(branchCommits, moduleName);
+        branchesMap.set(moduleName, branches);
+        displayedMap.set(
+          moduleName,
+          displayedBranch(branches, selectedBranches.get(moduleName)),
+        );
+      }
+      return {
+        branchesByModule: branchesMap,
+        displayedBranches: displayedMap,
+        displayedCommits: decodedCommits.filter(
+          ({ commit }) => displayedMap.get(commit.moduleName) === commit.branch,
+        ),
+      };
+    }, [decodedCommits, selectedBranches]);
+
+  // 表示するブランチのコミットから, モジュールとパーツを導出する
   const { modules, parts, partNames, partsByIdHash } = useMemo(() => {
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
@@ -155,7 +241,7 @@ export function useEvents(): EventsState {
     const nameMap = new Map<string, string>();
 
     // Sort events ascending by time
-    const sorted = [...decodedCommits].sort(
+    const sorted = [...displayedCommits].sort(
       (a, b) => a.event.timeMs - b.event.timeMs,
     );
 
@@ -204,6 +290,8 @@ export function useEvents(): EventsState {
       moduleMap.set(commit.moduleName, {
         moduleId: commit.moduleName,
         name: commit.moduleName,
+        branch: commit.branch,
+        branches: branchesByModule.get(commit.moduleName) ?? [],
         description: commit.moduleDescription,
         latestEventHash: ev.eventHash,
         parentCommitHash: commit.parentCommitHash,
@@ -219,12 +307,12 @@ export function useEvents(): EventsState {
       partNames: nameMap,
       partsByIdHash: partIdHashMap,
     };
-  }, [decodedCommits]);
+  }, [displayedCommits, branchesByModule]);
 
-  // 型チェッカーの型環境に使う, 署名の正しいイベントの全モジュールの最新のパーツ
+  // 型チェッカーの型環境に使う, 全モジュールの表示しているブランチの最新のパーツ
   const committedParts = useMemo(
-    () => latestParts(decodedCommits),
-    [decodedCommits],
+    () => latestParts(displayedCommits),
+    [displayedCommits],
   );
 
   return {
@@ -238,5 +326,8 @@ export function useEvents(): EventsState {
     accountNames,
     committedParts,
     decodedCommits,
+    branchesByModule,
+    displayedBranches,
+    selectBranch,
   };
 }

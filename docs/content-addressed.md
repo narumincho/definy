@@ -190,8 +190,8 @@ definy では、Git のディレクトリ（Tree）構造と同様に **「モ�
 
 コミット前にパーツ間の相互参照（再帰・相互再帰）を可能にするため、以下の決定論的ハッシュ関数を用いて一意な識別子を導出します：
 
-- `derive_module_id(account_id, module_name)`:
-  アカウントIDとモジュール名から一意な `EventHashId` を導出
+- `derive_module_id(module_name)`:
+  モジュール名から一意な `EventHashId` を導出 (2026-10-24 まではアカウント ID も使っていた. モジュールはブランチで分ける. [branch.md](branch.md))
 - `derive_module_part_id(module_id, part_name)`:
   モジュールIDとパーツ名からモジュール内パーツの一意な `EventHashId` を導出
 

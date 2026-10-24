@@ -23,32 +23,3 @@ export function pickLatestCommitPerModule<T extends TimedModuleCommit>(
   }
   return result;
 }
-
-/**
- * アカウント `accountId` のモジュール `moduleName` の最新のコミットのイベントハッシュ. 無ければ `null`.
- * サーバーはモジュールをアカウントとモジュール名で区別し, 新しいコミットの親がこれでなければ拒否する
- * (core.check-event. docs/event.md)
- */
-export function latestOwnCommitHash(
-  commits: Iterable<{
-    readonly accountId: string;
-    readonly moduleName: string;
-    readonly eventHash: string;
-    readonly timeMs: number;
-  }>,
-  accountId: string,
-  moduleName: string,
-): string | null {
-  let latest: { readonly eventHash: string; readonly timeMs: number } | null =
-    null;
-  for (const commit of commits) {
-    if (
-      commit.accountId === accountId &&
-      commit.moduleName === moduleName &&
-      (latest === null || latest.timeMs < commit.timeMs)
-    ) {
-      latest = commit;
-    }
-  }
-  return latest?.eventHash ?? null;
-}
