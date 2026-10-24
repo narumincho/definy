@@ -5,10 +5,10 @@ import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
   decodeCborItem,
-  toUint8Array,
 } from "./cbor.ts";
 import { devSystemAccountBytes } from "./seed_parts.ts";
-import { verifySignedEvent } from "./signed_event.ts";
+import type { CommitPart, ModuleCommitContent } from "./event_content.ts";
+import { decodeVerifiedSignedEvent } from "./signed_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
 
@@ -157,24 +157,9 @@ async function postConnectJson<T>(
   return (await response.json()) as T;
 }
 
-type RawCommitPart = {
-  readonly name?: unknown;
-  readonly part_type?: unknown;
-  readonly description?: unknown;
-  readonly expression?: unknown;
-  readonly content_hash?: unknown;
-};
-
-type RawModuleCommit = {
-  readonly module_name?: unknown;
-  readonly module_description?: unknown;
-  readonly message?: unknown;
-  readonly parts?: unknown;
-};
-
 type LatestCommitEntry = {
   readonly time: number;
-  readonly commit: RawModuleCommit;
+  readonly commit: ModuleCommitContent;
 };
 
 /**
@@ -184,7 +169,7 @@ async function fetchLatestSystemModuleCommits(
   fetchFn: typeof fetch,
   baseUrl: string,
   systemAccountId: string,
-): Promise<ReadonlyMap<string, RawModuleCommit>> {
+): Promise<ReadonlyMap<string, ModuleCommitContent>> {
   const latest = new Map<string, LatestCommitEntry>();
   let offset = 0;
 
@@ -208,53 +193,21 @@ async function fetchLatestSystemModuleCommits(
         continue;
       }
 
-      let meta;
+      let decoded;
       try {
-        meta = await verifySignedEvent(signedBytes);
+        decoded = await decodeVerifiedSignedEvent(signedBytes);
       } catch {
         continue;
       }
-
+      const { meta, content } = decoded;
       if (meta.accountId !== systemAccountId) {
         continue;
       }
-      if (meta.eventType !== "module_commit") {
+      if (content.type !== "module_commit") {
         continue;
       }
-
-      let signedRaw: unknown;
-      try {
-        [signedRaw] = decodeCborItem(signedBytes);
-      } catch {
-        continue;
-      }
-      const eventBinaryField = (signedRaw as Record<string, unknown> | null)
-        ?.event_binary as
-        { readonly __tag?: unknown; readonly value?: unknown } | undefined;
-      const innerBytes = toUint8Array(
-        eventBinaryField?.value ?? eventBinaryField,
-      );
-      if (!innerBytes) {
-        continue;
-      }
-
-      let innerRaw: unknown;
-      try {
-        [innerRaw] = decodeCborItem(innerBytes);
-      } catch {
-        continue;
-      }
-      if (!innerRaw || typeof innerRaw !== "object") {
-        continue;
-      }
-      const innerObj = innerRaw as Record<string, unknown>;
-      const contentObj = innerObj.content as
-        Record<string, unknown> | undefined;
-      if (!contentObj || !("ModuleCommit" in contentObj)) {
-        continue;
-      }
-      const commit = contentObj.ModuleCommit as RawModuleCommit;
-      const moduleName = String(commit.module_name ?? "");
+      const { commit } = content;
+      const moduleName = commit.moduleName;
       if (!moduleName) {
         continue;
       }
@@ -271,7 +224,7 @@ async function fetchLatestSystemModuleCommits(
     offset += count;
   }
 
-  const result = new Map<string, RawModuleCommit>();
+  const result = new Map<string, ModuleCommitContent>();
   for (const [modName, entry] of latest) {
     result.set(modName, entry.commit);
   }
@@ -285,31 +238,22 @@ async function fetchLatestSystemModuleCommits(
 async function hydrateCommitParts(
   fetchFn: typeof fetch,
   baseUrl: string,
-  rawParts: ReadonlyArray<RawCommitPart>,
+  commitParts: ReadonlyArray<CommitPart>,
 ): Promise<ReadonlyArray<PartSeedData>> {
   const parts: Array<PartSeedData> = [];
-  for (const raw of rawParts) {
-    const name = String(raw.name ?? "");
-    let expression: unknown = undefined;
-
-    if (raw.expression != null) {
-      expression = raw.expression;
-    } else if (raw.content_hash != null) {
-      const hashBytes = toUint8Array(raw.content_hash);
-      const contentHash = hashBytes
-        ? bytesToUrlSafeBase64NoPad(hashBytes)
-        : String(raw.content_hash);
-
+  for (const part of commitParts) {
+    let expression: unknown = part.expression ?? undefined;
+    if (expression === undefined && part.contentHash !== null) {
       const response = await postConnectJson<GetContentResponse>(
         fetchFn,
         baseUrl,
         "GetContent",
-        { contentHash },
+        { contentHash: part.contentHash },
       );
       const item = response.item;
       if (!item) {
         throw new Error(
-          `content ${contentHash} for part '${name}' was not found`,
+          `content ${part.contentHash} for part '${part.name}' was not found`,
         );
       }
       const contentBytes = base64ToBytes(item.contentBytes);
@@ -317,13 +261,11 @@ async function hydrateCommitParts(
       expression = decodedExpr;
     }
 
-    const partData: Record<string, unknown> = { name };
-    if (raw.part_type !== undefined) {
-      partData.part_type = raw.part_type;
+    const partData: Record<string, unknown> = { name: part.name };
+    if (part.partType !== null) {
+      partData.part_type = part.partType;
     }
-    if (raw.description !== undefined) {
-      partData.description = raw.description;
-    }
+    partData.description = part.description;
     if (expression !== undefined) {
       partData.expression = expression;
     }
@@ -457,18 +399,15 @@ export async function exportSeeds(
     if (!commit) {
       continue;
     }
-    const rawParts = Array.isArray(commit.parts)
-      ? (commit.parts as ReadonlyArray<RawCommitPart>)
-      : [];
     const hydratedParts = await hydrateCommitParts(
       fetchFn,
       options.baseUrl,
-      rawParts,
+      commit.parts,
     );
     updatedSeedsMap.set(name, {
-      module_name: String(commit.module_name ?? name),
-      module_description: commit.module_description,
-      message: String(commit.message ?? ""),
+      module_name: commit.moduleName,
+      module_description: commit.moduleDescription,
+      message: commit.message,
       parts: hydratedParts,
     });
     exportedList.push(name);

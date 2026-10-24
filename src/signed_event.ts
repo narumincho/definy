@@ -9,6 +9,11 @@ import {
   sha256EventHashId,
   toUint8Array,
 } from "./cbor.ts";
+import {
+  decodeEventContent,
+  type EventContent,
+  type EventType,
+} from "./event_content.ts";
 
 export type ParsedSignedEventMeta = {
   readonly accountId: string;
@@ -18,7 +23,7 @@ export type ParsedSignedEventMeta = {
   readonly referencedContentHashes: ReadonlyArray<string>;
 };
 
-export type EventType = "create_account" | "change_profile" | "module_commit";
+export type { EventType } from "./event_content.ts";
 
 /** 署名済みイベントとして受理できないバイト列であることを表すエラー */
 export class InvalidSignedEventError extends Error {
@@ -34,36 +39,21 @@ type DecodedSignedEvent = {
   readonly signature: Uint8Array;
   readonly innerBytes: Uint8Array;
   readonly accountIdBytes: Uint8Array;
-  readonly content: Readonly<Record<string, unknown>>;
+  readonly content: EventContent;
   readonly meta: ParsedSignedEventMeta;
 };
 
-function eventTypeOf(content: Record<string, unknown>): EventType {
-  if ("CreateAccount" in content) return "create_account";
-  if ("ChangeProfile" in content) return "change_profile";
-  if ("ModuleCommit" in content) return "module_commit";
-  throw new InvalidSignedEventError(
-    `unknown event content: ${Object.keys(content).join(", ")}`,
-  );
-}
-
+/** CAS に預けた式の content hash (コミットを受理する前に CAS に揃っている必要がある) */
 function referencedContentHashesOf(
-  content: Record<string, unknown>,
+  content: EventContent,
 ): ReadonlyArray<string> {
-  const mc = content.ModuleCommit as
-    { readonly parts?: ReadonlyArray<Record<string, unknown>> } | undefined;
-  if (!mc || !Array.isArray(mc.parts)) {
+  if (content.type !== "module_commit") {
     return [];
   }
   const hashes = new Set<string>();
-  for (const part of mc.parts) {
-    if (!part || typeof part !== "object") continue;
-    if (part.expression == null && part.content_hash != null) {
-      const hashBytes = toUint8Array(part.content_hash);
-      if (!hashBytes) {
-        throw new InvalidSignedEventError("content_hash must be bytes");
-      }
-      hashes.add(bytesToUrlSafeBase64NoPad(hashBytes));
+  for (const part of content.commit.parts) {
+    if (part.expression === null && part.contentHash !== null) {
+      hashes.add(part.contentHash);
     }
   }
   return Array.from(hashes);
@@ -120,23 +110,24 @@ function decodeSignedEvent(bytes: Uint8Array): DecodedSignedEvent {
     throw new InvalidSignedEventError("time must be CBOR tag 1 epoch seconds");
   }
   const timeMs = Math.round(timeField.value * 1000);
-  const content = innerObj.content;
-  if (!content || typeof content !== "object") {
-    throw new InvalidSignedEventError("content must be a map");
+  const content = decodeEventContent(innerObj.content);
+  if (content === undefined) {
+    throw new InvalidSignedEventError(
+      "content must be a value of core.event-content",
+    );
   }
-  const contentObj = content as Record<string, unknown>;
 
   return {
     signature,
     innerBytes,
     accountIdBytes,
-    content: contentObj,
+    content,
     meta: {
       accountId: bytesToUrlSafeBase64NoPad(accountIdBytes),
-      eventType: eventTypeOf(contentObj),
+      eventType: content.type,
       createdAtRfc3339: new Date(timeMs).toISOString(),
       timeMs,
-      referencedContentHashes: referencedContentHashesOf(contentObj),
+      referencedContentHashes: referencedContentHashesOf(content),
     },
   };
 }
@@ -160,7 +151,7 @@ export async function decodeVerifiedSignedEvent(
   nowMs: number = Date.now(),
 ): Promise<{
   readonly accountIdBytes: Uint8Array;
-  readonly content: Readonly<Record<string, unknown>>;
+  readonly content: EventContent;
   readonly meta: ParsedSignedEventMeta;
 }> {
   const decoded = decodeSignedEvent(bytes);

@@ -34,7 +34,7 @@ DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY="<public_key>" npm run export:seeds https://def
 ## 動作の流れ
 
 1. Connect-RPC `POST {baseUrl}/definy.v1.EventService/GetEvents`（`{ eventType: "module_commit", limit: 500 }`）をページングして全件取得します。
-2. 各イベントの Ed25519 署名を検証し、`account_id` がシステムアカウントで内容が `ModuleCommit` のものを抽出します。モジュールごとにイベント時刻が最新のコミットを採用します。他アカウントのコミットは無視されます。
+2. 各イベントの Ed25519 署名を検証し、`account_id` がシステムアカウントで中身が `module_commit` ([event.md](event.md)) のものを抽出します。モジュールごとにイベント時刻が最新のコミットを採用します。他アカウントのコミットは無視されます。
 3. 式を持たず content hash のみを持つパーツは、Connect-RPC `GetContent` で CAS から CBOR バイト列を取得して式を復元します（式を持つパーツの `content_hash` は seed に書き出しません）。
 4. 書き出し後の全モジュール（新規追加されたパーツを含む）の「システムアカウント × モジュール名 × パーツ名」から導出したパーツ ID (URL-safe Base64 の文字列) の対応表を作成し、式や型定義の中でその文字列と一致する値を `{"$part": "module.name"}` に置き換えます。対応表にない ID はそのまま残します。
 5. システムアカウントのコミットが見つからないモジュールの seed ファイルは書き換えません。ビルトインモジュール以外のモジュールは `npm run build:seeds` が読まないため書き出しません。

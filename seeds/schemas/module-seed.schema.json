@@ -1669,6 +1669,280 @@
       },
       "additionalProperties": false
     },
+    "core.event-content": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#create_account"
+          ],
+          "properties": {
+            "#create_account": {
+              "type": "object",
+              "required": [
+                "account_name"
+              ],
+              "properties": {
+                "account_name": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#module_commit"
+          ],
+          "properties": {
+            "#module_commit": {
+              "$ref": "#/definitions/core.module-commit"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.module-commit": {
+      "type": "object",
+      "required": [
+        "module_name",
+        "module_description",
+        "message",
+        "parent_commit_hash",
+        "parts"
+      ],
+      "properties": {
+        "module_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "module_description": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.localized-text"
+          }
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "parent_commit_hash": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.module-commit-part"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.module-commit-part": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "part_type",
+        "expression",
+        "content_hash"
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "description": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.localized-text"
+          }
+        },
+        "part_type": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "content_hash": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.localized-text": {
+      "type": "object",
+      "required": [
+        "language",
+        "text"
+      ],
+      "properties": {
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "core.type-error": {
       "anyOf": [
         {

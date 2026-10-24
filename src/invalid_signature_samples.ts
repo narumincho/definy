@@ -21,6 +21,7 @@ import {
   toUint8Array,
   type DecodedPart,
 } from "./cbor.ts";
+import { variant, variantPayload } from "./definy_value.ts";
 
 export type InvalidSignatureSampleKind =
   "flipped_signature" | "tampered_content" | "impersonated_account";
@@ -144,16 +145,13 @@ export async function createInvalidSignatureSamples(
       timeSeconds,
     ),
   );
-  const content = commit.inner.content as Record<string, unknown>;
-  const moduleCommit = content.ModuleCommit as Record<string, unknown>;
+  const moduleCommit = variantPayload(commit.inner.content, "module_commit");
   const tamperedInner = {
     ...commit.inner,
-    content: {
-      ModuleCommit: {
-        ...moduleCommit,
-        message: "Tampered after signing",
-      },
-    },
+    content: variant("module_commit", {
+      ...(moduleCommit as Readonly<Record<string, unknown>>),
+      message: "Tampered after signing",
+    }),
   };
 
   const impersonatedAccountId =

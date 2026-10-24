@@ -1410,13 +1410,6 @@ button.card:hover {
   --event-border: var(--green-border);
 }
 
-.timeline-item[data-event-type="change_profile"] {
-  --event-color: var(--yellow);
-  --event-text: var(--yellow-text);
-  --event-bg: var(--yellow-bg-strong);
-  --event-border: var(--yellow-border);
-}
-
 .timeline-item.timeline-item-invalid {
   --event-color: var(--red);
   --event-text: var(--red-text);
@@ -1726,13 +1719,6 @@ button.card:hover {
   --event-text: var(--green-text);
   --event-bg: var(--green-bg-strong);
   --event-border: var(--green-border);
-}
-
-.event-detail-view[data-event-type="change_profile"] {
-  --event-color: var(--yellow);
-  --event-text: var(--yellow-text);
-  --event-bg: var(--yellow-bg-strong);
-  --event-border: var(--yellow-border);
 }
 
 .event-detail-view.event-detail-invalid {
