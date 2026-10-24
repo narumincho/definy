@@ -139,8 +139,22 @@ export function symbolizePartReferences(
   }
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
-    if (typeof obj.$part === "string") {
+    if (typeof obj.$part === "string" || typeof obj.$partId === "string") {
       return obj;
+    }
+    // パーツ ID の文字列 (`{"$partId": "core.code"}` を解決したもの) の文字列リテラルを戻す
+    const stringLiteral = obj.String as
+      { readonly value?: unknown } | undefined;
+    if (
+      Object.keys(obj).length === 1 &&
+      stringLiteral &&
+      typeof stringLiteral.value === "string" &&
+      /^[A-Za-z0-9_-]{43}$/.test(stringLiteral.value)
+    ) {
+      const name = table.get(bytesToKey(base64ToBytes(stringLiteral.value)));
+      if (name) {
+        return { String: { value: { $partId: name } } };
+      }
     }
     if ("__float64" in obj && typeof obj.__float64 === "number") {
       return obj.__float64;

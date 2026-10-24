@@ -174,6 +174,9 @@ export function partTypeToSelfHostedAst(partType: unknown): unknown {
       ),
     );
   }
+  if ("code" in obj) {
+    return variant("code", convert(obj.code));
+  }
   if ("type_part" in obj) {
     return variant(
       "reference",
@@ -673,6 +676,8 @@ export function formatTypeAst(
       return value.tag;
     case "list":
       return `List<${format(fieldOf(value.payload, "item_type"))}>`;
+    case "code":
+      return `Code<${format(value.payload)}>`;
     case "function":
       return `(${items(fieldOf(value.payload, "parameters"))
         .map(

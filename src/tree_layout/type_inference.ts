@@ -109,6 +109,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
   }
   const obj = node as Record<string, unknown>;
   if ("TypeList" in obj) return "expr:type:list";
+  if ("TypeCode" in obj) return "expr:type:code";
   if ("TypeFunction" in obj) return "expr:type:function";
   if ("TypeUnion" in obj) return "expr:type:union";
 
@@ -119,6 +120,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
     return b.value === false ? "expr:boolean:false" : "expr:boolean:true";
   }
   if ("ListLiteral" in obj) return "expr:list";
+  if ("Quote" in obj) return "expr:quote";
   if ("Let" in obj) return "expr:let";
   if ("Match" in obj) {
     return isBooleanMatch(obj.Match) ? "expr:match_boolean" : "expr:match";

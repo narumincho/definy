@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package definy.v1;
+
+// HttpProxyService sends HTTP requests that the browser cannot send because of CORS,
+// on behalf of an allowed account (DEFINY_ADMIN_ACCOUNT_IDS or DEFINY_HTTP_PROXY_ACCOUNT_IDS).
+// The request must be signed with the Authorization header (docs/rpc-authorization.md).
+// wasi.io programs (e.g. definy.deploy-to-cloudflare-workers) use it when the CORS proxy option is on.
+service HttpProxyService {
+  rpc Fetch(FetchRequest) returns (FetchResponse);
+}
+
+message HttpHeader {
+  string name = 1;
+  string value = 2;
+}
+
+message FetchRequest {
+  // HTTP method (default GET)
+  string method = 1;
+  // Absolute http or https URL
+  string url = 2;
+  repeated HttpHeader headers = 3;
+  // Request body (standard Base64)
+  string body_base64 = 4;
+}
+
+message FetchResponse {
+  uint32 status = 1;
+  repeated HttpHeader headers = 2;
+  // Response body (standard Base64)
+  string body_base64 = 3;
+}

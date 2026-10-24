@@ -342,6 +342,102 @@ describe("self-hosted type check (stage1)", () => {
     expect(outcomes[2]).toMatchObject({ tag: "function_not_called" });
   }, 600_000);
 
+  it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
+    const parts = await loadSeedParts();
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
+    const coreExpressionId = parts.find(
+      (part) => part.name === "core.expression",
+    )?.id;
+    const quote = (expression: unknown): unknown => ({
+      Quote: { expression },
+    });
+    const incrementType = {
+      function: {
+        parameters: [{ name: "n", type: "number" }],
+        return_type: "number",
+      },
+    };
+    const increment = {
+      Function: {
+        parameters: [{ parameter_id: 0, parameter_name: "n" }],
+        body: await coreCall("plus", {
+          left: { Variable: { variable_id: 0 } },
+          right: { Number: { value: 1 } },
+        }),
+      },
+    };
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        {
+          partType: { code: "number" },
+          expression: quote({ Number: { value: 1 } }),
+        },
+        {
+          partType: { code: "number" },
+          expression: quote({ String: { value: "x" } }),
+        },
+        { partType: { code: incrementType }, expression: quote(increment) },
+        // Code<T> の値は core.code のレコードなので expression を取り出せる
+        // (ラムダ式は期待する型が無いと推論できないので, ここでは数の式)
+        {
+          partType: { type_part: coreExpressionId },
+          expression: {
+            RecordGet: {
+              record: quote({ Number: { value: 1 } }),
+              key: "expression",
+            },
+          },
+        },
+        // quote の中から外の変数は使えない
+        {
+          partType: {
+            function: {
+              parameters: [{ name: "x", type: "number" }],
+              return_type: { code: "number" },
+            },
+          },
+          expression: {
+            Function: {
+              parameters: [{ parameter_id: 0, parameter_name: "x" }],
+              body: quote({ Variable: { variable_id: 0 } }),
+            },
+          },
+        },
+        // 期待する型が無い位置 (let) でも推論できる
+        {
+          partType: { code: "string" },
+          expression: {
+            Let: {
+              bindings: [
+                {
+                  variable_id: 0,
+                  variable_name: "c",
+                  value: quote({ String: { value: "x" } }),
+                },
+              ],
+              body: { Variable: { variable_id: 0 } },
+            },
+          },
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "ok",
+      "ok",
+      "type_error",
+      "ok",
+    ]);
+    expect(outcomes[1]).toMatchObject({ tag: "type_mismatch" });
+    expect(outcomes[4]).toMatchObject({ tag: "undefined_variable" });
+    expect(
+      formatTypeAst({ tag: "code", payload: { tag: "number", payload: null } }),
+    ).toBe("Code<number>");
+  }, 600_000);
+
   it("未入力 (probe) の位置で期待する型を返す", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

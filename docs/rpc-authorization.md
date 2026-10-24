@@ -40,15 +40,13 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 例外として、シード中の `stage1` は名前付きのキーで、コンテンツアドレスではない。
 `/virtual/wasm/:hash` は内容のハッシュが URL と一致するときだけ `immutable` でキャッシュし、`stage1` は毎回再検証させる。
 
-## DeployService: 管理者の認可
+## HttpProxyService: アカウントの認可
 
-次の操作は管理者アカウントに限る。
+`HttpProxyService/Fetch` (CORS の仲介, [wasi-io.md](wasi-io.md)) は署名付きのリクエストで,
+管理者か `DEFINY_HTTP_PROXY_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウントに限る。誰でも使えると
+オープンプロキシになるため。署名が無ければ 401, 許可されていないアカウントなら 403。
 
-- `DeployCloudflare` / `ListCloudflareWorkers` で `apiToken` を省略し、サーバーの `CLOUDFLARE_API_TOKEN` を使う
-- `DeployCloudflare` の `seedD1`
-
-利用者が自分の `apiToken` を渡す場合は認可不要 (自分の Cloudflare アカウントへの操作なので)。
-パーツが指定した `cloudflareToken` も、管理者のリクエストでのみ使う。
+以前の `DeployService` (サーバーの `CLOUDFLARE_API_TOKEN` を使うデプロイ) は削除した。
 
 管理者は Worker の環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウント ID。
 アカウント ID は Base64URL なので大文字小文字を区別する。未設定なら誰も管理者ではない。
@@ -66,7 +64,7 @@ Authorization: Definy-Ed25519 <accountId>.<unix 秒>.<署名 (URL-safe Base64)>
 ```
 definy-rpc-v1
 <HTTP メソッド (大文字)>
-<パス (例: /definy.v1.DeployService/DeployCloudflare)>
+<パス (例: /definy.v1.HttpProxyService/Fetch)>
 <unix 秒>
 <リクエストボディの SHA-256 (URL-safe Base64)>
 ```

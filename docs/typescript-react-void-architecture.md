@@ -88,7 +88,6 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 │   ├── module/[id].tsx       # モジュール詳細
 │   ├── changes.tsx           # 未コミット作業中の変更
 │   ├── history.tsx           # コミット履歴
-│   ├── deployments.tsx       # Cloudflare Workers デプロイセンター
 │   ├── accounts.tsx          # アカウント一覧
 │   ├── settings.tsx          # 設定
 │   └── about.tsx             # definy 紹介
@@ -97,7 +96,6 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 ├── worker/                   # Cloudflare Worker バックエンド実装
 │   ├── index.ts              # API ハンドラー (Connect-RPC, /virtual/wasm/*, /mcp)
 │   ├── store.ts              # Cloudflare D1 (SQLite) イベントストア
-│   ├── cloudflare_api.ts     # DeployCloudflare 用 API クライアント
 │   └── cbor.ts               # 決定論的 CBOR & Ed25519 署名ユーティリティ
 ├── wasm/
 │   └── stage1.wasm           # definy 自己記述コンパイラ (68KB)
@@ -215,7 +213,7 @@ export default defineConfig({
 - **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate)、Deno、Bun など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
 - **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
 - **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
-- **再生成とサーバー側コンパイル**: `wasm/stage1.wasm` は `npm run build:stage1` で再生成できます ([self-hosting.md](self-hosting.md))。サーバー側のパーツの Wasm コンパイル (`worker/part_compiler.ts`) も stage1 で行います ([worker-runtime.md](worker-runtime.md))。
+- **再生成とサーバー側コンパイル**: `wasm/stage1.wasm` は `npm run build:stage1` で再生成できます ([self-hosting.md](self-hosting.md))。デプロイ (`definy.deploy-to-cloudflare-workers`) もブラウザで definy 製のコンパイラを動かして行います ([cloudflare-workers.md](cloudflare-workers.md))。
 
 ### ④ シードデータの自動初期化とブラウザ側 CBOR 射影
 

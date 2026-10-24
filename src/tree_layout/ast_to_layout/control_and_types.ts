@@ -9,6 +9,8 @@ import { FIELD_STEPS } from "../mutation.ts";
 /** FIELD_STEPS の式の表示名 */
 const FIELD_STEP_LABELS: Readonly<Record<string, string>> = {
   TypeList: "List",
+  TypeCode: "Code",
+  Quote: "quote",
 };
 
 export function tryBuildControlOrTypeNode(
@@ -240,6 +242,9 @@ export function tryBuildControlOrTypeNode(
   for (const [key, steps] of Object.entries(FIELD_STEPS)) {
     if (key in node) {
       const inner = (node[key] ?? {}) as Record<string, unknown>;
+      // quote の中の式は外の変数を使えないので, 外のスコープを見せない
+      const innerContext: ScopeContext =
+        key === "Quote" ? { ...context, scopeVariables: new Map() } : context;
       return {
         id: idPrefix,
         path: currentPath,
@@ -250,7 +255,7 @@ export function tryBuildControlOrTypeNode(
             inner[field],
             `${idPrefix}.${field}`,
             childPath(currentPath, step as PathStep),
-            context,
+            innerContext,
           ),
         ),
         computedWidth: 0,

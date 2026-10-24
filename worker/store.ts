@@ -2,7 +2,6 @@ import type {
   ContentItem,
   D1Database,
   D1PreparedStatement,
-  DeploymentHistoryItem,
   Env,
   EventItem,
   GetEventsRequest,
@@ -48,19 +47,6 @@ const D1_SCHEMA_STATEMENTS: ReadonlyArray<string> = [
     content_hash TEXT PRIMARY KEY,
     content_bytes TEXT NOT NULL
   )`,
-  `CREATE TABLE IF NOT EXISTS deployments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    machine_id TEXT NOT NULL,
-    commit_hash TEXT,
-    status TEXT NOT NULL,
-    url TEXT NOT NULL,
-    app_url TEXT NOT NULL,
-    region TEXT NOT NULL,
-    created_at_rfc3339 TEXT NOT NULL,
-    wasm_hash TEXT,
-    provider TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_deployments_id ON deployments(id DESC)`,
 ];
 
 const D1_BATCH_CHUNK_SIZE = 50;
@@ -97,18 +83,6 @@ type D1EventRow = {
 type D1ContentRow = {
   readonly content_hash: string;
   readonly content_bytes: string;
-};
-
-type D1DeploymentRow = {
-  readonly machine_id: string;
-  readonly commit_hash: string | null;
-  readonly status: string;
-  readonly url: string;
-  readonly app_url: string;
-  readonly region: string;
-  readonly created_at_rfc3339: string;
-  readonly wasm_hash: string | null;
-  readonly provider: string | null;
 };
 
 async function fetchSeedBundle(
@@ -179,7 +153,6 @@ export class WorkerStore {
   private events: ReadonlyArray<SeedEventEntry> = [];
   private eventHashes: ReadonlySet<string> = new Set<string>();
   private contents: ReadonlyMap<string, string> = new Map<string, string>();
-  private deployments: ReadonlyArray<DeploymentHistoryItem> = [];
 
   constructor(options: { readonly expectedSeedFingerprint?: string } = {}) {
     this.expectedSeedFingerprint =
@@ -746,66 +719,6 @@ export class WorkerStore {
       return undefined;
     }
     return base64ToBytes(item.contentBytes);
-  }
-
-  /**
-   * デプロイ履歴を記録する
-   */
-  async recordDeployment(
-    item: DeploymentHistoryItem,
-    env?: Env,
-  ): Promise<void> {
-    if (env?.DB) {
-      await env.DB.prepare(
-        `INSERT INTO deployments (machine_id, commit_hash, status, url, app_url, region, created_at_rfc3339, wasm_hash, provider)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-        .bind(
-          item.machineId,
-          item.commitHash ?? null,
-          item.status,
-          item.url,
-          item.appUrl,
-          item.region,
-          item.createdAtRfc3339,
-          item.wasmHash ?? null,
-          item.provider ?? null,
-        )
-        .run();
-    }
-    this.deployments = [item, ...this.deployments];
-  }
-
-  /**
-   * デプロイ履歴一覧を取得する
-   */
-  async listDeployments(
-    limit?: number | null,
-    env?: Env,
-  ): Promise<ReadonlyArray<DeploymentHistoryItem>> {
-    const max = Math.min(100, Math.max(1, limit ?? 20));
-    if (env?.DB) {
-      const res = await env.DB.prepare(
-        `SELECT machine_id, commit_hash, status, url, app_url, region, created_at_rfc3339, wasm_hash, provider
-         FROM deployments
-         ORDER BY id DESC
-         LIMIT ?`,
-      )
-        .bind(max)
-        .all<D1DeploymentRow>();
-      return res.results.map((r) => ({
-        machineId: r.machine_id,
-        commitHash: r.commit_hash,
-        status: r.status,
-        url: r.url,
-        appUrl: r.app_url,
-        region: r.region,
-        createdAtRfc3339: r.created_at_rfc3339,
-        wasmHash: r.wasm_hash,
-        provider: r.provider,
-      }));
-    }
-    return this.deployments.slice(0, max);
   }
 }
 

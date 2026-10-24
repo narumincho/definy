@@ -49,17 +49,15 @@ export type Env = {
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   readonly DEFINY_ROOT_DOMAIN?: string;
   /**
-   * システムアカウントの公開鍵 (URL-safe base64). `DeployCloudflare` の `partId` に `module.part` と書いたとき,
-   * このアカウントのモジュールとして解決する. 未設定なら開発用の鍵 (docs/system-account.md)
+   * システムアカウントの公開鍵 (URL-safe base64). 型検査でコンパイラ組み込みのパーツを置けるモジュールを見分けるのに使う.
+   * 未設定なら開発用の鍵 (docs/system-account.md)
    */
   readonly DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?: string;
-  readonly CLOUDFLARE_API_TOKEN?: string;
-  readonly CLOUDFLARE_ACCOUNT_ID?: string;
   /**
-   * Cloudflare REST API のベース URL (既定は `https://api.cloudflare.com/client/v4`).
-   * ローカル開発で DeployCloudflare をモックの API に向けるときだけ設定する
+   * `HttpProxyService/Fetch` (CORS の仲介) を使えるアカウント ID (カンマ・空白区切りで複数可).
+   * 管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) はいつでも使える
    */
-  readonly CLOUDFLARE_API_BASE_URL?: string;
+  readonly DEFINY_HTTP_PROXY_ACCOUNT_IDS?: string;
   /**
    * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
    * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
@@ -161,61 +159,25 @@ export type GetContentResponse = {
 };
 
 /**
- * Connect-RPC: DeployService メッセージ型
+ * Connect-RPC: HttpProxyService メッセージ型 (`proto/definy/v1/http_proxy.proto`).
+ * ブラウザから CORS で直接送れない HTTP リクエストを, 許可されたアカウントのためにサーバーが仲介する
  */
-// Connect-RPC の JSON リクエスト body からデシリアライズされ、未指定プロパティに undefined や null が混在しうるため
-export type DeployCloudflareRequest = {
-  /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
-  readonly apiToken?: string | null | undefined;
-  readonly accountId?: string | null | undefined;
-  readonly scriptName?: string | null | undefined;
-  readonly wasmHash?: string | null | undefined;
-  readonly partId?: string | null | undefined;
-  readonly customScript?: string | null | undefined;
-  readonly commitHash?: string | null | undefined;
-  /** D1 にシードを再投入する（管理者のみ） */
-  readonly seedD1?: boolean | null | undefined;
+export type HttpProxyHeader = {
+  readonly name: string;
+  readonly value: string;
 };
 
-export type DeployCloudflareResponse = {
-  readonly scriptName: string;
-  readonly status: string;
-  readonly url: string;
-  readonly evaluatedResult?: string | null;
+export type HttpProxyFetchRequest = {
+  readonly method?: string | null;
+  readonly url?: string | null;
+  readonly headers?: ReadonlyArray<HttpProxyHeader> | null;
+  /** 本文 (標準 Base64) */
+  readonly bodyBase64?: string | null;
 };
 
-export type ListDeploymentsRequest = {
-  readonly limit?: number | null;
-};
-
-export type DeploymentHistoryItem = {
-  readonly machineId: string;
-  readonly commitHash?: string | null;
-  readonly status: string;
-  readonly url: string;
-  readonly appUrl: string;
-  readonly region: string;
-  readonly createdAtRfc3339: string;
-  readonly wasmHash?: string | null;
-  readonly provider?: string | null;
-};
-
-export type ListDeploymentsResponse = {
-  readonly deployments: ReadonlyArray<DeploymentHistoryItem>;
-};
-
-export type ListCloudflareWorkersRequest = {
-  /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
-  readonly apiToken?: string | null;
-  readonly accountId?: string | null;
-};
-
-export type CloudflareWorkerItem = {
-  readonly id: string;
-  readonly createdOn?: string;
-  readonly modifiedOn?: string;
-};
-
-export type ListCloudflareWorkersResponse = {
-  readonly workers: ReadonlyArray<CloudflareWorkerItem>;
+export type HttpProxyFetchResponse = {
+  readonly status: number;
+  readonly headers: ReadonlyArray<HttpProxyHeader>;
+  /** 本文 (標準 Base64) */
+  readonly bodyBase64: string;
 };

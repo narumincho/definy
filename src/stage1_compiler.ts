@@ -534,6 +534,9 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
         convert(node.body),
       );
     }
+    case "Quote":
+      // コードそのものを値にする式. 型は Code<中の式の型>, 値は core.code ({ expression, parts }) (docs/quote.md)
+      return selfHostedVariant("quote", convert(node.expression));
     case "Hole":
       return holeToSelfHostedAst(node, allowHoles);
     case "Compiler":
@@ -649,18 +652,18 @@ export function stage1PartsExpression(
   );
 }
 
-/** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
-export type CompiledFunctionInstance = {
+/** stage1 でコンパイルした式の Wasm のインスタンスと, `evaluate()` の結果の値 */
+export type CompiledValueInstance = {
   readonly exports: WasmExports;
+  /** `evaluate()` が返した値のポインタ */
+  readonly root: number;
   /**
    * リテラルの式 (`Variant` / `TypeLiteral` / `ListLiteral` / `String` / `Number` / `Boolean` の木) を
    * 線形メモリに書き込み, その値のポインタを返す. 同じ値を何度も渡すときは 1 度だけ書けばよい
    */
   readonly writeArgument: (literal: unknown) => number;
-  /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
-  readonly call: (argumentPointers: ReadonlyArray<number>) => number;
   /**
-   * 関数の値 (`call` が返した関数など) のポインタを, 引数の順に並べたポインタで呼び, 結果のポインタを返す.
+   * 関数の値のポインタを, 引数の順に並べたポインタで呼び, 結果のポインタを返す.
    * 関数でなければ例外を投げる
    */
   readonly callClosure: (
@@ -672,18 +675,25 @@ export type CompiledFunctionInstance = {
    * `callClosure` で呼ぶときなど). レコードでないかフィールドが無ければ例外を投げる
    */
   readonly recordField: (recordPointer: number, key: string) => number;
+  /**
+   * タグ付きの値 (Variant) のポインタから, タグとペイロードのポインタ (無ければ `null`) を返す.
+   * タグ付きの値でなければ例外を投げる
+   */
+  readonly variant: (pointer: number) => {
+    readonly tag: string;
+    readonly payload: number | null;
+  };
   /** 結果のポインタを JavaScript の値として読む */
   readonly read: (pointer: number) => DefinyValue;
 };
 
 /**
- * stage1 でコンパイルした「関数を返す式」の Wasm を新しいインスタンスで評価し, 返った関数を呼べるようにする.
- * 型チェッカーのように 1 度コンパイルして何度も呼ぶものに使う.
+ * stage1 でコンパイルした式の Wasm を新しいインスタンスで評価し, 値をポインタのまま扱えるようにする.
  * 線形メモリは解放しないので, 呼び出しが多いときや Wasm が trap したときは作り直す
  */
-export function instantiateCompiledFunction(
+export function instantiateCompiledValue(
   module: WebAssembly.Module,
-): CompiledFunctionInstance {
+): CompiledValueInstance {
   const instance = new WebAssembly.Instance(module, {});
   const exports = instance.exports as unknown as WasmExports;
 
@@ -709,18 +719,10 @@ export function instantiateCompiledFunction(
     return fn(envPtr, argsPtr);
   };
 
-  const closurePtr = exports.evaluate();
-  const tag = new DataView(exports.memory.buffer).getUint8(closurePtr);
-  if (tag !== 5) {
-    throw new Error(
-      `compiled wasm evaluate() did not return a function closure (tag: ${tag})`,
-    );
-  }
-
   return {
     exports,
+    root: exports.evaluate(),
     writeArgument: (literal) => writeLiteral(exports, literal),
-    call: (argumentPointers) => callClosure(closurePtr, argumentPointers),
     callClosure,
     recordField: (recordPtr, key) => {
       const mem = new Uint8Array(exports.memory.buffer);
@@ -737,8 +739,50 @@ export function instantiateCompiledFunction(
       }
       throw new Error(`the record has no field '${key}'`);
     },
+    variant: (pointer) => {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(exports.memory.buffer);
+      if (mem[pointer] !== 6) {
+        throw new Error(`the value is not a variant (tag: ${mem[pointer]})`);
+      }
+      const payload = view.getUint32(pointer + 8, true);
+      return {
+        tag: String(readDefinyValue(mem, view.getUint32(pointer + 4, true))),
+        payload: payload === 0 ? null : payload,
+      };
+    },
     read: (pointer) =>
       readDefinyValue(new Uint8Array(exports.memory.buffer), pointer),
+  };
+}
+
+/** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
+export type CompiledFunctionInstance = CompiledValueInstance & {
+  /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
+  readonly call: (argumentPointers: ReadonlyArray<number>) => number;
+};
+
+/**
+ * stage1 でコンパイルした「関数を返す式」の Wasm を新しいインスタンスで評価し, 返った関数を呼べるようにする.
+ * 型チェッカーのように 1 度コンパイルして何度も呼ぶものに使う.
+ * 線形メモリは解放しないので, 呼び出しが多いときや Wasm が trap したときは作り直す
+ */
+export function instantiateCompiledFunction(
+  module: WebAssembly.Module,
+): CompiledFunctionInstance {
+  const instance = instantiateCompiledValue(module);
+  const tag = new DataView(instance.exports.memory.buffer).getUint8(
+    instance.root,
+  );
+  if (tag !== 5) {
+    throw new Error(
+      `compiled wasm evaluate() did not return a function closure (tag: ${tag})`,
+    );
+  }
+  return {
+    ...instance,
+    call: (argumentPointers) =>
+      instance.callClosure(instance.root, argumentPointers),
   };
 }
 

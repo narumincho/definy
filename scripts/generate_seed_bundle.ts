@@ -13,18 +13,12 @@ import {
   sha256Bytes,
   sha256EventHashId,
 } from "../src/cbor.ts";
-import {
-  deployTargetExpression,
-  stage1OutputCacheKey,
-} from "../src/deploy_target.ts";
 import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
-import {
-  collectReferencedParts,
-  createStage1Compiler,
-} from "../src/stage1_compiler.ts";
+import { createStage1Compiler } from "../src/stage1_compiler.ts";
+import { resolvePartPlaceholders } from "../src/seed_parts.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import type {
   SeedBundle,
@@ -92,84 +86,6 @@ const MODULE_SPECS: ReadonlyArray<ModuleSpec> = [
     createdAtRfc3339: "2019-01-31T04:36:01.000999928+00:00",
   },
 ];
-
-/**
- * 式または型定義内の `{"$part": "module.name"}` を 32 バイトのパーツ ID に置き換える
- */
-async function resolvePartPlaceholders(
-  expr: unknown,
-  accountBytes: Uint8Array,
-): Promise<unknown> {
-  if (Array.isArray(expr)) {
-    return await Promise.all(
-      expr.map((item) => resolvePartPlaceholders(item, accountBytes)),
-    );
-  }
-  if (expr && typeof expr === "object") {
-    const obj = expr as Record<string, unknown>;
-    if (typeof obj.$part === "string") {
-      const dot = obj.$part.indexOf(".");
-      const moduleId = await deriveModuleIdBytes(
-        accountBytes,
-        obj.$part.slice(0, dot),
-      );
-      const partId = await deriveModulePartId(
-        moduleId,
-        obj.$part.slice(dot + 1),
-      );
-      return Array.from(base64ToBytes(partId));
-    }
-    const entries = await Promise.all(
-      Object.entries(obj).map(async ([key, value]) => [
-        key,
-        await resolvePartPlaceholders(value, accountBytes),
-      ]),
-    );
-    return Object.fromEntries(entries);
-  }
-  return expr;
-}
-
-/**
- * `definy.deploy({ ..., handler })` を持つパーツの handler を stage1 で事前にコンパイルし, CAS に入れる内容を返す.
- * Worker (`worker/part_compiler.ts`) は同じキー (`stage1OutputCacheKey`) でこの結果を探して使い,
- * デプロイのたびにコンパイルする CPU 時間を省く
- */
-async function precompileDeployTargets(
-  modules: ReadonlyMap<string, ModuleSeedData>,
-  accountBytes: Uint8Array,
-): Promise<ReadonlyArray<SeedContentEntry>> {
-  const partExpressions = await seedPartExpressions(modules, accountBytes);
-  const stage1 = createStage1Compiler(
-    new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
-  );
-  const entries: Array<SeedContentEntry> = [];
-  for (const spec of MODULE_SPECS) {
-    for (const part of modules.get(spec.name)?.parts ?? []) {
-      if (part.expression == null) {
-        continue;
-      }
-      const { target, deploy } = deployTargetExpression(part.expression);
-      if (deploy === undefined) {
-        continue;
-      }
-      const { parts, unresolved } = collectReferencedParts(target, (id) =>
-        partExpressions.get(id),
-      );
-      if (unresolved.length > 0) {
-        throw new Error(
-          `${spec.name}.${String(part.name)}: unresolved parts ${unresolved.join(", ")}`,
-        );
-      }
-      const wasmBytes = stage1.compile(target, parts);
-      entries.push({
-        contentHash: await stage1OutputCacheKey(target, parts),
-        contentBytes: bytesToBase64(wasmBytes),
-      });
-    }
-  }
-  return entries;
-}
 
 /** seed に署名するシステムアカウント. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` が無ければ開発用の鍵 */
 async function seedAccountCredentials(): Promise<AccountCredentials> {
@@ -274,9 +190,6 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
     }
   }
 
-  contentsList.push(
-    ...(await precompileDeployTargets(loadedModules, accountBytes)),
-  );
   const contents: ReadonlyArray<SeedContentEntry> = contentsList;
 
   // 3. イベント一覧の構築 (sample, wasi, std, core, definy, create_account, 署名が不正なサンプルの順)

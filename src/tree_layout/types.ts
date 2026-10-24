@@ -31,6 +31,10 @@ export type PathStep =
   | { readonly kind: "listItemValue"; readonly index: number }
   | { readonly kind: "recordItemValue"; readonly index: number }
   | "typeListItem"
+  /** `Code<T>` の型の T */
+  | "typeCodeValue"
+  /** quote 式の中の式 (コードそのもの) */
+  | "quoteExpression"
   | "functionBody"
   | { readonly kind: "callArgument"; readonly index: number }
   | { readonly kind: "typeFunctionParameter"; readonly index: number }

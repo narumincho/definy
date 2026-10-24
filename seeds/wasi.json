@@ -11,7 +11,7 @@
       "text": "WASI 0.3 能力インターフェース (時計・乱数・I/O) と能力注入基盤"
     }
   ],
-  "message": "Initial commit for wasi module",
+  "message": "HTTP クライアント (wasi:http/outgoing-handler 相当)・パーツの読み込み・環境変数を使う I/O の型 wasi.io を足す",
   "parts": [
     {
       "name": "wasi.datetime",
@@ -457,6 +457,329 @@
               ]
             }
           }
+        }
+      }
+    },
+    {
+      "name": "outgoing-request",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "HTTP request to send, like wasi:http/types.outgoing-request (method, absolute URL, headers, body bytes)"
+        },
+        {
+          "language": "ja",
+          "text": "送る HTTP リクエスト. wasi:http/types の outgoing-request に相当する (メソッド, 絶対 URL, ヘッダー, 本文のバイト列)"
+        }
+      ],
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "method",
+              "value": "TypeString"
+            },
+            {
+              "key": "url",
+              "value": "TypeString"
+            },
+            {
+              "key": "headers",
+              "value": {
+                "TypeList": {
+                  "item_type": {
+                    "TypeLiteral": {
+                      "items": [
+                        {
+                          "key": "name",
+                          "value": "TypeString"
+                        },
+                        {
+                          "key": "value",
+                          "value": "TypeString"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "key": "body",
+              "value": {
+                "TypeList": {
+                  "item_type": "TypeNumber"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "incoming-response",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "Received HTTP response, like wasi:http/types.incoming-response. text is the body decoded as UTF-8"
+        },
+        {
+          "language": "ja",
+          "text": "受け取った HTTP レスポンス. wasi:http/types の incoming-response に相当する. text は本文を UTF-8 として読んだ文字列"
+        }
+      ],
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "status",
+              "value": "TypeNumber"
+            },
+            {
+              "key": "headers",
+              "value": {
+                "TypeList": {
+                  "item_type": {
+                    "TypeLiteral": {
+                      "items": [
+                        {
+                          "key": "name",
+                          "value": "TypeString"
+                        },
+                        {
+                          "key": "value",
+                          "value": "TypeString"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "key": "body",
+              "value": {
+                "TypeList": {
+                  "item_type": "TypeNumber"
+                }
+              }
+            },
+            {
+              "key": "text",
+              "value": "TypeString"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "http-result",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "Result of wasi:http/outgoing-handler.handle: the response, or an error message (network error, CORS error, ...)"
+        },
+        {
+          "language": "ja",
+          "text": "wasi:http/outgoing-handler の handle の結果. レスポンスか, エラーの説明 (ネットワークエラー, CORS エラーなど)"
+        }
+      ],
+      "expression": {
+        "TypeUnion": {
+          "variants": [
+            {
+              "tag": "ok",
+              "payload_type": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "wasi.incoming-response"
+                  }
+                }
+              }
+            },
+            {
+              "tag": "error",
+              "payload_type": "TypeString"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "io",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "A program that does I/O through the host, step by step: done(message) ends it, outgoing_request sends an HTTP request with the host fetch (wasi:http/outgoing-handler.handle) and continues with then(result), get_parts reads the latest expressions of the parts with the ids from the definy the runner uses (to compile quoted code, see core.code), get_environment reads the environment variables the runner set (wasi:cli/environment.get-environment)"
+        },
+        {
+          "language": "ja",
+          "text": "ホストを通して 1 歩ずつ I/O をするプログラム. done(message) で終わり, outgoing_request はホストの fetch で HTTP リクエストを送って (wasi:http/outgoing-handler の handle) 結果を then に渡して続け, get_parts は実行している definy からその id のパーツの最新の式を読み (quote したコードをコンパイルするため. core.code を参照), get_environment は実行する人が設定した環境変数を読む (wasi:cli/environment の get-environment)"
+        }
+      ],
+      "expression": {
+        "TypeUnion": {
+          "variants": [
+            {
+              "tag": "done",
+              "payload_type": "TypeString"
+            },
+            {
+              "tag": "outgoing_request",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "request",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "wasi.outgoing-request"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "key": "then",
+                      "value": {
+                        "TypeFunction": {
+                          "parameters": [
+                            {
+                              "name": "result",
+                              "type": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "wasi.http-result"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "return_type": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "wasi.io"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "get_parts",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "ids",
+                      "value": {
+                        "TypeList": {
+                          "item_type": "TypeString"
+                        }
+                      }
+                    },
+                    {
+                      "key": "then",
+                      "value": {
+                        "TypeFunction": {
+                          "parameters": [
+                            {
+                              "name": "parts",
+                              "type": {
+                                "TypeList": {
+                                  "item_type": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "id",
+                                          "value": "TypeString"
+                                        },
+                                        {
+                                          "key": "expression",
+                                          "value": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.expression"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "return_type": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "wasi.io"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "get_environment",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "then",
+                      "value": {
+                        "TypeFunction": {
+                          "parameters": [
+                            {
+                              "name": "environment",
+                              "type": {
+                                "TypeList": {
+                                  "item_type": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "name",
+                                          "value": "TypeString"
+                                        },
+                                        {
+                                          "key": "value",
+                                          "value": "TypeString"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "return_type": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "wasi.io"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
       }
     }

@@ -265,18 +265,6 @@ export default function AboutPage(): JSX.Element {
                 "Esplori Partojn →",
               )}
             </Link>
-            <Link
-              href="/deployments"
-              className="btn btn-secondary"
-              style={{ padding: "0.6rem 1.4rem", textDecoration: "none" }}
-            >
-              {label(
-                language,
-                "Deploy & Runtime →",
-                "デプロイ・実行 →",
-                "Deplojo & Rultempo →",
-              )}
-            </Link>
           </div>
         </div>
 
@@ -665,8 +653,8 @@ export default function AboutPage(): JSX.Element {
             >
               {label(
                 language,
-                "Explore public modules, write expressions in the tree editor, or deploy parts to Cloudflare Workers edge.",
-                "公開されているモジュールを閲覧したり、式の木構造エディタで関数を作成し、Cloudflare Workers へデプロイできます。",
+                "Explore public modules, write expressions in the tree editor, or deploy parts to Cloudflare Workers edge with definy.deploy-to-cloudflare-workers.",
+                "公開されているモジュールを閲覧したり、式の木構造エディタで関数を作成し、definy.deploy-to-cloudflare-workers で Cloudflare Workers へデプロイできます。",
                 "Esploru publikajn modulojn kaj kreu esprimojn en la arba redaktilo.",
               )}
             </div>

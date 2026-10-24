@@ -102,16 +102,6 @@ export function AccountsIcon(props: IconProps): JSX.Element {
   );
 }
 
-export function DeployIcon(props: IconProps): JSX.Element {
-  return (
-    <StrokeIcon {...props}>
-      <path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9a4 4 0 0 1 .5 7.97" />
-      <path d="M12 21v-8" />
-      <path d="M9 15.5l3-3 3 3" />
-    </StrokeIcon>
-  );
-}
-
 export function AboutIcon(props: IconProps): JSX.Element {
   return (
     <StrokeIcon {...props}>

@@ -11,6 +11,8 @@ export const FIELD_STEPS: Readonly<
   >
 > = {
   TypeList: [{ step: "typeListItem", field: "item_type" }],
+  TypeCode: [{ step: "typeCodeValue", field: "value_type" }],
+  Quote: [{ step: "quoteExpression", field: "expression" }],
 };
 
 /** パスの段がフィールドの表にあれば, その式のキーとフィールド名 */

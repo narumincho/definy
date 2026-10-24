@@ -11,10 +11,7 @@ import { assertEquals, Deno } from "./test_helpers.ts";
 Deno.test("isWorkerFirstPath matches Connect-RPC and dynamic endpoints", () => {
   assertEquals(isWorkerFirstPath("/definy.v1.EventService/GetEvents"), true);
   assertEquals(isWorkerFirstPath("/definy.v1.EventService/GetEvent"), true);
-  assertEquals(
-    isWorkerFirstPath("/definy.v1.DeployService/DeployCloudflare"),
-    true,
-  );
+  assertEquals(isWorkerFirstPath("/definy.v1.HttpProxyService/Fetch"), true);
   assertEquals(isWorkerFirstPath("/virtual/wasm/abc123.wasm"), true);
   assertEquals(isWorkerFirstPath("/healthz"), true);
 
