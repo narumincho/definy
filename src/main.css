@@ -1368,7 +1368,8 @@ button.card:hover {
 .timeline-day-label {
   position: sticky;
   top: 0;
-  z-index: 1;
+  /* カードの上に重ねたリンク (z-index: 1) より手前に出す */
+  z-index: 2;
   margin: 0 0 0.6rem;
   padding: 0.35rem 0;
   font-size: 0.78rem;
@@ -1456,6 +1457,7 @@ button.card:hover {
 }
 
 .event-card {
+  position: relative;
   display: grid;
   gap: 0.4rem;
   min-width: 0;
@@ -1475,9 +1477,75 @@ button.card:hover {
   background: var(--surface-hover);
 }
 
-.event-card:focus-visible {
+.event-card:has(.event-card-link:focus-visible) {
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
+}
+
+/* カード全体をイベント詳細へのリンクにする. 中のほかのリンクは z-index で上に重ねる */
+.event-card-link {
+  color: var(--event-text);
+  text-decoration: none;
+}
+
+.event-card-link:focus-visible {
+  outline: none;
+}
+
+.event-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.event-card a:not(.event-card-link) {
+  position: relative;
+  z-index: 1;
+}
+
+.event-summary-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--text-muted);
+}
+
+.event-summary-link:hover {
+  color: var(--blue-text);
+  border-bottom-color: currentColor;
+}
+
+.event-part-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-part-chip {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--overlay-2);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.event-part-chip:hover {
+  border-color: var(--purple-border);
+  background: var(--purple-bg-strong);
+  color: var(--purple-text);
+}
+
+.event-part-more {
+  align-self: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 .event-card-header {
@@ -1553,16 +1621,28 @@ button.card:hover {
   color: var(--text-muted);
 }
 
-.event-author {
+/* アカウントのページへのリンク. 頭文字の丸いアバター付き */
+.account-link {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
   color: var(--text-secondary);
+  text-decoration: none;
 }
 
-.event-author-avatar {
+.account-link:hover {
+  color: var(--text-primary);
+}
+
+.account-link:hover .account-link-name {
+  text-decoration: underline;
+}
+
+.account-link-avatar {
   display: inline-grid;
   place-items: center;
+  flex-shrink: 0;
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 50%;
@@ -1570,6 +1650,12 @@ button.card:hover {
   color: var(--blue-text);
   font-size: 0.66rem;
   font-weight: 700;
+}
+
+.account-link-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .event-hash {
@@ -1611,10 +1697,540 @@ button.card:hover {
   }
 }
 
-.event-detail-card {
-  background: var(--surface-card);
+/* イベント詳細 */
+.event-detail-view,
+.account-detail-view {
+  --event-color: var(--text-muted);
+  --event-text: var(--text-secondary);
+  --event-bg: rgba(255, 255, 255, 0.04);
+  --event-border: var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem 3rem;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.event-detail-view[data-event-type="module_commit"] {
+  --event-color: var(--blue);
+  --event-text: var(--blue-text);
+  --event-bg: var(--blue-bg-strong);
+  --event-border: var(--blue-border);
+}
+
+.event-detail-view[data-event-type="create_account"] {
+  --event-color: var(--green);
+  --event-text: var(--green-text);
+  --event-bg: var(--green-bg-strong);
+  --event-border: var(--green-border);
+}
+
+.event-detail-view[data-event-type="change_profile"] {
+  --event-color: var(--yellow);
+  --event-text: var(--yellow-text);
+  --event-bg: var(--yellow-bg-strong);
+  --event-border: var(--yellow-border);
+}
+
+.event-detail-view.event-detail-invalid {
+  --event-color: var(--red);
+  --event-text: var(--red-text);
+  --event-bg: var(--red-bg-strong);
+  --event-border: var(--red-border);
+}
+
+.event-detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-top: 3px solid var(--event-color);
+}
+
+.event-detail-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--event-bg);
+  border: 1px solid var(--event-border);
+  color: var(--event-text);
+}
+
+.event-detail-icon-svg {
+  display: block;
+}
+
+.event-detail-heading {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.event-detail-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.event-detail-type {
+  font-weight: 600;
+  color: var(--event-text);
+}
+
+.event-detail-time {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-detail-summary {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.event-detail-summary .event-summary-text {
+  font-size: 1.15rem;
+}
+
+/* 詳細ではメッセージをコミットの欄に全文出すので, 見出しには出さない */
+.event-detail-summary .event-commit-message {
+  display: none;
+}
+
+.event-detail-section {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.event-detail-section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.detail-meta-grid {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.6rem 1.5rem;
+  margin: 0;
+}
+
+.meta-item {
+  display: contents;
+}
+
+.meta-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.meta-value {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.meta-hash {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.meta-hash code {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.meta-link {
+  color: var(--blue-text);
+  text-decoration: none;
+}
+
+.meta-link:hover {
+  text-decoration: underline;
+}
+
+.meta-link-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.copy-button {
+  padding: 0.05rem 0.5rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.signature-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.signature-valid {
+  color: var(--green-text);
+}
+
+.signature-invalid {
+  color: var(--red-text);
+}
+
+.signature-reason {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.event-detail-message {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--event-border);
+  border-radius: var(--radius-xs);
+  background: var(--overlay-1);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.event-detail-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.event-detail-parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-detail-part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name hash"
+    "desc desc";
+  gap: 0.15rem 0.5rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.event-detail-part:hover {
+  border-color: var(--purple-border);
+  background: var(--purple-bg);
+}
+
+.event-detail-part-name {
+  grid-area: name;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--purple-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-detail-part-hash {
+  grid-area: hash;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.event-detail-part-desc {
+  grid-area: desc;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* アカウントのページ */
+a.account-card {
+  display: flex;
+}
+
+.account-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.account-detail-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.account-avatar-xl {
+  width: 64px;
+  height: 64px;
+  font-size: 1.4rem;
+}
+
+.account-detail-info {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.account-detail-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.account-detail-joined {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.account-detail-joined:hover {
+  text-decoration: underline;
+}
+
+.account-detail-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+}
+
+.account-detail-stats > div {
+  display: grid;
+  justify-items: center;
+}
+
+.account-detail-stats dt {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.account-detail-stats dd {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-detail-section {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.account-module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-module-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--blue-border);
+  border-radius: 999px;
+  background: var(--blue-bg);
+  color: var(--blue-text);
+  font-size: 0.84rem;
+  text-decoration: none;
+}
+
+.account-module-chip:hover {
+  background: var(--blue-bg-strong);
+}
+
+/* コミット履歴・アカウント一覧・モジュール詳細も一覧と同じ余白にする */
+.history-view,
+.accounts-view,
+.module-detail-view {
+  padding: 1.5rem 1.75rem 3rem;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.module-detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.module-parts-section h3 {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1rem;
+}
+
+.commit-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.commit-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.8rem 1rem;
+}
+
+.commit-header,
+.commit-footer,
+.commit-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  min-width: 0;
+}
+
+.commit-hash {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--blue-text);
+  text-decoration: none;
+}
+
+.commit-hash:hover {
+  text-decoration: underline;
+}
+
+.commit-time {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.commit-module {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.commit-module:hover {
+  color: var(--blue-text);
+  text-decoration: underline;
+}
+
+.commit-message {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.commit-footer {
+  font-size: 0.78rem;
+}
+
+.commit-footer .btn {
+  margin-left: auto;
+}
+
+/* モジュールのコミット履歴 */
+.module-commit-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.module-commit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.module-commit-message {
+  flex: 1;
+  min-width: 12rem;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.module-commit-message:hover {
+  text-decoration: underline;
+}
+
+.module-commit-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .event-detail-view,
+  .account-detail-view,
+  .history-view,
+  .accounts-view,
+  .module-detail-view {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .detail-meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+
+  .meta-value {
+    margin-bottom: 0.5rem;
+  }
+
+  .event-detail-time {
+    margin-left: 0;
+  }
 }
 
 .event-card-invalid {

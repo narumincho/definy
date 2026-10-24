@@ -333,7 +333,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     <div className="part-detail-view">
       <div className="part-header card">
         <div className="breadcrumb">
-          <Link href="/modules" className="breadcrumb-link">
+          <Link href={`/module/${part.moduleName}`} className="breadcrumb-link">
             {part.moduleName}
           </Link>
           <span className="breadcrumb-separator">/</span>

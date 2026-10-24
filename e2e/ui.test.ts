@@ -63,6 +63,47 @@ test.describe("definy UI E2E", () => {
     }
   });
 
+  test("timeline links to accounts, modules, parts and event details", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const commitCard = page
+      .locator('.event-card[data-event-type="module_commit"]')
+      .filter({ has: page.locator(".event-part-chip") })
+      .first();
+    await expect(commitCard).toBeVisible({ timeout: 15000 });
+
+    // 作成者のリンクでアカウントのページへ行き, そのアカウントのイベントが並ぶ
+    await commitCard.locator(".account-link").click();
+    await page.waitForURL(/\/account\//);
+    await expect(page.locator(".account-detail-name")).toBeVisible();
+    await expect(page.locator(".event-card").first()).toBeVisible();
+
+    // モジュール名のリンクでモジュールのページへ
+    await page.goto("/");
+    await commitCard.locator(".event-summary-link").click();
+    await page.waitForURL(/\/module\//);
+    await expect(page.locator(".module-commit").first()).toBeVisible();
+
+    // パーツのチップでパーツのページへ
+    await page.goto("/");
+    const chip = commitCard.locator(".event-part-chip").first();
+    const partName = await chip.textContent();
+    await chip.click();
+    await page.waitForURL(/\/part\//);
+    await expect(page.locator(".breadcrumb-current")).toHaveText(
+      partName ?? "",
+    );
+
+    // カードのリンク以外の場所 (時刻) を押すとイベント詳細へ. 時刻の上にはカード全体のリンクが重なっている
+    await page.goto("/");
+    await commitCard.locator(".event-time").click({ force: true });
+    await page.waitForURL(/\/event\//);
+    await expect(page.locator(".event-detail-header")).toBeVisible();
+    await expect(page.locator(".detail-meta-grid").first()).toBeVisible();
+    await expect(page.locator(".event-detail-part").first()).toBeVisible();
+  });
+
   test("page title follows the opened page", async ({ page }) => {
     await page.goto("/?lang=en");
     await expect(page).toHaveTitle("definy");
