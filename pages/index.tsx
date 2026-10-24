@@ -13,6 +13,7 @@ import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 import type { DecodedCommitEvent } from "../src/state/useEvents.ts";
 import type { EventRecord, LanguageCode } from "../src/types.ts";
+import { usePageTitle } from "../src/page_title.ts";
 
 type EventTypeInfo = {
   readonly type: string;
@@ -87,6 +88,7 @@ function groupByDay(
 export default function EventsPage(): JSX.Element {
   const { language, events, connectionStatus, accountNames, decodedCommits } =
     useDefiny();
+  usePageTitle(null);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const commitsByHash = useMemo(

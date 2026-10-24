@@ -3,9 +3,11 @@ import { Link } from "@void/react";
 import { PlayIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
+import { usePageTitle } from "../src/page_title.ts";
 
 export default function PartsPage(): JSX.Element {
   const { language, parts, workingChanges } = useDefiny();
+  usePageTitle(label(language, "Parts", "パーツ一覧", "Partoj"));
   const [search, setSearch] = useState("");
 
   const q = search.trim().toLowerCase();

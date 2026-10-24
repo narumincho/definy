@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { useParams, Link } from "@void/react";
 import { label } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
+import { usePageTitle } from "../../src/page_title.ts";
 import type { EventRecord } from "../../src/types.ts";
 
 export default function EventDetailPage(): JSX.Element {
@@ -19,6 +20,9 @@ export default function EventDetailPage(): JSX.Element {
   };
 
   const event = events.find((e) => e.eventHash === id) ?? fallbackEvent;
+  usePageTitle(
+    `${label(language, "Event", "イベント", "Evento")} ${event.eventHash.slice(0, 16)}`,
+  );
   const isInvalid = event.verification.status === "invalid";
 
   return (

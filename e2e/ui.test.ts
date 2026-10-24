@@ -63,6 +63,31 @@ test.describe("definy UI E2E", () => {
     }
   });
 
+  test("page title follows the opened page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page).toHaveTitle("definy");
+
+    // クライアント側の遷移でもタイトルが変わる (Void が head.title で上書きしたあとに設定し直す)
+    await page.locator('.activity-item[href="/parts"]').click();
+    await expect(page).toHaveTitle("Parts | definy");
+
+    await page
+      .locator(".part-card", { hasText: "triangle-area" })
+      .first()
+      .click();
+    await expect(page).toHaveTitle("sample.triangle-area | definy");
+
+    await page.locator('.activity-item[href="/modules"]').click();
+    await expect(page).toHaveTitle("Modules | definy");
+
+    await page.goBack();
+    await expect(page).toHaveTitle("sample.triangle-area | definy");
+
+    // 直接開いたときと, 表示言語に合わせたタイトル
+    await page.goto("/history?lang=ja");
+    await expect(page).toHaveTitle("コミット履歴 | definy");
+  });
+
   test("modules page lists builtin modules", async ({ page }) => {
     await page.goto("/modules");
 

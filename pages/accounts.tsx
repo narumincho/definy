@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
+import { usePageTitle } from "../src/page_title.ts";
 
 export default function AccountsPage(): JSX.Element {
   const {
@@ -10,6 +11,7 @@ export default function AccountsPage(): JSX.Element {
     currentAccount,
     setAccountModalOpen,
   } = useDefiny();
+  usePageTitle(label(language, "Accounts", "アカウント一覧", "Kontoj"));
 
   // Deduplicate accounts from events
   const accounts: ReadonlyArray<string> = Array.from(

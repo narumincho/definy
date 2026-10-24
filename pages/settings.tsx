@@ -7,6 +7,7 @@ import {
   loadWasiIoSettings,
   saveWasiIoSettings,
 } from "../src/wasi_io_browser.ts";
+import { usePageTitle } from "../src/page_title.ts";
 
 export default function SettingsPage(): JSX.Element {
   const {
@@ -16,6 +17,7 @@ export default function SettingsPage(): JSX.Element {
     currentAccount,
     refreshEvents,
   } = useDefiny();
+  usePageTitle(label(language, "Settings", "設定", "Agordoj"));
   const [submitting, setSubmitting] = useState(false);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

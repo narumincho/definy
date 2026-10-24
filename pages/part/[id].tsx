@@ -3,6 +3,7 @@ import { useParams, Link } from "@void/react";
 import { PlayIcon, RedoIcon, UndoIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
+import { usePageTitle } from "../../src/page_title.ts";
 import {
   collectReferencedParts,
   evaluateCompiledWasm,
@@ -82,6 +83,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
+  usePageTitle(`${part.moduleName}.${currentName}`);
   const currentDescription = change?.description ?? part.description;
   // 作業中の変更の型 (null は型指定なし) を優先する
   const currentPartType =
