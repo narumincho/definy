@@ -2,7 +2,7 @@
  * パーツの型 (`partType`, seeds/schemas の `PartType`) と, 型のツリーエディタで扱う型の式の相互変換.
  *
  * 型の行は式のツリーエディタ (ExpressionTreeEditor の mode="type") をそのまま使うので,
- * 旧 Rust 版と同じく型を式 (`TypeNumber`, `TypeList`, `TypeFunction` ...) にして編集し, 保存のときに戻す.
+ * 型を式 (`TypeNumber`, `TypeList`, `TypeFunction` ...) にして編集し, 保存のときに戻す.
  *
  * | partType                                  | 型の式                                                   |
  * | ----------------------------------------- | -------------------------------------------------------- |

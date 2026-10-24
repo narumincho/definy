@@ -1,8 +1,5 @@
 # Cloudflare Workers でのパーツコンパイル・評価
 
-> [!NOTE]
-> 従来の Rust 製 `definy-worker-runtime`（Rust + `wasmi`）および Deno は完全撤廃され、**TypeScript + self-hosted Wasm ([wasm/stage1.wasm](../wasm/stage1.wasm))** に一本化されました。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
-
 Cloudflare Worker (`definy`) で definy の Wasm を動かすときの仕組みと制約です。
 
 パーツのデプロイは Worker ではしない。以前は `DeployService/DeployCloudflare` が Worker 内の stage1 でパーツを
@@ -29,8 +26,7 @@ Cloudflare Worker (`definy`) で definy の Wasm を動かすときの仕組み�
   `WebAssembly.Module` から `new WebAssembly.Instance` する (これは許可されている)。Void (Vite) のビルドでは
   `dist/ssr/assets/*.wasm` が `compiled-wasm` モジュールとしてアップロードされる。Vitest (Node.js) では
   `vitest.config.ts` のプラグインが同じ `?module` を `new WebAssembly.Module(readFileSync(...))` にする
-- 同じ理由で, **コンパイル結果を Worker 内で評価することはできない**。旧 Rust 版はコンパイル結果を評価して
-  `evaluatedResult` を返していた
+- 同じ理由で, **コンパイル結果を Worker 内で評価することはできない**
 - **スタック**: Workers ではスタックを広げられない。以前の stage1 は補助関数がリストの長さだけ再帰し, 生成する関数が
   ローカル変数を 512 個固定で宣言していたため (1 フレーム 2KB 以上), 大きなパーツでスタックオーバーフローした。
   これを直したあと ([self-hosting.md](self-hosting.md) の「stage1 の再帰の深さとフレームの大きさ」), ローカルの workerd で

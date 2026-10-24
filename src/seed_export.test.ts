@@ -33,7 +33,6 @@ async function createTestServer(bundle: SeedBundle): Promise<{
   const d1 = createSqliteD1Database();
   const env: Env = {
     DB: d1,
-    DEFINY_ROOT_DOMAIN: "definy.local",
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
         const url =

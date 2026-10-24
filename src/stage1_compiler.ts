@@ -303,7 +303,6 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
 /**
  * definy の JSON AST (`{"Call": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
  * `core.expression` の値 (`Variant` / `TypeLiteral` / `ListLiteral` などのリテラルの木) に変換する.
- * 旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植.
  * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) は `builtin("plus")` にし, その呼び出しは他のパーツの呼び出しと
  * 同じく `call` にする (組み込みの扱いは definy 側). `core.expression` で表せない式 (型の式・未入力) は
  * `SelfHostedAstConversionError` を投げる
@@ -604,7 +603,7 @@ export function collectPartReferenceIds(
 
 /**
  * 式が (参照先をたどって) 参照するパーツを集める.
- * 旧 Rust 版と同じ順序 (末尾から取り出す LIFO)。`wasm/stage1.wasm` の再生成でバイト一致させるために必要。
+ * 末尾から取り出す LIFO の順序。stage1 を作ったときと同じ順序で, `wasm/stage1.wasm` の再生成でバイト一致させるために必要。
  * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
  * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
  * (stage1 はその参照を unreachable にコンパイルする).

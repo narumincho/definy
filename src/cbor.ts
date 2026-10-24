@@ -351,7 +351,7 @@ const COLON_SEP_BYTES = TEXT_ENCODER.encode(":");
 const PART_SEP_BYTES = TEXT_ENCODER.encode(":part:");
 
 /**
- * definy-event の `derive_module_id` と同一のアルゴリズムで Module ID を同期的に導出する
+ * `worker/cbor.ts` の `deriveModuleIdBytes` と同一のアルゴリズムで Module ID を同期的に導出する
  */
 export function deriveModuleIdBytesSync(
   accountBytes: Uint8Array,
@@ -375,7 +375,7 @@ export function deriveModuleIdBytesSync(
 }
 
 /**
- * definy-event の `derive_module_part_id` と同一のアルゴリズムで Part ID (`EventHashId` 文字列) を同期的に導出する
+ * `worker/cbor.ts` の `deriveModulePartId` と同一のアルゴリズムで Part ID (`EventHashId` 文字列) を同期的に導出する
  */
 export function deriveModulePartIdSync(
   moduleIdBytes: Uint8Array,

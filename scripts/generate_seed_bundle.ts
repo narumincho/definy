@@ -29,7 +29,7 @@ import type {
 /** seed バンドルの指紋を書くファイル */
 export const SEED_FINGERPRINT_PATH = "seeds/seed_bundle_fingerprint.json";
 
-/** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) */
+/** 開発用システムアカウント鍵のシード (`src/system_account.ts` の `DEV_SYSTEM_KEY_SEED` と同じ値) */
 const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
   "definy-compiler-system-key-2026\0",
 );

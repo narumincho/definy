@@ -1,27 +1,14 @@
 # サーバーの構成
 
-> [!NOTE]
-> 本ドキュメントは初期の設計案（旧設計・廃止済み）です。
-> 現在は UI 配信・API・仮想 Wasm 配信をすべて **Cloudflare Workers (Void + React 19)** に一本化し、データベースには **Cloudflare D1 (SQLite)** を採用しています。詳細は [cloudflare-workers-assets.md](cloudflare-workers-assets.md) および [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
+UI の配信 (SSR)・API (Connect-RPC)・仮想 Wasm 配信は 1 つの **Cloudflare Workers** (Void + React 19) で行い,
+データベースは **Cloudflare D1 (SQLite)** を使う。詳細は [cloudflare-workers-assets.md](cloudflare-workers-assets.md),
+[typescript-react-void-architecture.md](typescript-react-void-architecture.md), [database.md](database.md) を参照。
 
-以下は初期構想時の記録です。
+## SaaS 選定の経緯
 
-### UIサーバー (旧構想)
-
-UIサーバーはHTMLを返すサーバー. ブラウザでの操作UIを提供する
-使用SaaS (旧): Deno Deploy
-
-### ファイルサーバー (旧構想)
-
-ファイルを保存して, 配信するサーバー
-使用SaaS (旧): Cloudflare R2
-
-## APIサーバー (旧構想)
-
-APIサーバーはデータを受け取って処理をするサーバー
-使用SaaS (旧): Deno Deploy
-
-### データベース (旧構想)
-
-イベントの検索向けのデータ保存と, IPアドレス, ログを保存する場所
-使用SaaS (旧): SurrealDB Cloud
+| 役割             | 検討した候補                        | 結論                                                                                        |
+| ---------------- | ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| UI サーバー      | Deno Deploy, Cloudflare Workers     | Deno Deploy が Cloudflare Workers に統合される方針になったので Cloudflare Workers           |
+| API サーバー     | Deno Deploy, Shuttle (Rust), fly.io | いったん fly.io にしたが廃止し, UI と同じ Cloudflare Workers                                |
+| データベース     | SurrealDB Cloud                     | D1 に移行                                                                                   |
+| ファイルサーバー | Cloudflare R2, AWS S3               | 料金の安い R2 を使う予定 (まだ使っていない。式などのバイト列は D1 の `cas_contents` にある) |

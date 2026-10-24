@@ -8,11 +8,10 @@ Deterministic Encoding (RFC 8949)** を組み合わせて使用しています�
 ## 1. 全体像と設計思想
 
 - **通信レイヤー（Connect-RPC）**:
-  - クライアント（React 19 UI / 旧 `definy-ui`）とサーバー（Cloudflare Workers `worker/index.ts` / 旧 `definy-server`）間の RPC 通信。
+  - クライアント（React 19 UI）とサーバー（Cloudflare Workers `worker/index.ts`）間の RPC 通信。
   - プロトコル仕様: Connect-RPC (`Connect-Protocol-Version: 1`)。
-  - フォーマット:
-    `application/json`（ブラウザからのフェッチやデバッグ・開発ツール用）および
-    `application/proto`（バイナリ Protobuf）の両方をサポート。
+  - フォーマット: `application/json` (Connect-RPC の JSON マッピング。フィールド名は camelCase,
+    バイト列は Base64 文字列)。メッセージの定義は `proto/definy/v1/*.proto`
   - エラーフォーマット: Connect-RPC
     標準エラー（`{"code": "<code_str>", "message": "<message_str>"}`）。
   - ※旧来の REST API（`/events`, `/events/{hash}`）は完全に削除され、通信は
@@ -114,16 +113,7 @@ message GetContentResponse {
 
 ## 3. 実装モジュール
 
-- **`definy-event::rpc`**:
-  - `prost::Message` および `serde::{Serialize, Deserialize}` を導出した RPC
-    メッセージ型を定義。
-  - JSON マッピング時は Connect-RPC 標準の camelCase（`signedEventBytes`,
-    `eventHash` など）と Rust 慣用の snake_case（`signed_event_bytes`,
-    `event_hash` など）の双方を alias で受容。
-  - `signed_event_bytes` は JSON 転送時に URL-safe / standard base64
-    で透過的にエンコード・デコード。
-
-- **サーバー側 (`worker/index.ts` / 旧 `definy-server::connect_rpc`)**:
+- **サーバー側 (`worker/index.ts`)**:
   - `POST /definy.v1.EventService/GetEvents`
   - `POST /definy.v1.EventService/GetEvent`
   - `POST /definy.v1.EventService/SubmitEvent`
@@ -132,7 +122,6 @@ message GetContentResponse {
     (不足コンテンツの一括アップロード & ハッシュ検証)
   - `POST /definy.v1.EventService/GetContent`
     (コンテンツアドレスからの式バイナリ取得)
-  - リクエストヘッダーの Content-Type に応じて JSON または Protobuf を自動切替。
   - 受信した `signed_event_bytes` の署名・CBOR 構造を
     即座に検証し、不正データは
     `invalid_argument` (HTTP 400) で拒否。
@@ -141,15 +130,10 @@ message GetContentResponse {
     `status: "missing_content"`
     とともに不足ハッシュ一覧（`missing_content_hashes`）を返却。
 
-- **クライアント側 (`src/state.tsx` / 旧 `definy-ui::fetch`)**:
-  - Web ブラウザ環境から `fetch` により Connect-RPC エンドポイントを呼び出し。
-  - 自動差分ハッシュ・ネゴシエーション:
-    1. 楽観的送信（初回 `SubmitEvent` を送信）
-    2. サーバーが `missing_content`
-       を返した場合、指定された不足ハッシュに対応する式バイナリを
-       `UploadContent` で一括アップロード
-    3. アップロード完了後に再度 `SubmitEvent` を送信してトランザクションを確定
-  - オフライン時やキューイング送信（Local Event）ともシームレスに統合。
+- **クライアント側 (`src/auth.ts` の `submitSignedEvent`, `src/state/useEvents.ts`)**:
+  - ブラウザから `fetch` で Connect-RPC エンドポイントを呼び出す。
+  - 今のクライアントはモジュールコミットに式をそのまま入れて送るので, 下の差分ハッシュ・ネゴシエーションの往復はしない
+    (サーバー側は `content_hash` だけのパーツを受け付け, 足りなければ `missing_content` を返す)。
 
 ## 4. 差分ハッシュ・ネゴシエーション方式（Git Tree/Blob モデル）
 
@@ -187,33 +171,10 @@ Client (React 19 UI)                             Server (Cloudflare Worker)
   RTT）** で完了します。
 - **改ざん防止 & 内容同一性**: サーバーは `UploadContent` で受信したバイナリの
   SHA-256 ハッシュを計算し、クライアントから指定された `ContentHash`
-  と完全一致することを確認した上で CAS（`contents` テーブル）に格納します。
+  と完全一致することを確認した上で CAS（D1 の `cas_contents` テーブル）に格納します。
 
-## 5. Swagger UI & Connect-RPC / CBOR Explorer
+## 5. 以前あった開発ツール (削除済み)
 
-- **Swagger UI (`/swagger-ui`)**:
-  - Connect-RPC の各メソッド（`/definy.v1.EventService/GetEvents`, `GetEvent`,
-    `SubmitEvent`）は OpenAPI (utoipa) スキーマに登録されており、Swagger UI
-    上で対話的にテスト可能です。
-- **CBOR in gRPC / Connect-RPC の UI 表現**:
-  - 汎用の gRPC / Connect UI ツール（Buf Studio, grpc-ui, Postman, Swagger UI
-    等）は、Protobuf 定義のレベルで
-    `bytes`（Base64）を表示するに留まり、そのバイト列に内包された RFC 8949
-    Deterministic CBOR や definy 固有の AST、ContentHash、Ed25519
-    署名を自動パース・検証するツールは存在しません。
-- **definy 自作 Explorer (`/api` / `/api/{event_hash}`)**:
-  - definy-ui に専用の「Connect-RPC & CBOR Explorer」を内蔵。
-  - Connect-RPC メソッドの直接実行、あるいは任意の Base64/Hex CBOR
-    バイナリの貼り付けに対応。
-  - レスポンス内の Deterministic CBOR をクライアント側で即座にデコード・Ed25519
-    署名検証し、イベント構造（ModuleCommit, Account, Parts, AST 式構造,
-    ContentHash）および Hex/Base64
-    バイナリダンプをグラフィカルに可視化・検査できます。
-
-## 6. 開発ノウハウ & 注意点
-
-- **`dx fmt` の挙動**:
-  - Dioxus CLI の `dx fmt`
-    において、マクロ内の複数引数を持つ関数呼び出しやブロックにおいて、引数リストが重複出力される既知の不具合があります。
-  - フォーマット後は必ず `git diff`
-    を確認し、意図しないコード重複が発生していないか検証してください。
+Rust 版には, OpenAPI (utoipa) の Swagger UI (`/swagger-ui`) と, Connect-RPC メソッドの実行や任意の CBOR バイナリの
+デコード・署名検証ができる「Connect-RPC & CBOR Explorer」(`/api`) があった。今はイベント詳細ページ (`/event/{hash}`) で
+イベントの中身と署名の検証結果を見る。Protobuf バイナリ (`application/proto`) の受け付けも今は無い。

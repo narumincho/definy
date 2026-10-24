@@ -1,7 +1,7 @@
 # システムアカウントと seed の編集フロー
 
 ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）は **システムアカウント** が所有します。
-現在の TypeScript 実装では `src/auth.ts` / `worker/store.ts` / `src/seed_parts.ts` にてシステムアカウント鍵シードを扱います。
+`src/auth.ts` / `worker/store.ts` / `src/seed_parts.ts` にてシステムアカウント鍵シードを扱います。
 
 ## 鍵の設定
 
@@ -16,8 +16,7 @@
 - 両方を設定した場合は一致している必要があります。秘密鍵だけなら公開鍵はそこから導出します。
 - どちらも未設定の場合は、リポジトリに埋め込まれた **開発用の鍵**（`DEV_SYSTEM_KEY_SEED`、秘密鍵が公開されている）を使います。テストや CI（PR）はこの鍵で動きます。
 
-> **歴史的注記（旧 Rust 実装・廃止済み）**:
-> 旧 Rust 版では `cargo run -p definy-server -- --generate-system-key` コマンドが存在していました。現在は UI の「アカウント作成」または `src/auth.ts` の `generateAccountCredentials` で生成可能です。秘密鍵は UI の「秘密鍵でログイン」に貼り付ければ、ブラウザからシステムアカウントとして操作できます。
+鍵は UI の「アカウント作成」または `src/auth.ts` の `generateAccountCredentials` で作れる。秘密鍵は UI の「秘密鍵でログイン」に貼り付ければ、ブラウザからシステムアカウントとして操作できる。
 
 ## seed のパーツ参照は名前で書く
 
@@ -25,7 +24,7 @@ seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列では�
 
 ## 編集フロー
 
-1. システムアカウントの秘密鍵で UI にログインし（または MCP から）、ビルトインモジュールのパーツを編集してコミットする。
+1. システムアカウントの秘密鍵で UI にログインし、ビルトインモジュールのパーツを編集してコミットする。
 2. 編集したサーバーから seed に書き戻す機能は `npm run export:seeds <baseUrl>` で実行可能です。詳細は [seed の書き戻し (`export:seeds`)](./seed-export.md) を参照してください。
 3. `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で指紋 `seeds/seed_bundle_fingerprint.json` を更新してコミットします。シードバンドル本体 (`public/__definy_seed_bundle.json`) はコミットせず、dev / build / test のたびに作ります ([build-artifacts.md](build-artifacts.md))。
 

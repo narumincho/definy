@@ -28,7 +28,7 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
   - `store.ts`: Cloudflare D1 (SQLite) イベント・CAS ストア
   - `cbor.ts`: 決定論的 CBOR & Ed25519 署名ユーティリティ
 - `wasm/`:
-  - `stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (68KB, 外部 import ゼロ)
+  - `stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (外部 import ゼロ)
 - `seeds/`: 組み込みモジュール (`core`, `std`, `wasi`, `sample`, `definy`) の seed 定義とバンドル JSON
 - `docs/`: 設計・アーキテクチャドキュメント ([TypeScript + React + Void アーキテクチャ](docs/typescript-react-void-architecture.md) など)
 

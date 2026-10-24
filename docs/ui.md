@@ -7,16 +7,16 @@
 
 ## ワークベンチ (IDE 風レイアウト)
 
-画面全体は React 19 実装の [src/components/Workbench.tsx](../src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている (旧 Rust 実装: `definy-ui/src/workbench.rs`).
+画面全体は React 19 実装の [src/components/Workbench.tsx](../src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている.
 詳細なアーキテクチャは [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照.
 
-| 領域               | 内容                                                                                | 旧 Rust 実装 (廃止)                 | React 19 実装                        |
-| ------------------ | ----------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
-| タイトルバー       | エクスプローラーのドロワーを開くボタン (狭い画面だけ)・ロゴ・検索・言語・アカウント | `header.rs` の `HeaderView`         | `src/components/Header.tsx`          |
-| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え  | `workbench.rs` の `ActivityBar`     | `src/components/ActivityBar.tsx`     |
-| エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                 | `workbench.rs` の `ExplorerSidebar` | `src/components/ExplorerSidebar.tsx` |
-| エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする  | `workbench.rs` の `EditorTabBar`    | `pages/` 各ページコンポーネント      |
-| ステータスバー     | 接続状態・未送信ローカルイベント数・言語                                            | `header.rs` の `StatusBarView`      | `src/components/StatusBar.tsx`       |
+| 領域               | 内容                                                                                | 実装                                 |
+| ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------ |
+| タイトルバー       | エクスプローラーのドロワーを開くボタン (狭い画面だけ)・ロゴ・検索・言語・アカウント | `src/components/Header.tsx`          |
+| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え  | `src/components/ActivityBar.tsx`     |
+| エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                 | `src/components/ExplorerSidebar.tsx` |
+| エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする  | `pages/` 各ページコンポーネント      |
+| ステータスバー     | 接続状態・未送信ローカルイベント数・言語                                            | `src/components/StatusBar.tsx`       |
 
 - `body` はスクロールさせず, エディタ領域 (`.workbench-editor-scroll`) が独立してスクロールする.
   ページ側で `window` のスクロール位置に依存する処理は書かないこと
@@ -54,7 +54,7 @@
 
 ### コマンドパレット
 
-Cmd/Ctrl+P または Cmd/Ctrl+K, タイトルバー中央のクリックで開く (`definy-ui/src/command_palette.rs`).
+Cmd/Ctrl+P または Cmd/Ctrl+K, タイトルバー中央のクリックで開く ([src/components/CommandPalette.tsx](../src/components/CommandPalette.tsx)).
 パーツ (`module.part`)・モジュール・各ページを名前で探して開く. 並び順は
 名前全体の一致 > 先頭一致 > 区切り (`.` `-` `_`) の直後からの一致 > 途中の一致 > 文字の順の一致 (あいまい).
 Enter は結果の `<a>` をクリックして開くので, 通常のリンクと同じくクライアント側のルーティングを通る.
@@ -70,7 +70,7 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 ### 型エラー表示
 
 型エラーの判定は, サーバーの `SubmitEvent` と同じ definy 製の型チェッカー (`core.type-check-against`. 型環境も definy 製の `core.build-type-env` で作る) で行う
-(`src/self_hosted_type_check.ts`. [self-hosting.md](self-hosting.md) の「definy 製型チェッカーの実行 (TypeScript 版)」).
+(`src/self_hosted_type_check.ts`. [self-hosting.md](self-hosting.md) の「definy 製型チェッカーの実行」).
 
 - 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が
   ハッシュ付きアセットとして読み込んでコンパイルする (1 度だけ). サーバーと同じものなので, UI で通ればサーバーでも通る
@@ -108,45 +108,22 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 ### 作業中の変更とまとめてコミット
 
 git の作業ツリーのように, パーツの編集はすぐにはコミットせず, ブラウザの localStorage
-(`definy_working_changes`, CBOR を base64 にしたもの) に記録しておき, 変更ページ (`/changes`) でまとめてコミットする.
-実装は `definy-ui/src/working_changes.rs` (記録・適用) と `working_changes_view.rs` (変更ページ).
+(`definy.working_changes.v3`, JSON. バイト列は `{"$bytes": "<Base64URL>"}`) に記録しておき, 変更ページ (`/changes`) でまとめてコミットする.
+実装は [src/state/useWorkingChanges.ts](../src/state/useWorkingChanges.ts) (記録・コミット),
+[src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [pages/changes.tsx](../pages/changes.tsx) (変更ページ).
 
-- パーツ詳細の編集は入力のたびに自動で記録する. コミット済みと同じ内容に戻すと記録から消える.
-  `content_hash` は式から決まるので比較しない. 型は式との往復変換を通してから比べる
-- 記録はパーツの定義全体 (`ModulePartEntry`) をパーツ ID (コミット済みの名前から導出) ごとに 1 つ持つ.
-  新しいパーツの作成フォームの「変更に追加」からも記録できる (`is_new`)
-- コミットはモジュールごとの `ModuleCommitEvent` なので, 複数のモジュールの変更はモジュールの数だけコミットになる.
-  コミットのときにモジュールの最新のパーツ一覧へ変更を当てる (編集したパーツは同じ位置で差し替え, 新しいパーツは末尾).
-  記録したあとに別のコミットが入ったモジュールには警告を出すが, そのまま最新に重ねてコミットできる
-- 変更ページではチェックを外した変更をコミットから除ける (git add の代わり)
-- localStorage は SSR の HTML と揃えるため, 初期化のときではなく `Workbench` の `use_effect` で読み込む.
-  読み込みが終わる (`WORKING_CHANGES_LOADED`) までパーツ詳細は記録しない (空の編集で保存済みの変更を消さないため)
-- 未コミットの変更があるパーツはエクスプローラーに `M` を出し, アクティビティバーの「変更」とステータスバーに件数を出す
-- 変更ページはコミットする前に, サーバーと同じ検査をする (`self_hosted_type_check::check_module_changes`).
-  コミットに含める変更をモジュールごとの `ModuleCommitEvent` にし (`build_module_commit`),
-  サーバーが受け付けるときと同じ `definy_core::self_hosted_type_check::check_module_commit_parts` に渡す.
-  型エラーがあればモジュールの下にパーツ名と理由を出し, コミットボタンを押せなくする
-  - パーツ詳細の型検査はコミット済みの型環境で編集中のパーツだけを検査するので,
-    パーツの型を変えたときに, それを参照する別のパーツ (式は変えていない) が壊れることは分からない.
-    変更ページの検査は型が変わればモジュールの全パーツを検査するので, これも見つかる
-  - 複数のモジュールにまたがるときは, 各モジュールを今の取得済みのイベントに対して検査する
-    (先にコミットする別のモジュールの変更は型環境に入らない)
-  - 変更・選択・取得済みのイベントの数・ログイン中のアカウントが変わったら 300ms 待ってから検査し直す.
-    ログイン中のアカウントが core の所有者 (システムアカウント) なら, サーバーと同じく式の無い組み込みパーツを受け入れる
-- 動作確認のノウハウ (2026-10 に変更ページのコミット前の検査を確かめたとき)
-  - 作業中の変更は localStorage の `definy_working_changes` に `working_changes::encode` の結果を入れれば再現できる.
-    `PartChange` を組み立てて `encode` を表示する使い捨ての example を `cargo run -p definy-ui --example ...` で動かし,
-    その文字列をブラウザの `localStorage.setItem` で入れて `/changes` を開く
-  - wasm の panic のバックトレースに関数名を出すには `dx serve` に `--keep-names` を付ける
-- コミットがサーバーに拒否されたら, 理由 (`invalid_argument: part '...': type error: ...` など) を
-  「変更のコミットに失敗しました」の後ろに出す (`LocalEventRecord::last_error`)
+- 記録はパーツの定義全体 (`PartChange`) をパーツ ID ごとに 1 つ持つ
+- コミットはモジュールごとの `ModuleCommitEvent`. 今のモジュールのパーツに作業中の変更を重ねたもの (`buildCommitParts`) を,
+  モジュールの最新コミットを親にして署名して送る. 受け付けられたらそのモジュールの変更を記録から消す
+- 未コミットの変更があるパーツはエクスプローラーに印を出し, アクティビティバーの「変更」とステータスバーに件数を出す
+- コミット前の型検査は上の「型エラー表示」を参照
 
 ### ツリーエディタの選択肢
 
 ノードを選ぶと出るメニュー (置換メニュー) の選択肢と並び順・操作.
 実装は [src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx),
 選択肢と検索・ハイライトの規則は [src/tree_layout/selector_options.ts](../src/tree_layout/selector_options.ts) (単体テストあり).
-旧 Rust 版 (`definy-ui/src/dropdown.rs` の `SearchableDropdownPanel`) の操作感に合わせている. キー操作は [key.md](key.md).
+キー操作は [key.md](key.md).
 
 - 開くと検索欄に選択中の式の名前 (`core.eval-ast`, `core.plus` など) が全選択で入る. 打てば置き換わり, 打つまでは絞り込まずに全部の選択肢を出す.
   現在の選択肢には ✓ を付け, リストの中央に来るようにスクロールする. 未入力にした直後は検索欄を空にする
@@ -274,7 +251,7 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
 
 ### パーツの型の行 (型のツリーエディタ)
 
-パーツ詳細の `type` の行は, 旧 Rust 版と同じく型を式にして式のツリーエディタで編集する
+パーツ詳細の `type` の行は, 型を式にして式のツリーエディタで編集する
 (`ExpressionTreeEditor` の `mode="type"`).
 
 - パーツの型 (`partType`, seeds/schemas の `PartType`) と型の式の相互変換は
@@ -309,18 +286,10 @@ I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッ
 「CORS エラーのときサーバーで仲介する」は設定画面で決める ([wasi-io.md](wasi-io.md)).
 式がシークレットリテラルのパーツのページには, 名前と送ってよい宛先の編集, 値の入力, 使用箇所, 使用履歴の欄を出す ([secret.md](secret.md)).
 
-### 履歴グラフ
+### 履歴
 
-履歴ページ (`/history`) は VS Code の Git Graph 拡張のように, モジュールのコミットを枝分かれの線で一覧する.
-計算は `definy-ui/src/commit_graph.rs`, 表示は `commit_graph_view.rs`.
-
-- `ModuleCommitEvent` の親は `parent_commit_hash` の 1 つだけなのでマージは無い.
-  同じ親から複数のコミットが作られたとき (オフラインでの編集など) だけ枝分かれし, 親の行で合流する
-- 新しい順に並べ, レーンごとに「次に来るはずのコミット (親)」を覚えて上から置く.
-  親が取得済みのイベントに無いときはレーンを閉じる. モジュールごとに別の木なので別のレーンになる
-- 未コミットの変更は, そのモジュールの最新コミットから伸びる点線・中抜きの点としていちばん上に出す
-- 行をクリックすると, 親コミットと比べたパーツの追加 (A)・変更 (M)・削除 (D) を出す.
-  モジュール詳細の「グラフで見る」からは `?tab=<モジュールのハッシュ>` でそのモジュールに絞って開く
+履歴ページ (`/history`, [pages/history.tsx](../pages/history.tsx)) はモジュールのコミットを新しい順に並べ, 各コミットのイベント詳細へリンクする.
+`ModuleCommitEvent` の親は `parent_commit_hash` の 1 つだけなので, 枝分かれ (同じ親から複数のコミット) はあってもマージは無い.
 
 ### イベントタイムライン
 
@@ -341,15 +310,6 @@ I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッ
 
 ページ全体を opacity: 0 からフェードインさせない. アニメーションが進まない環境 (非表示のタブ・プレビューなど) で
 ページが透明・薄暗いまま残るため. 読み込み中はエディタ上端の細いバー (`.editor-loading-bar`) だけで示す.
-
-### Dioxus のイベントハンドラでの注意
-
-- ハンドラの中で同期的に `element.focus()` / `element.click()` を呼ばず, `crate::dom::focus_first` / `click_first`
-  (内部で `crate::dom::defer` = マイクロタスク) を使う. その場で focus / click イベントが起きて処理が入れ子になるのを避けるため.
-  setTimeout ではなくマイクロタスクなのは, 素早く続けて押された次のキーより先にフォーカスを移すため
-- `if let Some(x) = *signal.peek() && ... { signal.set(..) }` のように, let チェーンの条件で `peek()` / `read()` すると
-  借用が if の本体まで続き, 本体の `set` で `AlreadyBorrowed` の panic になる (wasm 全体が止まる).
-  先に `let current = *signal.peek();` と取り出してから条件に使う
 
 ## SSR とハイドレーション (React 19 + Void 実装)
 

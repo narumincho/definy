@@ -1892,7 +1892,7 @@ button.card:hover {
 }
 
 /*
- * 式のツリーのノードの状態 (definy-ui/src/tree_layout/view.rs の data-state).
+ * 式のツリーのノードの状態 (TreeLayoutRenderer の data-state).
  * 選択は主色の枠と淡い光, ホバーは中立色の枠だけにして, ガイド線などの装飾と見分けられるようにする
  */
 .tree-capsule {
@@ -1967,7 +1967,7 @@ button.card:hover {
 }
 
 /*
- * パーツ定義の木構造 (part_detail/definition_tree.rs).
+ * パーツ定義の木構造 (PartDefinitionTree).
  * 式のツリーと同じく, 選択中の行を主色の枠で示す
  */
 .part-definition-tree {

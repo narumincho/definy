@@ -1,8 +1,7 @@
 # Cloudflare Workers Static Assets 構成とデプロイ仕様
 
 > [!NOTE]
-> 従来の Dioxus クライアント（旧 Rust 実装・廃止済み）から、**Void (Vite 8) + React 19** を用いたフルスタック統合構成への移行が行われました。
-> Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括ビルドされます。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
+> **Void (Vite 8) + React 19** のフルスタック構成。Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括ビルドされます。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
 
 definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Workers Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS コンテンツ配信等のバックエンド API もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
 
@@ -10,7 +9,7 @@ definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Wo
 
 ## 1. アーキテクチャ概要
 
-Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。また、旧 Fly.io バックエンドは廃止され、GitHub Actions でのビルドと `wrangler deploy` による Cloudflare Workers へのデプロイに一本化されています。
+Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。デプロイは GitHub Actions でのビルドと `wrangler deploy` による Cloudflare Workers へのデプロイに一本化されています。
 
 ```
 [ ブラウザ / クライアント ]
@@ -62,9 +61,6 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 # main, [assets], compatibility_date 等は Void 側で自動設定される。
 name = "definy"
 compatibility_flags = ["nodejs_compat"]
-
-[vars]
-DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
 
 [[d1_databases]]
 binding = "DB"

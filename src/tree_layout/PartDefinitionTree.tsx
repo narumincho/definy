@@ -64,7 +64,7 @@ export function PartDefinitionTree({
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
-  // 型は旧 Rust 版と同じく型の式にして式のツリーエディタで編集する (part_type.ts)
+  // 型は型の式にして式のツリーエディタで編集する (part_type.ts)
   const typeExpression = useMemo(
     () => partTypeToExpression(partType),
     [partType],

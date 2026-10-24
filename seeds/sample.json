@@ -2783,11 +2783,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Deploys sample.self-hosted-definy-server to the Cloudflare Worker self-definy (evaluate it with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID set)"
+          "text": "Deploys sample.self-hosted-definy-server to the Cloudflare Worker self-definy (set the value of definy.cloudflare-api-token on its page first)"
         },
         {
           "language": "ja",
-          "text": "sample.self-hosted-definy-server を Cloudflare Worker self-definy にデプロイする (環境変数 CLOUDFLARE_API_TOKEN と CLOUDFLARE_ACCOUNT_ID を設定して評価する)"
+          "text": "sample.self-hosted-definy-server を Cloudflare Worker self-definy にデプロイする (先に definy.cloudflare-api-token のページで値を入れておく)"
         }
       ],
       "expression": {
@@ -2870,11 +2870,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Deploys a handler that returns Hello from definy to the Cloudflare Worker definy-hello (evaluate it with CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID set)"
+          "text": "Deploys a handler that returns Hello from definy to the Cloudflare Worker definy-hello (set the value of definy.cloudflare-api-token on its page first)"
         },
         {
           "language": "ja",
-          "text": "Hello from definy を返すハンドラを Cloudflare Worker definy-hello にデプロイする (環境変数 CLOUDFLARE_API_TOKEN と CLOUDFLARE_ACCOUNT_ID を設定して評価する)"
+          "text": "Hello from definy を返すハンドラを Cloudflare Worker definy-hello にデプロイする (先に definy.cloudflare-api-token のページで値を入れておく)"
         }
       ],
       "expression": {

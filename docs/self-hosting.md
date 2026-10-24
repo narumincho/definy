@@ -4,10 +4,11 @@ definy を definy
 自身の言語仕様・データ構造・評価器を用いて表現し、自己記述・自己検証可能にするための設計と実装仕様。
 
 > [!NOTE]
-> 本リポジトリは Rust + Deno から **TypeScript + React 19 + Void (Vite 8) + Cloudflare Workers** に移行済みです。
-> 本ドキュメント内の Rust ツールチェイン（`cargo run -p definy-server`, `cargo test` など）に関する記述は、セルフホストおよび固定点達成に至るまでの**旧 Rust 実装（廃止済み）における歴史的経緯と仕様**を記録したものです。
-> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`, `src/stage1_fixed_point.test.ts`）で検証されています。
-> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`)、`stage1.wasm` の再生成と不動点検証は `npm run build:stage1` / `npm run check:stage1` (`scripts/regenerate_stage1.ts`) で実行可能です。
+> 実行と検証は TypeScript 側の `wasm/stage1.wasm` の実行パイプライン (`src/stage1_compiler.ts`) と
+> Vitest (`src/stage1_conformance.test.ts`, `src/stage1_fixed_point.test.ts` など) で行う。
+> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`)、`stage1.wasm` の再生成と不動点検証は
+> `npm run build:stage1` / `npm run check:stage1` (`scripts/regenerate_stage1.ts`)。
+> 2026-10-18 (#699) までは Rust 製のサーバー・コンパイラ (stage0) があり, 古い節の数値やテスト名はその時点のもの。
 
 ## 概要
 
@@ -19,7 +20,7 @@ definy
 これにより、以下の利点が得られます：
 
 1. **コンパイラ・評価器の完全自己完結**:
-   外部言語（Rustなど）の変更なしに、definy 言語自体の新機能や最適化を definy
+   外部言語の変更なしに、definy 言語自体の新機能や最適化を definy
    内で記述・検証可能。
 2. **決定論的かつコンテンツ指向の言語定義**: 式や型、モジュール構造自体が
    SHA-256 / Ed25519
@@ -29,14 +30,13 @@ definy
 4. **自己ホスト WebAssembly 生成とエッジ配備**: definy 式から WebAssembly
    バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザおよび
    Cloudflare Workers エッジ上で即時実行可能（詳細は
-   [自己記述コンパイラと Cloudflare Workers エッジ直結パイプライン](self-hosting-compiler-cloudflare-workers.md)
+   [cloudflare-workers.md](cloudflare-workers.md)
    を参照）。
 
 ### 実サービスとの接続状況
 
-セルフホスト部品の実行テストは、Definy AST で記述した関数を Rust の
-`definy-core` 実行基盤上で動かす検証です。Definy
-サービス全体のブートストラップが完了したことを意味しません。
+セルフホスト部品の実行テストは、definy で記述した関数を stage1 でコンパイルして WebAssembly として動かす検証です。
+definy サービス全体のブートストラップが完了したことを意味しません。
 
 - `core.type-check`
   は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、直和型構築（`variant`）、パターンマッチ（`match`）、リスト式（`list`）、パーツ参照（`part_reference`）、型環境上の関数適用を扱います。
@@ -68,8 +68,8 @@ definy
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
-- Connect-RPC の `SubmitEvent` は、`checkSubmittedModuleCommit` (`worker/type_check.ts`。旧 Rust 版は `definy_core::self_hosted_type_check::check_module_commit`)
-  でコミットのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行 (TypeScript 版)」) (UI の型エラー表示・
+- Connect-RPC の `SubmitEvent` は、`checkSubmittedModuleCommit` (`worker/type_check.ts`)
+  でコミットのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
   seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
   コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
   パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),
@@ -130,11 +130,9 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
    （[ui.md](ui.md) の「型エラー表示」を参照）。
 4. **[済] bootstrap の固定**: core definitions を `seeds/*.json` として固定し、
-   コミット済み seed が正規化済みであることを `seed_tests.rs` で検証します。
-5. **[stage1 済] compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
-   compiler stage1 を作り、 stage1 が同一 compiler と test suite
-   を再生成できるか比較します。definy 製コンパイラは評価器の適合テストを全て通り, 自分自身をコンパイルした stage1 の出力が
-   stage0 と一致し, stage2 で不動点に達しています。下の「definy 製コンパイラの対応状況」を参照。
+   seed から作るバンドルの指紋 (`seeds/seed_bundle_fingerprint.json`) をテストで確かめます。
+5. **[済] compiler bootstrap**: definy 製コンパイラは評価器の適合テストを全て通り, 自分自身をコンパイルした結果が
+   不動点に達しています (`wasm/stage1.wasm`)。下の「definy 製コンパイラのブートストラップ」を参照。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
@@ -179,8 +177,8 @@ graph TD
     end
 
     subgraph "実行基盤 (Runtime)"
-        WasmVM["definy-core Wasm VM<br/>(WebAssembly 実行 & 文字列等価ネイティブ対応)"]
-        MetaCircular["メタ循環評価 (Self-Hosting Execution)<br/>evaluate_expression"]
+        WasmVM["WebAssembly ランタイム<br/>(ブラウザ / Node.js / Cloudflare Workers)"]
+        MetaCircular["メタ循環評価 (Self-Hosting Execution)"]
     end
 
     ExpressionAST --> Evaluator
@@ -213,72 +211,24 @@ graph TD
 ## seed JSON が正本
 
 ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）のパーツ定義の正本は
-`seeds/*.json` です。以前は `definy-server/src/builtin_*.rs`（約 17,000 行）の Rust コードで
-AST を手組みし、そこから JSON を生成していましたが、このコードは削除しました。
-本文中に出てくる `builtin_type_checker/record_ops.rs` などのファイル名は、その時点の実装場所を指す履歴です。
+`seeds/*.json` です (以前は Rust のコードで AST を手組みして JSON を生成していた)。
 
-- 読み込み: `definy_server::seed::get_builtin_module_seeds()` が `include_str!` で埋め込んだ JSON を
-  パースします。名前でのパーツ取得は `find_builtin_part(name)`（パーツ名は全モジュールで一意）。
-- パーツ間参照のハッシュは、ビルトインシステムアカウント（`builtin_system_account_id()`）の
-  モジュール ID から `derive_module_part_id` で計算済みです。テストも同じアカウントを使います。
-- テスト: `self_hosting_tests` は `seed_part("type-check")` のように seed からパーツを取得して検証します。
-  `seed_tests.rs` は、コミット済み seed が正規化済み（パースして整形し直した結果と一致）であることと、
-  JSON Schema が最新であることを検証します。
-- 編集方法（段階移行）: 旧 Rust 版では `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行っていましたが、現在は未対応です。
+- パーツ間の参照は `{"$part": "core.expression"}` のように名前で書き, 読み込むときにシステムアカウントの
+  モジュール ID からパーツ ID に置き換えます (`src/seed_parts.ts` の `resolvePartPlaceholders`)
+- `npm run build:seeds` が `public/__definy_seed_bundle.json` と指紋を作ります ([build-artifacts.md](build-artifacts.md))。
+  本番の内容を seed に書き戻すのは `npm run export:seeds` ([seed-export.md](seed-export.md))
 
-## definy 製コンパイラの対応状況 (旧 Rust 版検証時)
+## definy 製コンパイラのブートストラップ
 
-definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) が, 旧 Rust 製コンパイラ
-(`definy-core/src/wasm_emitter`, stage0) と比べてどこまでコンパイルできるかを測るテスト（旧 `definy-server/tests/self_hosted_compiler_coverage.rs`）が行われていました。
+definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) は, 2026-10-17〜18 に
+Rust 製コンパイラ (stage0) の上で育て, 評価器の適合テスト (`conformance/eval_cases.json`) の全 65 ケースを通るようにしてから,
+stage0 で definy 製コンパイラ自身をコンパイルして stage1 (68,452 バイト) を作った。stage1 で自分自身をコンパイルした
+stage2 は stage1 と 1 バイトも違わない (不動点)。その後 Rust 製の stage0 は削除したので, stage1 は今の stage1 でしか
+作れない (ブートストラップの種として `wasm/stage1.wasm` をコミットしている)。
 
-```sh
-# 旧 Rust 版でのテストコマンド（現在は廃止済み）
-cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
-```
+### stage1.wasm の再生成
 
-- `self_hosted_compiler_conformance`: 評価器の適合テスト (`conformance/eval_cases.json`) の各ケースを
-  `self_hosted_wasm_compiler::compile_with_self_hosted_compiler` (Rust 製コンパイラへのフォールバックなし) で
-  コンパイル・実行し, 期待値と比べます。通過数が `MIN_PASSING_CASES` を下回ると失敗するので,
-  対応範囲を広げたらこの値を上げてください
-- `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
-  コンパイラが扱えないものを一覧します
-
-### 適合テストの結果: 65 ケースすべてが期待値どおり
-
-definy 製コンパイラは, Rust 製コンパイラ (stage0) と同じく評価器の適合テストの全ケースを通ります。
-
-経過 (2026-10-17〜18): 測定開始時は 58 ケース中 15 (うち 2 つは偶然の一致), 真偽値・負の数を直して 25,
-レコード・バリアントの誤った値を明示的な失敗にして 65 ケース中 28, 値の表現を下の形に作り直して 53,
-関数・呼び出し・パーツ参照を入れて 65。
-
-### stage1: definy 製コンパイラが自分自身をコンパイルできる
-
-`self_hosted_compiler_stage1` (`definy-server/tests/self_hosted_compiler_coverage.rs`) で確かめています。
-
-1. stage0: Rust 製コンパイラで動かした definy 製コンパイラで, 関数・クロージャ・呼び出し・レコード・文字列・
-   `match` を含む式をコンパイルする
-2. `core.compile-to-wasm(expr = その式の core.expression, parts = [])` という呼び出しを, definy 製コンパイラで
-   コンパイルする。参照をたどってコンパイラ自身のパーツ (38 個) がすべて入り, 約 74KB の Wasm になる
-3. その Wasm を実行して得たバイト列が 1 の出力と **1 バイトも違わず**, 実行すると同じ値になる
-
-### stage2: 不動点に達している
-
-`self_hosted_compiler_stage2` で確かめています。
-
-1. stage1 = stage0 で `core.compile-to-wasm` への参照をコンパイルしたモジュール (`self_hosted_wasm_compiler::build_self_hosted_compiler_wasm`)。
-   `evaluate` がコンパイラのクロージャを返す, 単独で動くコンパイラ (68,452 バイト)
-2. stage1 を wasmtime で直接動かす (`definy_core::self_hosted_compiler_module::CompilerModule`)。入力の `core.expression` と
-   `parts` を値の箱としてモジュールのメモリに書き (`alloc` をエクスポートしている), 関数表 (`table` をエクスポート) から
-   クロージャを呼ぶと, 出力のバイト列 (`list<number>` の箱) が返る
-3. stage1 でコンパイラ自身をコンパイルした stage2 が stage1 と **1 バイトも違わない** (不動点)
-4. 適合テストの 65 個の式を stage0 と stage1 でコンパイルした結果も, すべて 1 バイトも違わない
-
-所要時間 (debug ビルド, Apple Silicon): stage1 を作る (stage0) 約 13 秒, stage1 の読み込み (wasmtime のコンパイル) 0.6 秒,
-stage1 でコンパイラ自身をコンパイル 0.16 秒, 適合テストの 65 個の式のコンパイルは stage0 で 125 秒, stage1 で 0.045 秒。
-
-### stage1.wasm の再生成 (TypeScript 版)
-
-TypeScript 移行後は、`scripts/regenerate_stage1.ts` を用いて `wasm/stage1.wasm` の再生成と不動点（fixed point）の自動検証を行えます。
+`scripts/regenerate_stage1.ts` を用いて `wasm/stage1.wasm` の再生成と不動点（fixed point）の自動検証を行えます。
 
 ```bash
 # 再生成と既存バイナリとの一致検証 (CI / テスト向け)
@@ -300,7 +250,7 @@ npm run build:stage1
 #### 参照パーツの順序 (LIFO) とバイト一致
 
 `src/stage1_compiler.ts` の `collectReferencedParts` では、参照パーツの探索キューから**末尾の要素を取り出す LIFO (後入れ先出し)** を採用しています。
-旧 Rust 実装 (`definy-server/src/self_hosted_wasm_compiler.rs` の `referenced_parts_expression`) が `queue.pop()` で末尾から取り出していたため、同じ順序に揃えることで関数表（Wasm の table）のインデックス順や関数の配置順が一致し、当時の `wasm/stage1.wasm` (68,452 バイト) と 1 バイトの差異もなく完全一致させることができます（FIFO にするとサイズは同じでもインデックスがずれてバイト不一致になります）。
+stage1 を作った Rust 版と同じ順序で, これを変えると関数表 (Wasm の table) のインデックスがずれて, サイズは同じでも stage1 とバイト一致しなくなります。
 
 #### コンパイラの出力を変えたとき (`--bootstrap`)
 
@@ -352,88 +302,18 @@ definy には例外による大域脱出がなく, スタックトレースも�
 `compile-find-part` などの線形の探索もスタックを使わない。V8 (Node.js 20 以降, Chrome 112 以降, Cloudflare Workers),
 Firefox 121 以降, Safari 18.2 以降が対応している。
 
-### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
+### 本番での stage1 の使い方
 
-**速さ**: definy 製型チェッカーの呼び出し `core.type-check(1 + 2, 空の環境)` を例に測った (release ビルド, 結果はどちらも `ok(number)`)。
+- stage1 は外部 import の無い静的な Wasm なので, ブラウザ・Node.js・Cloudflare Workers のどれでもそのまま動く
+- Cloudflare Workers は実行時に作った Wasm をコンパイルできないので, stage1 の **出力** を Worker の中では動かせない。
+  型チェッカーはビルド時にコンパイルして Worker にバンドルし (下の「definy 製型チェッカーの実行」),
+  デプロイする Wasm は Cloudflare の API にアップロードして向こうでコンパイルさせる ([cloudflare-workers.md](cloudflare-workers.md),
+  [worker-runtime.md](worker-runtime.md))
+- 未着手: 文字列リテラルを 1 バイトずつ書く命令にしている。データセグメントにまとめたい
 
-|                              | コンパイル | 実行 (wasmtime が出力をコンパイルする時間を含む) | 出力の大きさ |
-| ---------------------------- | ---------- | ------------------------------------------------ | ------------ |
-| Rust 製コンパイラ            | 7 ms       | 175 ms                                           | 208 KB       |
-| definy 製コンパイラ (stage1) | 48 ms      | 100 ms                                           | 124 KB       |
+### 値の表現 (線形メモリの形)
 
-stage1 はコンパイル自体は Rust 製より遅いが, 出力が小さい (参照された関数だけを出す) ので wasmtime のコンパイルが速く, 合計では同等以上。
-stage0 (Rust 製の評価器で definy 製コンパイラを毎回コンパイルする今の `compile_with_self_hosted_compiler`) は 1 回数秒かかるので,
-本番では使えない。どちらの場合も実行時間の大半は wasmtime による出力のコンパイルなので, 出力を content hash で
-キャッシュする効果が大きい。
-
-**使い回し方**:
-
-- stage1 の Wasm は definy 製コンパイラのパーツ (seed の core) だけで決まる。パーツの content hash をキーにして
-  1 回だけ作り, 保存して使い回す (サーバーの起動時に作る / CAS に置く / seed と一緒にビルド時に作る)。
-  作り直したときは stage2 == stage1 (不動点) をテストで確かめる
-- サーバー (wasmtime): `CompilerModule` を 1 つ持ち, コンパイルのたびにインスタンスを作る (メモリは解放しないので毎回新しく)
-- ブラウザ (UI, wasm32): stage1 はブラウザの `WebAssembly` でそのまま動く。今の UI は definy 製型チェッカーを Rust 製コンパイラ
-  (UI の Wasm に含まれる) でコンパイルしているので, stage1 に置き換えれば UI の Wasm から Rust 製コンパイラを外せる可能性がある。
-  ただし `CompilerModule` は wasmtime 用なので, `js_sys::WebAssembly` 版が要る
-- Cloudflare Workers: stage1 は静的な Wasm なので, デプロイ時にバンドルすれば Workers でもネイティブ (V8) に動かせる
-  (実行時に作った Wasm ではないので制限に当たらない)。ただし stage1 の **出力** は実行時に作った Wasm なので,
-  今と同じく wasmi か Dynamic Workers で動かす必要がある
-
-**置き換えの状況** (2026-10-18):
-
-1. `core.expression` で表せない式 (`BitAnd` などのビット演算, 型の式) は definy 製コンパイラに渡せないので,
-   Rust 製コンパイラにフォールバックしている (下の「サーバーの本番のコンパイルで stage1 を使う」)。言語側で `core.expression` に足せば外せる
-2. HTTP アプリは stage1 の出力でも動くことを確かめた (下の「HTTP アプリとプレビュー」)
-3. 文字列リテラルを 1 バイトずつ書く命令にしている。データセグメントにまとめたい (未着手)
-4. 入口 `self_hosted_wasm_compiler::compile_expression_to_wasm` は stage1 を使うように切り替えた
-
-### サーバーの本番のコンパイルで stage1 を使う
-
-`definy-server/src/self_hosted_wasm_compiler.rs` に入っています。
-
-- **キャッシュのキー**: `self_hosted_compiler_cache_key()` = `self-hosted-compiler-stage1:` + definy 製コンパイラのパーツ
-  (`self_hosted_compiler_parts()`, `core.compile-to-wasm` から参照をたどった core のパーツ) の CBOR の `ContentHash`。
-  seed の core を変えるとキーが変わる
-- **プロセス内のキャッシュ**: `static STAGE1: OnceLock` に stage1 の Wasm と `CompilerModule` を 1 つだけ持つ。
-  `self_hosted_compiler()` は無ければ作って待つ (debug で十数秒), `ready_self_hosted_compiler()` は待たずにできていれば返す
-- **サーバーの起動時**: `start_server` の DB 初期化のタスクの後で `prepare_self_hosted_compiler(db)` を呼ぶ。
-  DB の `contents` テーブルにキーで保存した stage1 があれば読み込み, 無ければ `spawn_blocking` で作って保存する
-  (`contents` の他のレコードはバイト列の content hash がキーだが, このレコードだけは入力 (コンパイラのパーツ) の hash がキーのメモ)。
-  読み込んだ stage1 は `15 + 27` を正しくコンパイルできるか確かめてから使い, 壊れていれば作り直す
-- **入口** `compile_expression_to_wasm(expression, events)`: stage1 ができていれば使い, まだなら Rust 製コンパイラを使う
-  (起動直後のリクエストを待たせない)。stage1 ができていても, 次の式は Rust 製コンパイラにフォールバックする
-  (`checked_self_hosted_compiler_input`):
-  - 式か, 式がたどって参照するパーツが `core.expression` で表せない
-  - 参照するパーツが見つからないか式を持たない (definy 製コンパイラは unreachable にする)
-  - `core.compile-expr-instructions` が個別に扱わないタグ (`type_number` など) を含む (`_` アームで unreachable になる)。
-    扱うタグは seed の `core.compile-expr-instructions` の `match` から読むので, コンパイラに対応を足すと自動で広がる
-- どちらを使ったかは `compile_expression_to_wasm_with(compiler, expression, events)` が `UsedCompiler` で返す
-- 使っているのは `deploy_rpc` の `DeployCloudflare` (パーツをデプロイするとき)。DB のイベントも渡すので, パーツ参照を含む式もコンパイルできる
-- テスト: `definy-server/tests/self_hosted_compiler_entry.rs` で, 適合テストの全 65 ケースが stage1 でコンパイルされ,
-  実行結果が Rust 製コンパイラと期待値の両方に一致することを確かめている。フォールバックと DB への保存のテストもある
-
-### HTTP アプリとプレビュー
-
-`self_hosted_compiler_entry.rs` の `stage1_compiles_http_app` で, サンプルの `self-hosted-definy-server` のプレビューのハンドラ
-(`/`, `/api/self-host`, `/healthz`, `/not-found`) を stage1 でコンパイルし, `execute_wasm_http_response` (wasmtime) と
-wasmi のどちらでも Rust 製と同じステータス・ヘッダー・ボディになることを確かめた。クロージャの形 (`(env, args) -> i32`),
-`table` のエクスポートが Rust 製と同じで, データを 1024 番地から置くので, ストリームの呼び出しが引数の置き場に使う 512 番地ともぶつからない。
-出力は stage1 が約 278KB, Rust 製が約 529KB で stage1 の方が小さい (参照された関数だけを出すため)。
-
-プレビューを stage1 に切り替える道筋 (今回は切り替えていない):
-
-1. `definy_core::http_app::build_http_request_target_expression` でリクエストを適用した式を作る (切り出し済み)
-2. `self_hosted_wasm_compiler::compile_http_request_to_wasm` で `definy_core::http_app::compile_http_request_to_wasm` の代わりに
-   その式を `compile_expression_to_wasm(&target, events)` に渡す。フォールバックは入口と同じ
-3. ハンドラが関数でない式のときに `evaluate_expression` (Rust 製コンパイラで 1 回コンパイルして実行) で関数かどうかを
-   調べているので, ここも stage1 にするなら型 (`core.type-check`) で判定するか, stage1 でコンパイルして実行する
-4. プレビューはリクエストのたびにコンパイルするので, リクエストを引数にした関数としてハンドラを 1 回だけコンパイルし,
-   `CompilerModule` と同じようにメモリに書いたリクエストで呼ぶ形にすると, コンパイルと wasmtime のコンパイルをキャッシュできる
-
-### 値の表現 (Rust 製コンパイラと同じ線形メモリの形)
-
-すべての値を「線形メモリ上のタグ付きの箱」へのポインタ (i32) で表します。箱の形は Rust 製コンパイラ
-(`definy-core/src/wasm_emitter/compiler.rs`) と実行結果の読み取り (`wasm_emitter::read_value_from_memory`) と同じです。
+すべての値を「線形メモリ上のタグ付きの箱」へのポインタ (i32) で表します。実行結果の読み取りは `src/stage1_compiler.ts` が行います。
 
 | タグ | 値                | 形                                                                   |
 | ---- | ----------------- | -------------------------------------------------------------------- |
@@ -447,7 +327,7 @@ wasmi のどちらでも Rust 製と同じステータス・ヘッダー・ボ�
 
 - メモリは確保するだけで解放しません (1 回の評価は短いので)。ヒープの先頭はグローバル変数 0 で, 確保は 8 バイト境界に揃え,
   足りなければ `memory.grow` します。確保したばかりのメモリは 0 なので, 数値の箱はタグを書かずに済みます
-- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す), `memory`, 関数表 `table`, メモリを確保する `alloc` をエクスポートします (`cloudflare_workers.rs` が生成する JS のために, `evaluate` を `main` としてもエクスポート)。`table` と `alloc` は, 外から値を書いて関数を呼ぶため (`CompilerModule`)。
+- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す), `memory`, 関数表 `table`, メモリを確保する `alloc` をエクスポートします (デプロイ先の `worker.js` のために, `evaluate` を `main` としてもエクスポート)。`table` と `alloc` は, 外から値を書いて関数を呼ぶため (`instantiateCompiledFunction`)。
   `match` で真偽値のタグとして使う文字列 `"true"` `"false"` だけはデータセグメント (1024 番地) に置きます
 - ランタイム関数 (メモリの確保, 数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作,
   `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
@@ -463,8 +343,6 @@ wasmi のどちらでも Rust 製と同じステータス・ヘッダー・ボ�
 
 ### 関数・呼び出し・パーツ参照
 
-Rust 製コンパイラ (`wasm_emitter/function_ops.rs`) と同じ形です。
-
 - 関数は Wasm の関数 (型 `(env_ptr, args_ptr) -> i32`) にし, 関数表 (table 0) に並べます。Wasm の関数番号は
   15 (ランタイム関数の後ろ) から, 関数表の番号は 0 から
 - 関数の値はクロージャの箱 (タグ 5)。関数の式を評価すると, 本体の自由変数 (`core.free-variables`) を環境の配列に詰めて箱を作る。
@@ -474,27 +352,18 @@ Rust 製コンパイラ (`wasm_emitter/function_ops.rs`) と同じ形です。
   - `core.collect-functions` で式の中の関数の式を前順 (自身が先, 次に子を `core.expression-children` の順) に並べ, その位置を番号にする
   - `core.compile-expr-instructions` は引数 `fn_base` (その式の中で最初の関数の番号) を受け取り, 子をコンパイルするときは
     前の兄弟に含まれる関数の数 (`core.count-functions`) を足して渡す。こうすると集めたときと同じ番号になる
-- **パーツ参照**: Rust 側 (`self_hosted_wasm_compiler::compile_with_self_hosted_compiler`) が, 式から参照をたどって集めたパーツを
+- **パーツ参照**: 呼び出し側 (`src/stage1_compiler.ts` の `collectReferencedParts`) が, 式から参照をたどって集めたパーツを
   `parts: list<{ id, expression }>` として `core.compile-to-wasm` に渡す。関数表には, 式の中の関数の後ろに各パーツの式の中の関数を続ける
   (`core.compile-assign-part-bases` で各パーツの最初の番号を求める)。
   関数のパーツへの参照は, その番号のクロージャ (環境なし) になる。関数でないパーツへの参照は, 参照した場所でパーツの式をコンパイルする
   (パーツの中の関数の番号はパーツの最初の番号から数えるので, どこでコンパイルしても同じ)。インライン化中のパーツを再び参照したら `unreachable`
 - 式を持たないパーツや `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`.
   コンパイラ組み込みのパーツは式 `builtin(name)` のまま渡し, その呼び出しは `core.compile-builtin-call` が名前で命令列にする ([builtin-parts.md](builtin-parts.md))
-- 引数は名前ではなく書いた順に渡す (Rust 製と同じ)
+- 引数は名前ではなく書いた順に渡す
 
-### Rust 製コンパイラの修正: 静的データが 64KB を超えるとヒープが上書きしていた
+### definy 製型チェッカーの実行 (2026-10-21)
 
-Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024 番地からの静的データに置き, ヒープを常に 65536 番地から始めていました。
-静的データが 64KB を超えると, ヒープの確保が静的データを上書きし, 定数が別の値に化けていました
-(definy 製コンパイラにコンパイラ自身の式を渡したときに `unsigned-leb128` の結果がおかしくなって見つかった)。
-`module_builder::assemble_wasm_module` でヒープを静的データの後ろから始め, メモリの初期ページ数も足りるようにしました
-(`test_large_static_data_is_not_overwritten_by_heap`)。
-
-### definy 製型チェッカーの実行 (TypeScript 版, 2026-10-21)
-
-TypeScript への移行で一度なくなっていた definy 製型チェッカーの実行を, stage1 の上に作り直した
-(`src/self_hosted_type_check.ts`。旧 Rust 版 `definy_core::self_hosted_type_check` の移植)。
+definy 製型チェッカーは stage1 でコンパイルして動かす (`src/self_hosted_type_check.ts`)。
 
 - **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-checker` への
   `PartReference` を stage1 でコンパイルする (関数を返す式の Wasm になる)。`checkParts` は
@@ -590,9 +459,8 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
 
 ### 次に進める順番の案
 
-1. ~~stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う~~ (済み: 上の「サーバーの本番のコンパイルで stage1 を使う」)。次はプレビュー (上の「HTTP アプリとプレビュー」)
-2. ~~definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす~~ (済み: 上の「definy 製型チェッカーの実行 (TypeScript 版)」)
-3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
+1. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
+2. サーバーの業務ロジック (イベントの検証・保存など) を definy のパーツに移す
 
 ## セルフホストのロードマップと到達状況
 
@@ -612,7 +480,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
     `expression -> list<number>`
   - 完全 WebAssembly バイナリ生成器 `core.compile-to-wasm`:
     `expression -> list<number>`
-  - definy の Wasm VM による即時実行・検証を実証完了
+  - 生成した Wasm の即時実行・検証を実証完了
 - [x] **Phase 4: 自己記述フォーマッター・メタ循環評価 (Self-Hosted Formatter &
       Meta-Circular Execution)**
   - 自己記述コード整形器 `core.expression-to-source`: `expression -> string`
@@ -638,8 +506,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
 - [x] **Phase 7: 直和型・パターンマッチ自己評価 & 動的等価判定 &
       高階コレクションコンビネータ (Self-Hosted ADT Pattern Matching &
       Collections)**
-  - Wasm コンパイラでのディープ文字列等価比較ネイティブ対応（`Expression::Equal`
-    / `Expression::NotEqual` で Tag 2: String のバイト列比較ディスパッチ）
+  - Wasm コンパイラでの文字列の等価比較（Tag 2: String のバイト列比較）
   - 動的値等価性自己判定器 `core.value-equals`: `value -> value -> boolean`
   - 直和型構築 `variant` 式の自己解釈実行（`core.eval-value`）
   - パターンマッチ `match` 式の完全自己解釈実行（`core.eval-match-arms`,
@@ -664,14 +531,13 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
     `record_get` によるフィールド値アクセスの評価アームを追加
   - 動的等価判定器 `core.value-equals` に `core.value-equals-record-fields`
     を追加し、動的レコード同士の順序依存・キー/値再帰等価比較に対応
-  - Wasm コンパイラ `emit_match_arms` におけるワイルドカード `_`
-    の無条件マッチ対応
+  - Wasm コンパイラの `match` でワイルドカード `_` を無条件に一致させる
   - レコード式の型検査・動的自己評価・動的等価判定およびパーツ妥当性検証（`core.validate-part`）のメタ循環実証完了
 - [x] **Phase 9: 直和型（Union）・パターンマッチ（Match）の自己ホスト型検査 &
       網羅性検証 (Self-Hosted Union Variants & Pattern Match Type Checking)**
   - 型エラー型 `core.type-error` に `not_a_union`, `variant_not_found`,
     `non_exhaustive_match` を追加
-  - 直和型探索・検証パーツ群（`seeds/core.json`、旧 `builtin_type_checker/union_lookup.rs`）を新設
+  - 直和型探索・検証パーツ群（`seeds/core.json`）を新設
     - `core.union-variant-type-lookup`:
       直和型から指定タグのペイロード型を線形探索（引数なし variant は `{}`
       レコード型として統一）
@@ -681,7 +547,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
       `non_exhaustive_match` を返却
     - `core.type-assignable-union-variants`:
       直和型の双対的幅サブタイピング（$Actual \subseteq Expected$）を再帰検証
-  - パターンマッチ型検査パーツ群（`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`）を新設
+  - パターンマッチ型検査パーツ群（`seeds/core.json`）を新設
     - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` /
       `core.type-check-match-arms-skipped` の 2 段階に置き換え。Phase 2 の 6 を参照）:
       各アームの環境拡張、本体型検査、戻り値型一致検証（初出アーム型との
@@ -691,13 +557,12 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
     `match`（パターンマッチ式）の型検査アームを追加
   - 型代入適合性検査器 `core.type-assignable`
     に直和型同士の部分型関係（サブタイピング）検証を追加
-  - 1000行ルールに基づき `union_lookup.rs` と `union_check.rs` に責務を分離
   - 単体バリアント推論、双対的サブタイピング代入、全アーム型一致、網羅性欠落エラー検出、未知バリアントエラー検出のメタ循環実証完了
 - [x] **Phase 10: リスト式（List Literal）の自己ホスト型検査 &
       共変サブタイピング (Self-Hosted List Type Checking & Covariant
       Subtyping)**
   - 型エラー型 `core.type-error` に `cannot_infer_empty_list` を追加
-  - リスト型検査パーツ群（`seeds/core.json`、旧 `builtin_type_checker/list_ops.rs`）を新設
+  - リスト型検査パーツ群（`seeds/core.json`）を新設
     - `core.type-check-list-items`:
       リストリテラルの各要素を期待される要素型に対して再帰検査し、全要素適合時に
       `ok(list({ item_type }))` を返却
@@ -712,23 +577,8 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
   - 数値・文字列リストの型推論、空リスト推論拒否、期待型付き空リスト検査、異種要素不一致エラー検出、レコードリストの共変代入適合性のメタ循環実証完了
 - [x] **Phase 11: Seed データの分離・固定化と JSON Schema によるブートストラップ
       (Self-Hosted Seed Decoupling & Schema Validation)**
-  - Rust コード内の手組み AST への依存を解消し、Git / GitHub
-    でバージョン管理しやすいテキスト形式の静的定義データ（`seeds/*.json`）を導入
-  - モジュール Seed 型 `definy_event::event::ModuleSeed` を新設し、`schemars`
-    による Draft-07 準拠の JSON
-    Schema（`seeds/schemas/module-seed.schema.json`）を自動生成
-  - `core.json`, `std.json`, `wasi.json`, `sample.json` を独立した Seed JSON
-    ファイルとして書き出し、エディタ（VSCode）での `$schema`
-    によるリアルタイム型補完・検証環境を整備
-  - `builtin_migration.rs` を約 870 行から約 150
-    行に大幅スリム化し、パーツ生成責務を
-    `builtin_core_parts.rs`、`builtin_sample_parts.rs`、`seed.rs`
-    に分離（1000行制限ルールを遵守）
-  - `seed_tests.rs`
-    テストスイートにより、スキーマ適合性、完全デシリアライズ性、および自己記述型チェッカー（`core.validate-module`）によるモジュール型妥当性検証の自動テスト実証完了
-  - **seed の正本化**: Rust の AST 構築コードを削除し、`seeds/*.json` を正本とした
-    （[seed JSON が正本](#seed-json-が正本) を参照）。`seed_tests.rs` はディスクへ書き込まず、
-    コミット済み seed が正規化済みであることだけを検証する（`find_stale_seed_files`）。
+  - 手組みの AST をやめ, テキスト形式の静的定義データ (`seeds/*.json`) を正本にした
+    （[seed JSON が正本](#seed-json-が正本) を参照）。JSON Schema (`seeds/schemas/`) でエディタの補完・検証が効く
 
 ---
 
@@ -844,16 +694,13 @@ type-check-against: expression -> type-env -> type-ast -> type-result
 の一致を確認してから return type を返します。 引数型注釈を持たない lambda
 の型は、宣言された期待関数型から決めます。
 
-#### 6. seed・UI のパーツ検査 (`definy_core::self_hosted_type_check`)
+#### 6. seed・UI のパーツ検査 (`src/self_hosted_type_check.ts`)
 
-UI の型エラー表示と seed の検証 (`definy-server/tests/self_hosted_type_check_tests.rs`) は
-`definy_core::self_hosted_type_check::check_parts` で `core.type-check-against` を呼びます。
-Rust の `Expression` から `core.expression` の値への変換は `definy_core::self_hosted_ast` です。
+UI の型エラー表示・サーバーの `SubmitEvent`・seed の検証 (`src/self_hosted_type_check.test.ts`) は
+`core.type-checker` をコンパイルして `core.type-check-against` を呼びます (上の「definy 製型チェッカーの実行」)。
+JSON AST から `core.expression` の値への変換は `src/stage1_compiler.ts` の `definyAstToSelfHostedAst` です。
 seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外すべて型エラーなしで通ります。
 
-- **まとめて実行**: 型環境を `let env = ... in [check(a), check(b), ...]` で 1 回だけ作り, 8 パーツずつ
-  1 つの式にして Wasm にコンパイル・実行します。まとめた実行が失敗したら 1 パーツずつやり直し,
-  どのパーツで失敗したか (`CheckerFailed`) を分かるようにします。
 - **型パーツの展開**: 型パーツは `reference({ part_hash })` 型で表します。型環境には型パーツの
   宣言した型を `{hash}#definition` のキーでも入れ, `core.type-resolve` がそれを使って中身の型に展開します。
   `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
@@ -870,18 +717,6 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   (`core.match-arm-env`)。
 - **組み込みのパーツ**: 型環境では組み込みのパーツの型を `builtin(name)` にし, その呼び出しを `core.type-check-builtin-call` が
   名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と順番どおり一致させる)。
-
-ノウハウ:
-
-- Wasm の線形メモリはバンプアロケータ (global 0) で確保します。初期 16 ページを超えると
-  `out of bounds memory access` になるため, ヒープポインタを進めるたびに
-  `emit_ensure_heap_capacity` で足りない分を `memory.grow` します。ポインタを進める前に書き込む
-  操作があるので 1MB の余裕を持たせています。
-- 関数のローカル変数の数は `next_local_idx + 64` で宣言します (以前の `count_locals` との二重計上で
-  大きな式が `too many locals` になっていた)。
-- 1 回の検査はネイティブの release で 400ms ほどで, 大半が型チェッカー本体のコンパイルです。
-  型チェッカーを 1 度だけコンパイルし, 引数の値を線形メモリに書き込んで関数として呼び出せば速くなりますが,
-  値をメモリへ書き込む処理を 3 つの実行環境 (wasmtime・ブラウザ・wasmi) に用意する必要があるため未着手です。
 
 ---
 
@@ -924,7 +759,7 @@ compile-to-wasm: expression -> list<number>
 5. **Code Section** (Section 10): ローカル変数定義（0個）+
    コンパイルされたスタック命令列 + `end` (`0x0b`)
 
-生成されたバイト列は、definy の Wasm VM およびブラウザの
+生成されたバイト列は、ブラウザ・Node.js の
 `WebAssembly.instantiate` で即座にロード・実行できます。
 
 ---
@@ -951,15 +786,9 @@ definy パーツ。
 
 #### 2. メタ循環評価 (Meta-Circular Evaluation) 実証
 
-definy 式として記述された評価器・フォーマッターパーツは、definy の WebAssembly
-実行基盤（`definy-core`）上で直接実行・検証されています。
-
-- `test_self_hosted_meta_circular_eval_ast_execution`: `core.eval-ast`
-  パーツに多項式 AST `(100 - (10 * 3)) + (50 / 2)` を与えて実行し、自己評価結果
-  `95` を実証。
-- `test_self_hosted_expression_to_source_execution`: `core.expression-to-source`
-  パーツに `10 + 20` の AST を与えて実行し、自己整形結果
-  `"((<number> + <number>))"` を実証。
+definy 式として記述された評価器・フォーマッターパーツは, definy 製コンパイラで Wasm にして実行できます
+(`core.eval-ast` に `(100 - (10 * 3)) + (50 / 2)` の AST を与えると `95`)。
+`sample.self-hosted-definy-server` はこれらをリクエストのたびに実際に呼んでいます ([deployment-bootstrapping.md](deployment-bootstrapping.md))。
 
 ---
 
@@ -1045,7 +874,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 8: レコード構築・フィールドアクセスと動的等価判定
 
-#### 1. レコード型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/record_ops.rs`)
+#### 1. レコード型検査パーツ群 (`seeds/core.json`)
 
 - `core.record-field-type-lookup`:
   `list<{ key: string, value: type-ast }> -> string -> number -> optional<type-ast>`
@@ -1055,7 +884,7 @@ validate-module: module-definition -> list<entry> -> boolean
   レコードリテラルを走査し、各フィールド式を `core.type-check`
   で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
 
-#### 2. レコード動的評価パーツ群 (`seeds/core.json`、旧 `builtin_evaluator/record_eval.rs`)
+#### 2. レコード動的評価パーツ群 (`seeds/core.json`)
 
 - `core.record-field-lookup`:
   `list<{ key: string, value: value }> -> string -> number -> value`
@@ -1065,7 +894,7 @@ validate-module: module-definition -> list<entry> -> boolean
   レコードリテラルの全フィールド式を `core.eval-value`
   で動的評価して動的レコード `core.value::record` を構築。
 
-#### 3. レコード動的等価判定パーツ (`seeds/core.json`、旧 `builtin_value_type.rs`)
+#### 3. レコード動的等価判定パーツ (`seeds/core.json`)
 
 - `core.value-equals-record-fields`:
   `list<{ key: string, value: value }> -> list<{ key: string, value: value }> -> number -> boolean`
@@ -1076,7 +905,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 9: 直和型（Union）・パターンマッチ（Match）の自己ホスト型検査 & 網羅性検証
 
-#### 1. 直和型探索・検証パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/union_lookup.rs`)
+#### 1. 直和型探索・検証パーツ群 (`seeds/core.json`)
 
 - `core.union-variant-type-lookup`:
   `list<{ tag: string, payload: optional<type-ast> }> -> string -> number -> result<type-ast, type-error>`
@@ -1095,7 +924,7 @@ validate-module: module-definition -> list<entry> -> boolean
   実際の直和型の全バリアントが期待される直和型に含まれ、ペイロード型が代入適合しているか（直和型の双対的幅サブタイピング:
   $Actual \subseteq Expected$）を再帰検証。
 
-#### 2. パターンマッチ型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`)
+#### 2. パターンマッチ型検査パーツ群 (`seeds/core.json`)
 
 - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` と
   `core.type-check-match-arms-skipped` の 2 段階に置き換え）:
@@ -1111,7 +940,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 10: リスト式（List Literal）の自己ホスト型検査 & 共変サブタイピング
 
-#### 1. リスト型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/list_ops.rs`)
+#### 1. リスト型検査パーツ群 (`seeds/core.json`)
 
 - `core.type-check-list-items`:
   `list<expression> -> type-env -> number -> type-ast -> type-result`
@@ -1123,20 +952,20 @@ validate-module: module-definition -> list<entry> -> boolean
   を返却し、1個以上の場合は先頭要素から型を推論して残りの要素を
   `core.type-check-list-items` で検証。
 
-#### 2. リスト型の共変サブタイピング (`seeds/core.json`、旧 `builtin_type_checker/assignable.rs`)
+#### 2. リスト型の共変サブタイピング (`seeds/core.json`)
 
 - リスト型は要素型に関して共変（Covariant）です：
   $ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$
   要素型がレコードの幅サブタイピング（$Expected \subseteq Actual$）を満たす場合、リスト全体も自動的に代入適合となります。
 
-#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`seeds/core.json`、旧 `builtin_evaluator/list_eval.rs`, `builtin_value_type.rs`)
+#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`seeds/core.json`)
 
 - `core.eval-list-items`:
   `list<expression> -> env -> number -> list<value> -> list<value>`
   リスト式内の全要素式をインデックス順に `core.eval-value`
   で動的評価し、累積リストへ追加して `list<value>` を構築。
 - `core.eval-value`: `list` アームにおいて `core.eval-list-items`
-  を呼び出し、評価結果を `value.list`（`Value::List`）として返却。
+  を呼び出し、評価結果を `value.list`として返却。
 - `core.value-equals-list-items`:
   `list<value> -> list<value> -> number -> boolean`
   2つのリスト値の長さおよび全要素を `core.value-equals` で再帰比較。
@@ -1147,86 +976,20 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### 完全自己ホストコンパイル & メタ循環実行の実証
 
-definy
-のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
-end-to-end メタ循環実行がすべて実証されています。 テストコードは責務に応じて
-`ast_structure_tests.rs`（静的構造検証）、`execution_tests.rs`（動的実行実証）、
-`record_tests.rs`（レコード検証）、`union_tests.rs`（直和型・パターンマッチ型検証）、`list_tests.rs`（リスト型検証）、`part_reference_tests.rs`（パーツ参照検証）、`validator_tests.rs`（バリデータ検証）、および共通ヘルパー
-`helpers.rs` に分割・整理されています。
+旧 Rust 版のテスト (`self_hosting_tests`) で, 評価器 (`core.eval-ast`, `core.eval-value`)・整形器・型チェッカー
+(レコード・直和型・match の網羅性・リストの共変性・パーツ参照)・`core.validate-part` / `core.validate-module`・
+`core.compile-to-wasm`・`core.optimize-expression` を一通り実行して確かめていた。今は次のテストが受け持つ。
 
-| テスト関数名                                                        | 検証対象パーツ                                      | 入力・実行内容                                                   | 実証された結果                                 |
-| :------------------------------------------------------------------ | :-------------------------------------------------- | :--------------------------------------------------------------- | :--------------------------------------------- |
-| `test_self_hosted_meta_circular_eval_ast_execution`                 | `core.eval-ast`                                     | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                         | 自己評価値 `95`                                |
-| `test_self_hosted_expression_to_source_execution`                   | `core.expression-to-source`                         | 加算式 AST `add(10, 20)`                                         | 整形文字列 `"((<number> + <number>))"`         |
-| `test_self_hosted_meta_circular_eval_value_execution`               | `core.eval-value`                                   | 加算式 AST `add(10, 25)` と空環境 `[]`                           | 動的値 `number(35)`                            |
-| `test_self_hosted_type_checker_execution`                           | `core.type-check`                                   | 加算式 AST `add(10, 20)` と空型環境 `[]`                         | 型推論結果 `ok(number)`                        |
-| `test_self_hosted_validate_part_execution`                          | `core.validate-part`                                | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }`         | 判定結果 `true`                                |
-| `test_self_hosted_validate_module_execution`                        | `core.validate-module`                              | 正常なモジュール定義（`true`）と空名不正モジュール（`false`）    | 判定結果 `true` / `false`                      |
-| `test_self_hosted_compile_to_wasm_execution`                        | `core.compile-to-wasm`                              | 式 `15 + 27` から自己ホストで Wasm バイナリを生成                | 生成された Wasm を VM で実行し `42` を算出     |
-| `test_self_hosted_optimize_expression_execution`                    | `core.optimize-expression` + `core.compile-to-wasm` | 多項式 `(10 * 3) + 12` を `42` に定数畳み込み最適化し Wasm 生成  | 最適化された Wasm を実行し `42` を算出         |
-| `test_self_hosted_value_equals_execution`                           | `core.value-equals`                                 | 数値・文字列・真偽値の動的値等価比較                             | 判定結果 `true` / `false`                      |
-| `test_self_hosted_eval_value_variant_and_match_execution`           | `core.eval-value` + `core.eval-match-arms`          | AST `match variant("some", 42) { some(x) => x + 8 }`             | パターンマッチ自己実行で `50` を算出           |
-| `test_self_hosted_list_map_and_fold_execution`                      | `core.list-map` + `core.list-fold`                  | `map (*2) [1,2,3]` および `fold (+) 0 [10,20,30]`                | `[2, 4, 6]` および `60` を算出                 |
-| `test_self_hosted_record_type_checking_execution`                   | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査            | 推論型 `ok(record({ x: number, y: str }))`     |
-| `test_self_hosted_record_get_type_checking_execution`               | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー    | 成功型 `ok(number)` および `not_a_record`      |
-| `test_self_hosted_record_eval_value_and_get_execution`              | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`              | 動的値 `number(42)`                            |
-| `test_self_hosted_record_value_equals_execution`                    | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }`  | 判定結果 `true` / `false`                      |
-| `test_self_hosted_validate_part_with_record_expression`             | `core.validate-part`                                | レコード式を本体に持つパーツ定義の自己妥当性検証                 | 判定結果 `true`                                |
-| `test_self_hosted_variant_type_inference_and_subtyping`             | `core.type-check` + `core.type-assignable`          | `variant("some", 42)` 単体型推論と `Option<number>` への代入適合 | 推論型 `ok(union([some(num)]))` および `true`  |
-| `test_self_hosted_variant_none_inference_and_against`               | `core.type-check` + `core.type-check-against`       | 引数なし `variant("none")` の型推論および期待型検査              | 推論型 `ok(union([none]))` および適合成功      |
-| `test_self_hosted_match_expression_type_checking`                   | `core.type-check`                                   | `match variant("some", 42) { none => 0, some(n) => n + 1 }`      | 全アーム型一致・網羅性検証成功 `ok(number)`    |
-| `test_self_hosted_match_expression_detects_type_mismatch`           | `core.type-check`                                   | アーム間で戻り値型が異なる match 式（`0` と `"not zero"`）       | 型エラー `type_mismatch` 検出                  |
-| `test_self_hosted_match_expression_detects_non_exhaustive_arms`     | `core.type-check`                                   | `some` アームのみで `none` を欠く match 式                       | 網羅性欠落エラー `non_exhaustive_match` 検出   |
-| `test_self_hosted_match_expression_detects_unknown_variant`         | `core.type-check`                                   | 対象直和型に存在しないタグ `other` を照合する match 式           | 未知タグエラー `variant_not_found` 検出        |
-| `test_self_hosted_list_number_type_inference`                       | `core.type-check`                                   | 数値リスト `[10, 20, 30]` の型推論                               | 推論型 `ok(list({ item_type: number }))`       |
-| `test_self_hosted_list_string_type_inference`                       | `core.type-check`                                   | 文字列リスト `["hello", "world"]` の型推論                       | 推論型 `ok(list({ item_type: string }))`       |
-| `test_self_hosted_empty_list_inference_fails_without_expected_type` | `core.type-check`                                   | 期待型のない空リスト `[]` の推論拒否                             | エラー `cannot_infer_empty_list` 検出          |
-| `test_self_hosted_empty_list_checked_against_expected_type`         | `core.type-check-against`                           | 期待型 `list<number>` に対する空リスト `[]` の適合               | 期待型適合 `ok(list({ item_type: number }))`   |
-| `test_self_hosted_list_heterogeneous_items_detects_mismatch`        | `core.type-check`                                   | 異種要素リスト `[10, "string"]` の要素型検査                     | 要素型不一致 `type_mismatch` 検出              |
-| `test_self_hosted_list_covariant_subtyping`                         | `core.type-assignable` + `core.type-check-against`  | レコードリスト `list<{x, y}>` から `list<{x}>` への共変代入適合  | 共変代入適合 `true` および検査成功             |
-| `test_self_hosted_part_type_lookup_direct`                          | `core.part-type-lookup`                             | パーツ型環境 `part-type-env` からのハッシュ直引き探索            | 宣言型 `ok(type)` または `part_not_found`      |
-| `test_self_hosted_part_reference_type_checking`                     | `core.type-check`                                   | `part_reference` 式およびパーツ参照を含む複合演算式の型推論      | 推論型 `ok(number)` または `part_not_found`    |
-| `test_self_hosted_part_reference_check_against`                     | `core.type-check-against`                           | 期待型に対する `part_reference` の整合性検査                     | 合致時 `ok(type)`、不一致時 `type_mismatch`    |
-| `test_self_hosted_validate_module_with_part_references`             | `core.validate-module`                              | パーツ参照を含む複数パーツモジュールの一括型環境構築と自己検証   | 判定結果 `true`、未知参照/型不一致時は `false` |
+- `src/eval_value_conformance.test.ts`: `core.eval-value` を適合テストの全ケースで動かす ([eval-conformance.md](eval-conformance.md))
+- `src/stage1_conformance.test.ts` / `src/stage1_fixed_point.test.ts`: コンパイラの適合テストと不動点
+- `src/self_hosted_type_check.test.ts` / `worker/type_check.test.ts`: seed の全パーツの型検査とコミットの検査
+- `src/validate_module.test.ts`: `core.validate-module`
 
 ---
 
 ## 実装アーキテクチャとノウハウ
 
-ビルトインパーツの AST を Rust で手組みしていた時期のファイル分割・コード共通化に関するノウハウは、
-seed JSON を正本にした際に対象コードごと削除したため省略しています（必要なら git 履歴を参照）。
-
-### 1. テストスイートのモジュール分割と DRY 化
-
-セルフホスティングのテストが 1000
-行近くに達した際、以下の設計方針で分割・整理を行いました：
-
-- **`helpers.rs`**:
-  テスト用アカウント生成（`get_test_account_and_mod_id`）、イベントコミット生成（`create_test_module_events`）、AST
-  構築簡易ヘルパー（`ast_num`,
-  `ast_add`）、パーツ呼び出しビルダー（`call_part1`, `call_part2`,
-  `call_part3`）、および Wasm
-  バイト列抽出ヘルパー（`value_list_to_u8_vec`）を集約。型エイリアス
-  `TestEvents` によりシグネチャの複雑さを抑制。
-- **`ast_structure_tests.rs`**:
-  ビルトインパーツの登録、および各パーツの式が意図通りの
-  AST（パターンマッチ分岐やタグの網羅性）を持つことを検証。
-- **`execution_tests.rs`**: 実際にパーツを definy
-  実行系に登録し、メタ循環評価を実行して期待通りの値が返ることを実証。
-
-### 2. Wasm コンパイラにおけるワイルドカード（`_`）パターンの無条件マッチ処理
-
-パターンマッチ（`MatchExpression`）の Wasm
-生成処理（`adt_ops::emit_match_arms`）では、通常各アームの `tag`
-とターゲット値のタグ文字列の等価比較（`emit_string_eq`）を出力します。
-しかしフォールスルー用のワイルドカードアーム（`arm.tag == "_"`）に対しても文字列
-`"_"` との比較を行ってしまうと、他のタグにマッチせず `default`（未指定時は
-`Number(0)`）へ誤ってフォールスルーしてしまいます。
-これを解消するため、`arm.tag == "_"`
-の場合はタグ比較を行わずに無条件でアーム本体を展開するよう改善し、Rust の
-`_ => ...` と同等の挙動と実行速度を実現しました。
-
-### 3. 直積型（Record）と直和型（Union）のサブタイピングの双対性（Duality）
+### 1. 直積型（Record）と直和型（Union）のサブタイピングの双対性（Duality）
 
 definy
 の自己記述型チェッカー（`core.type-assignable`）における構造的部分型（Structural
@@ -1241,7 +1004,7 @@ Subtyping）は、直積型と直和型で完全な圏論的双対性（Duality�
 `union([ some(number) ])`
 が、`Option<number>`（`union([ none, some(number) ])`）の期待型スロットへアノテーションなしで透過的に代入・適合可能となります。
 
-### 4. リストの双方向型推論（Bidirectional Type Checking）と共変性
+### 2. リストの双方向型推論（Bidirectional Type Checking）と共変性
 
 リスト式（`list` リテラル）の型付けでは、空リスト `[]`
 の曖昧性を双方向型推論によりエレガントに解決しています：

@@ -1,12 +1,11 @@
 /**
  * definy 製の型チェッカー (`core.type-check-against`) でパーツの式を型検査する.
- * 旧 Rust 版 `definy_core::self_hosted_type_check` の移植.
  *
  * 型チェッカー本体は stage1 で 1 度だけ Wasm にコンパイルし (`compileTypeChecker`), 全モジュールの最新のパーツと
  * コミットするパーツを書き込んで definy 製の `core.type-checker` で型環境と検査するパーツを決めてから,
  * パーツごとに検査する式と期待する型を書き込んで呼ぶ (`createTypeCheckSession`).
  * サーバーの `SubmitEvent` の検査と UI の型エラー表示が同じ関数を使う
- * (docs/self-hosting.md の「definy 製型チェッカーの実行 (TypeScript 版)」).
+ * (docs/self-hosting.md の「definy 製型チェッカーの実行」).
  */
 import {
   instantiateCompiledFunction,

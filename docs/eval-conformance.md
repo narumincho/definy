@@ -12,8 +12,6 @@ definy の式評価について、共有テストケース `conformance/eval_cas
    `parts` と同じ形) と一緒に `core.eval-value(expr, [], parts)` に渡し, その呼び出しを stage1 でコンパイルして実行します。
    返った `core.value` を正規化表現に直して比べます。`src/eval_value_conformance.test.ts` で 67 件すべてがパスします。
 
-> **歴史的注記（旧 Rust 実装・廃止済み）**: 移行前は TypeScript 製評価器や Rust サーバー（wasmtime、wasmi ネイティブ、wasmi wasm32 の `definy-worker-runtime`）との比較にも使用されていました。
-
 ## テストケース
 
 `conformance/eval_cases.json` に `name` / `expression` / `expected` の組で定義されています。
@@ -41,7 +39,7 @@ stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取
 
 1. **式**: `core.expression` の値。`core.plus` の呼び出しは `Variant("call", {function: Variant("part_reference", ...), arguments})` のように,
    リテラル (`Variant` / `TypeLiteral` / `ListLiteral` / `Number` / `String` / `Boolean`) だけの木で表します。
-   変換は `definyAstToSelfHostedAst` (旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植) が行います。
+   変換は `definyAstToSelfHostedAst` (`src/stage1_compiler.ts`) が行います。
    - `Match` の束縛しないアームの `variable_id` は `-1`, `default` はワイルドカードアーム `_` にします。
    - `Variant` の payload は `some(式)` / `none` で包みます。
    - `PartReference` の ID (CBOR 由来のバイト列, seed 由来の数値配列) は URL-safe Base64 の文字列にします。

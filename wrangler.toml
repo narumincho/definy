@@ -3,9 +3,6 @@
 name = "definy"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "definy-db"
