@@ -8,6 +8,7 @@ import {
   type NavKey,
   type NavNode,
 } from "./keyboard.ts";
+import type { DefinitionTarget } from "./go_to_definition.ts";
 
 export type UseTreeKeyboardParams = {
   readonly containerRef: RefObject<HTMLDivElement | null>;
@@ -22,10 +23,12 @@ export type UseTreeKeyboardParams = {
   readonly closeMenu: () => void;
   readonly handleClear: (path: ReadonlyArray<PathStep>) => void;
   readonly setInlineEdit: (inline: boolean) => void;
-  /** 選んだ式が参照する変数の定義 (変数名) のパス. F12 で移動する. 無ければ `null` */
+  /** 選んだ式が参照する変数・パーツの定義. F12 で移動する. 無ければ `null` */
   readonly findDefinition: (
     path: ReadonlyArray<PathStep>,
-  ) => ReadonlyArray<PathStep> | null;
+  ) => DefinitionTarget | null;
+  /** パーツの詳細ページを開く (パーツの定義への移動) */
+  readonly openPart: (partIdHash: string) => void;
 };
 
 export type TreeKeyboardOperations = {
@@ -48,6 +51,7 @@ export function useTreeKeyboard({
   handleClear,
   setInlineEdit,
   findDefinition,
+  openPart,
 }: UseTreeKeyboardParams): TreeKeyboardOperations {
   const focusContainer = useCallback((): void => {
     containerRef.current?.focus({ preventScroll: true });
@@ -148,8 +152,10 @@ export function useTreeKeyboard({
         e.preventDefault();
         const definition =
           selectedPath === null ? null : findDefinition(selectedPath);
-        if (definition !== null) {
-          selectInTree(definition);
+        if (definition?.kind === "variable") {
+          selectInTree(definition.path);
+        } else if (definition?.kind === "part") {
+          openPart(definition.partIdHash);
         }
         return;
       }
@@ -184,6 +190,7 @@ export function useTreeKeyboard({
       collectNavNodes,
       exitTree,
       findDefinition,
+      openPart,
       handleClear,
       nodeIndex,
       onExit,

@@ -14,6 +14,13 @@ export type TreeLayoutRendererProps = {
   readonly inlineEdit?: boolean;
   readonly editable?: boolean;
   readonly onSelectNode?: (id: string, path: ReadonlyArray<PathStep>) => void;
+  /**
+   * Ctrl / Cmd + クリックした名前 (子の無いノード) の定義へ移動する.
+   * 移動できたら `true` を返し, 移動先が無ければ `false` を返す (そのときは普通に選ぶ)
+   */
+  readonly onGoToDefinition?: (path: ReadonlyArray<PathStep>) => boolean;
+  /** Ctrl / Cmd を押しながらホバーしている, 定義へ移動できる名前のノードの ID. 下線を引く */
+  readonly linkNodeId?: string | null;
   readonly onToggleCollapse?: (id: string) => void;
   readonly onChangeNumber?: (
     path: ReadonlyArray<PathStep>,
@@ -129,6 +136,8 @@ export function TreeLayoutRenderer(
     inlineEdit = true,
     editable = false,
     onSelectNode,
+    onGoToDefinition,
+    linkNodeId,
     onToggleCollapse,
     onChangeNumber,
     onChangeString,
@@ -150,6 +159,13 @@ export function TreeLayoutRenderer(
 
   function handleSelect(e: React.MouseEvent): void {
     e.stopPropagation();
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      node.children.length === 0 &&
+      onGoToDefinition?.(node.path) === true
+    ) {
+      return;
+    }
     onSelectNode?.(node.id, node.path);
   }
 
@@ -281,6 +297,7 @@ export function TreeLayoutRenderer(
         node={node}
         isSelected={isSelected}
         isHovered={isHovered}
+        isLink={linkNodeId === node.id}
         state={state}
         inlineEdit={inlineEdit}
         editable={editable}
@@ -465,6 +482,7 @@ export function TreeLayoutRenderer(
 function LeafNodeRenderer({
   node,
   isSelected,
+  isLink,
   state,
   anchorName,
   inlineEdit,
@@ -478,6 +496,8 @@ function LeafNodeRenderer({
   readonly node: LayoutNode;
   readonly isSelected: boolean;
   readonly isHovered: boolean;
+  /** Ctrl / Cmd を押しながらホバーしていて, クリックで定義へ移動できる */
+  readonly isLink: boolean;
   readonly state: string;
   readonly anchorName?: string;
   readonly inlineEdit: boolean;
@@ -629,6 +649,7 @@ function LeafNodeRenderer({
         className="tree-badge"
         data-state={state}
         data-type-error={typeErrorMarker !== null ? "true" : undefined}
+        data-link={isLink ? "true" : undefined}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -642,6 +663,9 @@ function LeafNodeRenderer({
           cursor: "pointer",
           userSelect: "none",
           whiteSpace: "nowrap",
+          ...(isLink
+            ? { textDecoration: "underline", textUnderlineOffset: "0.15em" }
+            : {}),
         }}
       >
         {content}

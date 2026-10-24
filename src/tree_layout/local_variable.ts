@@ -12,7 +12,6 @@ import {
   matchArmVariableIndex,
   renameMatchArmVariable,
 } from "./match_pattern.ts";
-import type { SelectorOption } from "./selector_options.ts";
 import type { PathStep } from "./types.ts";
 import { field, variantPayload } from "../definy_value.ts";
 import {
@@ -182,25 +181,4 @@ export function findVariableDefinitionPath(
     return null;
   }
   return definitionsInScope(expr, path).get(id) ?? null;
-}
-
-/** 置換メニューの「定義へ移動」の選択肢の value */
-export const GO_TO_DEFINITION = "action:go-to-definition";
-
-/** 選んだ式が定義の分かる変数を参照していれば, 置換メニューに出す「定義へ移動」の選択肢 */
-export function goToDefinitionOption(
-  expr: unknown,
-  path: ReadonlyArray<PathStep>,
-): ReadonlyArray<SelectorOption> {
-  return findVariableDefinitionPath(expr, path) === null
-    ? []
-    : [
-        {
-          value: GO_TO_DEFINITION,
-          name: "go-to-definition",
-          detail: "F12",
-          category: "Local",
-          returnType: "any",
-        },
-      ];
 }

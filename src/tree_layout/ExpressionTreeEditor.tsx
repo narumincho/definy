@@ -20,7 +20,8 @@ import {
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { pathToString, type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
-import { label, localizedText } from "../language.ts";
+import { label, localizedText, withLanguage } from "../language.ts";
+import { useRouter } from "@void/react";
 import {
   expectedTypeFromTypeAst,
   findExpressionTypeAt,
@@ -34,6 +35,7 @@ import { isTextInput, type NavKey } from "./keyboard.ts";
 import {
   collectNodeIndex,
   findExpressionNode,
+  findNodeById,
   findSelectedNode,
 } from "./selection.ts";
 import { useTreeKeyboard } from "./useTreeKeyboard.ts";
@@ -47,12 +49,12 @@ import {
   probeMatchTargetType,
   type PatternVariant,
 } from "./match_pattern.ts";
+import { isVariableNamePath, renameVariableAt } from "./local_variable.ts";
 import {
-  findVariableDefinitionPath,
+  findDefinitionTarget,
   GO_TO_DEFINITION,
-  isVariableNamePath,
-  renameVariableAt,
-} from "./local_variable.ts";
+  type DefinitionTarget,
+} from "./go_to_definition.ts";
 import { applyListAction, isListAction } from "./list_items.ts";
 import { applyLetAction, isLetAction } from "./let_bindings.ts";
 import { expectedVariantsFromTypeAst } from "./variant.ts";
@@ -420,9 +422,23 @@ export function ExpressionTreeEditor({
   );
 
   const findDefinition = useCallback(
-    (path: ReadonlyArray<PathStep>) =>
-      findVariableDefinitionPath(expression, path),
+    (path: ReadonlyArray<PathStep>): DefinitionTarget | null =>
+      findDefinitionTarget(expression, path),
     [expression],
+  );
+
+  const router = useRouter();
+  /** パーツの詳細ページを開く. 開けるパーツでなければ `false` */
+  const openPart = useCallback(
+    (partIdHash: string): boolean => {
+      const part = partsByIdHash.get(partIdHash);
+      if (part === undefined) {
+        return false;
+      }
+      router.visit(withLanguage(`/part/${part.partId}`, language));
+      return true;
+    },
+    [language, partsByIdHash, router],
   );
 
   /** 選んだ式をクリップボードに書く JSON 文字列. 式でない位置なら `null` */
@@ -491,7 +507,56 @@ export function ExpressionTreeEditor({
     handleClear,
     setInlineEdit,
     findDefinition,
+    openPart,
   });
+
+  /** 定義へ移動する (Ctrl / Cmd + クリック). 移動先が無ければ `false` */
+  const goToDefinition = useCallback(
+    (path: ReadonlyArray<PathStep>): boolean => {
+      const definition = findDefinition(path);
+      if (definition === null) {
+        return false;
+      }
+      if (definition.kind === "part") {
+        return openPart(definition.partIdHash);
+      }
+      keyboard.selectInTree(definition.path);
+      return true;
+    },
+    [findDefinition, keyboard, openPart],
+  );
+
+  // Ctrl / Cmd を押している間は, ホバーしている名前が定義へ移動できるなら下線を引く (VSCode と同じ)
+  const [modifierHeld, setModifierHeld] = useState(false);
+  useEffect(() => {
+    const update = (e: KeyboardEvent | MouseEvent): void => {
+      setModifierHeld(e.ctrlKey || e.metaKey);
+    };
+    const release = (): void => {
+      setModifierHeld(false);
+    };
+    window.addEventListener("keydown", update);
+    window.addEventListener("keyup", update);
+    window.addEventListener("mousemove", update);
+    window.addEventListener("blur", release);
+    return () => {
+      window.removeEventListener("keydown", update);
+      window.removeEventListener("keyup", update);
+      window.removeEventListener("mousemove", update);
+      window.removeEventListener("blur", release);
+    };
+  }, []);
+  const linkNodeId = useMemo(() => {
+    if (!modifierHeld || hoveredId === null) {
+      return null;
+    }
+    const node = findNodeById(layoutRoot, hoveredId);
+    return node !== null &&
+      node.children.length === 0 &&
+      findDefinition(node.path) !== null
+      ? hoveredId
+      : null;
+  }, [findDefinition, hoveredId, layoutRoot, modifierHeld]);
 
   // OS のクリップボードを使うコピー・切り取り・貼り付け (Ctrl/Cmd + C / X / V).
   // フォーカスのある要素に入力欄が無いとき copy / paste イベントは body に届くので, document で受けて
@@ -560,9 +625,8 @@ export function ExpressionTreeEditor({
     (optionValue: string): void => {
       if (!selectedPath || !onChange) return;
       if (optionValue === GO_TO_DEFINITION) {
-        const definition = findVariableDefinitionPath(expression, selectedPath);
-        if (definition !== null) {
-          keyboard.selectInTree(definition);
+        if (!goToDefinition(selectedPath)) {
+          keyboard.returnToTree();
         }
         return;
       }
@@ -638,6 +702,7 @@ export function ExpressionTreeEditor({
       clipboardTextAt,
       cutAt,
       expression,
+      goToDefinition,
       keyboard,
       menu.currentOptionValue,
       onChange,
@@ -723,6 +788,8 @@ export function ExpressionTreeEditor({
         onSelectNode={(_id, path) => {
           menu.openMenu(path);
         }}
+        onGoToDefinition={goToDefinition}
+        linkNodeId={linkNodeId}
         onToggleCollapse={toggleCollapse}
         onChangeNumber={handleChangeNumber}
         onChangeString={handleChangeString}

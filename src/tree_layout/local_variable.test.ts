@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import {
   findVariableDefinitionPath,
-  goToDefinitionOption,
   isVariableNamePath,
   renameVariableAt,
 } from "./local_variable.ts";
@@ -144,8 +143,6 @@ describe("findVariableDefinitionPath", () => {
   it("変数でない式・定義が式の中に無い変数は null", () => {
     expect(findVariableDefinitionPath(expression, listPath)).toBeNull();
     expect(findVariableDefinitionPath(variable(9), [])).toBeNull();
-    expect(goToDefinitionOption(expression, listPath)).toEqual([]);
-    expect(goToDefinitionOption(expression, item(0))).toHaveLength(1);
   });
 
   it("内側の定義が外側の同じ ID の定義を隠す", () => {

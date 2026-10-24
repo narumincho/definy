@@ -158,8 +158,14 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   (置換メニューは出さない). 変数は ID で参照しているので, 名前だけを変えれば参照する側の式は変えなくてよい.
   let の変数名は束縛の値とは別のパス `letBindingName` (式ではない) にしている.
   実装は [src/tree_layout/local_variable.ts](../src/tree_layout/local_variable.ts) の `renameVariableAt`
-- 定義への移動: 変数 (と関数型の変数の呼び出し) を選んだときの `go-to-definition`, またはツリーで F12.
-  その変数を定義している名前 (関数の引数名・let の変数名・match で束縛する変数の名前) を選ぶ.
+- 定義への移動: 変数・パーツの参照 (とその呼び出し) を選んだときの `go-to-definition`, ツリーで F12,
+  または名前を Ctrl / Cmd + クリック (VSCode などの IDE と同じ).
+  変数ならその変数を定義している名前 (関数の引数名・let の変数名・match で束縛する変数の名前) を選び,
+  パーツならそのパーツの詳細ページ (`/part/{id}`) を開く. 移動先は
+  [src/tree_layout/go_to_definition.ts](../src/tree_layout/go_to_definition.ts) の `findDefinitionTarget` で決める.
+  Ctrl / Cmd + クリックは子の無いノード (名前) だけが対象で, 移動先が無ければ普通のクリックと同じく選ぶ.
+  Ctrl / Cmd を押している間は, ホバーしている名前が移動できるならバッジに下線を引く (`data-link="true"`).
+  macOS の Ctrl + クリックはブラウザが右クリックとして扱うので, Mac では Cmd + クリックを使う.
   定義はルートから選んだ式までのパスを降りながら集め (`findVariableDefinitionPath`), 内側の定義が外側の同じ ID を隠す.
   let の束縛の値からはそれより前の束縛だけが見える. 定義が式の外 (未定義の変数) なら選択肢を出さない
 - リストの要素の操作 ([src/tree_layout/list_items.ts](../src/tree_layout/list_items.ts)):

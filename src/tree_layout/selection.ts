@@ -319,6 +319,18 @@ export function collectNodeIndex(node: LayoutNode): ReadonlyArray<{
   ];
 }
 
+/** その ID のノードを探す */
+export function findNodeById(node: LayoutNode, id: string): LayoutNode | null {
+  if (node.id === id) {
+    return node;
+  }
+  for (const child of node.children) {
+    const found = findNodeById(child, id);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
 /** そのパスの式を表すノード (式 1 つ分のノード) を探す */
 export function findExpressionNode(
   node: LayoutNode,
