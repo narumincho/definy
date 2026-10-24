@@ -4,7 +4,6 @@ import {
   AboutIcon,
   AccountsIcon,
   ChangesIcon,
-  DeployIcon,
   EventsIcon,
   HistoryIcon,
   ModuleIcon,
@@ -65,13 +64,6 @@ const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
     en: "Accounts",
     ja: "アカウント",
     eo: "Kontoj",
-  },
-  {
-    path: "/deployments",
-    icon: DeployIcon,
-    en: "Deploy",
-    ja: "デプロイ",
-    eo: "Deplojo",
   },
 ];
 

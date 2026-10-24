@@ -13,7 +13,8 @@ definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシ�
 
 - `events`: 署名済みイベント (`event_hash` PK, `signed_event_bytes`, `account_id`, `event_type`, `created_at_rfc3339`, `time_ms`)
 - `cas_contents`: Content-Addressed Storage (`content_hash` PK, `content_bytes`)
-- `deployments`: エッジデプロイ履歴 (`id` PK, `machine_id`, `commit_hash`, `status`, `url`, `app_url`, `region`, `created_at_rfc3339`, `wasm_hash`, `provider`)
+
+以前あったデプロイ履歴の `deployments` テーブルは, `DeployService` とともに削除した ([cloudflare-workers.md](cloudflare-workers.md))。
 
 ## スキーマ初期化とシードデータ投入
 
@@ -23,8 +24,6 @@ definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシ�
 2. **シードデータの自動投入**: イベント件数が 0 件の場合、組み込みシードバンドル（`/__definy_seed_bundle.json`。ビルド時に `seeds/*.json` から生成する）をロードして自動同期します。イベントが既に存在する場合は再シードはスキップされます。
 3. **ローカル D1 の手動初期化**:
    `bash scripts/ensure-d1.sh --local` により、ローカル D1 に `migrations/0001_initial_schema.sql` を適用することも可能です。
-4. **セルフホストデプロイ時 (`DeployService/DeployCloudflare`)**:
-   definy 上のデプロイ処理の一部として `seedD1: true` を指定すると、バインドされた D1 データベースに対して `store.seedD1(env.DB)` が実行されます。
 
 > **歴史的注記（旧 Rust 実装・廃止済み）**:
 > 以前はデプロイ時に `cargo run -p definy-server --release -- --export-seed-sql target/definy_seed.sql` でシード SQL を生成し、`scripts/ensure-d1.sh` から `wrangler d1 execute` で投入していましたが、現在は Worker の `ensureSeeded` による自動投入に一本化され、SQL 生成スクリプト・投入処理は削除されました。

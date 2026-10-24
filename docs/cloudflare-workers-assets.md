@@ -4,7 +4,7 @@
 > 従来の Dioxus クライアント（旧 Rust 実装・廃止済み）から、**Void (Vite 8) + React 19** を用いたフルスタック統合構成への移行が行われました。
 > Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括ビルドされます。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
 
-definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Workers Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS コンテンツ配信、自己デプロイ等のバックエンド API もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
+definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Workers Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS コンテンツ配信等のバックエンド API もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
 
 ---
 
@@ -24,14 +24,14 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
     └── Worker スクリプト (dist/ssr/index.js) ── SSR & エッジ API 処理
           ├── SSR HTML レスポンス（セキュリティヘッダー付与）
           ├── EventService (/definy.v1.EventService/*)
-          ├── DeployService (/definy.v1.DeployService/*) ── Cloudflare REST API v4 へ直接デプロイ (app.wasm 同梱)
+          ├── HttpProxyService (/definy.v1.HttpProxyService/Fetch) ── 許可されたアカウントの HTTP リクエストを仲介 (CORS 回避)
           ├── 仮想 Wasm バイナリ (/virtual/wasm/*)
           └── ヘルスチェック (/healthz)
 ```
 
 ### 特徴
 
-- **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS・自己デプロイが完結します。
+- **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS が完結します。デプロイは definy のパーツがブラウザから行います ([cloudflare-workers.md](cloudflare-workers.md))。
 - **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build` の最初に `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で `seeds/*.json` から作られ、`dist/client/` にコピーされて D1 データベースの初期化時に自動同期されます。コミットはしません ([build-artifacts.md](build-artifacts.md))。
 - **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`bash scripts/ensure-d1.sh`、`npm run build`、`wrangler deploy` を実行します。
 
@@ -49,7 +49,6 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 - `worker/`
   - `index.ts`: Worker リクエストハンドラー
   - `store.ts`: シードバンドルロード、D1 (SQLite) ストア
-  - `cloudflare_api.ts`: Cloudflare REST API v4 クライアント
   - `cbor.ts`: 決定論的 CBOR & Ed25519 ユーティリティ
   - `types.ts`: 型定義
 - `scripts/ensure-d1.sh`: D1 データベースのプロビジョニングと UUID バインディング設定スクリプト

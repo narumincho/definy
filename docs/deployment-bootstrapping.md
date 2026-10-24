@@ -237,12 +237,12 @@ graph TD
 
 ### ブートストラップ完了時の姿
 
-| 階層                          | 現在の実装 (TypeScript + React 19 / 旧 Rust)             | ブートストラップ完成時の姿 (definy 言語)                     |
-| :---------------------------- | :------------------------------------------------------- | :----------------------------------------------------------- |
-| **運用層 (Layer 1)**          | `worker/cloudflare_api.ts` (Cloudflare REST API v4)      | definy の純粋パーツ式（Machines API 呼出パーツ）             |
-| **ビルド層 (Layer 2)**        | `npm run build` (Void / Vite 8) / 旧 Rust ツールチェイン | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
-| **I/O・サーバー層 (Layer 3)** | Cloudflare Workers (`worker/index.ts`) / 旧 `axum`       | `wasi:http/outgoing-handler` Capability 注入パーツ           |
-| **UI・エディタ層**            | React 19 コンポーネント (`src/`, `pages/`) / 旧 Dioxus   | definy の UI 表現パーツ・ツリーレイアウト                    |
+| 階層                          | 現在の実装 (TypeScript + React 19 / 旧 Rust)                                                 | ブートストラップ完成時の姿 (definy 言語)                                          |
+| :---------------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| **運用層 (Layer 1)**          | `definy.deploy-to-cloudflare-workers` (definy で書いた, Cloudflare REST API v4 を呼ぶパーツ) | definy の純粋パーツ式（達成済み, [cloudflare-workers.md](cloudflare-workers.md)） |
+| **ビルド層 (Layer 2)**        | `npm run build` (Void / Vite 8) / 旧 Rust ツールチェイン                                     | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ)                      |
+| **I/O・サーバー層 (Layer 3)** | Cloudflare Workers (`worker/index.ts`) / 旧 `axum`                                           | `wasi:http/outgoing-handler` Capability 注入パーツ                                |
+| **UI・エディタ層**            | React 19 コンポーネント (`src/`, `pages/`) / 旧 Dioxus                                       | definy の UI 表現パーツ・ツリーレイアウト                                         |
 
 この 4 階層がすべて definy の式・パーツとして表現された時、definy
 は外部のあらゆる開発環境（Rust, Cargo, Docker, GitHub Actions,
@@ -250,8 +250,8 @@ graph TD
 が、クラウド上で自分自身の次の世代を生み出し続ける」**
 という究極の自己ホスティングが達成されます。
 
-現在、この完全なシーケンスは definy UI の `/deployments`
-画面にて多言語で視覚的に閲覧できるようになっています。
+以前はこのシーケンスを definy UI の `/deployments` 画面で閲覧できたが, デプロイを普通のパーツにしたとき
+(issue #733) に画面ごと削除した。
 
 ---
 

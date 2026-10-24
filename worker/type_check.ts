@@ -25,9 +25,27 @@ import {
   compilerBuiltinName,
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
+import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
-import { systemAccountBytes, type PartStoreReader } from "./part_compiler.ts";
-import type { Env } from "./types.ts";
+import type { Env, EventItem, GetEventsRequest } from "./types.ts";
+
+/** 型検査でストアから読むもの */
+export type PartStoreReader = {
+  readonly getEvents: (
+    req: GetEventsRequest,
+    env?: Env,
+  ) => Promise<ReadonlyArray<EventItem>>;
+  readonly getRawContentBytes: (
+    hash: string,
+    env?: Env,
+  ) => Promise<Uint8Array | undefined>;
+};
+
+/** システムアカウントの公開鍵. 未設定なら seed と同じ開発用の鍵 */
+async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
+  const publicKey = env?.DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?.trim();
+  return publicKey ? base64ToBytes(publicKey) : await devSystemAccountBytes();
+}
 
 const EVENTS_PAGE_SIZE = 500;
 
@@ -283,6 +301,7 @@ export async function checkSubmittedModuleCommit(
       part.partType === "type" ? await withExpression(part, store, env) : part,
     );
   }
+  // コンパイラ組み込みのパーツを置けるのはシステムアカウントのモジュールだけ
   const allowBuiltinParts =
     bytesToUrlSafeBase64NoPad(decoded.accountIdBytes) ===
     bytesToUrlSafeBase64NoPad(await systemAccountBytes(env));

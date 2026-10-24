@@ -10,7 +10,20 @@ export {
   devSystemAccountBytes,
 } from "./system_account.ts";
 
-/** `{"$part": "module.name"}` をパーツ ID（バイト列）に置き換える */
+async function seedPartId(
+  name: string,
+  accountBytes: Uint8Array,
+): Promise<string> {
+  const dot = name.indexOf(".");
+  const moduleId = await deriveModuleIdBytes(accountBytes, name.slice(0, dot));
+  return await deriveModulePartId(moduleId, name.slice(dot + 1));
+}
+
+/**
+ * `{"$part": "module.name"}` をパーツ ID（バイト列）に, `{"$partId": "module.name"}` をパーツ ID の文字列
+ * (URL-safe Base64. 型チェッカーなどが `core.type-ast` の `reference` で比べる形) に置き換える.
+ * `$partId` は definy の式の中でパーツ ID を文字列として使うとき (`{"String": {"value": {"$partId": "core.code"}}}`) に書く
+ */
 export async function resolvePartPlaceholders(
   expr: unknown,
   accountBytes: Uint8Array,
@@ -23,16 +36,12 @@ export async function resolvePartPlaceholders(
   if (expr && typeof expr === "object") {
     const obj = expr as Record<string, unknown>;
     if (typeof obj.$part === "string") {
-      const dot = obj.$part.indexOf(".");
-      const moduleId = await deriveModuleIdBytes(
-        accountBytes,
-        obj.$part.slice(0, dot),
+      return Array.from(
+        base64ToBytes(await seedPartId(obj.$part, accountBytes)),
       );
-      const partId = await deriveModulePartId(
-        moduleId,
-        obj.$part.slice(dot + 1),
-      );
-      return Array.from(base64ToBytes(partId));
+    }
+    if (typeof obj.$partId === "string") {
+      return await seedPartId(obj.$partId, accountBytes);
     }
     const entries = await Promise.all(
       Object.entries(obj).map(async ([key, value]) => [

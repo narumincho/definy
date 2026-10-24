@@ -15,6 +15,7 @@ export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:boolean": "TypeBoolean",
   "expr:type:type": "TypeType",
   "expr:type:list": { TypeList: { item_type: "TypeNumber" } },
+  "expr:type:code": { TypeCode: { value_type: "TypeNumber" } },
   "expr:type:function": {
     TypeFunction: {
       parameters: [{ name: "x", type: "TypeNumber" }],
@@ -267,6 +268,8 @@ export function applySelection(
     newSubExpr = { Hole: {} };
   } else if (selectionValue === "expr:list") {
     newSubExpr = { ListLiteral: { items: [] } };
+  } else if (selectionValue === "expr:quote") {
+    newSubExpr = { Quote: { expression: { Hole: {} } } };
   } else if (selectionValue === "expr:let") {
     // 新しい変数は式全体で使われていない ID にし, 本体はその変数を参照しておく
     const variableId = nextVariableId(expr);

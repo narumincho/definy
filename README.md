@@ -25,8 +25,7 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
 - `middleware/`: Void ミドルウェア (Connect-RPC, `/virtual/wasm/*`, `/healthz` のインターセプトと、SSR レスポンスへのセキュリティヘッダー付与)
 - `worker/`: Cloudflare Worker バックエンド実装
   - `index.ts`: API ハンドラー
-  - `store.ts`: Cloudflare D1 (SQLite) イベント・CAS・デプロイ履歴ストア
-  - `cloudflare_api.ts`: Cloudflare REST API v4 デプロイ連携
+  - `store.ts`: Cloudflare D1 (SQLite) イベント・CAS ストア
   - `cbor.ts`: 決定論的 CBOR & Ed25519 署名ユーティリティ
 - `wasm/`:
   - `stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (68KB, 外部 import ゼロ)

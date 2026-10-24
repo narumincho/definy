@@ -4,7 +4,6 @@ import {
   AboutIcon,
   AccountsIcon,
   ChangesIcon,
-  DeployIcon,
   EventsIcon,
   HistoryIcon,
   ModuleIcon,
@@ -202,18 +201,6 @@ export function CommandPalette(): JSX.Element | null {
       detail: pageDetail,
       href: "/accounts",
       icon: AccountsIcon,
-    },
-    {
-      id: "page-deploy",
-      label: label(
-        language,
-        "Deploy to Cloudflare",
-        "デプロイ (Cloudflare)",
-        "Deplojo",
-      ),
-      detail: pageDetail,
-      href: "/deployments",
-      icon: DeployIcon,
     },
     {
       id: "page-about",

@@ -9,6 +9,7 @@
  * | `"number"` / `"string"` / `"boolean"`     | `"TypeNumber"` / `"TypeString"` / `"TypeBoolean"`        |
  * | `"type"`                                  | `"TypeType"`                                             |
  * | `{ list: T }`                             | `{ TypeList: { item_type: T } }`                         |
+ * | `{ code: T }`                             | `{ TypeCode: { value_type: T } }`                        |
  * | `{ function: { parameters, return_type }}` | `{ TypeFunction: { parameters: [{ name, type }], return_type } }` |
  * | `{ record: [{ key, value }] }`            | `{ TypeLiteral: { items: [{ key, value }] } }`           |
  * | `{ union: [{ tag, payload }] }`           | `{ TypeUnion: { variants: [{ tag, payload_type }] } }`   |
@@ -52,6 +53,9 @@ export function partTypeToExpression(partType: unknown): unknown {
   }
   if ("list" in obj) {
     return { TypeList: { item_type: partTypeToExpression(obj.list) } };
+  }
+  if ("code" in obj) {
+    return { TypeCode: { value_type: partTypeToExpression(obj.code) } };
   }
   if ("function" in obj) {
     const fn = asRecord(obj.function) ?? {};
@@ -110,6 +114,11 @@ export function expressionToPartType(expression: unknown): unknown {
   if ("TypeList" in obj) {
     return {
       list: expressionToPartType(asRecord(obj.TypeList)?.item_type),
+    };
+  }
+  if ("TypeCode" in obj) {
+    return {
+      code: expressionToPartType(asRecord(obj.TypeCode)?.value_type),
     };
   }
   if ("TypeFunction" in obj) {

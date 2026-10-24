@@ -56,6 +56,13 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "list",
   },
   {
+    value: "expr:quote",
+    name: "quote",
+    detail: "Code<T>",
+    category: "Syntax",
+    returnType: "any",
+  },
+  {
     value: "expr:let",
     name: "let",
     detail: "x = 0",
@@ -137,6 +144,13 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     value: "expr:type:list",
     name: "list",
     detail: "List<number>",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:code",
+    name: "code",
+    detail: "Code<number>",
     category: "Type",
     returnType: "any",
   },

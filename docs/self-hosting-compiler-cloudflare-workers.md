@@ -141,6 +141,9 @@ UI、コンパイラ）を配備したとき、それが結果として「definy
 
 ### 2.6 Web UI (`pages/deployments.tsx` / 旧 `definy-ui/src/deployments.rs`)
 
+> [!NOTE]
+> この画面と `DeployService` は削除した。今のデプロイは [cloudflare-workers.md](cloudflare-workers.md) を参照。
+
 - Cloudflare Workers カードにて以下の 4 つのソースモードを切り替え可能:
   1. **JavaScript / ES Module**: 任意の JavaScript/TypeScript
      コードを直接記述して配備。

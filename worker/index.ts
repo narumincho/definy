@@ -1,21 +1,17 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
-import { compilePartToWasm, PartCompileError } from "./part_compiler.ts";
 import { checkSubmittedModuleCommit } from "./type_check.ts";
-import {
-  deployWorkerToCloudflare,
-  listWorkersFromCloudflare,
-} from "./cloudflare_api.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
+import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
 import type {
   CheckMissingHashesRequest,
-  DeployCloudflareRequest,
   Env,
   GetContentRequest,
   GetEventRequest,
   GetEventsRequest,
-  ListCloudflareWorkersRequest,
-  ListDeploymentsRequest,
+  HttpProxyFetchRequest,
+  HttpProxyFetchResponse,
+  HttpProxyHeader,
   SubmitEventRequest,
   UploadContentRequest,
 } from "./types.ts";
@@ -45,6 +41,20 @@ export function isWorkerFirstPath(pathname: string): boolean {
   );
 }
 
+/** カンマ・空白区切りのアカウント ID の一覧に含まれるか. アカウント ID は Base64URL なので大文字小文字を区別する */
+function isListedAccount(
+  accountId: string | undefined | null,
+  list: string | undefined,
+): boolean {
+  const normalized = accountId?.trim() ?? "";
+  if (normalized.length === 0) {
+    return false;
+  }
+  return (list ?? "")
+    .split(/[,;\s]+/)
+    .some((s) => s.length > 0 && s === normalized);
+}
+
 /**
  * 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS`（カンマ・空白区切り）と照合し、
  * アカウントが管理者権限を持つか判定する。アカウント ID は Base64URL なので大文字小文字を区別する。
@@ -54,13 +64,21 @@ export function isAdminAccount(
   accountId: string | undefined | null,
   env: Env,
 ): boolean {
-  const normalized = accountId?.trim() ?? "";
-  if (normalized.length === 0) {
-    return false;
-  }
-  return (env.DEFINY_ADMIN_ACCOUNT_IDS ?? "")
-    .split(/[,;\s]+/)
-    .some((s) => s.length > 0 && s === normalized);
+  return isListedAccount(accountId, env.DEFINY_ADMIN_ACCOUNT_IDS);
+}
+
+/**
+ * `HttpProxyService/Fetch` (CORS の仲介) を使えるアカウントか. 管理者か,
+ * 環境変数 `DEFINY_HTTP_PROXY_ACCOUNT_IDS`（カンマ・空白区切り）にあるアカウント. 未設定なら管理者だけ
+ */
+export function isHttpProxyAccount(
+  accountId: string | undefined | null,
+  env: Env,
+): boolean {
+  return (
+    isAdminAccount(accountId, env) ||
+    isListedAccount(accountId, env.DEFINY_HTTP_PROXY_ACCOUNT_IDS)
+  );
 }
 
 /**
@@ -147,14 +165,14 @@ function parseJsonBody<T>(text: string): T {
 }
 
 /**
- * `Authorization` ヘッダーの署名を検証し、管理者アカウントでなければ例外を投げる
+ * `Authorization` ヘッダーの署名を検証し、`isAllowed` が許すアカウントでなければ例外を投げる
  */
-async function requireAdmin(
+async function requireAccount(
   request: Request,
   pathname: string,
   body: string,
-  env: Env,
   reason: string,
+  isAllowed: (accountId: string) => boolean,
 ): Promise<void> {
   let accountId: string | null;
   try {
@@ -173,13 +191,13 @@ async function requireAdmin(
   if (accountId === null) {
     throw new ConnectError(
       "unauthenticated",
-      `${reason} requires an admin Authorization header`,
+      `${reason} requires an Authorization header`,
     );
   }
-  if (!isAdminAccount(accountId, env)) {
+  if (!isAllowed(accountId)) {
     throw new ConnectError(
       "permission_denied",
-      `${reason} is allowed only for admin accounts`,
+      `${reason} is not allowed for this account`,
     );
   }
 }
@@ -253,9 +271,6 @@ export async function handleWorkerRequest(
   } catch (e) {
     if (e instanceof ConnectError) {
       return connectErrorResponse(e);
-    }
-    if (e instanceof PartCompileError) {
-      return connectErrorResponse(new ConnectError(e.code, e.message));
     }
     if (
       e instanceof InvalidSignedEventError ||
@@ -404,42 +419,17 @@ async function handleRpc(
       );
     }
 
-    case "/definy.v1.DeployService/DeployCloudflare": {
-      const req = parseJsonBody<DeployCloudflareRequest>(body);
-      const usesServerToken = !req.apiToken?.trim();
-      if (usesServerToken || req.seedD1) {
-        await requireAdmin(
-          request,
-          pathname,
-          body,
-          env,
-          usesServerToken ? "Deploying with the server token" : "seedD1",
-        );
-      }
-      return jsonResponse(
-        await deployCloudflare(req, usesServerToken, env, store, fetchFn),
+    case "/definy.v1.HttpProxyService/Fetch": {
+      await requireAccount(
+        request,
+        pathname,
+        body,
+        "HttpProxyService/Fetch",
+        (accountId) => isHttpProxyAccount(accountId, env),
       );
-    }
-
-    case "/definy.v1.DeployService/ListDeployments": {
-      const req = parseJsonBody<ListDeploymentsRequest>(body);
-      return jsonResponse({
-        deployments: await store.listDeployments(req.limit, env),
-      });
-    }
-
-    case "/definy.v1.DeployService/ListCloudflareWorkers": {
-      const req = parseJsonBody<ListCloudflareWorkersRequest>(body);
-      if (!req.apiToken?.trim()) {
-        await requireAdmin(
-          request,
-          pathname,
-          body,
-          env,
-          "Listing workers with the server token",
-        );
-      }
-      return jsonResponse(await listWorkersFromCloudflare(req, env, fetchFn));
+      return jsonResponse(
+        await proxyFetch(parseJsonBody<HttpProxyFetchRequest>(body), fetchFn),
+      );
     }
 
     default:
@@ -450,66 +440,61 @@ async function handleRpc(
   }
 }
 
-async function deployCloudflare(
-  req: DeployCloudflareRequest,
-  usesServerToken: boolean,
-  env: Env,
-  store: WorkerStore,
+/** 仲介で送らないヘッダー (送り先とのつなぎ方は Worker の fetch が決める) */
+const PROXY_DROPPED_REQUEST_HEADERS: ReadonlySet<string> = new Set([
+  "host",
+  "content-length",
+  "connection",
+  "transfer-encoding",
+]);
+
+/**
+ * ブラウザから CORS で直接送れない HTTP リクエストを Worker から送り, レスポンスをそのまま返す.
+ * 送れなかったときは `internal` のエラーにする
+ */
+async function proxyFetch(
+  req: HttpProxyFetchRequest,
   fetchFn: typeof fetch,
-) {
-  if (req.seedD1 && env.DB) {
-    await store.seedD1(env.DB);
+): Promise<HttpProxyFetchResponse> {
+  const rawUrl = req.url?.trim() ?? "";
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new ConnectError("invalid_argument", `invalid url '${rawUrl}'`);
   }
-  const wasmHash = req.wasmHash?.trim();
-  const partId = req.partId?.trim();
-  let wasmBytes: Uint8Array | undefined;
-  let effectiveReq: DeployCloudflareRequest = req;
-
-  if (wasmHash) {
-    wasmBytes = await store.getRawContentBytes(wasmHash, env);
-    if (!wasmBytes) {
-      throw new ConnectError(
-        "not_found",
-        `Wasm content hash '${wasmHash}' not found in CAS`,
-      );
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new ConnectError(
+      "invalid_argument",
+      "only http and https urls can be fetched",
+    );
+  }
+  const method = (req.method?.trim() || "GET").toUpperCase();
+  const headers = new Headers();
+  for (const header of req.headers ?? []) {
+    if (!PROXY_DROPPED_REQUEST_HEADERS.has(header.name.toLowerCase())) {
+      headers.append(header.name, header.value);
     }
-  } else if (partId) {
-    const compiled = await compilePartToWasm(partId, store, env);
-    wasmBytes = compiled.wasmBytes;
-    effectiveReq = {
-      ...req,
-      scriptName: req.scriptName?.trim()
-        ? req.scriptName
-        : (compiled.cloudflareWorkerName ?? req.scriptName),
-      // パーツが指定したトークンはサーバーのトークンを使える管理者のリクエストでのみ使う
-      apiToken:
-        usesServerToken && compiled.cloudflareToken
-          ? compiled.cloudflareToken
-          : req.apiToken,
-    };
   }
-
-  const res = await deployWorkerToCloudflare(
-    effectiveReq,
-    wasmBytes,
-    env,
-    fetchFn,
-  );
-  await store.recordDeployment(
-    {
-      machineId: `cf-${res.scriptName}`,
-      status: res.status,
-      url: res.url,
-      appUrl: res.url,
-      region: "cloudflare-edge",
-      createdAtRfc3339: new Date().toISOString(),
-      commitHash: req.commitHash ?? null,
-      wasmHash: wasmHash ?? partId ?? null,
-      provider: "cloudflare_workers",
-    },
-    env,
-  );
-  return res;
+  const body =
+    method === "GET" || method === "HEAD" || !req.bodyBase64
+      ? null
+      : base64ToBytes(req.bodyBase64);
+  const response = await fetchFn(url.toString(), {
+    method,
+    headers,
+    body: body as unknown as BodyInit | null,
+    redirect: "manual",
+  });
+  const responseHeaders: HttpProxyHeader[] = [];
+  response.headers.forEach((value, name) => {
+    responseHeaders.push({ name, value });
+  });
+  return {
+    status: response.status,
+    headers: responseHeaders,
+    bodyBase64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
+  };
 }
 
 export default {

@@ -28,165 +28,64 @@ Workers は definy の設計思想に最も適合するクラウド実行基盤�
 
 ---
 
-## 2. 宣言的デプロイパーツ (`definy:deploy`) とサーバー実行モデル
+## 2. デプロイは普通のパーツ (`definy.deploy-to-cloudflare-workers`)
 
-definy では、手動のフォームで API トークンや Worker 名を入力して送信するのではなく、**パーツとして宣言的にデプロイを記述する**モデルを採用しています。
+デプロイを特殊扱いしない (issue #733)。サーバーの `DeployService` と `/deployments` 画面は削除し,
+デプロイは definy で書いたパーツ `definy.deploy-to-cloudflare-workers` が **definy 製のコンパイラでコンパイルし,
+HTTP リクエストで** 行う。
 
 ```text
-definy.deploy({
-  cloudflareToken: "$CLOUDFLARE_API_TOKEN",
-  cloudflareWorkerName: "my-edge-service",
-  handler: fn(req: HttpRequest) => HttpResponse { ... }
-})
+definy.deploy-to-cloudflare-workers(
+  worker_name: string,
+  handler: Code<fn(request: { method, url, headers }) => { status, headers, body }>,
+) => wasi.io
 ```
 
-- **唯一サーバーで実行される特殊なパーツ**:
-  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（Cloudflare Worker / 旧 `definy-server`）上で実行されます。
-- **開発時の動作確認も本番デプロイも Cloudflare Workers 個別配備に一本化**:
-  以前はサーバー内プレビュー (`definy:preview`) とエッジデプロイ (`definy:deploy`) に分かれていましたが、Cloudflare Workers REST API v4 による個別 Worker 配備が約2秒で完了し、かつ `app.wasm` (`application/wasm`) モジュールを V8 でネイティブ実行できるため、開発時の動作確認も本番デプロイも `definy:deploy` に一本化されました。
-- **`/deployments` ページの役割**:
-  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（Cloudflare D1 に永続化）を確認するためのダッシュボードとして機能します。
+- `handler` はパーツの値ではなく **コードそのもの** (`quote` 式, [quote.md](quote.md))。型で「HTTP リクエストを受け取って
+  レスポンスを返す関数」に制限している
+- 返り値は I/O をするプログラム (`wasi.io`, [wasi-io.md](wasi-io.md))。パーツ詳細画面で評価すると, その場で次の順に動く
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as 開発者 / ユーザー
-    participant UI as definy Web UI (パーツ詳細画面)
-    participant Server as definy (Worker / Server)
-    participant DB as Cloudflare D1 (deployments)
-    participant CFAPI as Cloudflare REST API v4 (api.cloudflare.com)
-    participant Edge as Cloudflare Workers Edge Network
+  1. `get_environment` で `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を読む (設定画面で書く)。無ければその旨を返して止まる
+  2. `get_parts` で handler が参照するパーツの式を読み, `core.compile-to-wasm` で Wasm にコンパイルする
+  3. `PUT /accounts/{account}/workers/scripts/{worker_name}` に multipart (`metadata`, `worker.js`, `app.wasm`) で送る。
+     `worker.js` はパーツ `definy.cloudflare-workers-runtime-script`, 本文は `definy.cloudflare-workers-script-upload-body`
+  4. `POST .../subdomain` に `{"enabled":true}` を送って workers.dev を有効にする
+  5. `GET /accounts/{account}/workers/subdomain` でサブドメインを読み, `デプロイしました: https://<worker>.<subdomain>.workers.dev` を返す
 
-    User->>UI: definy:deploy パーツ詳細画面で「デプロイを実行」または「評価」クリック
-    UI->>Server: Connect-RPC POST /definy.v1.DeployService/DeployCloudflare (part_id 指定)
-    Note over Server: 式から token, workerName, handler を自動抽出し Wasm / worker.js を構築
-    Server->>CFAPI: GET /accounts (Account ID 未指定時の自動解決)
-    Server->>CFAPI: PUT /accounts/{account}/workers/scripts/{script} (スクリプト配備)
-    Server->>CFAPI: POST /accounts/{account}/workers/scripts/{script}/subdomain (enabled: true)
-    Server->>CFAPI: GET /accounts/{account}/workers/subdomain (サブドメイン取得)
-    Server->>Edge: GET https://<script>.<subdomain>.workers.dev (健全性確認 Ping / Health Check)
-    Edge-->>Server: 200 OK (レイテンシ・稼働確認レスポンス)
-    Server->>DB: deployments テーブルに履歴保存 (status に Health Check 結果を記録)
-    Server-->>UI: DeployCloudflareResponse (URL, health_check_status, health_check_latency_ms, health_check_message)
-    UI-->>User: デプロイ完了URL & ⚡ エッジ稼働確認: 200 OK (85ms) を表示
-    User->>Edge: ブラウザでアクセス (V8 Isolate 上でサブミリ秒起動)
+- Cloudflare の API はブラウザからの CORS を許可していないので, 実際にブラウザから送るには設定画面で
+  「CORS エラーのときサーバーで仲介する」を有効にする (許可されたアカウントのみ。[wasi-io.md](wasi-io.md) の「CORS の仲介」)
+
+### 例 (`seeds/sample.json`)
+
+```text
+sample.deploy-hello-worker =
+  definy.deploy-to-cloudflare-workers("definy-hello", quote(fn(request) =>
+    { status: 200, headers: [content-type: text/plain], body: std.string-to-utf8-stream("Hello from definy! " ++ request.url) }))
+
+sample.deploy-self-hosted-definy-server =
+  definy.deploy-to-cloudflare-workers("self-definy", quote(fn(request) => sample.self-hosted-definy-server(request)))
 ```
 
----
+`sample.self-hosted-definy-server` (definy で書いた definy サーバー) をデプロイすると, コンパイル結果は約 552KB,
+アップロードは約 370KB で, 全体は約 3 秒 (Node.js で計測, 2026-10-24)。
 
-### デプロイ直後の健全性確認 (Edge Health Check Ping)
+### デプロイ先の `worker.js`
 
-デプロイ完了時、バックエンドは Cloudflare REST API v4 から返却された公開 URL に対して自動的に HTTP GET リクエスト（Health Check Ping）を発行します。
-
-- **即時稼働検証**: V8 Isolate のプロビジョニング完了とルーティングの反映をサーバー側で検証します。
-- **レイテンシ測定**: 初回コールドスタートを含む初期レスポンス時間（ミリ秒）を計測し、UI のバナーおよび Cloudflare D1 のデプロイ履歴に `succeeded (Health: 200 OK (85ms))` として記録します。
-- **テスト・自動化対応**: テスト環境や外部接続を行わない場合には、リクエストに `skipHealthCheck: true` を指定することでヘルスチェックをスキップできます。
+`definy.cloudflare-workers-runtime-script` は以前 `worker/cloudflare_api.ts` が作っていたものと同じ。`app.wasm` の
+`evaluate()` が関数を返したら HTTP リクエストを渡し, 返った `{ status, headers, body }` (body はストリーム) をレスポンスにする。
 
 ---
 
-## 3. Connect-RPC API 仕様
+## 3. 以前の仕組み (削除済み)
 
-### `definy.v1.DeployService/ListCloudflareWorkers`
-
-#### リクエスト (`ListCloudflareWorkersRequest`)
-
-- `apiToken`: (string, 必須) Cloudflare API Token（Workers Scripts
-  の読み取り権限）。
-- `accountId`: (string, 任意) Cloudflare Account
-  ID（省略時はトークンから自動解決）。
-
-#### レスポンス (`ListCloudflareWorkersResponse`)
-
-- `workers`: アカウント内でアクセス可能な Worker スクリプト一覧 (`id`,
-  `createdOn`, `modifiedOn`)。
-
-### `definy.v1.DeployService/DeployCloudflare`
-
-#### リクエスト (`DeployCloudflareRequest`)
-
-- `apiToken`: (string, 必須) Cloudflare API Token（Workers Scripts
-  の編集権限）。
-- `accountId`: (string, 任意) Cloudflare Account
-  ID（省略時はトークンから自動解決）。
-- `scriptName`: (string, 任意) デプロイ先の Worker
-  スクリプト名（省略時はランダム一意名）。
-- `wasmHash`: (string, 任意) エッジワーカーに同梱する仮想 WebAssembly
-  バイナリのハッシュ。
-- `customScript`: (string, 任意) カスタム `worker.js`
-  スクリプト（未指定時はデフォルトの edge runner が利用されます）。
-- `compileSelfHosted`: (bool, 任意)
-  自己記述コンパイラ検証サンプル（`15 + 27 = 42`）を動的ビルドして配備。
-- `partId`: (string, 任意) definy のパーツ ID, システムアカウントの `module.part`, または CAS の content hash。
-  指定時は該当パーツの式を自己記述コンパイラ (`wasm/stage1.wasm`) で Wasm 化して配備。式に
-  `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` があれば `handler` を配備し, worker 名を使う。
-  Workers のスタックに収まらない大きなパーツは `resource_exhausted` になる (詳細は [worker-runtime.md](worker-runtime.md))。
-
-#### レスポンス (`DeployCloudflareResponse`)
-
-- `scriptName`: Worker スクリプト名
-- `status`: デプロイステータス (`"succeeded"`)
-- `url`: デプロイされた Worker のメイン URL
-  (`https://<script>.<subdomain>.workers.dev`)
-- `evaluatedResult`: 式の評価結果（自己コンパイラ検証時。Workers は実行時に作った Wasm を動かせないので, パーツデプロイ時は返さない）
+以前はパーツの式の中の `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` をサーバーが探し,
+`DeployService/DeployCloudflare` が Worker 内の stage1 で handler をコンパイルしてデプロイしていた。デプロイ履歴を
+D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた。これらと `ListCloudflareWorkers`,
+`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_API_BASE_URL` などのサーバーの環境変数は削除した。
 
 ---
 
-### ローカルでの確認 (`CLOUDFLARE_API_BASE_URL`)
-
-Worker の環境変数 `CLOUDFLARE_API_BASE_URL` を設定すると, Cloudflare REST API の送信先 (既定は
-`https://api.cloudflare.com/client/v4`) を差し替えられる。本番では設定しない。
-
-`npm run dev` で `DeployCloudflare` を本物の Cloudflare に送らずに確かめるには, リポジトリ直下の `.env` に
-`CLOUDFLARE_API_BASE_URL=http://127.0.0.1:8788/client/v4` を書き, そこで `GET /accounts`・`GET /workers/subdomain`・
-`PUT /workers/scripts/:name` (multipart の `worker.js` と `app.wasm`)・`POST /workers/scripts/:name/subdomain` に
-`{ "success": true, "result": ... }` を返すモックを動かす。`apiToken` を指定すれば管理者の署名は要らない。
-受け取った `worker.js` の `import wasmModule from "./app.wasm"` を外して `app.wasm` の `WebAssembly.Module` を渡せば,
-デプロイ先と同じ処理を Node.js で動かせる (`worker/deploy.test.ts` と同じ方法)。
-
-2026-10-21 にこの方法で `sample.self-hosted-definy-server` / `sample.greet` / `sample.prime-numbers` のデプロイと,
-デプロイされた Worker の応答 (`/healthz`・`/api/self-host`・`/` / `"Hello, definy!"` / `[2, 3, 5, 7, 11]`) を確かめた。
-
-> [!NOTE]
-> 以前は dev サーバーのローカル D1 がイベントを 1 件でも持つと seed を入れ直さず, 古い seed が残っていた。
-> 今は seed バンドルの指紋が変われば入れ替わる ([system-account.md](system-account.md) の「D1 の seed の入れ替え」)。
-
-## 4. UI からの利用方法
-
-1. [Cloudflare ダッシュボード API Tokens (`https://dash.cloudflare.com/profile/api-tokens`)](https://dash.cloudflare.com/profile/api-tokens)
-   にて Workers Scripts の編集権限を持つ API Token を発行します。
-2. definy のナビゲーションバーから「Deploy」(`/deployments`) 画面を開きます。
-3. 「Cloudflare Workers へのデプロイ実行」フォームに API トークンを入力します。
-   - ※トークンはリクエスト時のみ使用され、データベースやローカルストレージには保存されません。
-4. トークンを入力すると自動的にアクセス可能な Worker 一覧が取得され、
-   - **「既存の Worker から選択」**: プルダウンで配備先の Worker
-     を選択できます。
-   - **「新規 Worker を作成」**: 新しい一意な Worker
-     名を入力して新規作成できます。
-5. デプロイ対象ソース（カスタム ES Modules、definy
-   パーツ、自己コンパイラ検証サンプル、Wasm ハッシュ）を選択します。
-6. 「🚀 Deploy to Cloudflare
-   Workers」をクリックすると、数秒以内にデプロイが完了し、即座にアクセス可能な
-   URL (`https://<script>.<subdomain>.workers.dev`) が表示されます。
-7. 過去のデプロイ履歴は下部の「デプロイ履歴一覧」カードに自動的に表示され、プロバイダごとに確認できます。
-
----
-
-## 5. cURL による直接呼び出し例
-
-```bash
-# Connect-RPC 経由でのデプロイ
-curl -X POST https://definy.narumincho.com/definy.v1.DeployService/DeployCloudflare \
-  -H "Content-Type: application/json" \
-  -H "connect-protocol-version: 1" \
-  -d '{
-    "apiToken": "cf_xxxxxxxxxxxxxxxx",
-    "scriptName": "my-definy-edge"
-  }'
-```
-
----
-
-## 6. Cloudflare Workers REST API v4 運用の技術知見
+## 4. Cloudflare Workers REST API v4 運用の技術知見
 
 1. **multipart/form-data による `worker.js` + `app.wasm` (`application/wasm`) モジュール送信**:
    - Cloudflare Workers の V8 ランタイムは、実行時に動的なバイト列 (`Uint8Array`) から `WebAssembly.instantiate` することをセキュリティポリシー上禁止しています (`CompileError: WebAssembly.instantiate(): Wasm code generation disallowed by embedder`)。
@@ -194,8 +93,7 @@ curl -X POST https://definy.narumincho.com/definy.v1.DeployService/DeployCloudfl
 2. **Account ID の自動解決**:
    - Cloudflare API はほとんどのエンドポイントで `account_id`
      を要求しますが、`GET /accounts` を叩くことで API トークンに紐づくアカウント
-     ID を動的に解決可能です。Cloudflare Worker（`worker/cloudflare_api.ts`）
-     ではユーザーの指定がない場合、自動で初手解決を行います。
+     ID を動的に解決可能です。今の `definy.deploy-to-cloudflare-workers` は環境変数 `CLOUDFLARE_ACCOUNT_ID` から読む。
 3. **`workers.dev` サブドメインの有効化と URL 導出**:
    - スクリプトをアップロードしただけでは `workers.dev`
      経由での外部アクセスが無効な場合があります。配備後に

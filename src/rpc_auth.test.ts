@@ -6,7 +6,7 @@ import {
   verifyRpcAuthorization,
 } from "./rpc_auth.ts";
 
-const path = "/definy.v1.DeployService/DeployCloudflare";
+const path = "/definy.v1.HttpProxyService/Fetch";
 const body = JSON.stringify({ partId: "x" });
 const now = 1_800_000_000;
 

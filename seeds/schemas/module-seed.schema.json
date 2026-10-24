@@ -382,6 +382,19 @@
           "additionalProperties": false
         },
         {
+          "description": "コードそのものを値にする式 (quote). 型は Code<中の式の型>",
+          "type": "object",
+          "required": [
+            "Quote"
+          ],
+          "properties": {
+            "Quote": {
+              "$ref": "#/definitions/QuoteExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
           "description": "未入力の式. エディタで式を消したときに入る. 評価・コンパイルはエラーになる",
           "type": "string",
           "enum": [
@@ -733,6 +746,19 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "description": "コードそのものの型 Code<T>. 値は quote 式で作る",
+          "type": "object",
+          "required": [
+            "code"
+          ],
+          "properties": {
+            "code": {
+              "$ref": "#/definitions/PartType"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -773,7 +799,24 @@
       ],
       "properties": {
         "value": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "description": "パーツ ID の文字列 (URL-safe Base64) に置き換わるプレースホルダー",
+              "type": "object",
+              "required": [
+                "$partId"
+              ],
+              "properties": {
+                "$partId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
         }
       }
     },
@@ -990,6 +1033,17 @@
           "additionalProperties": false
         }
       ]
+    },
+    "QuoteExpression": {
+      "type": "object",
+      "required": [
+        "expression"
+      ],
+      "properties": {
+        "expression": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
     }
   }
 }

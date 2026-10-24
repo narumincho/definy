@@ -291,7 +291,8 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
 
 ### ツリーに表示する組み込みの式
 
-`TypeList` は, 子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`TypeList` / `TypeCode` (`Code<T>` の型) / `Quote` (quote 式, [quote.md](quote.md)) は, 子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`Quote` の中は外の変数を使えないので, 中の式にはスコープの変数を渡さない.
 `core.list-get` などの組み込みのパーツの呼び出しは, 他のパーツの呼び出し (`Call`) と同じく表示する.
 `TypeUnion` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
 表の対応がない式は, 子を持たないキーワード (式のキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
@@ -300,6 +301,12 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
 式の直下に組み込みが入っているものとして `builtin string-concat` と表示する (`ast_to_layout/literals.ts`).
 表示は式の値 (`_` を `-` にしたもの) から作り, パーツ名は使わない. パーツ名を変えても表示は変わらず,
 組み込みかどうかも式で決まる (システムアカウントなら名前を変えたコミットも受け付ける. `worker/type_check.test.ts`)
+
+### I/O をするプログラムの実行 (wasi.io)
+
+パーツ詳細画面で「式を評価」した結果が `wasi.io` の値なら, そのまま I/O をしながら最後まで動かし,
+I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッセージを評価結果の下に出す.
+環境変数と「CORS エラーのときサーバーで仲介する」は設定画面で決める ([wasi-io.md](wasi-io.md)).
 
 ### 履歴グラフ
 
@@ -350,7 +357,7 @@ Void はページを SSR してからクライアントでハイドレーショ�
 
 - `localStorage` / `navigator` / `window.location` を `useState` の初期化やレンダー中に読まない.
   初回は SSR と同じ既定値でレンダーし, マウント後の `useEffect` で保存値を反映する
-  (`src/state.tsx` の言語・作業中の変更, `pages/deployments.tsx` の Cloudflare 設定, `ExplorerSidebar` の幅)
+  (`src/state.tsx` の言語・作業中の変更, `src/wasi_io_browser.ts` の wasi.io の環境変数と CORS 仲介の設定, `ExplorerSidebar` の幅)
 - URL は SSR でも `useRouter()` (`@void/react`) で読める. SSR では `createSsrRouter(リクエストの URL)` が使われ,
   `path` や `query` はクエリ文字列も含めてクライアントと一致する. 現在のパスは `window.location.pathname` ではなく
   `useRouter().path` を使う (`ActivityBar`)

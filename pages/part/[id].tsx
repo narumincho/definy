@@ -9,6 +9,15 @@ import {
   type DefinyValue,
 } from "../../src/stage1_compiler.ts";
 import { loadStage1Compiler } from "../../src/stage1_browser.ts";
+import {
+  isWasiIoValue,
+  runWasiIo,
+  type WasiIoStep,
+} from "../../src/wasi_io.ts";
+import {
+  browserWasiIoHandler,
+  loadWasiIoSettings,
+} from "../../src/wasi_io_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
@@ -39,12 +48,16 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     discardWorkingPart,
     checkPartType,
     typeCheckMessage,
+    currentAccount,
   } = useDefiny();
 
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
   const [_compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
+  // 評価結果が wasi.io (I/O をするプログラム) のときに動かした I/O の記録と, 終わったときのメッセージ
+  const [wasiIoSteps, setWasiIoSteps] = useState<ReadonlyArray<WasiIoStep>>([]);
+  const [wasiIoMessage, setWasiIoMessage] = useState<string | null>(null);
 
   const part = parts.find(
     (p) =>
@@ -208,23 +221,29 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   const handleEvaluate = useCallback(async () => {
     setEvaluating(true);
     setEvalError(null);
+    setEvalResult(null);
+    setWasiIoSteps([]);
+    setWasiIoMessage(null);
     try {
       const compiler = await loadStage1Compiler();
 
-      // 式が参照するパーツ (作業中の変更があればそちら) を集めて stage1 に渡す
+      // パーツの式 (作業中の変更があればそちら)
+      const resolvePart = (partIdHash: string): unknown => {
+        // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
+        const shown = parts.find((p) => p.partIdHash === partIdHash);
+        const shownChange =
+          shown === undefined
+            ? undefined
+            : workingChanges.parts.get(shown.partId);
+        return shownChange?.expression !== undefined
+          ? shownChange.expression
+          : partsByIdHash.get(partIdHash)?.expression;
+      };
+
+      // 式が参照するパーツを集めて stage1 に渡す
       const { parts: referencedParts, unresolved } = collectReferencedParts(
         currentExpression,
-        (partIdHash) => {
-          // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
-          const shown = parts.find((p) => p.partIdHash === partIdHash);
-          const shownChange =
-            shown === undefined
-              ? undefined
-              : workingChanges.parts.get(shown.partId);
-          return shownChange?.expression !== undefined
-            ? shownChange.expression
-            : partsByIdHash.get(partIdHash)?.expression;
-        },
+        resolvePart,
       );
       if (unresolved.length > 0) {
         throw new Error(
@@ -242,6 +261,29 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
 
       const result = await evaluateCompiledWasm(wasm);
       setEvalResult(result);
+
+      // wasi.io の値なら, I/O をしながら最後 (done) まで動かす
+      if (isWasiIoValue(result)) {
+        const settings = loadWasiIoSettings();
+        const secretKeyBase64 = currentAccount?.secretKeyBase64;
+        const message = await runWasiIo(
+          await WebAssembly.compile(wasm as unknown as BufferSource),
+          {
+            handle: browserWasiIoHandler(
+              settings,
+              currentAccount !== null && secretKeyBase64 !== undefined
+                ? { ...currentAccount, secretKeyBase64 }
+                : null,
+            ),
+            getPart: resolvePart,
+            environment: settings.environment,
+            onStep: (step) => {
+              setWasiIoSteps((steps) => [...steps, step]);
+            },
+          },
+        );
+        setWasiIoMessage(message);
+      }
     } catch (err) {
       setEvalError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -254,7 +296,19 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     workingChanges,
     partNames,
     language,
+    currentAccount,
   ]);
+
+  function formatWasiIoStep(step: WasiIoStep): string {
+    switch (step.kind) {
+      case "get_environment":
+        return `get_environment: ${step.names.join(", ") || "(なし)"}`;
+      case "get_parts":
+        return `get_parts: ${step.found} 個${step.missing.length > 0 ? ` (見つからない: ${step.missing.join(", ")})` : ""}`;
+      case "outgoing_request":
+        return `${step.method} ${step.url} (${step.bodyBytes} bytes) → ${"error" in step.result ? `エラー: ${step.result.error}` : step.result.status}`;
+    }
+  }
 
   function formatValue(v: DefinyValue): string {
     if (v === null) return "null";
@@ -370,6 +424,22 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
             </span>
           </div>
           <pre className="eval-result-pre">{formatValue(evalResult)}</pre>
+        </div>
+      )}
+
+      {(wasiIoSteps.length > 0 || wasiIoMessage !== null) && (
+        <div className="card eval-result-card success">
+          <div className="eval-result-header">
+            <span className="badge badge-success">
+              {label(language, "I/O (wasi.io)", "I/O の実行 (wasi.io)", "I/O")}
+            </span>
+          </div>
+          <pre className="eval-result-pre">
+            {[
+              ...wasiIoSteps.map(formatWasiIoStep),
+              ...(wasiIoMessage === null ? ["..."] : [wasiIoMessage]),
+            ].join("\n")}
+          </pre>
         </div>
       )}
 

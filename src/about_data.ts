@@ -352,13 +352,13 @@ export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [
     },
   },
   {
-    service: "DeployService",
-    name: "DeployCloudflare",
-    request: "DeployCloudflareRequest",
+    service: "HttpProxyService",
+    name: "Fetch",
+    request: "HttpProxyFetchRequest",
     desc: {
-      en: "Compile a definy part into WebAssembly and deploy to Cloudflare Workers edge in one step.",
-      ja: "definy のパーツを即座に Wasm にコンパイルし、Cloudflare Workers へゼロコンフィグ配信します。",
-      eo: "Kompili al Wasm kaj deploji al Cloudflare Workers.",
+      en: "Send an HTTP request the browser cannot send because of CORS on behalf of an allowed account (used by wasi.io programs).",
+      ja: "CORS でブラウザから送れない HTTP リクエストを, 許可されたアカウントのためにサーバーが仲介します (wasi.io のプログラムが使う)。",
+      eo: "Sendi HTTP-peton anstataŭ la retumilo, kiam CORS malhelpas ĝin.",
     },
   },
 ];

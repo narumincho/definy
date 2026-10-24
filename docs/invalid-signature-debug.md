@@ -15,8 +15,7 @@
 - 署名する鍵は固定 (`SEED_SAMPLE_SIGNER_KEY_SEED`, 秘密鍵は公開済み)、時刻も seed の時刻 (`2019-01-31T04:36:01.5Z`) に固定するので、何度作っても同じバイト列になる
 - `impersonated_account` はシステムアカウント (`definy`) になりすます。ブラウザが `definy` の `invalid_signature_sample` モジュールとして扱わないことを確かめられる
 - seed はサーバーが検証せずに取り込む経路なので、ストアには署名が不正なイベントが常にある。
-  サーバーでイベントの中身を使う処理は署名を検証してから使う (`worker/part_compiler.ts` のパーツの読み込みは `decodeVerifiedSignedEvent` を使い、
-  検証できないイベントは読み飛ばす。`worker/part_compiler.test.ts` で確かめる)
+  サーバーでイベントの中身を使う処理は署名を検証してから使う (`decodeVerifiedSignedEvent` を使い、検証できないイベントは読み飛ばす)
 - サンプルの署名者 (`invalid-signature-sample` の鍵) も seed のアカウントになるので、seed が変わるとその鍵の seed に無いイベントは D1 から消える ([system-account.md](./system-account.md))
 - `src/signed_event.test.ts` で、seed のイベントのうちちょうど 3 件が不正と判定されることを確かめる
 
