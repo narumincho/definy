@@ -6,8 +6,7 @@
 
 ## 式のツリーエディタでの実装
 
-[src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx) の `ExpressionTreeEditor` で, 上記のキーで選択中の式を移動する
-(旧 Rust 実装 `definy-ui/src/tree_layout/editor.rs` と同じ操作感).
+[src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx) の `ExpressionTreeEditor` で, 上記のキーで選択中の式を移動する.
 キー操作はツリーの枠 (`.expression-tree-container`, `tabindex=0`) にフォーカスがあるときに効く.
 クリックやタブキーでフォーカスすると枠が青くなる.
 

@@ -47,9 +47,7 @@ main env = (env.wall_clock.now) ()
 
 ## 2. システム標準 `wasi` モジュールの型とインターフェース
 
-definy
-サーバーの初期マイグレーション（`builtin_migration.rs`）において、システム標準モジュール
-`wasi`（`mod_wasi`）が提供されています。
+システム標準モジュール `wasi` (`seeds/wasi.json`) が提供されています。
 
 ### ① 日時データ型: `wasi.datetime` (`type_wasi_datetime`)
 
@@ -127,39 +125,14 @@ type wasi.env = {
 
 ### テスト例: 期限切れ判定ロジックの検証
 
-```rust
-// definy-server/src/self_hosting_tests/wasi_tests.rs より抜粋
-
-// 1. 期限切れ判定関数（WASI WallClock 注入型）
-// clock => deadline => (clock.now)({}).seconds >= deadline
-let is_expired_part = create_wasi_clock_is_expired_part(&mod_id);
-
-// 2. モック Clock 能力の作成（現在時刻を 1000秒 に固定）
-let mock_clock_before = create_mock_clock_capability(1000, 0);
-
-// 3. 期限 1500秒 に対して判定 -> 必ず false（未期限切れ）が返る！
-let res_before = evaluate(is_expired(mock_clock_before, 1500));
-assert_eq!(res_before, Value::Bool(false));
-
-// 4. 時刻を進めたモック Clock 能力の作成（現在時刻を 2000秒 に固定）
-let mock_clock_after = create_mock_clock_capability(2000, 0);
-
-// 5. 同じ期限に対して判定 -> 必ず true（期限切れ）が返る！
-let res_after = evaluate(is_expired(mock_clock_after, 1500));
-assert_eq!(res_after, Value::Bool(true));
-```
+`wasi.clock-is-expired` (`clock => deadline => (clock.now)({}).seconds >= deadline`) に,
+現在時刻を 1000 秒に固定したモックの Clock を渡すと期限 1500 秒に対して必ず `false`,
+2000 秒に固定したモックなら必ず `true` が返る (旧 Rust 版のテストで確かめていた)。
 
 ### 本番実行時のシステム実時間・システム乱数注入
 
-本番環境では、ホスト側（Rust / WebAssembly ランタイム）が
-`std::time::SystemTime` や WASI ホストインポートを呼び出す関数を格納した
-`wasi.env` レコードを構築し、`main` に渡して実行します。
-
-```rust
-// ホストランタイムがシステム能力を注入
-let system_env = create_system_wasi_env();
-let result = evaluate(main(system_env));
-```
+本番では, ホストが実時間や乱数を返す関数を入れた環境のレコードを `main` に渡して実行する想定 (未実装)。
+今 I/O をするプログラムは, この能力渡しとは別の `wasi.io` の値で表している ([wasi-io.md](wasi-io.md))。
 
 ---
 
@@ -216,9 +189,7 @@ Subtyping）** を採用しています。
 
 ### 実装アーキテクチャ
 
-- **UI 型診断 (`definy-ui`)**: `is_type_assignable`
-  が期待型の各フィールドが実引数のレコードに含まれるかを再帰的に検証し、余剰フィールドに対する誤検知エラーを防止します。
-- **セルフホスト型チェッカー (`definy-server`)**:
-  `core.type-assignable`（`assignable.rs`）により、関数呼び出し（`Call`）や期待型との照合（`check-against`）において幅サブタイピングを検証します。
+- **セルフホスト型チェッカー**: `core.type-assignable` により、関数呼び出し（`Call`）や期待型との照合（`check-against`）において
+  幅サブタイピングを検証します。UI の型エラー表示もサーバーの検査も同じ型チェッカーを使います。
 - **ランタイム評価器**: `record-field-lookup`
   によるキー名での動的フィールド探索を行っているため、余分なフィールドが存在していてもオーバーヘッドなく正しく動作します。

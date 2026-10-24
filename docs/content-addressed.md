@@ -89,19 +89,15 @@ graph TD
 によってモジュール内の複数のパーツ定義（Tree）を 1
 つの署名付きイベントとして一度に送信・公開する。
 
-```rust
-pub struct ModuleCommitEvent {
-    pub module_definition_event_hash: EventHashId,
-    pub parent_commit_hash: Option<EventHashId>,
-    pub message: Box<str>,
-    pub parts: Vec<ModulePartEntry>,
-}
+署名するイベントの中身 (CBOR。`src/auth.ts` の `createSignedModuleCommitEvent`):
 
-pub struct ModulePartEntry {
-    pub name: Box<str>,
-    pub part_type: Option<PartType>,
-    pub description: Description,
-    pub expression: Option<Expression>,
+```text
+ModuleCommit {
+  module_name: string,
+  module_description,
+  message: string,
+  parent_commit_hash: EventHashId | null,
+  parts: [{ name, description, part_type, expression | null, content_hash | null }],
 }
 ```
 
@@ -207,7 +203,7 @@ definy では、Git のディレクトリ（Tree）構造と同様に **「モ�
 ## 8. 移行ロードマップ
 
 - **フェーズ 1**: `ContentHash` 型と、純粋な `Expression` / `PartType`
-  からハッシュを計算する関数の実装 (`definy-event`)。(完了)
+  からハッシュを計算する関数の実装。(完了)
 - **フェーズ 2**: `PartReferenceExpression` での `ContentHash`
   依存バージョン固定・解決・UI アップグレードの実装。(完了)
 - **フェーズ 3**: `ModuleCommitEvent` へのイベント一本化、決定論的 ID
@@ -216,53 +212,13 @@ definy では、Git のディレクトリ（Tree）構造と同様に **「モ�
 
 ---
 
-## 9. バージョン管理 UI の仕様と操作フロー
+## 9. バージョン管理 UI
 
-definy の Web UI では、Git や Unison
-にインスパイアされたバージョン管理機能を直感的に操作・確認できます。
+- 編集は作業中の変更として貯め, 変更ページ (`/changes`) でコミットメッセージを付けてモジュールごとにコミットする ([ui.md](ui.md))
+- 履歴ページ (`/history`) とイベント詳細 (`/event/{hash}`) でコミットと署名の検証結果を見る
 
-### 1. 式エディタでのバージョン固定 (Pin) と最新追跡 (latest)
-
-- **PartReference の状態表示**:
-  - `🔄 latest`: 最新バージョンを自動追跡している状態。
-  - `📌 #xxxxxxx`: 特定の `ContentHash` に厳密に固定（Pin）されている状態。
-- **ワンクリック操作**:
-  - `📌 Pin (#hash)`: 現在の最新バージョンで即座に固定。
-  - `🔄 Unpin`: 固定を解除し、最新版を自動追跡するモードに切り替え。
-  - `↑ Upgrade`:
-    固定中のパーツに新しいバージョンが存在する場合に赤色のバッジで強調表示され、ワンクリックで最新の
-    `ContentHash` に更新。
-
-### 2. コミットメッセージの入力
-
-- パーツ詳細画面（`PartEditorCard`）およびモジュール詳細画面（`ModuleEditorCard`）に
-  **「Commit Message (コミットメッセージ)」** 入力フォームを配置。
-- 未入力の場合は適切なデフォルトメッセージが自動補完され、入力した場合はそのメッセージが
-  `ModuleCommitEvent.message` として署名付きで永続化されます。
-
-### 3. コミット履歴タイムライン (History Card)
-
-- パーツ詳細・モジュール詳細画面の双方に、リッチなコミット履歴カード（`PartHistoryCard`
-  / `ModuleHistoryCard`）を実装。
-  - **HEAD バッジ**: 最新のコミットを視覚的に明示。
-  - **コミットメッセージ**: 各コミットの変更意図を大きく表示。
-  - **作者・タイムスタンプ**: 署名アカウントの表示名・日時。
-  - **Commit ハッシュリンク**: イベント詳細画面へのダイレクトリンク。
-  - **Parent コミットリンク**:
-    親コミット（`parent_commit_hash`）へのリンクを保持し、Git
-    の履歴ツリーを辿ることが可能（初回のコミットには `🌱 Initial Commit`
-    バッジを表示）。
-  - **Part ContentHash バッジ**: そのコミット時点での該当パーツの `ContentHash`
-    をバッジ表示。
-
-### 4. コミットイベント詳細画面 (Event Detail)
-
-- `ModuleCommit` イベントの詳細画面では、親コミットへのリンク（または
-  `🌱 Initial Commit (root)`）と、そのコミットに含まれる全パーツの一覧をカード形式で表示。
-- 各パーツは詳細画面へのリンク、パーツ型バッジ、ContentHash
-  バッジ（`📌 #xxxxxxx`）、式のプレビューを備えています。
-
----
+Rust 版の UI には, パーツ参照を特定の `ContentHash` に固定する (Pin / Unpin / Upgrade) 操作や,
+パーツ・モジュールごとのコミット履歴カードがあったが, 今の UI には移していない。
 
 ## 10. 差分ハッシュ・ネゴシエーション方式 (Diff Hash Negotiation Flow)
 
@@ -277,14 +233,16 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 
 ### ネゴシエーションの通信手順
 
+> 今のブラウザのクライアントは式をコミットに直接入れて送るので, この往復はまだしない (サーバーは対応している。[connect-rpc.md](connect-rpc.md))。
+
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as 開発者 / UI
-    participant Client as definy-ui (クライアント)
+    participant Client as クライアント
     participant Gateway as Connect-RPC Gateway
-    participant CAS as SurrealDB contents テーブル
-    participant DB as SurrealDB events テーブル
+    participant CAS as D1 cas_contents テーブル
+    participant DB as D1 events テーブル
 
     User->>Client: パーツの式を編集
     Client->>Client: 修正された式の ContentHash を算出 (SHA-256)

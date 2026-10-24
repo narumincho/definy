@@ -1,7 +1,6 @@
 # seed の書き戻し (`export:seeds`)
 
-UI や MCP でシステムアカウントとしてビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）のパーツを編集した後、稼働中の definy サーバーから最新コミットを取得してリポジトリの `seeds/*.json`（正本）に書き戻すコマンドです。
-旧 Rust 版の `--export-seeds-from <URL>` を TypeScript に移植したものです。
+UI でシステムアカウントとしてビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）のパーツを編集した後、稼働中の definy サーバーから最新コミットを取得してリポジトリの `seeds/*.json`（正本）に書き戻すコマンドです。
 
 ## 使い方
 

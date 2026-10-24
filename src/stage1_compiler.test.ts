@@ -284,7 +284,7 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const { parts, unresolved } = collectReferencedParts(expression, (id) =>
       id === "builtin" || id === "plus" ? { Compiler: id } : undefined,
     );
-    // コンパイラ組み込みのパーツは呼び出さずに参照していても渡す. 旧 Rust 版と同じく後に現れた参照から調べる
+    // コンパイラ組み込みのパーツは呼び出さずに参照していても渡す. 後に現れた参照から調べる (LIFO)
     expect(parts).toEqual([
       { id: "builtin", expression: { Compiler: "builtin" } },
       { id: "plus", expression: { Compiler: "plus" } },

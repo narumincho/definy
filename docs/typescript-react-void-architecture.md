@@ -1,31 +1,20 @@
-# TypeScript + React 19 + Void 移行アーキテクチャと自己記述 Wasm 実行基盤
+# TypeScript + React 19 + Void アーキテクチャと自己記述 Wasm 実行基盤
 
-本ドキュメントでは、Rust (Dioxus + Rust crates) から **TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc)** への移行背景、アーキテクチャ、自己記述コンパイラ (`stage1.wasm`) の実行モデル、および開発ワークフローについてまとめます。
+本ドキュメントでは、**TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc)** の構成にした理由、アーキテクチャ、自己記述コンパイラ (`stage1.wasm`) の実行モデル、および開発ワークフローについてまとめます。
 
 ---
 
-## 1. 移行の動機と背景
+## 1. この構成にした理由
 
-### ① ビルド時間の劇的な短縮
+2026-10-18 (#699) まではブラウザの UI (Dioxus)・サーバー・Worker ランタイム (`wasmi`)・シード SQL 生成がすべて Rust で,
+変更のたびに約 2 分のビルド待ちがあった。また UI もサーバーも Rust だったので,「Rust で動いているのか, definy 自身のコードで
+動いているのか」が二重になっていた。
 
-従来の構成（旧 Rust 実装・廃止済み）では、直列の重い Rust ビルドにおいて：
-
-1. `dx build --package definy-client --release`（Rust → Dioxus WebAssembly クライアント）
-2. `cargo build -p definy-worker-runtime --release --target wasm32-unknown-unknown`（Rust Worker ランタイム + `wasmi` インタプリタ）
-3. `cargo run -p definy-server --release -- --export-seed-sql`（シード SQL 生成）
-
-という直列の重い Rust ビルドが走り、コードを変更するたびに **約 2 分間** のビルド待ちが発生していました。
-Vite 8 (Rolldown + Oxc) と Void を採用したことで、フルスタック全体のプロダクションビルドが **約 1.8 秒** で完了し、開発時は **ミリ秒単位の HMR (Hot Module Replacement)** で即時反映されるようになりました。
-
-### ② 自己ホスト（「definy 自身で definy を表現できているか」）の検証の容易化
-
-`definy` の言語コア（型検査 `core.type-check`、評価器 `core.eval-value`、Wasm コンパイラ `core.compile-to-wasm`）はすべて [seeds/core.json](../seeds/core.json) の中に書かれており、すでに **stage2 固定点（自己コンパイルした結果が元のバイナリと完全に一致する状態）** に到達しています。
-
-従来の構成では、ブラウザで動かす Dioxus UI 側も Rust であり、Worker 側も Rust 製の `wasmi` を Wasm 化して動かしていたため、「Rust 側の処理で動いているのか、definy 自身のコードで動いているのか」が二重になっていました。
-TypeScript + React に移行したことで：
-
-- **ブラウザ側**: 標準の `WebAssembly` API に動的 Wasm コンパイルの制限がないため、`stage1.wasm` をブラウザ内で直接実行し、ユーザーが編集した式をその場で `.wasm` に動的コンパイルして V8 のネイティブ JIT で即時実行・検証できます。
-- **サーバー側 (Cloudflare Workers)**: 静的 Wasm モジュールとしてバンドルし、D1 への永続化やデプロイを TypeScript の単一エコシステムで完結できます。
+- **ビルドが速い**: Vite 8 (Rolldown + Oxc) と Void でフルスタックのプロダクションビルドが約 1.8 秒, 開発時は HMR で即時反映
+- **言語の意味は definy だけが持つ**: 型検査 `core.type-check`・評価器 `core.eval-value`・Wasm コンパイラ `core.compile-to-wasm` は
+  [seeds/core.json](../seeds/core.json) に書かれ, 自己コンパイルの不動点に達している。TypeScript はそれを動かすだけ
+  - **ブラウザ側**: `stage1.wasm` をブラウザ内で直接実行し, 編集した式をその場で Wasm にコンパイルして V8 で実行できる
+  - **サーバー側 (Cloudflare Workers)**: 実行時に Wasm をコンパイルできないので, 必要な Wasm (型チェッカー) はビルド時に作ってバンドルする
 
 ---
 
@@ -94,11 +83,11 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 ├── middleware/
 │   └── 01.definy.ts          # Worker API ルートのインターセプト
 ├── worker/                   # Cloudflare Worker バックエンド実装
-│   ├── index.ts              # API ハンドラー (Connect-RPC, /virtual/wasm/*, /mcp)
+│   ├── index.ts              # API ハンドラー (Connect-RPC, /virtual/wasm/*, /healthz)
 │   ├── store.ts              # Cloudflare D1 (SQLite) イベントストア
 │   └── cbor.ts               # 決定論的 CBOR & Ed25519 署名ユーティリティ
 ├── wasm/
-│   └── stage1.wasm           # definy 自己記述コンパイラ (68KB)
+│   └── stage1.wasm           # definy 自己記述コンパイラ
 ├── src/
 │   ├── components/           # Workbench, Header, ActivityBar, Sidebar, StatusBar...
 │   ├── stage1_compiler.ts    # Wasm コンパイラ・評価パイプライン
@@ -111,13 +100,13 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 
 ### ミドルウェアによる Worker ルーティングの統合
 
-[middleware/01.definy.ts](../middleware/01.definy.ts) により、リクエストパスが API / 動的パス（`/healthz`、`/virtual/wasm/:hash`、`/definy.v1.*`、`/mcp`）の場合は [worker/index.ts](../worker/index.ts) の `handleWorkerRequest(c.req.raw, c.env)` を直結して処理し、それ以外のパスは `await next()` で React の各ページに流れる設計になっています。
+[middleware/01.definy.ts](../middleware/01.definy.ts) により、リクエストパスが API / 動的パス（`/healthz`、`/virtual/wasm/:hash`、`/definy.v1.*`）の場合は [worker/index.ts](../worker/index.ts) の `handleWorkerRequest(c.req.raw, c.env)` を直結して処理し、それ以外のパスは `await next()` で React の各ページに流れる設計になっています。
 
 ---
 
 ## 4. UI ワークベンチ設計と React 19 実装
 
-旧 definy-ui（Rust 実装・廃止済み）のダークテーマ IDE 設計（VS Code 風ワークベンチ）を React 19 で踏襲しています。
+ダークテーマの VS Code 風ワークベンチです ([ui.md](ui.md))。
 
 1. **タイトルバー ([src/components/Header.tsx](../src/components/Header.tsx))**:
    - サイドバー開閉トグル
@@ -210,7 +199,7 @@ export default defineConfig({
 
 `definy` の自己記述コンパイラ [wasm/stage1.wasm](../wasm/stage1.wasm) は、外部環境からの import が一切ありません (`Imports: []`)。
 
-- **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate)、Deno、Bun など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
+- **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate) など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
 - **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
 - **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
 - **再生成とサーバー側コンパイル**: `wasm/stage1.wasm` は `npm run build:stage1` で再生成できます ([self-hosting.md](self-hosting.md))。デプロイ (`definy.deploy-to-cloudflare-workers`) もブラウザで definy 製のコンパイラを動かして行います ([cloudflare-workers.md](cloudflare-workers.md))。

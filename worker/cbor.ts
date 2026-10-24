@@ -44,7 +44,7 @@ export {
 };
 
 /**
- * `definy-event` の `derive_module_id` と同一のアルゴリズムで Module ID の内部 32 バイトを導出する
+ * アカウント ID とモジュール名から Module ID の内部 32 バイトを導出する
  */
 export async function deriveModuleIdBytes(
   accountBytes: Uint8Array,
@@ -65,7 +65,7 @@ export async function deriveModuleIdBytes(
 }
 
 /**
- * `definy-event` の `derive_module_part_id` と同一のアルゴリズムで Part ID (`EventHashId` 文字列) を導出する
+ * Module ID とパーツ名から Part ID (`EventHashId` 文字列) を導出する
  */
 export async function deriveModulePartId(
   moduleIdBytes: Uint8Array,

@@ -1,5 +1,4 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
-import { test as it } from "vitest";
 import { bytesToBase64, sha256EventHashId } from "./store.ts";
 import {
   type AccountCredentials,
@@ -13,10 +12,6 @@ import type {
   D1PreparedStatement,
   D1Result,
 } from "./types.ts";
-
-export const Deno = {
-  test: (name: string, fn: () => void | Promise<void>) => it(name, fn),
-};
 
 export const adminCredentials = await generateAccountCredentials("admin");
 
@@ -138,19 +133,4 @@ export function createSqliteD1Database(): D1Database {
       return Promise.resolve({ count: 1, duration: 0 });
     },
   };
-}
-
-export function assertEquals<T>(
-  actual: T,
-  expected: T,
-  message?: string,
-): void {
-  if (actual !== expected) {
-    throw new Error(
-      message ??
-        `Assertion failed: expected ${JSON.stringify(expected)}, got ${JSON.stringify(
-          actual,
-        )}`,
-    );
-  }
 }

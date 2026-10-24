@@ -4,7 +4,7 @@
  */
 import { base64ToBytes } from "./cbor.ts";
 
-/** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) と同じ値 */
+/** 開発用システムアカウント鍵のシード (秘密鍵が公開されている. docs/system-account.md) */
 export const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
   "definy-compiler-system-key-2026\0",
 );

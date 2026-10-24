@@ -3,10 +3,10 @@
 core.compile-to-wasm は evaluate 関数の後ろに, ここで組み立てた関数の本体のバイト列をそのまま出す.
 関数の番号と型は core.compile-to-wasm / core.compile-expr-instructions と揃えること
 (型セクション・関数セクションは core.compile-to-wasm の中の定数).
-値の箱の形は docs/self-hosting.md の「definy 製コンパイラの対応状況」を参照.
+値の箱の形は docs/self-hosting.md の「値の表現 (線形メモリの形)」を参照.
 
     python3 scripts/wasm_runtime_functions.py seeds/core.json
-    # 旧 Rust 版では次に cargo run -p definy-server -- --export-seeds seeds で export していたが、現在は未対応
+    # コンパイラの出力が変わるので, 続けて npm run build:stage1 -- --bootstrap と npm run build:seeds を実行する
 """
 import json
 import sys
@@ -115,7 +115,7 @@ a.get(0).get(2).op(I32_ADD).load8(8).get(1).get(2).op(I32_ADD).load8(8).op(I32_N
 a.get(2).i32(1).op(I32_ADD).set(2).br(0)
 a.end().end().i32(1)
 helper(3, [(2, I32)], a)
-# 5 values_equal(a, b) -> i32. 両方が文字列なら中身, それ以外は +8 の i64 を比べる (Rust 製と同じ)
+# 5 values_equal(a, b) -> i32. 両方が文字列なら中身, それ以外は +8 の i64 を比べる
 a = A().get(0).load8(0).i32(2).op(I32_EQ).get(1).load8(0).i32(2).op(I32_EQ).op(I32_AND)
 a.if_(I32).get(0).get(1).call(F_STRING_EQ).else_().get(0).load64(8).get(1).load64(8).op(I64_EQ).end()
 helper(3, [], a)
