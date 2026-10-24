@@ -44,20 +44,31 @@ export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   ]),
 };
 
+/** 呼び出す関数の引数. `type` は引数の型 (`core.type-ast` の値). 型の無い組み込みのパーツは無い */
+export type CalleeParameter = {
+  readonly name: string;
+  readonly type?: unknown;
+};
+
 /**
- * パーツの引数名. 関数の型のパーツは型の引数名, 型の無いコンパイラ組み込みのパーツ (`core.equal` など,
+ * パーツの引数. 関数の型のパーツは型の引数, 型の無いコンパイラ組み込みのパーツ (`core.equal` など,
  * 引数の型が決まらないもの) は組み込みの引数名. 関数でなければ `undefined`
  */
-export function partParameterNames(part: {
+export function partParameters(part: {
   readonly partType: unknown;
   readonly expression: unknown;
-}): ReadonlyArray<string> | undefined {
+}): ReadonlyArray<CalleeParameter> | undefined {
   const fn = functionTypeOf(part.partType);
   if (fn !== undefined) {
-    return (fn.parameters ?? []).map((parameter) => String(parameter.name));
+    return (fn.parameters ?? []).map((parameter) => ({
+      name: String(parameter.name),
+      type: parameter.type,
+    }));
   }
   const builtin = compilerBuiltinName(part.expression);
-  return builtin === undefined ? undefined : BUILTIN_PARAMETERS.get(builtin);
+  return builtin === undefined
+    ? undefined
+    : BUILTIN_PARAMETERS.get(builtin)?.map((name) => ({ name }));
 }
 
 /** 関数の型 (`core.type-ast` の `function({ parameters, return_type })`) の中身. 関数の型でなければ `undefined` */
@@ -151,36 +162,57 @@ export function functionParameterTypes(
   return types;
 }
 
-/** 関数型の変数の引数名. 型が関数でない・分からない変数は `undefined` */
-export function variableParameterNames(
+/** 関数型の変数の引数. 型が関数でない・分からない変数は `undefined` */
+export function variableParameters(
   type: unknown,
-): ReadonlyArray<string> | undefined {
-  return functionTypeOf(type)?.parameters?.map((parameter) =>
-    String(parameter.name),
-  );
+): ReadonlyArray<CalleeParameter> | undefined {
+  return functionTypeOf(type)?.parameters?.map((parameter) => ({
+    name: String(parameter.name),
+    type: parameter.type,
+  }));
 }
 
 /**
- * パーツを選んだときの式. 関数のパーツ (`parameterNames` がある) はそのパーツの呼び出しにする.
- * 選んだ位置がすでにパーツの呼び出しなら, 同じ名前の引数の式を引き継ぐ (例: `core.less-than` → `core.less-than-or-equal`)
+ * パーツを選んだときの式. 関数のパーツ (`parameters` がある) はそのパーツの呼び出しにする.
+ * 選んだ位置がすでにパーツの呼び出しなら, 同じ名前の引数の式を引き継ぐ (例: `core.less-than` → `core.less-than-or-equal`).
+ * 引き継がない引数は未入力にし, 関数型の引数は本体を未入力にしたラムダ式 (`f: (item) => □`) にする.
+ * ラムダ式の引数の変数 ID は `firstVariableId` から順に振る (式全体で使われていない ID を渡す)
  */
 export function partSelection(
   reference: unknown,
-  parameterNames: ReadonlyArray<string> | undefined,
+  parameters: ReadonlyArray<CalleeParameter> | undefined,
   current: unknown,
+  firstVariableId: number,
 ): unknown {
-  if (parameterNames === undefined) {
+  if (parameters === undefined) {
     return reference;
   }
   const currentArguments = callOf(current)?.arguments ?? [];
+  let nextId = firstVariableId;
   return callExpression(
     reference,
-    parameterNames.map((name) => ({
-      name,
-      value:
-        currentArguments.find((argument) => argument.name === name)?.value ??
-        hole(),
-    })),
+    parameters.map(({ name, type }) => {
+      const inherited = currentArguments.find(
+        (argument) => argument.name === name,
+      )?.value;
+      if (inherited !== undefined) {
+        return { name, value: inherited };
+      }
+      const fn = functionTypeOf(type);
+      if (fn === undefined) {
+        return { name, value: hole() };
+      }
+      return {
+        name,
+        value: variant("function", {
+          parameters: (fn.parameters ?? []).map((parameter) => ({
+            parameter_id: nextId++,
+            parameter_name: String(parameter.name),
+          })),
+          body: hole(),
+        }),
+      };
+    }),
   );
 }
 
@@ -212,8 +244,8 @@ export function nextVariableId(expr: unknown): number {
 
 /**
  * 置換メニューで選んだ選択肢 (`selectionValue`) の式に, `path` の位置の式を置き換える.
- * `parameterNamesOf` はパーツ ID (Base64URL) からそのパーツの引数名 ({@link partParameterNames}) を返す.
- * 関数のパーツを選ぶと, そのパーツの呼び出しにする. `variableParameterNamesOf` は変数 ID から関数型の変数の引数名を返し,
+ * `parametersOf` はパーツ ID (Base64URL) からそのパーツの引数 ({@link partParameters}) を返す.
+ * 関数のパーツを選ぶと, そのパーツの呼び出しにする. `variableParametersOf` は変数 ID から関数型の変数の引数を返し,
  * 関数型の変数を選んだときもその変数の呼び出しにする.
  * `expectedType` (その位置で期待する型, `core.type-ast` の値) が関数の型なら, 選んだ式をラムダ式で包む ({@link applySelectionInLambda})
  */
@@ -221,12 +253,12 @@ export function applySelection(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
   selectionValue: string,
-  parameterNamesOf: (
+  parametersOf: (
     partHash: string,
-  ) => ReadonlyArray<string> | undefined = () => undefined,
-  variableParameterNamesOf: (
+  ) => ReadonlyArray<CalleeParameter> | undefined = () => undefined,
+  variableParametersOf: (
     variableId: number,
-  ) => ReadonlyArray<string> | undefined = () => undefined,
+  ) => ReadonlyArray<CalleeParameter> | undefined = () => undefined,
   expectedType: unknown = undefined,
 ): unknown {
   const expectedFunction = functionTypeOf(expectedType);
@@ -240,8 +272,8 @@ export function applySelection(
       path,
       selectionValue,
       expectedFunction,
-      parameterNamesOf,
-      variableParameterNamesOf,
+      parametersOf,
+      variableParametersOf,
     );
   }
   let newSubExpr: unknown;
@@ -309,15 +341,21 @@ export function applySelection(
     return updateExpressionAtPath(expr, path, (current) =>
       partSelection(
         variableExpression(varId),
-        variableParameterNamesOf(varId),
+        variableParametersOf(varId),
         current,
+        nextVariableId(expr),
       ),
     );
   } else if (selectionValue.startsWith("ref:part:")) {
     const partHash = selectionValue.replace("ref:part:", "");
     const reference = partReferenceExpression(partHash);
     return updateExpressionAtPath(expr, path, (current) =>
-      partSelection(reference, parameterNamesOf(partHash), current),
+      partSelection(
+        reference,
+        parametersOf(partHash),
+        current,
+        nextVariableId(expr),
+      ),
     );
   } else {
     return expr;
@@ -342,10 +380,12 @@ function applySelectionInLambda(
   path: ReadonlyArray<PathStep>,
   selectionValue: string,
   expectedFunction: NonNullable<ReturnType<typeof functionTypeOf>>,
-  parameterNamesOf: (partHash: string) => ReadonlyArray<string> | undefined,
-  variableParameterNamesOf: (
+  parametersOf: (
+    partHash: string,
+  ) => ReadonlyArray<CalleeParameter> | undefined,
+  variableParametersOf: (
     variableId: number,
-  ) => ReadonlyArray<string> | undefined,
+  ) => ReadonlyArray<CalleeParameter> | undefined,
 ): unknown {
   const current = variantPayload(
     getExpressionAtPath(expr, path),
@@ -371,8 +411,8 @@ function applySelectionInLambda(
     withLambda,
     bodyPath,
     selectionValue,
-    parameterNamesOf,
-    variableParameterNamesOf,
+    parametersOf,
+    variableParametersOf,
   );
   return updateExpressionAtPath(selected, bodyPath, (body) =>
     fillArgumentsWithParameters(body, parameters),

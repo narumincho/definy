@@ -12,10 +12,10 @@ import {
   applySelection,
   clearExpressionAtPath,
   functionParameterTypes,
-  partParameterNames,
+  partParameters,
   setNumberValue,
   setStringValue,
-  variableParameterNames,
+  variableParameters,
 } from "./mutation.ts";
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { pathToString, type PathStep } from "./types.ts";
@@ -702,12 +702,10 @@ export function ExpressionTreeEditor({
                 optionValue,
                 (hash) => {
                   const part = partsByIdHash.get(hash);
-                  return part === undefined
-                    ? undefined
-                    : partParameterNames(part);
+                  return part === undefined ? undefined : partParameters(part);
                 },
                 (variableId) =>
-                  variableParameterNames(parameterTypes.get(variableId)),
+                  variableParameters(parameterTypes.get(variableId)),
                 type,
               ),
             );

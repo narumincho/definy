@@ -3,9 +3,9 @@ import {
   applySelection,
   functionParameterTypes,
   nextVariableId,
-  partParameterNames,
+  partParameters,
   renameFunctionParameter,
-  variableParameterNames,
+  variableParameters,
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
@@ -44,7 +44,7 @@ describe("applySelection", () => {
   });
   const parameterNamesOf = (hash: string) =>
     hash === plusHash || hash === lessThanHash || hash === lessThanOrEqualHash
-      ? ["left", "right"]
+      ? [{ name: "left" }, { name: "right" }]
       : undefined;
 
   it("関数のパーツを選ぶと, 引数が未入力のパーツの呼び出しにする", () => {
@@ -182,7 +182,9 @@ describe("関数型の変数を選ぶ", () => {
     expect(types.get(0)).toEqual(itemToNumber);
     // 呼び出しの引数に書いたラムダ式の引数は, 呼び出すパーツのその引数の型
     expect(types.get(1)).toEqual(itemToNumber);
-    expect(variableParameterNames(types.get(1))).toEqual(["item"]);
+    expect(variableParameters(types.get(1))?.map((p) => p.name)).toEqual([
+      "item",
+    ]);
   });
 
   it("関数型の変数を選ぶと, 引数名を入れたその変数の呼び出しにする", () => {
@@ -196,7 +198,7 @@ describe("関数型の変数を選ぶ", () => {
       bodyPath,
       "ref:local:0",
       () => undefined,
-      (variableId) => variableParameterNames(types.get(variableId)),
+      (variableId) => variableParameters(types.get(variableId)),
     ) as typeof expression;
     const call = {
       "#call": {
@@ -213,16 +215,16 @@ describe("関数型の変数を選ぶ", () => {
         [],
         "ref:local:3",
         () => undefined,
-        () => variableParameterNames({ "#number": null }),
+        () => variableParameters({ "#number": null }),
       ),
     ).toEqual({ "#variable": { variable_id: 3 } });
   });
 });
 
-describe("partParameterNames", () => {
+describe("partParameters", () => {
   it("関数の型のパーツは型の引数名", () => {
     expect(
-      partParameterNames({
+      partParameters({
         partType: {
           "#function": {
             parameters: [{ name: "x", type: { "#number": null } }],
@@ -231,18 +233,18 @@ describe("partParameterNames", () => {
         },
         expression: null,
       }),
-    ).toEqual(["x"]);
+    ).toEqual([{ name: "x", type: { "#number": null } }]);
   });
 
   it("型の無いコンパイラ組み込みのパーツは組み込みの引数名", () => {
     expect(
-      partParameterNames({
+      partParameters({
         partType: null,
         expression: { "#builtin": "list_get" },
       }),
-    ).toEqual(["list", "index"]);
+    ).toEqual([{ name: "list" }, { name: "index" }]);
     expect(
-      partParameterNames({
+      partParameters({
         partType: { "#number": null },
         expression: { "#number": 1 },
       }),
@@ -380,7 +382,7 @@ describe("関数の型を期待する位置で選ぶとラムダ式で包む", (
       expression,
       path,
       `ref:part:${partHash}`,
-      (hash) => (hash === partHash ? ["value"] : undefined),
+      (hash) => (hash === partHash ? [{ name: "value" }] : undefined),
       () => undefined,
       expected,
     );
@@ -407,7 +409,7 @@ describe("関数の型を期待する位置で選ぶとラムダ式で包む", (
       path,
       "ref:local:0",
       () => undefined,
-      () => ["other", "item"],
+      () => [{ name: "other" }, { name: "item" }],
       expected,
     );
     expect(getExpressionAtPath(selected, path)).toEqual({
@@ -445,7 +447,7 @@ describe("関数の型を期待する位置で選ぶとラムダ式で包む", (
       lambda,
       path,
       `ref:part:${partHash}`,
-      () => ["item"],
+      () => [{ name: "item" }],
       () => undefined,
       expected,
     );
@@ -480,5 +482,50 @@ describe("関数の型を期待する位置で選ぶとラムダ式で包む", (
         path,
       ),
     ).toEqual(hole);
+  });
+});
+
+describe("関数型の引数を持つパーツの呼び出し", () => {
+  it("関数型の引数は本体を未入力にしたラムダ式にする", () => {
+    const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(5));
+    const itemToNumber = {
+      "#function": {
+        parameters: [{ name: "item", type: { "#number": null } }],
+        return_type: { "#number": null },
+      },
+    };
+    const expr = {
+      "#function": {
+        parameters: [{ parameter_id: 3, parameter_name: "xs" }],
+        body: { "#hole": { probe: false } },
+      },
+    };
+    expect(
+      getExpressionAtPath(
+        applySelection(expr, ["functionBody"], `ref:part:${mapHash}`, () => [
+          { name: "f", type: itemToNumber },
+          { name: "xs", type: { "#list": { item_type: { "#number": null } } } },
+        ]),
+        ["functionBody"],
+      ),
+    ).toEqual({
+      "#call": {
+        function: {
+          "#part_reference": { part_definition_event_hash: mapHash },
+        },
+        arguments: [
+          {
+            name: "f",
+            value: {
+              "#function": {
+                parameters: [{ parameter_id: 4, parameter_name: "item" }],
+                body: { "#hole": { probe: false } },
+              },
+            },
+          },
+          { name: "xs", value: { "#hole": { probe: false } } },
+        ],
+      },
+    });
   });
 });

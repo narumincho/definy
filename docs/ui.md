@@ -175,6 +175,9 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   - その位置がすでにラムダ式なら, 引数をそのまま使い本体だけを置き換える
   - 本体の呼び出しの未入力の引数には, 同じ名前のラムダ式の引数を, 無ければ残りの引数を順に入れる (`applySelectionInLambda`, `src/tree_layout/selection.ts`)
   - 未入力 (`hole`) を選んだときは包まない
+- 関数型の引数を持つパーツ・関数型の変数を選んで呼び出しを作るときは, その引数を本体が未入力のラムダ式にしておく
+  (`core.list-map` を選ぶと `core.list-map(f: (item) => □, xs: □)`. `partSelection`, `src/tree_layout/selection.ts`).
+  引数の型はパーツの型・変数の型 (`partParameters`, `variableParameters`) から求める
 - 定義への移動: 変数・パーツの参照 (とその呼び出し) を選んだときの `go-to-definition`, ツリーで F12,
   または名前を Ctrl / Cmd + クリック (VSCode などの IDE と同じ).
   変数ならその変数を定義している名前 (関数の引数名・let の変数名・match で束縛する変数の名前) を選び,

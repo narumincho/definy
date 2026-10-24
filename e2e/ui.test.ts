@@ -358,6 +358,37 @@ test.describe("definy UI E2E", () => {
     await expect(valueTree.locator(".tree-type-error")).toHaveCount(0);
   });
 
+  test("selecting a part with a function-typed parameter fills it with a lambda", async ({
+    page,
+  }) => {
+    await page.goto("/part/std.abs");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // core.minus(left: 0, right: x) の呼び出しを core.list-map に置き換える
+    await valueTree
+      .locator(".tree-badge", { hasText: /^core\.minus$/ })
+      .click();
+    await page.locator(".dropdown-search-input").fill("core.list-map");
+    await page
+      .locator(".dropdown-option", { hasText: /^core\.list-map(?!-)/ })
+      .first()
+      .click();
+    // f: は本体が未入力のラムダ式 (item) => □, xs: は未入力
+    await expect(
+      valueTree.locator('[data-node-id$=".fn"]', {
+        hasText: /^core\.list-map$/,
+      }),
+    ).toHaveCount(1);
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^item$/ }),
+    ).toHaveCount(1);
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(2);
+  });
+
   test("renaming a function parameter renames the arguments of the callers in other parts", async ({
     page,
   }) => {
