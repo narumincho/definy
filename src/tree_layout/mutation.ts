@@ -12,6 +12,8 @@ export {
 export {
   TYPE_SELECTIONS,
   applySelection,
+  functionParameterTypes,
   nextVariableId,
   partParameterNames,
+  variableParameterNames,
 } from "./selection.ts";

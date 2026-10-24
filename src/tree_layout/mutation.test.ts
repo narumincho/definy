@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   applySelection,
+  functionParameterTypes,
   nextVariableId,
   partParameterNames,
   renameFunctionParameter,
+  variableParameterNames,
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
@@ -124,6 +126,114 @@ describe("applySelection", () => {
         },
       },
     });
+  });
+});
+
+describe("関数型の変数を選ぶ", () => {
+  const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(7));
+  const itemToNumber = {
+    function: {
+      parameters: [{ name: "item", type: "number" }],
+      return_type: "number",
+    },
+  };
+  // (f: (item: number) -> number) => map(g: (x) => □, xs: □)
+  const partType = {
+    function: {
+      parameters: [{ name: "f", type: itemToNumber }],
+      return_type: "number",
+    },
+  };
+  const expression = {
+    Function: {
+      parameters: [{ parameter_id: 0, parameter_name: "f" }],
+      body: {
+        Call: {
+          function: {
+            PartReference: {
+              part_definition_event_hash: base64ToBytes(mapHash),
+            },
+          },
+          arguments: [
+            {
+              name: "g",
+              value: {
+                Function: {
+                  parameters: [{ parameter_id: 1, parameter_name: "x" }],
+                  body: { Hole: {} },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+  const types = functionParameterTypes(expression, partType, (hash) =>
+    hash === mapHash
+      ? {
+          function: {
+            parameters: [
+              {
+                name: "g",
+                type: {
+                  function: {
+                    parameters: [{ name: "x", type: itemToNumber }],
+                    return_type: "number",
+                  },
+                },
+              },
+            ],
+            return_type: "number",
+          },
+        }
+      : undefined,
+  );
+
+  it("パーツの型と呼び出すパーツの引数の型から, 関数の引数の型を求める", () => {
+    expect(types.get(0)).toEqual(itemToNumber);
+    // 呼び出しの引数に書いたラムダ式の引数は, 呼び出すパーツのその引数の型
+    expect(types.get(1)).toEqual(itemToNumber);
+    expect(variableParameterNames(types.get(1))).toEqual(["item"]);
+  });
+
+  it("関数型の変数を選ぶと, 引数名を入れたその変数の呼び出しにする", () => {
+    const bodyPath = [
+      "functionBody",
+      { kind: "callArgument", index: 0 },
+      "functionBody",
+    ] as const;
+    const selected = applySelection(
+      expression,
+      bodyPath,
+      "ref:local:0",
+      () => undefined,
+      (variableId) => variableParameterNames(types.get(variableId)),
+    ) as typeof expression;
+    const call = {
+      Call: {
+        function: { Variable: { variable_id: 0 } },
+        arguments: [{ name: "item", value: { Hole: {} } }],
+      },
+    };
+    expect(
+      (
+        selected.Function.body.Call.arguments[0]?.value as {
+          readonly Function: { readonly body: unknown };
+        }
+      ).Function.body,
+    ).toEqual(call);
+    expect(getOptionValueForExpression(call)).toBe("ref:local:0");
+    // 関数でない変数はそのまま変数にする
+    expect(
+      applySelection(
+        { Hole: {} },
+        [],
+        "ref:local:3",
+        () => undefined,
+        () => variableParameterNames("number"),
+      ),
+    ).toEqual({ Variable: { variable_id: 3 } });
   });
 });
 

@@ -12,10 +12,12 @@ import {
   applySelection,
   clearExpressionAtPath,
   functionParameterIndex,
+  functionParameterTypes,
   partParameterNames,
   renameFunctionParameter,
   setNumberValue,
   setStringValue,
+  variableParameterNames,
 } from "./mutation.ts";
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { pathToString, type PathStep } from "./types.ts";
@@ -121,6 +123,17 @@ export function ExpressionTreeEditor({
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
     return computeLayout(rawTree, { maxWidth });
   }, [expression, partNames, maxWidth]);
+
+  // 関数の引数の型. 関数型の変数を置換メニューで選んだときに, その引数名で呼び出しにする
+  const parameterTypes = useMemo(
+    () =>
+      functionParameterTypes(
+        expression,
+        partType,
+        (hash) => partsByIdHash.get(hash)?.partType,
+      ),
+    [expression, partType, partsByIdHash],
+  );
 
   const typeErrorNodeId = useMemo(() => {
     if (typeError === null) return null;
@@ -404,12 +417,19 @@ export function ExpressionTreeEditor({
       if (optionValue !== menu.currentOptionValue) {
         onChange(
           !isMatchPatternPath(selectedPath)
-            ? applySelection(expression, selectedPath, optionValue, (hash) => {
-                const part = partsByIdHash.get(hash);
-                return part === undefined
-                  ? undefined
-                  : partParameterNames(part);
-              })
+            ? applySelection(
+                expression,
+                selectedPath,
+                optionValue,
+                (hash) => {
+                  const part = partsByIdHash.get(hash);
+                  return part === undefined
+                    ? undefined
+                    : partParameterNames(part);
+                },
+                (variableId) =>
+                  variableParameterNames(parameterTypes.get(variableId)),
+              )
             : applyPatternSelection(
                 expression,
                 selectedPath,
@@ -425,6 +445,7 @@ export function ExpressionTreeEditor({
       keyboard,
       menu.currentOptionValue,
       onChange,
+      parameterTypes,
       partsByIdHash,
       patternVariants,
       selectedPath,

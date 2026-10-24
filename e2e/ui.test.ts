@@ -193,6 +193,31 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
   });
 
+  test("selecting a function-typed parameter makes a call with all its argument names", async ({
+    page,
+  }) => {
+    await page.goto("/part/core.list-map");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // f: (item) => f(item: item) の最後の item を, 関数型の引数 f に置き換える
+    await valueTree
+      .locator(".tree-badge", { hasText: /^item$/ })
+      .last()
+      .click();
+    await page.locator(".dropdown-search-input").fill("f");
+    await page.locator(".dropdown-option", { hasText: /^f\b/ }).first().click();
+    // 関数は値として書けないので, 引数名 (item:) を入れた f の呼び出しになる
+    await expect(
+      valueTree.locator('[data-node-id$=".fn"]', { hasText: /^f$/ }),
+    ).toHaveCount(2);
+    // (パーツの型の行の f の引数名 item: もあるので 3 つ)
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^item:$/ }),
+    ).toHaveCount(3);
+  });
+
   test("hovering an expression shows its type and the documentation of the part", async ({
     page,
   }) => {
