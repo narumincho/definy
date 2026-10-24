@@ -135,11 +135,13 @@ export function getOptionValueForExpression(node: unknown): string | null {
     }
   }
 
-  // パーツの呼び出しは, 呼び出しているパーツの選択肢 (選び直すと同じ名前の引数の式を引き継ぐ)
+  // 呼び出しは, 呼び出しているパーツ・関数型の変数の選択肢 (選び直すと同じ名前の引数の式を引き継ぐ)
   if ("Call" in obj) {
     const fn = (obj.Call as { readonly function?: unknown } | null)?.function;
     const value = getOptionValueForExpression(fn);
-    return value?.startsWith("ref:part:") ? value : null;
+    return value?.startsWith("ref:part:") || value?.startsWith("ref:local:")
+      ? value
+      : null;
   }
 
   if ("PartReference" in obj) {

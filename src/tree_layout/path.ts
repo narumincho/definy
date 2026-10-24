@@ -123,13 +123,6 @@ export function getExpressionAtPath(
     );
   }
 
-  if (head === "callFunction" && "Call" in node) {
-    return getExpressionAtPath(
-      (node.Call as { function?: unknown })?.function,
-      tail,
-    );
-  }
-
   if (
     typeof head === "object" &&
     head.kind === "callArgument" &&
@@ -398,17 +391,6 @@ export function updateExpressionAtPath(
       Function: {
         ...fnInner,
         body: updateExpressionAtPath(fnInner.body, tail, updater),
-      },
-    };
-  }
-
-  if (head === "callFunction" && "Call" in node) {
-    const callInner = node.Call as { function?: unknown };
-    return {
-      ...node,
-      Call: {
-        ...callInner,
-        function: updateExpressionAtPath(callInner.function, tail, updater),
       },
     };
   }

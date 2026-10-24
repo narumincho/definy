@@ -42,10 +42,10 @@ describe("findHoverTarget", () => {
     });
   });
 
-  it("パーツの呼び出しと呼び出す関数は呼び出すパーツの ID を出す", () => {
+  it("パーツの呼び出しと呼び出す関数の名前は, 呼び出しとして呼び出すパーツの ID を出す", () => {
     const fnId = ids.find((nodeId) => nodeId.endsWith(".fn"));
     expect(targetOf(fnId ?? "")).toMatchObject({
-      path: ["functionBody", "callFunction"],
+      path: ["functionBody"],
       partIdHash,
     });
     const callId = fnId?.slice(0, -".fn".length) ?? "";

@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "core.expression から演算子のバリアントをなくし, definy 製のコンパイラ・型チェッカー・評価器が組み込みのパーツの呼び出しを扱う",
+  "message": "呼び出し式で呼べるものを core.callee (パーツ・関数型の引数・レコードの関数のフィールド) にし, 関数を値として書くのを型エラーにする",
   "parts": [
     {
       "name": "let",
@@ -1039,7 +1039,7 @@
                       "value": {
                         "PartReference": {
                           "part_definition_event_hash": {
-                            "$part": "core.expression"
+                            "$part": "core.callee"
                           }
                         }
                       }
@@ -1345,6 +1345,197 @@
               "payload_type": "TypeString"
             }
           ]
+        }
+      }
+    },
+    {
+      "name": "callee",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "What a call expression calls: a part (function part or compiler built-in), a compiler built-in itself, a function parameter, or a function field of a record. A function cannot be called as an arbitrary expression"
+        },
+        {
+          "language": "ja",
+          "text": "呼び出し式で呼ぶもの: パーツ (関数のパーツ・コンパイラ組み込み), コンパイラ組み込みそのもの, 関数型の引数, レコードの関数のフィールド. 任意の式を呼ぶことはできない"
+        }
+      ],
+      "expression": {
+        "TypeUnion": {
+          "variants": [
+            {
+              "tag": "part_reference",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "part_definition_event_hash",
+                      "value": "TypeString"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "builtin",
+              "payload_type": "TypeString"
+            },
+            {
+              "tag": "variable",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "variable_id",
+                      "value": "TypeNumber"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "record_get",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "record",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "key": "key",
+                      "value": "TypeString"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "callee-to-expression",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "callee",
+              "type": {
+                "type_part": {
+                  "$part": "core.callee"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.expression"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Converts what a call calls to the expression that evaluates to the function (used by the evaluator and compiler)"
+        },
+        {
+          "language": "ja",
+          "text": "呼び出し先を, その関数に評価される式にする (評価器・コンパイラで使う)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "callee"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "part_reference",
+                  "variable_id": 1,
+                  "variable_name": "reference",
+                  "body": {
+                    "Variant": {
+                      "tag": "part_reference",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "builtin",
+                  "variable_id": 2,
+                  "variable_name": "name",
+                  "body": {
+                    "Variant": {
+                      "tag": "builtin",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "variable",
+                  "variable_id": 3,
+                  "variable_name": "variable",
+                  "body": {
+                    "Variant": {
+                      "tag": "variable",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "record_get",
+                  "variable_id": 4,
+                  "variable_name": "record_get",
+                  "body": {
+                    "Variant": {
+                      "tag": "record_get",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 4
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
         }
       }
     },
@@ -4893,13 +5084,29 @@
                             {
                               "name": "expr",
                               "value": {
-                                "RecordGet": {
-                                  "record": {
-                                    "Variable": {
-                                      "variable_id": 24
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.callee-to-expression"
+                                      }
                                     }
                                   },
-                                  "key": "function"
+                                  "arguments": [
+                                    {
+                                      "name": "callee",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 24
+                                            }
+                                          },
+                                          "key": "function"
+                                        }
+                                      }
+                                    }
+                                  ]
                                 }
                               }
                             },
@@ -14778,6 +14985,25 @@
             },
             {
               "tag": "not_a_function",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "actual",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-ast"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "function_not_called",
               "payload_type": {
                 "TypeLiteral": {
                   "items": [
@@ -29985,13 +30211,13 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-callee"
                               }
                             }
                           },
                           "arguments": [
                             {
-                              "name": "expr",
+                              "name": "callee",
                               "value": {
                                 "RecordGet": {
                                   "record": {
@@ -30344,29 +30570,53 @@
                       "function": {
                         "PartReference": {
                           "part_definition_event_hash": {
-                            "$part": "core.type-env-lookup"
+                            "$part": "core.type-check-value-not-function"
                           }
                         }
                       },
                       "arguments": [
                         {
-                          "name": "env",
+                          "name": "result",
                           "value": {
-                            "Variable": {
-                              "variable_id": 1
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-env-lookup"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "var_id",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 20
+                                        }
+                                      },
+                                      "key": "variable_id"
+                                    }
+                                  }
+                                }
+                              ]
                             }
                           }
                         },
                         {
-                          "name": "var_id",
+                          "name": "env",
                           "value": {
-                            "RecordGet": {
-                              "record": {
-                                "Variable": {
-                                  "variable_id": 20
-                                }
-                              },
-                              "key": "variable_id"
+                            "Variable": {
+                              "variable_id": 1
                             }
                           }
                         }
@@ -30521,29 +30771,53 @@
                       "function": {
                         "PartReference": {
                           "part_definition_event_hash": {
-                            "$part": "core.type-env-lookup-part"
+                            "$part": "core.type-check-value-not-function"
                           }
                         }
                       },
                       "arguments": [
                         {
-                          "name": "env",
+                          "name": "result",
                           "value": {
-                            "Variable": {
-                              "variable_id": 1
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-env-lookup-part"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "part_hash",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 22
+                                        }
+                                      },
+                                      "key": "part_definition_event_hash"
+                                    }
+                                  }
+                                }
+                              ]
                             }
                           }
                         },
                         {
-                          "name": "part_hash",
+                          "name": "env",
                           "value": {
-                            "RecordGet": {
-                              "record": {
-                                "Variable": {
-                                  "variable_id": 22
-                                }
-                              },
-                              "key": "part_definition_event_hash"
+                            "Variable": {
+                              "variable_id": 1
                             }
                           }
                         }
@@ -30556,179 +30830,56 @@
                   "variable_id": 70,
                   "variable_name": "rg_e",
                   "body": {
-                    "Match": {
-                      "target": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.type-check"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "expr",
-                              "value": {
-                                "RecordGet": {
-                                  "record": {
-                                    "Variable": {
-                                      "variable_id": 70
-                                    }
-                                  },
-                                  "key": "record"
-                                }
-                              }
-                            },
-                            {
-                              "name": "env",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              }
-                            }
-                          ]
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-check-value-not-function"
+                          }
                         }
                       },
-                      "arms": [
+                      "arguments": [
                         {
-                          "tag": "ok",
-                          "variable_id": 71,
-                          "variable_name": "rec_t",
-                          "body": {
-                            "Match": {
-                              "target": {
-                                "Call": {
-                                  "function": {
-                                    "PartReference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.type-resolve"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "type",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 71
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "env",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
-                                        }
-                                      }
-                                    }
-                                  ]
+                          "name": "result",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-check-record-get"
+                                  }
                                 }
                               },
-                              "arms": [
+                              "arguments": [
                                 {
-                                  "tag": "record",
-                                  "variable_id": 72,
-                                  "variable_name": "fields",
-                                  "body": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.record-field-type-lookup"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "fields",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 72
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "key",
-                                          "value": {
-                                            "RecordGet": {
-                                              "record": {
-                                                "Variable": {
-                                                  "variable_id": 70
-                                                }
-                                              },
-                                              "key": "key"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "index",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
+                                  "name": "record_get",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 70
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "_",
-                                  "variable_id": 96,
-                                  "variable_name": "_",
-                                  "body": {
-                                    "Variant": {
-                                      "tag": "error",
-                                      "payload": {
-                                        "Variant": {
-                                          "tag": "not_a_record",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 71
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
-                                        }
-                                      },
-                                      "type_part_definition_event_hash": null
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
                                     }
                                   }
                                 }
-                              ],
-                              "default": null
+                              ]
                             }
                           }
                         },
                         {
-                          "tag": "error",
-                          "variable_id": 73,
-                          "variable_name": "err",
-                          "body": {
-                            "Variant": {
-                              "tag": "error",
-                              "payload": {
-                                "Variable": {
-                                  "variable_id": 73
-                                }
-                              },
-                              "type_part_definition_event_hash": null
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
                             }
                           }
                         }
-                      ],
-                      "default": null
+                      ]
                     }
                   }
                 },
@@ -31698,6 +31849,630 @@
                         }
                       },
                       "type_part_definition_event_hash": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-check-record-get",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "record_get",
+              "type": {
+                "record": [
+                  {
+                    "key": "record",
+                    "value": {
+                      "type_part": {
+                        "$part": "core.expression"
+                      }
+                    }
+                  },
+                  {
+                    "key": "key",
+                    "value": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.type-result"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Type of a record field access (the field may be a function)"
+        },
+        {
+          "language": "ja",
+          "text": "レコードのフィールドを取り出す式の型 (フィールドは関数でもよい)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 70,
+              "parameter_name": "record_get"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-check"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "expr",
+                      "value": {
+                        "RecordGet": {
+                          "record": {
+                            "Variable": {
+                              "variable_id": 70
+                            }
+                          },
+                          "key": "record"
+                        }
+                      }
+                    },
+                    {
+                      "name": "env",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "ok",
+                  "variable_id": 71,
+                  "variable_name": "rec_t",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-resolve"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "type",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 71
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "record",
+                          "variable_id": 72,
+                          "variable_name": "fields",
+                          "body": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.record-field-type-lookup"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "fields",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 72
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "key",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 70
+                                        }
+                                      },
+                                      "key": "key"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 96,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "not_a_record",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "actual",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 71
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "error",
+                  "variable_id": 73,
+                  "variable_name": "err",
+                  "body": {
+                    "Variant": {
+                      "tag": "error",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 73
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-check-callee",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "callee",
+              "type": {
+                "type_part": {
+                  "$part": "core.callee"
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.type-result"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Type of what a call calls. Unlike a variable or part reference written as a value, it may be a function"
+        },
+        {
+          "language": "ja",
+          "text": "呼び出し先の型. 値として書いた変数・パーツ参照と違い, 関数でよい"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "callee"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "part_reference",
+                  "variable_id": 2,
+                  "variable_name": "reference",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-env-lookup-part"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "part_hash",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "key": "part_definition_event_hash"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "builtin",
+                  "variable_id": 3,
+                  "variable_name": "name",
+                  "body": {
+                    "Variant": {
+                      "tag": "ok",
+                      "payload": {
+                        "Variant": {
+                          "tag": "builtin",
+                          "payload": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          },
+                          "type_part_definition_event_hash": null
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "variable",
+                  "variable_id": 4,
+                  "variable_name": "variable",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-env-lookup"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "var_id",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              },
+                              "key": "variable_id"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "record_get",
+                  "variable_id": 5,
+                  "variable_name": "record_get",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-check-record-get"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "record_get",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 5
+                            }
+                          }
+                        },
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-check-value-not-function",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "result",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-result"
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.type-result"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Rejects a function written as a value (a variable, part reference or record field of a function type that is not called). Functions are only called, and a function argument is written as a lambda"
+        },
+        {
+          "language": "ja",
+          "text": "値として書いた関数 (呼び出していない関数型の変数・パーツ参照・レコードのフィールド) を拒否する. 関数は呼び出すだけで, 関数の引数にはラムダ式を書く"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "result"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "ok",
+                  "variable_id": 2,
+                  "variable_name": "value_type",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-resolve"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "type",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "function",
+                          "variable_id": 3,
+                          "variable_name": "function_type",
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "function_not_called",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "actual",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "builtin",
+                          "variable_id": 4,
+                          "variable_name": "name",
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "function_not_called",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "actual",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "error",
+                  "variable_id": 5,
+                  "variable_name": "error",
+                  "body": {
+                    "Variable": {
+                      "variable_id": 0
                     }
                   }
                 }
@@ -44394,13 +45169,13 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-callee"
                               }
                             }
                           },
                           "arguments": [
                             {
-                              "name": "expr",
+                              "name": "callee",
                               "value": {
                                 "RecordGet": {
                                   "record": {
@@ -60738,7 +61513,7 @@
               "name": "function",
               "type": {
                 "type_part": {
-                  "$part": "core.expression"
+                  "$part": "core.callee"
                 }
               }
             },
@@ -61026,7 +61801,7 @@
                     "key": "function",
                     "value": {
                       "type_part": {
-                        "$part": "core.expression"
+                        "$part": "core.callee"
                       }
                     }
                   },
@@ -61172,13 +61947,29 @@
                   "variable_id": 96,
                   "variable_name": "function",
                   "value": {
-                    "RecordGet": {
-                      "record": {
-                        "Variable": {
-                          "variable_id": 43
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.callee-to-expression"
+                          }
                         }
                       },
-                      "key": "function"
+                      "arguments": [
+                        {
+                          "name": "callee",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 43
+                                }
+                              },
+                              "key": "function"
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 },
@@ -75376,13 +76167,29 @@
                             "ListLiteral": {
                               "items": [
                                 {
-                                  "RecordGet": {
-                                    "record": {
-                                      "Variable": {
-                                        "variable_id": 38
+                                  "Call": {
+                                    "function": {
+                                      "PartReference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.callee-to-expression"
+                                        }
                                       }
                                     },
-                                    "key": "function"
+                                    "arguments": [
+                                      {
+                                        "name": "callee",
+                                        "value": {
+                                          "RecordGet": {
+                                            "record": {
+                                              "Variable": {
+                                                "variable_id": 38
+                                              }
+                                            },
+                                            "key": "function"
+                                          }
+                                        }
+                                      }
+                                    ]
                                   }
                                 }
                               ]
@@ -95788,13 +96595,29 @@
                                 {
                                   "name": "expr",
                                   "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 25
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.callee-to-expression"
+                                          }
                                         }
                                       },
-                                      "key": "function"
+                                      "arguments": [
+                                        {
+                                          "name": "callee",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 25
+                                                }
+                                              },
+                                              "key": "function"
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
                                 }
@@ -105048,7 +105871,7 @@
               "name": "function",
               "type": {
                 "type_part": {
-                  "$part": "core.expression"
+                  "$part": "core.callee"
                 }
               }
             },
@@ -105671,8 +106494,32 @@
                 {
                   "name": "f",
                   "value": {
-                    "Variable": {
-                      "variable_id": 0
+                    "Function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 100,
+                          "parameter_name": "item"
+                        }
+                      ],
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "item",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 100
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
                     }
                   }
                 },
@@ -105852,8 +106699,32 @@
                         {
                           "name": "f",
                           "value": {
-                            "Variable": {
-                              "variable_id": 0
+                            "Function": {
+                              "parameters": [
+                                {
+                                  "parameter_id": 100,
+                                  "parameter_name": "item"
+                                }
+                              ],
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "item",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 100
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
                             }
                           }
                         },
@@ -106054,8 +106925,44 @@
                 {
                   "name": "reducer",
                   "value": {
-                    "Variable": {
-                      "variable_id": 0
+                    "Function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 100,
+                          "parameter_name": "acc"
+                        },
+                        {
+                          "parameter_id": 101,
+                          "parameter_name": "item"
+                        }
+                      ],
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "acc",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 100
+                                }
+                              }
+                            },
+                            {
+                              "name": "item",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 101
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
                     }
                   }
                 },
@@ -106235,8 +107142,44 @@
                         {
                           "name": "reducer",
                           "value": {
-                            "Variable": {
-                              "variable_id": 0
+                            "Function": {
+                              "parameters": [
+                                {
+                                  "parameter_id": 100,
+                                  "parameter_name": "acc"
+                                },
+                                {
+                                  "parameter_id": 101,
+                                  "parameter_name": "item"
+                                }
+                              ],
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "acc",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 100
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "item",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 101
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
                             }
                           }
                         },

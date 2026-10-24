@@ -31,7 +31,6 @@ export type PathStep =
   | "constructorValue"
   | "typeListItem"
   | "functionBody"
-  | "callFunction"
   | { readonly kind: "callArgument"; readonly index: number }
   | { readonly kind: "typeFunctionParameter"; readonly index: number }
   /** 関数 (`Function`) の引数の名前. 式ではない */

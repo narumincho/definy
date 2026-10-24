@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   applySelection,
+  functionParameterTypes,
   nextVariableId,
   partParameterNames,
   renameFunctionParameter,
+  variableParameterNames,
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
@@ -97,15 +99,6 @@ describe("applySelection", () => {
         parameterNamesOf,
       ),
     ).toEqual(expected);
-    // 呼び出しの関数の位置で選んだときは参照だけを置き換える
-    expect(
-      applySelection(
-        expr,
-        ["callFunction"],
-        `ref:part:${lessThanOrEqualHash}`,
-        parameterNamesOf,
-      ),
-    ).toEqual(expected);
   });
 
   it("let は式全体で使われていない変数 ID で作る", () => {
@@ -133,6 +126,114 @@ describe("applySelection", () => {
         },
       },
     });
+  });
+});
+
+describe("関数型の変数を選ぶ", () => {
+  const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(7));
+  const itemToNumber = {
+    function: {
+      parameters: [{ name: "item", type: "number" }],
+      return_type: "number",
+    },
+  };
+  // (f: (item: number) -> number) => map(g: (x) => □, xs: □)
+  const partType = {
+    function: {
+      parameters: [{ name: "f", type: itemToNumber }],
+      return_type: "number",
+    },
+  };
+  const expression = {
+    Function: {
+      parameters: [{ parameter_id: 0, parameter_name: "f" }],
+      body: {
+        Call: {
+          function: {
+            PartReference: {
+              part_definition_event_hash: base64ToBytes(mapHash),
+            },
+          },
+          arguments: [
+            {
+              name: "g",
+              value: {
+                Function: {
+                  parameters: [{ parameter_id: 1, parameter_name: "x" }],
+                  body: { Hole: {} },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+  const types = functionParameterTypes(expression, partType, (hash) =>
+    hash === mapHash
+      ? {
+          function: {
+            parameters: [
+              {
+                name: "g",
+                type: {
+                  function: {
+                    parameters: [{ name: "x", type: itemToNumber }],
+                    return_type: "number",
+                  },
+                },
+              },
+            ],
+            return_type: "number",
+          },
+        }
+      : undefined,
+  );
+
+  it("パーツの型と呼び出すパーツの引数の型から, 関数の引数の型を求める", () => {
+    expect(types.get(0)).toEqual(itemToNumber);
+    // 呼び出しの引数に書いたラムダ式の引数は, 呼び出すパーツのその引数の型
+    expect(types.get(1)).toEqual(itemToNumber);
+    expect(variableParameterNames(types.get(1))).toEqual(["item"]);
+  });
+
+  it("関数型の変数を選ぶと, 引数名を入れたその変数の呼び出しにする", () => {
+    const bodyPath = [
+      "functionBody",
+      { kind: "callArgument", index: 0 },
+      "functionBody",
+    ] as const;
+    const selected = applySelection(
+      expression,
+      bodyPath,
+      "ref:local:0",
+      () => undefined,
+      (variableId) => variableParameterNames(types.get(variableId)),
+    ) as typeof expression;
+    const call = {
+      Call: {
+        function: { Variable: { variable_id: 0 } },
+        arguments: [{ name: "item", value: { Hole: {} } }],
+      },
+    };
+    expect(
+      (
+        selected.Function.body.Call.arguments[0]?.value as {
+          readonly Function: { readonly body: unknown };
+        }
+      ).Function.body,
+    ).toEqual(call);
+    expect(getOptionValueForExpression(call)).toBe("ref:local:0");
+    // 関数でない変数はそのまま変数にする
+    expect(
+      applySelection(
+        { Hole: {} },
+        [],
+        "ref:local:3",
+        () => undefined,
+        () => variableParameterNames("number"),
+      ),
+    ).toEqual({ Variable: { variable_id: 3 } });
   });
 });
 
@@ -168,7 +269,7 @@ describe("partParameterNames", () => {
 });
 
 describe("パーツの呼び出しの表示", () => {
-  it("呼び出すパーツと引数名ごとの式を子に持つ", () => {
+  it("呼び出すパーツの名前と引数名ごとの式を子に持つ. 名前は呼び出しと同じパス (式ではない)", () => {
     const node = expressionToLayoutNode({
       Call: {
         function: {
@@ -188,10 +289,52 @@ describe("パーツの呼び出しの表示", () => {
       "index:",
     ]);
     expect(node.children.map((c) => c.path)).toEqual([
-      ["callFunction"],
+      [],
       [{ kind: "callArgument", index: 0 }],
       [{ kind: "callArgument", index: 1 }],
     ]);
+    expect(node.children[0]?.scopeVariables).toBeUndefined();
+  });
+
+  it("関数型の引数の呼び出し・レコードの関数のフィールドの呼び出しは名前で出す", () => {
+    const node = expressionToLayoutNode({
+      Function: {
+        parameters: [
+          { parameter_id: 0, parameter_name: "f" },
+          { parameter_id: 1, parameter_name: "clock" },
+        ],
+        body: {
+          ListLiteral: {
+            items: [
+              {
+                Call: {
+                  function: { Variable: { variable_id: 0 } },
+                  arguments: [],
+                },
+              },
+              {
+                Call: {
+                  function: {
+                    RecordGet: {
+                      record: { Variable: { variable_id: 1 } },
+                      key: "now",
+                    },
+                  },
+                  arguments: [],
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+    const labels: Array<string> = [];
+    const walk = (n: typeof node): void => {
+      if (n.id.endsWith(".fn")) labels.push(n.label);
+      n.children.forEach(walk);
+    };
+    walk(node);
+    expect(labels).toEqual(["f", "clock.now"]);
   });
 });
 

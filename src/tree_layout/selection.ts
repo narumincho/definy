@@ -1,7 +1,11 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
 import { updateExpressionAtPath } from "./path.ts";
-import { BUILTIN_PARAMETERS, compilerBuiltinName } from "../stage1_compiler.ts";
+import {
+  BUILTIN_PARAMETERS,
+  compilerBuiltinName,
+  partReferenceId,
+} from "../stage1_compiler.ts";
 
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
@@ -46,6 +50,128 @@ export function partParameterNames(part: {
   }
   const builtin = compilerBuiltinName(part.expression);
   return builtin === undefined ? undefined : BUILTIN_PARAMETERS.get(builtin);
+}
+
+/** 関数の型 (`{function: {parameters, return_type}}`) の中身. 関数の型でなければ `undefined` */
+function functionTypeOf(type: unknown):
+  | {
+      readonly parameters?: ReadonlyArray<{
+        readonly name?: unknown;
+        readonly type?: unknown;
+      }>;
+      readonly return_type?: unknown;
+    }
+  | undefined {
+  return (type as { readonly function?: unknown } | null)?.function as
+    | {
+        readonly parameters?: ReadonlyArray<{
+          readonly name?: unknown;
+          readonly type?: unknown;
+        }>;
+        readonly return_type?: unknown;
+      }
+    | undefined;
+}
+
+/**
+ * 関数 (`Function`) の引数の変数 ID → 引数の型. 型は書いた位置で決まるものだけ求める:
+ * パーツの式の直下の関数はパーツの型 (`partType`), 呼び出しの引数に書いた関数は呼び出すパーツ・関数型の引数の
+ * その引数の型. `partTypeOf` はパーツ ID (Base64URL) からパーツの型を返す
+ */
+export function functionParameterTypes(
+  expression: unknown,
+  partType: unknown,
+  partTypeOf: (partHash: string) => unknown,
+): ReadonlyMap<number, unknown> {
+  const types = new Map<number, unknown>();
+  const calleeParameters = (
+    callee: unknown,
+  ): ReadonlyArray<{ readonly name?: unknown; readonly type?: unknown }> => {
+    const obj = callee as {
+      readonly PartReference?: {
+        readonly part_definition_event_hash?: unknown;
+      };
+      readonly Variable?: { readonly variable_id?: unknown };
+    } | null;
+    if (obj?.PartReference !== undefined) {
+      try {
+        return (
+          functionTypeOf(
+            partTypeOf(
+              partReferenceId(obj.PartReference.part_definition_event_hash),
+            ),
+          )?.parameters ?? []
+        );
+      } catch {
+        return [];
+      }
+    }
+    if (obj?.Variable !== undefined) {
+      return (
+        functionTypeOf(types.get(Number(obj.Variable.variable_id)))
+          ?.parameters ?? []
+      );
+    }
+    return [];
+  };
+  const visit = (node: unknown, expectedType: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach((item) => visit(item, undefined));
+      return;
+    }
+    if (!node || typeof node !== "object" || node instanceof Uint8Array) {
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    if ("Function" in obj) {
+      const fn = obj.Function as {
+        readonly parameters?: ReadonlyArray<{
+          readonly parameter_id?: unknown;
+        }>;
+        readonly body?: unknown;
+      };
+      const fnType = functionTypeOf(expectedType);
+      (fn.parameters ?? []).forEach((parameter, index) => {
+        const type = fnType?.parameters?.[index]?.type;
+        if (type !== undefined) {
+          types.set(Number(parameter.parameter_id), type);
+        }
+      });
+      visit(fn.body, fnType?.return_type);
+      return;
+    }
+    if ("Call" in obj) {
+      const call = obj.Call as {
+        readonly function?: unknown;
+        readonly arguments?: ReadonlyArray<{
+          readonly name?: unknown;
+          readonly value?: unknown;
+        }>;
+      };
+      const parameters = calleeParameters(call.function);
+      visit(call.function, undefined);
+      for (const argument of call.arguments ?? []) {
+        visit(
+          argument.value,
+          parameters.find((parameter) => parameter.name === argument.name)
+            ?.type,
+        );
+      }
+      return;
+    }
+    Object.values(obj).forEach((child) => visit(child, undefined));
+  };
+  visit(expression, partType);
+  return types;
+}
+
+/** 関数型の変数の引数名. 型が関数でない・分からない変数は `undefined` */
+export function variableParameterNames(
+  type: unknown,
+): ReadonlyArray<string> | undefined {
+  return functionTypeOf(type)?.parameters?.map((parameter) =>
+    String(parameter.name),
+  );
 }
 
 /**
@@ -112,7 +238,8 @@ export function nextVariableId(expr: unknown): number {
 /**
  * 置換メニューで選んだ選択肢 (`selectionValue`) の式に, `path` の位置の式を置き換える.
  * `parameterNamesOf` はパーツ ID (Base64URL) からそのパーツの引数名 ({@link partParameterNames}) を返す.
- * 関数のパーツを選ぶと, そのパーツの呼び出しにする (呼び出しの関数の位置で選んだときは参照だけ置き換える)
+ * 関数のパーツを選ぶと, そのパーツの呼び出しにする. `variableParameterNamesOf` は変数 ID から関数型の変数の引数名を返し,
+ * 関数型の変数を選んだときもその変数の呼び出しにする
  */
 export function applySelection(
   expr: unknown,
@@ -120,6 +247,9 @@ export function applySelection(
   selectionValue: string,
   parameterNamesOf: (
     partHash: string,
+  ) => ReadonlyArray<string> | undefined = () => undefined,
+  variableParameterNamesOf: (
+    variableId: number,
   ) => ReadonlyArray<string> | undefined = () => undefined,
 ): unknown {
   let newSubExpr: unknown;
@@ -187,7 +317,14 @@ export function applySelection(
     };
   } else if (selectionValue.startsWith("ref:local:")) {
     const varId = Number(selectionValue.replace("ref:local:", ""));
-    newSubExpr = { Variable: { variable_id: varId } };
+    // 関数型の変数は値として書けないので, 引数名を入れた呼び出しにする
+    return updateExpressionAtPath(expr, path, (current) =>
+      partSelection(
+        { Variable: { variable_id: varId } },
+        variableParameterNamesOf(varId),
+        current,
+      ),
+    );
   } else if (selectionValue.startsWith("ref:part:")) {
     const partHash = selectionValue.replace("ref:part:", "");
     const reference = {
@@ -195,10 +332,8 @@ export function applySelection(
         part_definition_event_hash: base64ToBytes(partHash),
       },
     };
-    const parameterNames =
-      path.at(-1) === "callFunction" ? undefined : parameterNamesOf(partHash);
     return updateExpressionAtPath(expr, path, (current) =>
-      partSelection(reference, parameterNames, current),
+      partSelection(reference, parameterNamesOf(partHash), current),
     );
   } else {
     return expr;

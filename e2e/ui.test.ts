@@ -161,8 +161,11 @@ test.describe("definy UI E2E", () => {
     await expect(valueTree).toBeVisible({ timeout: 15000 });
 
     // core.minus(left: 0, right: x) の呼び出し (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る
-    // (期待する型が number と分かる)
-    await clickCallCapsule(callCapsule(valueTree, "core.minus"));
+    // (期待する型が number と分かる). 呼び出す関数の名前は呼び出しの一部なので, 名前を押すと呼び出しを選ぶ
+    const subtract = valueTree.locator(".tree-badge", {
+      hasText: /^core\.minus$/,
+    });
+    await subtract.click();
     // 検索欄には今の式の名前が入っているので, 空にして全ての選択肢を出す
     await page.locator(".dropdown-search-input").fill("");
     await expect(
@@ -188,6 +191,31 @@ test.describe("definy UI E2E", () => {
     await expect(
       valueTree.locator(".tree-badge", { hasText: /^value:$/ }),
     ).toHaveCount(1);
+  });
+
+  test("selecting a function-typed parameter makes a call with all its argument names", async ({
+    page,
+  }) => {
+    await page.goto("/part/core.list-map");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // f: (item) => f(item: item) の最後の item を, 関数型の引数 f に置き換える
+    await valueTree
+      .locator(".tree-badge", { hasText: /^item$/ })
+      .last()
+      .click();
+    await page.locator(".dropdown-search-input").fill("f");
+    await page.locator(".dropdown-option", { hasText: /^f\b/ }).first().click();
+    // 関数は値として書けないので, 引数名 (item:) を入れた f の呼び出しになる
+    await expect(
+      valueTree.locator('[data-node-id$=".fn"]', { hasText: /^f$/ }),
+    ).toHaveCount(2);
+    // (パーツの型の行の f の引数名 item: もあるので 3 つ)
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^item:$/ }),
+    ).toHaveCount(3);
   });
 
   test("hovering an expression shows its type and the documentation of the part", async ({
