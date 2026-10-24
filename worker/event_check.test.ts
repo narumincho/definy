@@ -10,7 +10,7 @@ import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import { latestCommitHashOf } from "./type_check.ts";
-import type { Env } from "./types.ts";
+import type { Env, GetModuleBranchesResponse } from "./types.ts";
 
 async function submit(
   store: WorkerStore,
@@ -103,5 +103,47 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
     // alice は bob のブランチにはコミットできない. main は alice のまま
     expect((await commit(alice, "bob", await head("bob"), 5)).status).toBe(400);
     expect((await commit(alice, "main", main1, 6)).status).toBe(200);
+
+    // GetModuleBranches は各ブランチの作成者・コミット数・最新のコミットのイベントを返す (seed のモジュールも)
+    const res = await handleWorkerRequest(
+      new Request(
+        "https://definy.local/definy.v1.EventService/GetModuleBranches",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        },
+      ),
+      env,
+      store,
+    );
+    expect(res.status).toBe(200);
+    const { branches } = (await res.json()) as GetModuleBranchesResponse;
+    const app = branches
+      .filter((b) => b.moduleName === "app")
+      .map((b) => ({
+        branch: b.branch,
+        creatorAccountId: b.creatorAccountId,
+        commitCount: b.commitCount,
+        latestEventHash: b.latestEvent.eventHash,
+      }))
+      .sort((a, b) => a.branch.localeCompare(b.branch));
+    expect(app).toEqual([
+      {
+        branch: "bob",
+        creatorAccountId: bob.accountId,
+        commitCount: 2,
+        latestEventHash: await head("bob"),
+      },
+      {
+        branch: "main",
+        creatorAccountId: alice.accountId,
+        commitCount: 2,
+        latestEventHash: await head("main"),
+      },
+    ]);
+    expect(
+      branches.some((b) => b.moduleName === "core" && b.branch === "main"),
+    ).toBe(true);
   }, 60_000);
 });

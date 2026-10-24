@@ -22,6 +22,7 @@ export default function AccountDetailPage(): JSX.Element {
     accountNames,
     currentAccount,
     decodedCommits,
+    modules,
     connectionStatus,
   } = useDefiny();
 
@@ -30,9 +31,21 @@ export default function AccountDetailPage(): JSX.Element {
     [events, accountId],
   );
 
-  /** このアカウントがコミットしたモジュール (最後にコミットした順) */
+  /**
+   * このアカウントがコミットしたモジュール (最後にコミットした順). 全イベントは読まないので,
+   * 読んだコミットと, このアカウントが作ったブランチから集める
+   */
   const committedModules = useMemo(() => {
     const latest = new Map<string, number>();
+    for (const mod of modules) {
+      for (const branch of mod.branches) {
+        if (branch.creatorAccountId !== accountId) continue;
+        const prev = latest.get(mod.name);
+        if (prev === undefined || prev < branch.latestTimeMs) {
+          latest.set(mod.name, branch.latestTimeMs);
+        }
+      }
+    }
     for (const { event, commit } of decodedCommits) {
       if (event.accountId !== accountId) continue;
       const prev = latest.get(commit.moduleName);
@@ -41,7 +54,7 @@ export default function AccountDetailPage(): JSX.Element {
       }
     }
     return [...latest].sort((a, b) => b[1] - a[1]).map(([name]) => name);
-  }, [decodedCommits, accountId]);
+  }, [modules, decodedCommits, accountId]);
 
   const isCurrent = currentAccount?.accountId === accountId;
   const name =

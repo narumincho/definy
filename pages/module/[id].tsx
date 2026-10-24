@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
 import {
@@ -11,23 +11,38 @@ import { usePageTitle } from "../../src/page_title.ts";
 import { MAIN_BRANCH } from "../../src/event_content.ts";
 import type { DecodedCommitEvent } from "../../src/state/useEvents.ts";
 
-/** `latest` から `parentCommitHash` をたどったコミット (新しい順) */
+/** コミット履歴に出す最大の数 (古いコミットは 1 件ずつ読むので上限を置く) */
+const HISTORY_LIMIT = 50;
+
+/**
+ * `latest` から `parentCommitHash` をたどったコミット (新しい順) と, まだ読んでいない次のコミット.
+ * 全イベントは読まないので, 足りないコミットは `loadEvent` で読む
+ */
 function branchHistory(
   commits: ReadonlyArray<DecodedCommitEvent>,
   latest: string | null,
-): ReadonlyArray<DecodedCommitEvent> {
+): {
+  readonly history: ReadonlyArray<DecodedCommitEvent>;
+  readonly missing: string | null;
+} {
   const byHash = new Map(commits.map((c) => [c.event.eventHash, c]));
   const history: DecodedCommitEvent[] = [];
   const visited = new Set<string>();
   let hash = latest;
-  while (hash !== null && !visited.has(hash)) {
+  while (
+    hash !== null &&
+    !visited.has(hash) &&
+    history.length < HISTORY_LIMIT
+  ) {
     visited.add(hash);
     const commit = byHash.get(hash);
-    if (commit === undefined) break;
+    if (commit === undefined) {
+      return { history, missing: hash };
+    }
     history.push(commit);
     hash = commit.commit.parentCommitHash;
   }
-  return history;
+  return { history, missing: null };
 }
 
 export default function ModuleDetailPage(): JSX.Element {
@@ -39,6 +54,7 @@ export default function ModuleDetailPage(): JSX.Element {
     decodedCommits,
     accountNames,
     selectBranch,
+    loadEvent,
   } = useDefiny();
 
   const mod = modules.find((m) => m.moduleId === id) ?? {
@@ -57,10 +73,26 @@ export default function ModuleDetailPage(): JSX.Element {
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
   /** 表示しているブランチの最新のコミットから親をたどったコミット (新しい順). 分かれる前の main のコミットも入る */
-  const moduleCommits = branchHistory(
+  const { history: moduleCommits, missing } = branchHistory(
     decodedCommits.filter((c) => c.commit.moduleName === id),
     mod.branches.find((b) => b.name === mod.branch)?.latestEventHash ?? null,
   );
+  // 読んでいない古いコミットを 1 件ずつ読む. 見つからなければ (消えた・不正) そこで止める
+  const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    if (missing === null || unavailable.has(missing)) return;
+    let cancelled = false;
+    void loadEvent(missing).then((found) => {
+      if (!found && !cancelled) {
+        setUnavailable((prev) => new Set(prev).add(missing));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [missing, unavailable, loadEvent]);
 
   return (
     <div className="module-detail-view">

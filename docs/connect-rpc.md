@@ -36,6 +36,8 @@ package definy.v1;
 
 service EventService {
   rpc GetEvents (GetEventsRequest) returns (GetEventsResponse);
+  // 各モジュールの各ブランチの作成者・コミット数・最新のコミットのイベント (docs/branch.md)
+  rpc GetModuleBranches (GetModuleBranchesRequest) returns (GetModuleBranchesResponse);
   rpc GetEvent (GetEventRequest) returns (GetEventResponse);
   rpc SubmitEvent (SubmitEventRequest) returns (SubmitEventResponse);
 
@@ -115,6 +117,7 @@ message GetContentResponse {
 
 - **サーバー側 (`worker/index.ts`)**:
   - `POST /definy.v1.EventService/GetEvents`
+  - `POST /definy.v1.EventService/GetModuleBranches`
   - `POST /definy.v1.EventService/GetEvent`
   - `POST /definy.v1.EventService/SubmitEvent`
   - `POST /definy.v1.EventService/CheckMissingHashes` (差分ハッシュ照会)

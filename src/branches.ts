@@ -24,11 +24,18 @@ export type BranchSummary = {
   readonly commitCount: number;
 };
 
-/** モジュール `moduleName` のブランチ. main が先頭, 残りは名前順 */
-export function moduleBranches(
+/** モジュール名付きのブランチ */
+export type ModuleBranchSummary = BranchSummary & {
+  readonly moduleName: string;
+};
+
+/**
+ * コミットを全モジュールのブランチにまとめる. サーバーの `GetModuleBranches` が使う
+ * (ブラウザは全コミットを読まず, その結果を受け取る)
+ */
+export function summarizeBranches(
   commits: Iterable<BranchCommit>,
-  moduleName: string,
-): ReadonlyArray<BranchSummary> {
+): ReadonlyArray<ModuleBranchSummary> {
   const branches = new Map<
     string,
     {
@@ -38,27 +45,36 @@ export function moduleBranches(
     }
   >();
   for (const commit of commits) {
-    if (commit.moduleName !== moduleName) {
-      continue;
-    }
-    const existing = branches.get(commit.branch);
-    if (existing === undefined) {
-      branches.set(commit.branch, { first: commit, latest: commit, count: 1 });
-      continue;
-    }
-    branches.set(commit.branch, {
-      first: commit.timeMs < existing.first.timeMs ? commit : existing.first,
-      latest: existing.latest.timeMs < commit.timeMs ? commit : existing.latest,
-      count: existing.count + 1,
-    });
+    const key = JSON.stringify([commit.moduleName, commit.branch]);
+    const existing = branches.get(key);
+    branches.set(
+      key,
+      existing === undefined
+        ? { first: commit, latest: commit, count: 1 }
+        : {
+            first:
+              commit.timeMs < existing.first.timeMs ? commit : existing.first,
+            latest:
+              existing.latest.timeMs < commit.timeMs ? commit : existing.latest,
+            count: existing.count + 1,
+          },
+    );
   }
-  return Array.from(branches, ([name, { first, latest, count }]) => ({
-    name,
+  return Array.from(branches.values(), ({ first, latest, count }) => ({
+    moduleName: latest.moduleName,
+    name: latest.branch,
     creatorAccountId: first.accountId,
     latestEventHash: latest.eventHash,
     latestTimeMs: latest.timeMs,
     commitCount: count,
-  })).sort((a, b) =>
+  }));
+}
+
+/** main を先頭に, 残りを名前順に並べる */
+export function sortBranches<T extends BranchSummary>(
+  branches: Iterable<T>,
+): ReadonlyArray<T> {
+  return [...branches].sort((a, b) =>
     a.name === MAIN_BRANCH
       ? -1
       : b.name === MAIN_BRANCH

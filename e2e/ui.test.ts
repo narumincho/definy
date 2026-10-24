@@ -1,4 +1,8 @@
 import { expect, test, type Locator } from "@playwright/test";
+import {
+  createSignedAccountEvent,
+  generateAccountCredentials,
+} from "../src/auth.ts";
 
 /**
  * 関数 `functionName` を呼び出す式のカプセル.
@@ -176,6 +180,34 @@ test.describe("definy UI E2E", () => {
       .allTextContents();
     expect(moduleTitles).toContain("core");
     expect(moduleTitles).toContain("sample");
+  });
+
+  test("seed modules stay listed after more than 100 newer events (#761)", async ({
+    page,
+    request,
+  }) => {
+    // seed のコミットより新しいイベントを 100 件より多く作る. UI は最新の 100 件のイベントだけでなく
+    // 各ブランチの最新のコミット (GetModuleBranches) からモジュールを作るので, core などは消えない
+    for (let i = 0; i < 105; i += 1) {
+      const credentials = await generateAccountCredentials(`filler_${i}`);
+      const { signedEventBytes } = await createSignedAccountEvent(credentials);
+      const res = await request.post("/definy.v1.EventService/SubmitEvent", {
+        data: { signedEventBytes },
+      });
+      expect(res.ok()).toBe(true);
+    }
+    await page.goto("/modules");
+    await expect(
+      page.locator(".module-card-title", { hasText: /^core$/ }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.locator(".module-card-title", { hasText: /^sample$/ }),
+    ).toBeVisible();
+    // 型環境にも残っている (core のパーツを開くと型エラーにならず型が出る)
+    await page.goto("/module/core");
+    await expect(page.locator(".module-commit").first()).toBeVisible({
+      timeout: 15000,
+    });
   });
 
   test("parts page lists parts, supports search and part navigation", async ({
