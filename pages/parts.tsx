@@ -86,12 +86,7 @@ export default function PartsPage(): JSX.Element {
                 <div className="part-card-footer">
                   <PlayIcon size={14} className="part-card-play-icon" />
                   <span className="part-card-link-text">
-                    {label(
-                      language,
-                      "Open & Evaluate",
-                      "開いて評価",
-                      "Malfermi kaj taksi",
-                    )}
+                    {label(language, "Open", "開く", "Malfermi")}
                   </span>
                 </div>
               </Link>

@@ -179,3 +179,23 @@ export function RedoIcon(props: IconProps): JSX.Element {
     </StrokeIcon>
   );
 }
+
+export function CloseIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props} strokeWidth={2}>
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </StrokeIcon>
+  );
+}
+
+/** 実行パネル (ターミナル) */
+export function TerminalIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <polyline points="7 9 10 12 7 15" />
+      <line x1="12" y1="15" x2="17" y2="15" />
+    </StrokeIcon>
+  );
+}

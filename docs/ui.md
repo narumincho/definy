@@ -202,8 +202,10 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 
 ### 元に戻す (Undo) / やり直す (Redo)
 
-パーツ詳細 (`pages/part/[id].tsx`) の編集は, ヘッダーのボタンか Ctrl / Cmd + Z で元に戻し,
-Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/undo_history.ts](../src/undo_history.ts) (単体テストあり).
+パーツ詳細 (`pages/part/[id].tsx`) の編集は, ヘッダー (definy のロゴの右) のボタンか Ctrl / Cmd + Z で元に戻し,
+Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる.
+ヘッダーのボタンはページごとの履歴をつなぐだけで, ページが `useDefiny().setPageUndo` で `PageUndoControls` を渡す
+(離れるときに `null` に戻す). 渡していないページではボタンを押せない. 履歴の計算は [src/undo_history.ts](../src/undo_history.ts) (単体テストあり).
 
 - 履歴には, 変える前のそのパーツの作業中の変更 (`PartChange`. 変更が無ければ `undefined`) を積む.
   元に戻して変更が無い状態になれば作業中の変更も消える (`discardWorkingPart`). 「変更を破棄」も元に戻せる
@@ -212,6 +214,7 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
   式の数値・文字列・変数名の入力欄は `text:<パス>`) の変更が 1 秒以内に続けば新しく積まない.
   `ExpressionTreeEditor` の `onChange` と `PartDefinitionTree` の `onExpressionChange` がキーを渡す
 - 入力欄 (`input` / `textarea`) にフォーカスがあるときのショートカットはブラウザの入力欄の Undo に任せる
+- 実行パネル (`.run-panel`) の中にフォーカスがあるときのショートカットはパーツの履歴に使わない (パネルの式はパーツではないため)
 - 履歴はパーツ詳細を開いている間だけ持つ. 別のパーツへ移ると消える (ページを `key` で作り直すため)
 - 上限は 200 件. 超えたら古いものから捨てる
 
@@ -280,8 +283,8 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
 
 ### I/O をするプログラムの実行 (wasi.io)
 
-パーツ詳細画面で「式を評価」した結果が `wasi.io` の値なら, そのまま I/O をしながら最後まで動かし,
-I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッセージを評価結果の下に出す.
+実行パネル ([run-panel.md](run-panel.md)) で実行した結果が `wasi.io` の値なら, そのまま I/O をしながら最後まで動かし,
+I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッセージを実行履歴に出す.
 「CORS エラーのときサーバーで仲介する」は設定画面で決める ([wasi-io.md](wasi-io.md)).
 式がシークレットリテラルのパーツのページには, 名前と送ってよい宛先の編集, 値の入力, 使用箇所, 使用履歴の欄を出す ([secret.md](secret.md)).
 

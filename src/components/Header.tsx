@@ -1,6 +1,12 @@
 import type { JSX } from "react";
 import { Link } from "./Link.tsx";
-import { SearchIcon, SidebarIcon } from "../icons.tsx";
+import {
+  RedoIcon,
+  SearchIcon,
+  SidebarIcon,
+  TerminalIcon,
+  UndoIcon,
+} from "../icons.tsx";
 import { label, languageNativeName } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import type { LanguageCode } from "../types.ts";
@@ -13,6 +19,9 @@ export function Header(): JSX.Element {
     currentAccount,
     setAccountModalOpen,
     toggleSidebar,
+    pageUndo,
+    runPanelOpen,
+    toggleRunPanel,
   } = useDefiny();
 
   const explorerLabel = label(
@@ -27,6 +36,15 @@ export function Header(): JSX.Element {
     "Search parts, modules and pages",
     "パーツ・モジュール・ページを検索",
     "Serĉi partojn, modulojn kaj paĝojn",
+  );
+
+  const undoLabel = label(language, "Undo", "元に戻す", "Malfari");
+  const redoLabel = label(language, "Redo", "やり直す", "Refari");
+  const runPanelLabel = label(
+    language,
+    "Toggle Run Panel",
+    "実行パネルの表示切替",
+    "Baskuligi rul-panelon",
   );
 
   return (
@@ -46,6 +64,34 @@ export function Header(): JSX.Element {
         <h1 className="logo-text">definy</h1>
       </Link>
 
+      {/* 今のページ (パーツ詳細など) の元に戻す・やり直す. 持たないページでは押せない */}
+      <div className="header-undo-redo">
+        <button
+          type="button"
+          className="titlebar-icon-button header-undo"
+          disabled={pageUndo === null || !pageUndo.canUndo}
+          title={`${undoLabel} (Ctrl+Z)`}
+          aria-label={undoLabel}
+          onClick={() => {
+            pageUndo?.undo();
+          }}
+        >
+          <UndoIcon size={16} className="titlebar-icon" />
+        </button>
+        <button
+          type="button"
+          className="titlebar-icon-button header-redo"
+          disabled={pageUndo === null || !pageUndo.canRedo}
+          title={`${redoLabel} (Ctrl+Shift+Z)`}
+          aria-label={redoLabel}
+          onClick={() => {
+            pageUndo?.redo();
+          }}
+        >
+          <RedoIcon size={16} className="titlebar-icon" />
+        </button>
+      </div>
+
       <div className="header-title-container">
         <button
           type="button"
@@ -63,6 +109,17 @@ export function Header(): JSX.Element {
       </div>
 
       <div className="header-actions">
+        <button
+          type="button"
+          className={`titlebar-icon-button run-panel-toggle ${runPanelOpen ? "active" : ""}`}
+          title={`${runPanelLabel} (Ctrl+\`)`}
+          aria-label={runPanelLabel}
+          aria-pressed={runPanelOpen}
+          onClick={toggleRunPanel}
+        >
+          <TerminalIcon size={17} className="titlebar-icon" />
+        </button>
+
         <div className="language-dropdown-wrapper">
           <select
             className="header-control language-select"

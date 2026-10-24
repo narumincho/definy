@@ -3,6 +3,7 @@ import { ActivityBar } from "./ActivityBar.tsx";
 import { CommandPalette } from "./CommandPalette.tsx";
 import { ExplorerSidebar } from "./ExplorerSidebar.tsx";
 import { Header } from "./Header.tsx";
+import { RunPanel } from "./RunPanel.tsx";
 import { StatusBar } from "./StatusBar.tsx";
 import { useDefiny } from "../state.tsx";
 
@@ -29,6 +30,7 @@ export function Workbench({
 
       <main id="main-content" className="workbench-editor">
         <div className="workbench-editor-scroll">{children}</div>
+        <RunPanel />
       </main>
 
       <StatusBar />

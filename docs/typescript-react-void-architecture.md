@@ -125,9 +125,8 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
    - 接続状態インジケータ（緑=接続中 / 黄=確認中 / 灰=オフライン）
    - 未コミット変更ショートカット
    - 現在の言語名
-5. **パーツ詳細 & ブラウザ内即時評価 ([pages/part/[id].tsx](../pages/part/[id].tsx))**:
-   - **「式を評価 (Wasm)」ボタン**: バックエンド通信なしで、ブラウザ内で `stage1.wasm` を用いて式を Wasm に動的コンパイルし、V8 上で即座に実行して結果を表示。式が参照するパーツも集めて stage1 に渡す（[eval-conformance.md](eval-conformance.md) の「stage1.wasm の入力」を参照）。
-   - **WebAssembly タブ**: 生成された Wasm バイナリのサイズ（バイト数）と先頭 16 進ダンプの確認。
+5. **パーツ詳細 ([pages/part/[id].tsx](../pages/part/[id].tsx)) と実行パネル ([src/components/RunPanel.tsx](../src/components/RunPanel.tsx))**:
+   - **実行パネル**: ヘッダーのボタンか Ctrl + \` で出す。木構造のエディタで入力した式を、バックエンド通信なしでブラウザ内の `stage1.wasm` で Wasm にコンパイルして実行し、実行履歴に残す。式が参照するパーツも集めて stage1 に渡す（[run-panel.md](run-panel.md)）。
 
 ---
 
@@ -233,4 +232,4 @@ npm run test:e2e
    - `core`, `sample` 等の組み込みモジュールがカード形式で一覧表示されること。
 3. **パーツ一覧・詳細画面 (`/parts`, `/part/:id`)**:
    - パーツの検索絞り込み（`triangle` で `triangle-area` がヒット）とカードクリックによる詳細画面への遷移。
-   - パーツ詳細画面での「式を評価」ボタン押下により、Wasm 評価器が実行され `.eval-result-card` に結果が出力されること。
+   - 実行パネルで開いているパーツを入力して実行すると、Wasm 評価器が実行され `.run-history-entry` に結果が出力されること。再実行で履歴が増えること。

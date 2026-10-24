@@ -43,9 +43,10 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 - `onSecretUse`: シークレットを使った (使おうとした) ときに呼ぶ (使用履歴)
 - `onStep`: I/O のたびに記録を渡す (シークレットは名前だけで値は渡さない)
 
-### ブラウザ (パーツ詳細画面)
+### ブラウザ (実行パネル)
 
-パーツ詳細画面の「式を評価」で結果が `wasi.io` の値なら, そのまま `runWasiIo` で動かし, I/O の記録と `done` のメッセージを出す。
+実行パネル ([run-panel.md](run-panel.md)) で実行した結果が `wasi.io` の値なら, そのまま `runWasiIo` で動かし, I/O の記録と `done` のメッセージを出す
+(`src/run_expression.ts`)。シークレットの使用履歴の「使った場所」は `run-panel` になる。
 
 - `get_parts` は評価と同じく, 作業中の変更があればそちらの式を返す
 - シークレットの値はシークレットのパーツのページで入れる ([secret.md](secret.md))
