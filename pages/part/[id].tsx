@@ -1,27 +1,9 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
-import { PlayIcon, RedoIcon, UndoIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
-import {
-  collectReferencedParts,
-  evaluateCompiledWasm,
-  type DefinyValue,
-} from "../../src/stage1_compiler.ts";
-import { loadStage1Compiler } from "../../src/stage1_browser.ts";
-import {
-  isWasiIoValue,
-  runWasiIo,
-  type WasiIoStep,
-} from "../../src/wasi_io.ts";
-import {
-  browserWasiIoHandler,
-  loadSecret,
-  loadWasiIoSettings,
-  recordSecretUse,
-} from "../../src/wasi_io_browser.ts";
 import { findSecretUsages, secretLiteralOf } from "../../src/secret.ts";
 import { SecretPanel } from "../../src/components/SecretPanel.tsx";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
@@ -39,7 +21,7 @@ import {
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  // パーツを切り替えたら作り直し, 選択中の行・式や評価結果を前のパーツから持ち越さない
+  // パーツを切り替えたら作り直し, 選択中の行・式や Undo の履歴を前のパーツから持ち越さない
   return <PartDetail key={id ?? ""} id={id} />;
 }
 
@@ -47,23 +29,13 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   const {
     language,
     parts,
-    partNames,
-    partsByIdHash,
     workingChanges,
     updateWorkingPart,
     discardWorkingPart,
     checkPartType,
     typeCheckMessage,
-    currentAccount,
+    setPageUndo,
   } = useDefiny();
-
-  const [evaluating, setEvaluating] = useState(false);
-  const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
-  const [evalError, setEvalError] = useState<string | null>(null);
-  const [_compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
-  // 評価結果が wasi.io (I/O をするプログラム) のときに動かした I/O の記録と, 終わったときのメッセージ
-  const [wasiIoSteps, setWasiIoSteps] = useState<ReadonlyArray<WasiIoStep>>([]);
-  const [wasiIoMessage, setWasiIoMessage] = useState<string | null>(null);
 
   const part = parts.find(
     (p) =>
@@ -147,12 +119,38 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     [applyChange, change, history],
   );
 
+  // ヘッダー (definy のロゴの右) の元に戻す・やり直すボタンにこのパーツの履歴をつなぐ
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
+  useEffect(() => {
+    setPageUndo({
+      canUndo,
+      canRedo,
+      undo: () => {
+        handleUndoKey("undo");
+      },
+      redo: () => {
+        handleUndoKey("redo");
+      },
+    });
+  }, [canUndo, canRedo, handleUndoKey, setPageUndo]);
+  useEffect(
+    () => () => {
+      setPageUndo(null);
+    },
+    [setPageUndo],
+  );
+
   // Ctrl / Cmd + Z で元に戻す, Ctrl / Cmd + Shift + Z と Ctrl + Y でやり直す.
-  // 入力欄の中ではブラウザの入力欄の Undo に任せる
+  // 入力欄の中ではブラウザの入力欄の Undo に任せる. 実行パネルの式はパーツではないので対象にしない
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent): void => {
       const key = undoKeyFromEvent(e);
-      if (key === null || isTextInput(e.target)) {
+      if (
+        key === null ||
+        isTextInput(e.target) ||
+        (e.target instanceof Element && e.target.closest(".run-panel") !== null)
+      ) {
         return;
       }
       e.preventDefault();
@@ -224,109 +222,6 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     currentExpression,
   ]);
 
-  const handleEvaluate = useCallback(async () => {
-    setEvaluating(true);
-    setEvalError(null);
-    setEvalResult(null);
-    setWasiIoSteps([]);
-    setWasiIoMessage(null);
-    try {
-      const compiler = await loadStage1Compiler();
-
-      // パーツの式 (作業中の変更があればそちら)
-      const resolvePart = (partIdHash: string): unknown => {
-        // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
-        const shown = parts.find((p) => p.partIdHash === partIdHash);
-        const shownChange =
-          shown === undefined
-            ? undefined
-            : workingChanges.parts.get(shown.partId);
-        return shownChange?.expression !== undefined
-          ? shownChange.expression
-          : partsByIdHash.get(partIdHash)?.expression;
-      };
-
-      // 式が参照するパーツを集めて stage1 に渡す
-      const { parts: referencedParts, unresolved } = collectReferencedParts(
-        currentExpression,
-        resolvePart,
-      );
-      if (unresolved.length > 0) {
-        throw new Error(
-          `${label(
-            language,
-            "Referenced parts were not found, have no expression, or are compiler built-ins",
-            "参照しているパーツが見つからないか, 式が無いか, コンパイラ組み込みのため評価できません",
-            "Referencitaj partoj ne troviĝis, ne havas esprimon aŭ estas enkonstruitaj en la kompililo",
-          )}: ${unresolved.map((partIdHash) => partNames.get(partIdHash) ?? partIdHash).join(", ")}`,
-        );
-      }
-
-      const wasm = compiler.compile(currentExpression, referencedParts);
-      setCompiledWasm(wasm);
-
-      const result = await evaluateCompiledWasm(wasm);
-      setEvalResult(result);
-
-      // wasi.io の値なら, I/O をしながら最後 (done) まで動かす
-      if (isWasiIoValue(result)) {
-        const settings = loadWasiIoSettings();
-        const secretKeyBase64 = currentAccount?.secretKeyBase64;
-        const message = await runWasiIo(
-          await WebAssembly.compile(wasm as unknown as BufferSource),
-          {
-            handle: browserWasiIoHandler(
-              settings,
-              currentAccount !== null && secretKeyBase64 !== undefined
-                ? { ...currentAccount, secretKeyBase64 }
-                : null,
-            ),
-            getPart: resolvePart,
-            getSecret: loadSecret,
-            onSecretUse: (use) => {
-              recordSecretUse(use, `${part.moduleName}.${currentName}`);
-            },
-            onStep: (step) => {
-              setWasiIoSteps((steps) => [...steps, step]);
-            },
-          },
-        );
-        setWasiIoMessage(message);
-      }
-    } catch (err) {
-      setEvalError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setEvaluating(false);
-    }
-  }, [
-    currentExpression,
-    parts,
-    partsByIdHash,
-    workingChanges,
-    partNames,
-    language,
-    currentAccount,
-    part.moduleName,
-    currentName,
-  ]);
-
-  function formatWasiIoStep(step: WasiIoStep): string {
-    switch (step.kind) {
-      case "get_parts":
-        return `get_parts: ${step.found} 個${step.missing.length > 0 ? ` (見つからない: ${step.missing.join(", ")})` : ""}`;
-      case "outgoing_request":
-        return `${step.method} ${step.url} (${step.bodyBytes} bytes${step.secrets.length > 0 ? `, シークレット: ${step.secrets.join(", ")}` : ""}) → ${"error" in step.result ? `エラー: ${step.result.error}` : step.result.status}`;
-    }
-  }
-
-  function formatValue(v: DefinyValue): string {
-    if (v === null) return "null";
-    if (typeof v === "object") {
-      return JSON.stringify(v, null, 2);
-    }
-    return String(v);
-  }
-
   return (
     <div className="part-detail-view">
       <div className="part-header card">
@@ -355,40 +250,6 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
           className="part-actions"
           style={{ display: "flex", gap: "0.5rem" }}
         >
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            disabled={history.past.length === 0}
-            title={label(
-              language,
-              "Undo (Ctrl+Z)",
-              "元に戻す (Ctrl+Z)",
-              "Malfari (Ctrl+Z)",
-            )}
-            aria-label={label(language, "Undo", "元に戻す", "Malfari")}
-            onClick={() => {
-              handleUndoKey("undo");
-            }}
-          >
-            <UndoIcon size={14} className="btn-icon" />
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            disabled={history.future.length === 0}
-            title={label(
-              language,
-              "Redo (Ctrl+Shift+Z)",
-              "やり直す (Ctrl+Shift+Z)",
-              "Refari (Ctrl+Shift+Z)",
-            )}
-            aria-label={label(language, "Redo", "やり直す", "Refari")}
-            onClick={() => {
-              handleUndoKey("redo");
-            }}
-          >
-            <RedoIcon size={14} className="btn-icon" />
-          </button>
           {hasChange && (
             <button
               type="button"
@@ -405,63 +266,8 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
               )}
             </button>
           )}
-
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={handleEvaluate}
-            disabled={evaluating}
-          >
-            <PlayIcon size={14} className="btn-icon" />
-            {evaluating
-              ? label(language, "Evaluating...", "評価中...", "Taksante...")
-              : label(
-                  language,
-                  "Evaluate Expression",
-                  "式を評価 (Wasm)",
-                  "Taksi esprimon",
-                )}
-          </button>
         </div>
       </div>
-
-      {evalResult !== null && (
-        <div className="card eval-result-card success">
-          <div className="eval-result-header">
-            <span className="badge badge-success">
-              {label(language, "Evaluation Result", "評価結果", "Rezulto")}
-            </span>
-          </div>
-          <pre className="eval-result-pre">{formatValue(evalResult)}</pre>
-        </div>
-      )}
-
-      {(wasiIoSteps.length > 0 || wasiIoMessage !== null) && (
-        <div className="card eval-result-card success">
-          <div className="eval-result-header">
-            <span className="badge badge-success">
-              {label(language, "I/O (wasi.io)", "I/O の実行 (wasi.io)", "I/O")}
-            </span>
-          </div>
-          <pre className="eval-result-pre">
-            {[
-              ...wasiIoSteps.map(formatWasiIoStep),
-              ...(wasiIoMessage === null ? ["..."] : [wasiIoMessage]),
-            ].join("\n")}
-          </pre>
-        </div>
-      )}
-
-      {evalError !== null && (
-        <div className="card eval-result-card error">
-          <div className="eval-result-header">
-            <span className="badge badge-error">
-              {label(language, "Evaluation Error", "評価エラー", "Eraro")}
-            </span>
-          </div>
-          <pre className="eval-result-pre">{evalError}</pre>
-        </div>
-      )}
 
       {secret !== null && (
         <SecretPanel

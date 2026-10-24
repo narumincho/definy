@@ -934,6 +934,164 @@ body.sidebar-resizing {
   align-content: start;
 }
 
+/* --- 実行パネル (docs/run-panel.md) --- */
+
+.run-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: min(42vh, 420px);
+  min-height: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-canvas);
+}
+
+.run-panel[hidden] {
+  display: none;
+}
+
+.run-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-chrome);
+}
+
+.run-panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.run-panel-header-spacer {
+  flex: 1;
+}
+
+.run-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.6rem 0.85rem 1rem;
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+}
+
+.run-panel-input {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.run-panel-prompt {
+  font-family: var(--font-mono);
+  color: var(--green);
+  padding-top: 0.35rem;
+}
+
+.run-panel-input-tree {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.run-panel-run {
+  flex-shrink: 0;
+}
+
+/* 実行パネルの式は 1 行で済むことが多いので, ツリーの枠を詰める */
+.run-panel .expression-tree-container {
+  min-height: 0 !important;
+  padding: 0.4rem 0.6rem !important;
+}
+
+.run-panel-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.run-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.run-history-entry {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue-border);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  overflow-x: auto;
+}
+
+.run-history-entry[data-outcome="value"] {
+  border-left-color: var(--green-border);
+}
+
+.run-history-entry[data-outcome="error"],
+.run-history-entry[data-outcome="unresolved_parts"] {
+  border-left-color: var(--red-border);
+}
+
+.run-history-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.run-history-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-history-output {
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-xs);
+  background: var(--bg-input);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--green-text);
+}
+
+.run-history-output.error {
+  color: var(--red-text);
+}
+
+/* ヘッダーのロゴの右の元に戻す・やり直す */
+.header-undo-redo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.titlebar-icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.titlebar-icon-button:disabled:hover {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+.run-panel-toggle.active {
+  color: var(--primary) !important;
+}
+
 /* --- コマンドパレット --- */
 
 .command-palette-backdrop {

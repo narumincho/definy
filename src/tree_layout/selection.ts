@@ -163,7 +163,7 @@ export function variableParameterNames(
  * パーツを選んだときの式. 関数のパーツ (`parameterNames` がある) はそのパーツの呼び出しにする.
  * 選んだ位置がすでにパーツの呼び出しなら, 同じ名前の引数の式を引き継ぐ (例: `core.less-than` → `core.less-than-or-equal`)
  */
-function partSelection(
+export function partSelection(
   reference: unknown,
   parameterNames: ReadonlyArray<string> | undefined,
   current: unknown,

@@ -18,7 +18,7 @@ import type {
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
-import { useUiState } from "./state/useUiState.ts";
+import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
 import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
 import { useAccount } from "./state/useAccount.ts";
 import {
@@ -27,7 +27,7 @@ import {
 } from "./state/useWorkingChanges.ts";
 import { useTypeCheck, type CommitTypeError } from "./state/useTypeCheck.ts";
 
-export type { CommitWorkingChangesParams, CommitTypeError };
+export type { CommitWorkingChangesParams, CommitTypeError, PageUndoControls };
 
 export type DefinyContextValue = {
   readonly language: LanguageCode;
@@ -111,6 +111,13 @@ export type DefinyContextValue = {
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
   readonly setCommandPaletteOpen: (open: boolean) => void;
+  /** 実行パネル (docs/run-panel.md) を出しているか */
+  readonly runPanelOpen: boolean;
+  readonly setRunPanelOpen: (open: boolean) => void;
+  readonly toggleRunPanel: () => void;
+  /** 今のページの Undo / Redo (ヘッダーのボタンが使う). 持たないページでは `null` */
+  readonly pageUndo: PageUndoControls | null;
+  readonly setPageUndo: (controls: PageUndoControls | null) => void;
 };
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
@@ -173,6 +180,11 @@ export function DefinyProvider({
       setSidebarOpen: ui.setSidebarOpen,
       commandPaletteOpen: ui.commandPaletteOpen,
       setCommandPaletteOpen: ui.setCommandPaletteOpen,
+      runPanelOpen: ui.runPanelOpen,
+      setRunPanelOpen: ui.setRunPanelOpen,
+      toggleRunPanel: ui.toggleRunPanel,
+      pageUndo: ui.pageUndo,
+      setPageUndo: ui.setPageUndo,
     }),
     [
       ui.language,
@@ -182,6 +194,11 @@ export function DefinyProvider({
       ui.setSidebarOpen,
       ui.commandPaletteOpen,
       ui.setCommandPaletteOpen,
+      ui.runPanelOpen,
+      ui.setRunPanelOpen,
+      ui.toggleRunPanel,
+      ui.pageUndo,
+      ui.setPageUndo,
       ui.accountModalOpen,
       ui.setAccountModalOpen,
       events.events,
