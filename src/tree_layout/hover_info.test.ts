@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
-import { findHoverTarget } from "./hover_info.ts";
+import { findHoverTarget, hoverCardPosition } from "./hover_info.ts";
 import { collectNodeIndex } from "./selection.ts";
 
 const partIdHash = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8";
@@ -57,5 +57,38 @@ describe("findHoverTarget", () => {
 
   it("見つからなければ null", () => {
     expect(targetOf("nothing")).toBeNull();
+  });
+});
+
+describe("hoverCardPosition", () => {
+  const viewport = { width: 1000, height: 800 };
+  const card = { width: 300, height: 100 };
+
+  it("収まるときは式の下に左端を揃えて出す", () => {
+    expect(
+      hoverCardPosition({ top: 100, bottom: 120, left: 50 }, card, viewport),
+    ).toEqual({ top: 124, left: 50 });
+  });
+
+  it("画面の下端に収まらないときは式の上に出す", () => {
+    expect(
+      hoverCardPosition({ top: 740, bottom: 760, left: 50 }, card, viewport),
+    ).toEqual({ top: 636, left: 50 });
+  });
+
+  it("右端からはみ出すときは左にずらす", () => {
+    expect(
+      hoverCardPosition({ top: 100, bottom: 120, left: 900 }, card, viewport),
+    ).toEqual({ top: 124, left: 692 });
+  });
+
+  it("上にも下にも収まらないときは画面の中に収める", () => {
+    expect(
+      hoverCardPosition(
+        { top: 50, bottom: 70, left: 0 },
+        { width: 300, height: 760 },
+        viewport,
+      ),
+    ).toEqual({ top: 32, left: 8 });
   });
 });

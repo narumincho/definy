@@ -78,3 +78,36 @@ export function referencedPartIdHash(target: unknown): string | null {
   }
   return partReferenceIdOf(target);
 }
+
+/** カードと式・画面の端の間の余白 (px) */
+const CARD_GAP = 4;
+const VIEWPORT_MARGIN = 8;
+
+/**
+ * 画面 (viewport) の中でのカードの位置. 式の下に収まらなければ上に出し, 左右は画面の中に収める
+ */
+export function hoverCardPosition(
+  anchor: {
+    readonly top: number;
+    readonly bottom: number;
+    readonly left: number;
+  },
+  card: { readonly width: number; readonly height: number },
+  viewport: { readonly width: number; readonly height: number },
+): { readonly top: number; readonly left: number } {
+  const below = anchor.bottom + CARD_GAP;
+  const above = anchor.top - CARD_GAP - card.height;
+  const fitsBelow = below + card.height <= viewport.height - VIEWPORT_MARGIN;
+  const top =
+    fitsBelow || above < VIEWPORT_MARGIN
+      ? Math.max(
+          VIEWPORT_MARGIN,
+          Math.min(below, viewport.height - VIEWPORT_MARGIN - card.height),
+        )
+      : above;
+  const left = Math.max(
+    VIEWPORT_MARGIN,
+    Math.min(anchor.left, viewport.width - VIEWPORT_MARGIN - card.width),
+  );
+  return { top, left };
+}

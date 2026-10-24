@@ -15,6 +15,7 @@
  * | `record([{ key, field_type }])`                | `type_record([{ key, value }])`                            |
  * | `union([{ tag, payload_type }])`               | `type_union([{ tag, payload_type }])`                      |
  * | `reference({ part_hash })`                     | `part_reference({ part_definition_event_hash })`           |
+ * | `builtin(name)` (組み込みの関数の型)            | `builtin(name)`                                            |
  * | `null` (型指定なし)                            | `null`                                                     |
  *
  * 未入力 (`hole`) は `null` に戻す. 知らない形はそのまま `unknown_part_type(値)` で包んで往復させる
@@ -102,6 +103,8 @@ export function partTypeToExpression(partType: unknown): unknown {
       return variant("part_reference", {
         part_definition_event_hash: field(payload, "part_hash"),
       });
+    case "builtin":
+      return variant("builtin", payload);
   }
   return variant("unknown_part_type", partType);
 }
@@ -159,6 +162,8 @@ export function expressionToPartType(expression: unknown): unknown {
       return variant("reference", {
         part_hash: field(payload, "part_definition_event_hash"),
       });
+    case "builtin":
+      return variant("builtin", payload);
   }
   return null;
 }

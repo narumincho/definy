@@ -193,9 +193,27 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 - 型は definy 製の型チェッカーに聞く (`findExpressionTypeAt`, `src/tree_layout/type_inference.ts`).
   式 `t` を `let _ = [t, probe] in t` に置き換えて推論した型を聞き, 推論できない式 (引数の型を書かない関数・未入力など) は
   その位置で期待する型を「期待する型」として出す ([self-hosting.md](self-hosting.md) の「未入力 (`hole`) と期待する型」)
-- コンパイラ組み込みの型は引数の型を持たないので `builtin minus(left, right)` のように引数名だけ出す (`formatTypeAst`)
+- 型は文字列にせず, 式と同じツリー表示エンジンで描く (下の「型の表示」). コンパイラ組み込みの型は `builtin minus` と出す
 - 型のツリーエディタ (`mode="type"`) では型は聞かず, 型パーツの参照の名前と説明だけ出す
 - 置換メニューを開いている間は出さない. カードは `pointer-events: none` なのでクリックの邪魔をしない
+- カードは `createPortal` で `document.body` に出し, popover (top layer, `popover="manual"`) の `position: fixed` にして
+  位置は画面 (viewport) の座標で JS が決める (`hoverCardPosition`, `hover_info.ts`. 単体テストあり).
+  式の下に収まらなければ式の上に出し, 左右は画面の中に収める. スクロール・リサイズでは位置を測り直す.
+  以前はツリーの枠の中に `position: absolute` で置いていたので, 枠の `overflow-x: auto` (これがあると `overflow-y` も
+  `auto` 扱いになる) のせいで, 下の方の式をホバーするとカードが切れたり枠の中に縦スクロールバーが出たりしていた (#751).
+  枠の中に置くと, 枠の中の `.tree-badge` などを探すセレクター (E2E も) にカードの型のツリーが混ざるので body に出している
+
+### 型の表示
+
+期待する型や推論した型など, 型 (`core.type-ast` の値) を見せるところは文字列 (`formatTypeAst`) にせず,
+式と同じツリー表示エンジン (`engine.ts` の `computeLayout` + `TreeLayoutRenderer`) で読み取り専用で描く
+([src/tree_layout/TypeTreeView.tsx](../src/tree_layout/TypeTreeView.tsx)).
+型は `partTypeToExpression` (`part_type.ts`) で型の式にしてから描くので, パーツの型の行のツリーエディタと同じ見た目になり,
+長い型 (大きなレコード・直和型など) は式と同じく幅を超えると縦に並ぶ.
+
+- 使っているところ: 式のホバーカードの型, 置換メニューの上の「期待する型」(`.dropdown-expected-type`)
+- `data-node-id` は `type-view` で始めて, 式のツリーのノード ID (`root...`) と重ならないようにしている
+- 型エラーの文言 (`outcomeErrorMessage`) と選択肢の横の短い型 (`partTypeText`) は 1 行のテキストのまま
 - ホバーしているノードはツリーの枠の `mouseover` の `event.target` から `closest("[data-node-id]")` で決める.
   各ノードの `onMouseEnter` で決めると, ツリーの外から一度に複数の入れ子のノードに入ったときに
   React が外側のノードの mouseenter を後に呼ぶことがあり, いちばん外側 (ルート) のノードになってしまう

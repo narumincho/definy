@@ -3,6 +3,7 @@ import { Link } from "../components/Link.tsx";
 import type { LanguageCode } from "../types.ts";
 import { label } from "../language.ts";
 import type { ExpectedType } from "./type_inference.ts";
+import { TypeTreeView } from "./TypeTreeView.tsx";
 import type { PathStep } from "./types.ts";
 import {
   isTypeMismatch,
@@ -40,7 +41,10 @@ export type ExpressionPopoverMenuProps = {
   readonly selectedPath: ReadonlyArray<PathStep>;
   readonly selectionAnchorName: string;
   readonly currentName: string;
+  /** 選択肢の並び替えに使う大まかな期待する型 */
   readonly expectedType: ExpectedType;
+  /** 選んだ位置で期待する型 (`core.type-ast` の値). 分からなければ `null`. メニューの上に型のツリーで出す */
+  readonly expectedTypeAst: unknown;
   readonly searchQuery: string;
   readonly setSearchQuery: (query: string) => void;
   readonly setQueryEdited: (edited: boolean) => void;
@@ -64,6 +68,7 @@ export function ExpressionPopoverMenu({
   selectionAnchorName,
   currentName: _currentName,
   expectedType,
+  expectedTypeAst,
   searchQuery,
   setSearchQuery,
   setQueryEdited,
@@ -202,19 +207,6 @@ export function ExpressionPopoverMenu({
           onKeyDown={handleMenuKeyDown}
         />
 
-        {expectedType !== "any" && (
-          <span
-            style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}
-          >
-            {label(language, "Expects:", "期待:", "Atendas:")}{" "}
-            <span
-              className="mono"
-              style={{ color: "var(--blue-text)", fontWeight: 600 }}
-            >
-              {expectedType}
-            </span>
-          </span>
-        )}
         <button
           type="button"
           className="dropdown-header-button"
@@ -240,6 +232,15 @@ export function ExpressionPopoverMenu({
           ✕
         </button>
       </div>
+
+      {expectedTypeAst != null && (
+        <div className="dropdown-expected-type">
+          <span className="dropdown-expected-type-label">
+            {label(language, "Expects", "期待する型", "Atendas")}
+          </span>
+          <TypeTreeView type={expectedTypeAst} maxWidth={320} />
+        </div>
+      )}
 
       <div
         ref={listRef}
