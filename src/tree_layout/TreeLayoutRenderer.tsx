@@ -297,6 +297,11 @@ export function TreeLayoutRenderer(
   // 3. Multiline capsule node rendering
   if (node.layoutMode === "multiline") {
     const colors = nodeBadgeColors(node.kind);
+    // 見出しの無いノード (関数呼び出し) は最初の子 (呼び出す関数) を見出しの行に出す
+    const [headerChild, bodyChildren] =
+      node.label.length === 0
+        ? [node.children[0], node.children.slice(1)]
+        : [undefined, node.children];
 
     return (
       <div
@@ -317,7 +322,15 @@ export function TreeLayoutRenderer(
         }}
         onClick={handleSelect}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.3rem",
+            // 見出しのバッジが無いときは見出しの行の下にメニューを出す
+            ...(anchorName && node.label.length === 0 ? { anchorName } : {}),
+          }}
+        >
           <button
             type="button"
             style={{
@@ -340,48 +353,34 @@ export function TreeLayoutRenderer(
           </button>
 
           {/* 複数行のときは子を含む全体ではなく, 見出しのバッジの直下にメニューを出す */}
-          <div
-            className="tree-badge"
-            data-state={isSelected ? "selected" : ""}
-            data-type-error={hasTypeError ? "true" : undefined}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "0.12rem 0.42rem",
-              borderRadius: "var(--radius-full)",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.82rem",
-              background: colors.bg,
-              color: colors.color,
-              border: colors.border,
-              cursor: "pointer",
-              userSelect: "none",
-              whiteSpace: "nowrap",
-              ...(anchorName ? { anchorName } : {}),
-            }}
-          >
-            {node.label}
-          </div>
-          {typeErrorMarker}
-
-          {isCollapsed && (
-            <span
+          {node.label.length > 0 && (
+            <div
+              className="tree-badge"
+              data-state={isSelected ? "selected" : ""}
+              data-type-error={hasTypeError ? "true" : undefined}
               style={{
-                fontSize: "0.72rem",
-                color: "var(--text-secondary)",
-                opacity: 0.75,
-                fontFamily: "monospace",
-                fontStyle: "italic",
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "0.12rem 0.42rem",
+                borderRadius: "var(--radius-full)",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "0.82rem",
+                background: colors.bg,
+                color: colors.color,
+                border: colors.border,
                 cursor: "pointer",
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleCollapse?.(node.id);
+                userSelect: "none",
+                whiteSpace: "nowrap",
+                ...(anchorName ? { anchorName } : {}),
               }}
             >
-              {`... (${node.children.length} args)`}
-            </span>
+              {node.label}
+            </div>
           )}
+          {headerChild !== undefined && (
+            <TreeLayoutRenderer {...props} node={headerChild} />
+          )}
+          {typeErrorMarker}
         </div>
 
         {!isCollapsed && (
@@ -397,7 +396,7 @@ export function TreeLayoutRenderer(
               boxSizing: "border-box",
             }}
           >
-            {node.children.map((child) => (
+            {bodyChildren.map((child) => (
               <div
                 key={child.id}
                 style={{ width: "fit-content", maxWidth: "100%" }}
@@ -431,27 +430,30 @@ export function TreeLayoutRenderer(
       }}
       onClick={handleSelect}
     >
-      <div
-        className="tree-badge"
-        data-state={isSelected ? "selected" : ""}
-        data-type-error={hasTypeError ? "true" : undefined}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          padding: "0.12rem 0.42rem",
-          borderRadius: "var(--radius-full)",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "0.82rem",
-          background: colors.bg,
-          color: colors.color,
-          border: colors.border,
-          cursor: "pointer",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {node.label}
-      </div>
+      {/* 関数呼び出しなど見出しの無いノードはバッジを出さない */}
+      {node.label.length > 0 && (
+        <div
+          className="tree-badge"
+          data-state={isSelected ? "selected" : ""}
+          data-type-error={hasTypeError ? "true" : undefined}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "0.12rem 0.42rem",
+            borderRadius: "var(--radius-full)",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "0.82rem",
+            background: colors.bg,
+            color: colors.color,
+            border: colors.border,
+            cursor: "pointer",
+            userSelect: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {node.label}
+        </div>
+      )}
       {node.children.map((child) => (
         <TreeLayoutRenderer key={child.id} {...props} node={child} />
       ))}
