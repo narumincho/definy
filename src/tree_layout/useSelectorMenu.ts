@@ -20,7 +20,8 @@ import {
   type Highlight,
   type SelectorOption,
 } from "./selector_options.ts";
-import { goToDefinitionOption, isVariableNamePath } from "./local_variable.ts";
+import { goToDefinitionOption } from "./go_to_definition.ts";
+import { isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
 import { letBindingSelectorOptions } from "./let_bindings.ts";
 import { clipboardSelectorOptions } from "./clipboard.ts";

@@ -217,13 +217,13 @@ export const SHORTCUT_GROUPS: ReadonlyArray<ShortcutGroup> = [
       },
       {
         id: "tree-go-to-definition",
-        keys: [["F12"]],
+        keys: [["F12"], ["Mod", "Click"]],
         description: (l) =>
           label(
             l,
-            "Go to the variable's definition",
-            "変数の定義へ移動",
-            "Iri al la difino de la variablo",
+            "Go to the definition of the variable or part",
+            "変数・パーツの定義へ移動",
+            "Iri al la difino de la variablo aŭ parto",
           ),
       },
     ],

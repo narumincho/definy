@@ -475,6 +475,40 @@ test.describe("definy UI E2E", () => {
     await page.keyboard.press("F12");
     await expect(selected).toHaveText("height");
     await expect(badge("height")).toHaveCount(2);
+
+    // Ctrl + クリックでも移動できる. Ctrl を押しながらホバーすると下線が付く
+    await page.keyboard.down("Control");
+    await badge("width").last().hover();
+    await expect(badge("width").last()).toHaveAttribute("data-link", "true");
+    await badge("width")
+      .last()
+      .click({ modifiers: ["Control"] });
+    await page.keyboard.up("Control");
+    await expect(selected).toHaveText("width");
+    await expect(page.locator(".dropdown-search-input")).toHaveCount(0);
+  });
+
+  test("expression tree editor opens the referenced part with Ctrl + click", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.match-option-sample");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const plus = valueTree.locator(".tree-badge", { hasText: /^core\.plus$/ });
+    await expect(plus).toHaveCount(1);
+
+    // 普通のクリックは選ぶだけ (ページは移動しない)
+    await plus.click();
+    await expect(page).toHaveURL(/\/part\/sample\.match-option-sample/);
+    await page.keyboard.press("Escape");
+
+    // Ctrl + クリックで呼び出しているパーツ core.plus の詳細ページへ移動する
+    await plus.click({ modifiers: ["Control"] });
+    await expect(page).not.toHaveURL(/match-option-sample/);
+    await expect(page).toHaveURL(/\/part\//);
+    await expect(page).toHaveTitle(/plus/);
   });
 
   test("expression tree editor adds, moves, and deletes list items", async ({
