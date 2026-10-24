@@ -3,6 +3,14 @@ import { useRouter } from "@void/react";
 import { parseLanguageCode, withLanguage } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
 
+/** ページ (パーツ詳細など) が持つ元に戻す (Undo) / やり直す (Redo). ヘッダーのボタンから使う */
+export type PageUndoControls = {
+  readonly canUndo: boolean;
+  readonly canRedo: boolean;
+  readonly undo: () => void;
+  readonly redo: () => void;
+};
+
 export type UiState = {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
@@ -17,6 +25,13 @@ export type UiState = {
   readonly setCommandPaletteOpen: (open: boolean) => void;
   readonly accountModalOpen: boolean;
   readonly setAccountModalOpen: (open: boolean) => void;
+  /** 実行パネル (docs/run-panel.md) を出しているか. どのページでも出したままにできる */
+  readonly runPanelOpen: boolean;
+  readonly setRunPanelOpen: (open: boolean) => void;
+  readonly toggleRunPanel: () => void;
+  /** 今のページの Undo / Redo. 持たないページでは `null` (ヘッダーのボタンは押せない) */
+  readonly pageUndo: PageUndoControls | null;
+  readonly setPageUndo: (controls: PageUndoControls | null) => void;
 };
 
 export function useUiState(): UiState {
@@ -28,6 +43,8 @@ export function useUiState(): UiState {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
+  const [runPanelOpen, setRunPanelOpen] = useState(false);
+  const [pageUndo, setPageUndo] = useState<PageUndoControls | null>(null);
 
   const setLanguage = useCallback(
     (lang: LanguageCode) => {
@@ -44,6 +61,10 @@ export function useUiState(): UiState {
     setSidebarOpen((prev) => !prev);
   }, []);
 
+  const toggleRunPanel = useCallback(() => {
+    setRunPanelOpen((prev) => !prev);
+  }, []);
+
   return {
     language,
     setLanguage,
@@ -54,5 +75,10 @@ export function useUiState(): UiState {
     setCommandPaletteOpen,
     accountModalOpen,
     setAccountModalOpen,
+    runPanelOpen,
+    setRunPanelOpen,
+    toggleRunPanel,
+    pageUndo,
+    setPageUndo,
   };
 }

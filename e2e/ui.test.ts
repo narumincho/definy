@@ -207,16 +207,12 @@ test.describe("definy UI E2E", () => {
     await expect(breadcrumb).toBeVisible();
     await expect(breadcrumb).toHaveText("triangle-area");
 
-    // 「式を評価」ボタンをクリックして評価を実行
-    const evalButton = page.locator(".part-actions button", {
-      hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
-    });
-    await expect(evalButton).toBeVisible();
-    await evalButton.click();
-
-    // 評価結果カード（成功またはエラー）が表示されることを確認
-    const resultCard = page.locator(".eval-result-card");
-    await expect(resultCard).toBeVisible({ timeout: 10000 });
+    // 「式を評価」ボタンは無く, 実行は実行パネルでする
+    await expect(
+      page.locator(".part-actions button", {
+        hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
+      }),
+    ).toHaveCount(0);
   });
 
   test("expression tree editor renders AST structure, supports selection, and evaluates with stage1.wasm", async ({
@@ -239,16 +235,35 @@ test.describe("definy UI E2E", () => {
     await divideBadge.first().click();
     await expect(divideBadge.first()).toHaveAttribute("data-state", "selected");
 
-    // 「式を評価」ボタンをクリックして stage1.wasm による評価結果が 25 になることを検証
-    const evalButton = page.locator(".part-actions button", {
-      hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
-    });
-    await expect(evalButton).toBeVisible();
-    await evalButton.click();
+    // 実行パネルを開き, 開いているパーツを入力して実行すると stage1.wasm による結果が 25 になる
+    const runPanel = page.locator(".run-panel");
+    await expect(runPanel).toBeHidden();
+    await page.locator(".run-panel-toggle").click();
+    await expect(runPanel).toBeVisible();
+    await runPanel.locator(".run-panel-use-part").click();
+    await runPanel.locator(".run-panel-run").click();
 
-    const resultCard = page.locator(".eval-result-card.success");
-    await expect(resultCard).toBeVisible({ timeout: 15000 });
-    await expect(resultCard).toContainText("25");
+    const entry = runPanel.locator(".run-history-entry").first();
+    await expect(entry).toHaveAttribute("data-outcome", "value", {
+      timeout: 15000,
+    });
+    await expect(entry.locator(".run-history-output")).toHaveText("25");
+
+    // 再実行すると履歴に新しい記録が足される. パネルはページを移っても出したまま
+    await entry.locator(".run-history-rerun").click();
+    await expect(runPanel.locator(".run-history-entry")).toHaveCount(2);
+    await expect(
+      runPanel
+        .locator(".run-history-entry")
+        .first()
+        .locator(".run-history-output"),
+    ).toHaveText("25", { timeout: 15000 });
+    await page
+      .locator(".activity-item", { hasText: /Parts|パーツ/ })
+      .first()
+      .click();
+    await page.waitForURL(/\/parts/);
+    await expect(runPanel).toBeVisible();
   });
 
   test("expression tree editor asks the definy type checker for the expected type and renames function parameters", async ({
