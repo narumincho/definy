@@ -7,15 +7,8 @@ import {
   importAccountCredentials,
   type AccountCredentials,
 } from "../src/auth.ts";
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  type DecodedPart,
-} from "../src/cbor.ts";
-import {
-  devSystemAccountBytes,
-  resolvePartPlaceholders,
-} from "../src/seed_parts.ts";
+import { bytesToUrlSafeBase64NoPad, type DecodedPart } from "../src/cbor.ts";
+import { resolvePartPlaceholders } from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
@@ -82,10 +75,7 @@ async function submitCommit(
     moduleDescription: [],
     message: "test",
     parentCommitHash: await latestCommitHashOf(
-      await deriveModuleIdBytes(
-        base64ToBytes(credentials.accountId),
-        moduleName,
-      ),
+      await deriveModuleIdBytes(moduleName),
       store,
       env,
     ),
@@ -110,7 +100,7 @@ async function partReference(
   return {
     "#part_reference": {
       part_definition_event_hash: await deriveModulePartId(
-        await deriveModuleIdBytes(base64ToBytes(accountId), moduleName),
+        await deriveModuleIdBytes(moduleName),
         partName,
       ),
     },
@@ -183,14 +173,11 @@ describe("SubmitEvent の型検査", () => {
       { "#number": null },
       {
         "#call": {
-          function: await resolvePartPlaceholders(
-            {
-              "#part_reference": {
-                part_definition_event_hash: { $part: "core.plus" },
-              },
+          function: await resolvePartPlaceholders({
+            "#part_reference": {
+              part_definition_event_hash: { $part: "core.plus" },
             },
-            await devSystemAccountBytes(),
-          ),
+          }),
           arguments: [
             {
               name: "left",
@@ -225,21 +212,14 @@ describe("SubmitEvent の型検査", () => {
         readonly expression?: unknown;
       }>;
     };
-    const accountBytes = base64ToBytes(system.accountId);
     const parts = await Promise.all(
       seed.parts.map(async (seedPart) =>
         part(
           // 組み込みかどうかは式 ({"#builtin": "bit_and"}) で決まり, 名前によらない.
           // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
           seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
-          await resolvePartPlaceholders(
-            seedPart.part_type ?? null,
-            accountBytes,
-          ),
-          await resolvePartPlaceholders(
-            seedPart.expression ?? null,
-            accountBytes,
-          ),
+          await resolvePartPlaceholders(seedPart.part_type ?? null),
+          await resolvePartPlaceholders(seedPart.expression ?? null),
         ),
       ),
     );

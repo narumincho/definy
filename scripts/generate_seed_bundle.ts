@@ -14,7 +14,7 @@ import {
   sha256EventHashId,
   type LocalizedText,
 } from "../src/cbor.ts";
-import { encodeEventContent } from "../src/event_content.ts";
+import { encodeEventContent, MAIN_BRANCH } from "../src/event_content.ts";
 import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
@@ -101,9 +101,7 @@ async function seedAccountCredentials(): Promise<AccountCredentials> {
 }
 
 /** 各モジュールの seed ファイルを読み込み, パーツ ID のプレースホルダーを解決する */
-async function loadSeedModules(
-  accountBytes: Uint8Array,
-): Promise<ReadonlyMap<string, ModuleSeedData>> {
+async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
   // 1. 各モジュールシードファイルを読み込み、プレースホルダーを解決
   const loadedModulesMap = new Map<string, ModuleSeedData>();
   for (const spec of MODULE_SPECS) {
@@ -117,13 +115,11 @@ async function loadSeedModules(
         if (partCopy.part_type != null) {
           partCopy.part_type = await resolvePartPlaceholders(
             partCopy.part_type,
-            accountBytes,
           );
         }
         if (partCopy.expression != null) {
           partCopy.expression = await resolvePartPlaceholders(
             partCopy.expression,
-            accountBytes,
           );
         }
         return partCopy;
@@ -142,11 +138,10 @@ async function loadSeedModules(
 /** seed の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
 async function seedPartExpressions(
   modules: ReadonlyMap<string, ModuleSeedData>,
-  accountBytes: Uint8Array,
 ): Promise<ReadonlyMap<string, unknown>> {
   const partExpressions = new Map<string, unknown>();
   for (const mod of modules.values()) {
-    const moduleId = await deriveModuleIdBytes(accountBytes, mod.module_name);
+    const moduleId = await deriveModuleIdBytes(mod.module_name);
     for (const part of mod.parts) {
       partExpressions.set(
         await deriveModulePartId(moduleId, String(part.name)),
@@ -161,7 +156,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   const creds = await seedAccountCredentials();
   const accountBytes = base64ToBytes(creds.accountId);
   const privateKey = await importPrivateKeyFromSecretKey(creds.secretKeyBase64);
-  const loadedModules = await loadSeedModules(accountBytes);
+  const loadedModules = await loadSeedModules();
 
   // 2. CAS コンテンツ一覧の構築 (definy, core, std, sample, wasi の順に走査し重複排除)
   const contentOrder: ReadonlyArray<string> = [
@@ -209,6 +204,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
         type: "module_commit",
         commit: {
           moduleName: mod.module_name,
+          branch: MAIN_BRANCH,
           moduleDescription: mod.module_description,
           parentCommitHash: null,
           message: mod.message,
@@ -333,19 +329,14 @@ export const TYPE_CHECKER_WASM_PATH = "wasm/type_checker.wasm";
 
 /** seed の型チェッカーを stage1 でコンパイルする */
 export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
-  const creds = await seedAccountCredentials();
-  const accountBytes = base64ToBytes(creds.accountId);
-  const partExpressions = await seedPartExpressions(
-    await loadSeedModules(accountBytes),
-    accountBytes,
-  );
+  const partExpressions = await seedPartExpressions(await loadSeedModules());
   return compileTypeChecker({
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
     core: {
       typeChecker: await deriveModulePartId(
-        await deriveModuleIdBytes(accountBytes, "core"),
+        await deriveModuleIdBytes("core"),
         "type-checker",
       ),
     },
@@ -361,18 +352,13 @@ export const EVENT_CHECKER_WASM_PATH = "wasm/event_checker.wasm";
 
 /** seed の `core.check-event` を stage1 でコンパイルする */
 export async function generateEventCheckerWasm(): Promise<Uint8Array> {
-  const creds = await seedAccountCredentials();
-  const accountBytes = base64ToBytes(creds.accountId);
-  const partExpressions = await seedPartExpressions(
-    await loadSeedModules(accountBytes),
-    accountBytes,
-  );
+  const partExpressions = await seedPartExpressions(await loadSeedModules());
   return compileEventChecker({
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
     checkEventPartId: await deriveModulePartId(
-      await deriveModuleIdBytes(accountBytes, "core"),
+      await deriveModuleIdBytes("core"),
       "check-event",
     ),
     resolvePart: (id) => partExpressions.get(id),

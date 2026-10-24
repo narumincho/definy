@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import cases from "../conformance/eval_cases.json" with { type: "json" };
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
@@ -14,16 +13,12 @@ import {
 
 const wasmBytes = readFileSync("wasm/stage1.wasm");
 const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 
 describe("eval conformance (stage1.wasm)", () => {
   for (const testCase of cases.cases) {
     it(testCase.name, async () => {
-      const expression = await resolvePartPlaceholders(
-        testCase.expression,
-        accountBytes,
-      );
+      const expression = await resolvePartPlaceholders(testCase.expression);
       const { parts, unresolved } = collectReferencedParts(expression, (id) =>
         seedPartExpressions.get(id),
       );

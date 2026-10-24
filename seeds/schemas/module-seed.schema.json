@@ -1717,6 +1717,7 @@
       "type": "object",
       "required": [
         "module_name",
+        "branch",
         "module_description",
         "message",
         "parent_commit_hash",
@@ -1724,6 +1725,16 @@
       ],
       "properties": {
         "module_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "branch": {
           "anyOf": [
             {
               "type": "string"
@@ -2528,6 +2539,42 @@
         {
           "type": "object",
           "required": [
+            "#empty_branch_name"
+          ],
+          "properties": {
+            "#empty_branch_name": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#first_branch_must_be_main"
+          ],
+          "properties": {
+            "#first_branch_must_be_main": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#not_branch_creator"
+          ],
+          "properties": {
+            "#not_branch_creator": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#parent_commit_mismatch"
           ],
           "properties": {
@@ -2574,13 +2621,16 @@
       "type": "object",
       "required": [
         "account_created",
-        "latest_commit_hash"
+        "branch_latest_commit_hash",
+        "is_branch_creator",
+        "module_has_commits",
+        "parent_in_module"
       ],
       "properties": {
         "account_created": {
           "type": "boolean"
         },
-        "latest_commit_hash": {
+        "branch_latest_commit_hash": {
           "anyOf": [
             {
               "type": "object",
@@ -2614,6 +2664,15 @@
               "additionalProperties": false
             }
           ]
+        },
+        "is_branch_creator": {
+          "type": "boolean"
+        },
+        "module_has_commits": {
+          "type": "boolean"
+        },
+        "parent_in_module": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

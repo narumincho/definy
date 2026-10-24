@@ -7,10 +7,14 @@
  */
 import eventCheckerModule from "../wasm/event_checker.wasm?module";
 import { base64ToBytes } from "../src/cbor.ts";
-import { checkEvent, eventRejectionMessage } from "../src/event_check.ts";
+import {
+  checkEvent,
+  eventRejectionMessage,
+  NO_MODULE_STATE,
+} from "../src/event_check.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import { deriveModuleIdBytes } from "./cbor.ts";
-import { latestCommitHashOf, type PartStoreReader } from "./type_check.ts";
+import { branchStateOf, type PartStoreReader } from "./type_check.ts";
 import type { Env } from "./types.ts";
 
 const EVENTS_PAGE_SIZE = 500;
@@ -52,19 +56,20 @@ export async function checkSubmittedEvent(
   }
   // ストアのイベントの accountId と同じ形 (署名済みイベントのメタデータ)
   const accountId = decoded.meta.accountId;
-  const latestCommitHash =
-    decoded.content.type === "module_commit"
-      ? await latestCommitHashOf(
-          await deriveModuleIdBytes(
-            decoded.accountIdBytes,
-            decoded.content.commit.moduleName,
-          ),
+  const { content } = decoded;
+  const moduleState =
+    content.type === "module_commit"
+      ? await branchStateOf(
+          await deriveModuleIdBytes(content.commit.moduleName),
+          content.commit.branch,
+          accountId,
+          content.commit.parentCommitHash,
           store,
           env,
         )
-      : null;
-  return checkEvent(eventCheckerModule, decoded.content, {
+      : NO_MODULE_STATE;
+  return checkEvent(eventCheckerModule, content, {
     accountCreated: await isAccountCreated(accountId, store, env),
-    latestCommitHash,
+    ...moduleState,
   }).map(eventRejectionMessage);
 }

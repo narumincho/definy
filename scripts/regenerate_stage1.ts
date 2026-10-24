@@ -7,7 +7,6 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "../src/seed_parts.ts";
@@ -28,8 +27,7 @@ function areBytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   return true;
 }
 
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 
 const compileToWasmPlaceholder = {
   "#part_reference": {
@@ -39,10 +37,7 @@ const compileToWasmPlaceholder = {
   },
 };
 
-const expression = await resolvePartPlaceholders(
-  compileToWasmPlaceholder,
-  accountBytes,
-);
+const expression = await resolvePartPlaceholders(compileToWasmPlaceholder);
 
 const { parts, unresolved } = collectReferencedParts(expression, (id) =>
   seedPartExpressions.get(id),

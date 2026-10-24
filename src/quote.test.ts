@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
@@ -16,11 +15,10 @@ import { literalExpression } from "./definy_value.ts";
 const compiler = createStage1Compiler(
   new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
 );
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 
 async function seedExpression(expression: unknown): Promise<unknown> {
-  return await resolvePartPlaceholders(expression, accountBytes);
+  return await resolvePartPlaceholders(expression);
 }
 
 async function evaluate(expression: unknown): Promise<unknown> {

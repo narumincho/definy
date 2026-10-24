@@ -41,9 +41,8 @@ describe("sha256BytesSync", () => {
 
 describe("module / part ID derivation", () => {
   it("sync and async versions agree", async () => {
-    const account = Uint8Array.from({ length: 32 }, (_, i) => i);
-    const moduleId = deriveModuleIdBytesSync(account, "std");
-    expect(hex(moduleId)).toBe(hex(await deriveModuleIdBytes(account, "std")));
+    const moduleId = deriveModuleIdBytesSync("std");
+    expect(hex(moduleId)).toBe(hex(await deriveModuleIdBytes("std")));
     expect(deriveModulePartIdSync(moduleId, "abs")).toBe(
       await deriveModulePartId(moduleId, "abs"),
     );

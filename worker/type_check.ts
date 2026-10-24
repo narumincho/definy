@@ -26,7 +26,12 @@ import {
   compilerBuiltinName,
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
-import type { CommitPart, ModuleCommitContent } from "../src/event_content.ts";
+import {
+  MAIN_BRANCH,
+  type CommitPart,
+  type ModuleCommitContent,
+} from "../src/event_content.ts";
+import type { EventCheckState } from "../src/event_check.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -133,7 +138,9 @@ async function commitParts(
 
 type CachedCommit = {
   readonly eventHash: string;
+  readonly accountId: string;
   readonly moduleId: string;
+  readonly branch: string;
   readonly timeMs: number;
   /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
   readonly parts: ReadonlyArray<
@@ -161,13 +168,12 @@ async function decodeCommit(item: {
   let result: CachedCommit | null = null;
   if (decoded?.content.type === "module_commit") {
     const { commit } = decoded.content;
-    const moduleIdBytes = await deriveModuleIdBytes(
-      decoded.accountIdBytes,
-      commit.moduleName,
-    );
+    const moduleIdBytes = await deriveModuleIdBytes(commit.moduleName);
     result = {
       eventHash: item.eventHash,
+      accountId: decoded.meta.accountId,
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
+      branch: commit.branch,
       timeMs: decoded.meta.timeMs,
       // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
       parts: (await commitParts(commit, moduleIdBytes)).map((part) =>
@@ -182,11 +188,11 @@ async function decodeCommit(item: {
   return result;
 }
 
-/** ストアの署名の正しいモジュールコミットの, モジュールごとに最新のもの (キーはモジュール ID) */
-async function loadLatestCommits(
+/** ストアの署名の正しいモジュールコミットすべて */
+async function loadCommits(
   store: PartStoreReader,
   env: Env | undefined,
-): Promise<ReadonlyMap<string, CachedCommit>> {
+): Promise<ReadonlyArray<CachedCommit>> {
   const commits: Array<CachedCommit> = [];
   for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
     const page = await store.getEvents(
@@ -203,25 +209,94 @@ async function loadLatestCommits(
       break;
     }
   }
-  return pickLatestCommitPerModule(commits);
+  return commits;
 }
 
-/** モジュール (`moduleIdBytes`) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
+/** モジュールごとの main ブランチの最新のコミット (キーはモジュール ID) */
+async function loadLatestMainCommits(
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyMap<string, CachedCommit>> {
+  return pickLatestCommitPerModule(
+    (await loadCommits(store, env)).filter(
+      (commit) => commit.branch === MAIN_BRANCH,
+    ),
+  );
+}
+
+/** モジュール (`moduleIdBytes`) のブランチ (既定は main) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
 export async function latestCommitHashOf(
   moduleIdBytes: Uint8Array,
   store: PartStoreReader,
   env: Env | undefined,
+  branch: string = MAIN_BRANCH,
 ): Promise<string | null> {
+  const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
   return (
-    (await loadLatestCommits(store, env)).get(
-      bytesToUrlSafeBase64NoPad(moduleIdBytes),
+    latestOnBranch(
+      (await loadCommits(store, env)).filter(
+        (commit) => commit.moduleId === moduleId,
+      ),
+      branch,
     )?.eventHash ?? null
   );
 }
 
+function latestOnBranch(
+  moduleCommits: ReadonlyArray<CachedCommit>,
+  branch: string,
+): CachedCommit | undefined {
+  let latest: CachedCommit | undefined;
+  for (const commit of moduleCommits) {
+    if (
+      commit.branch === branch &&
+      (latest === undefined || latest.timeMs < commit.timeMs)
+    ) {
+      latest = commit;
+    }
+  }
+  return latest;
+}
+
 /**
- * ストアの署名の正しいモジュールコミットから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
- * 型パーツ以外の式は持たない
+ * モジュール (`moduleIdBytes`) のブランチ `branch` に, アカウント `accountId` が `parentCommitHash` を親にしてコミットするときの,
+ * ブランチの規則 (`core.check-event-branch`) が使う状態. ブランチの作成者はブランチの最初の (時刻が最小の) コミットのアカウント
+ */
+export async function branchStateOf(
+  moduleIdBytes: Uint8Array,
+  branch: string,
+  accountId: string,
+  parentCommitHash: string | null,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<Omit<EventCheckState, "accountCreated">> {
+  const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
+  const moduleCommits = (await loadCommits(store, env)).filter(
+    (commit) => commit.moduleId === moduleId,
+  );
+  let first: CachedCommit | undefined;
+  for (const commit of moduleCommits) {
+    if (
+      commit.branch === branch &&
+      (first === undefined || commit.timeMs < first.timeMs)
+    ) {
+      first = commit;
+    }
+  }
+  return {
+    branchLatestCommitHash:
+      latestOnBranch(moduleCommits, branch)?.eventHash ?? null,
+    isBranchCreator: first?.accountId === accountId,
+    moduleHasCommits: moduleCommits.length > 0,
+    parentInModule:
+      parentCommitHash !== null &&
+      moduleCommits.some((commit) => commit.eventHash === parentCommitHash),
+  };
+}
+
+/**
+ * ストアの署名の正しいモジュールコミットから, モジュールごとに main ブランチの最新のコミットのパーツを集める (キーはパーツ ID).
+ * 型パーツ以外の式は持たない. ブランチへのコミットも, 他のモジュールは main のパーツで検査する (docs/branch.md)
  */
 async function loadLatestParts(
   store: PartStoreReader,
@@ -229,7 +304,7 @@ async function loadLatestParts(
 ): Promise<
   ReadonlyMap<string, LatestPart & { readonly contentHash: string | null }>
 > {
-  const latestCommits = await loadLatestCommits(store, env);
+  const latestCommits = await loadLatestMainCommits(store, env);
   const parts = new Map<
     string,
     LatestPart & { readonly contentHash: string | null }
@@ -289,10 +364,7 @@ export async function checkSubmittedModuleCommit(
   ) {
     return [];
   }
-  const moduleIdBytes = await deriveModuleIdBytes(
-    decoded.accountIdBytes,
-    commit.moduleName,
-  );
+  const moduleIdBytes = await deriveModuleIdBytes(commit.moduleName);
   const committed = await Promise.all(
     (await commitParts(commit, moduleIdBytes)).map((part) =>
       withExpression(part, store, env),

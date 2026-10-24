@@ -1,10 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
-import {
-  devSystemAccountBytes,
-  resolvePartPlaceholders,
-} from "./seed_parts.ts";
+import { resolvePartPlaceholders } from "./seed_parts.ts";
 import {
   checkParts,
   compileTypeChecker,
@@ -42,7 +39,6 @@ type SeedPart = {
 };
 
 async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
-  const account = await devSystemAccountBytes();
   const parts: SeedPart[] = [];
   for (const file of readdirSync("seeds")) {
     if (!file.endsWith(".json") || file.startsWith("seed_bundle")) {
@@ -52,30 +48,21 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
       readonly module_name: string;
       readonly parts: ReadonlyArray<Readonly<Record<string, unknown>>>;
     };
-    const moduleId = await deriveModuleIdBytes(account, seed.module_name);
+    const moduleId = await deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       const name = String(part.name);
       parts.push({
         id: await deriveModulePartId(moduleId, name),
         name: `${seed.module_name}.${name}`,
-        partType: await resolvePartPlaceholders(
-          part.part_type ?? null,
-          account,
-        ),
-        expression: await resolvePartPlaceholders(
-          part.expression ?? null,
-          account,
-        ),
+        partType: await resolvePartPlaceholders(part.part_type ?? null),
+        expression: await resolvePartPlaceholders(part.expression ?? null),
       });
     }
   }
   return parts;
 }
 
-const coreModuleId = await deriveModuleIdBytes(
-  await devSystemAccountBytes(),
-  "core",
-);
+const coreModuleId = await deriveModuleIdBytes("core");
 
 /** seed の core のパーツ (`core.plus` などのコンパイラ組み込み) の呼び出し */
 async function coreCall(

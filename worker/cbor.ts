@@ -44,22 +44,17 @@ export {
 };
 
 /**
- * アカウント ID とモジュール名から Module ID の内部 32 バイトを導出する
+ * モジュール名から Module ID の内部 32 バイトを導出する. モジュールはアカウントによらず名前で決まり,
+ * 誰がコミットできるかはブランチで決まる (docs/branch.md)
  */
 export async function deriveModuleIdBytes(
-  accountBytes: Uint8Array,
   moduleName: string,
 ): Promise<Uint8Array> {
   const prefix = new TextEncoder().encode("definy:module:");
-  const sep = new TextEncoder().encode(":");
   const nameBytes = new TextEncoder().encode(moduleName);
-  const buf = new Uint8Array(
-    prefix.length + accountBytes.length + sep.length + nameBytes.length,
-  );
+  const buf = new Uint8Array(prefix.length + nameBytes.length);
   buf.set(prefix, 0);
-  buf.set(accountBytes, prefix.length);
-  buf.set(sep, prefix.length + accountBytes.length);
-  buf.set(nameBytes, prefix.length + accountBytes.length + sep.length);
+  buf.set(nameBytes, prefix.length);
   const first = await sha256Bytes(buf);
   return await sha256Bytes(first);
 }

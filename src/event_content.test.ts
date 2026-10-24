@@ -15,6 +15,7 @@ const moduleCommit: EventContent = {
   type: "module_commit",
   commit: {
     moduleName: "math",
+    branch: "main",
     moduleDescription: [{ language: "en", text: "Math functions" }],
     message: "Add answer",
     parentCommitHash: null,
@@ -65,6 +66,7 @@ describe("core.event-content", () => {
     expect(encoded).toEqual({
       "#module_commit": {
         module_name: "math",
+        branch: "main",
         module_description: [{ language: "en", text: "Math functions" }],
         message: "Add answer",
         parent_commit_hash: { "#none": null },
