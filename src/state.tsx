@@ -17,6 +17,7 @@ import type {
 } from "./types.ts";
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
+import type { CommitTarget } from "./branches.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
 import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
@@ -38,9 +39,8 @@ export type DefinyContextValue = {
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
   /**
-   * パーツ ID (`partIdHash`, URL-safe Base64) → パーツ. 全コミットのパーツを ID ごとに最新で持つ.
-   * `parts` は `module.name` ごとに最新の 1 つだけなので, 別アカウントの同名モジュールのパーツへの
-   * `PartReference` はこちらで解決する
+   * パーツ ID (`partIdHash`, URL-safe Base64) → パーツ. 各モジュールの表示しているブランチのパーツを ID ごとに最新で持つ.
+   * `PartReference` の解決に使う
    */
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
   readonly accountNames: ReadonlyMap<string, string>;
@@ -66,6 +66,10 @@ export type DefinyContextValue = {
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
   ) => Promise<string>;
+  /** `moduleName` へコミットする先 (自分のブランチ / 新しいブランチ / 新しいモジュール. docs/branch.md). ログインしていなければ `null` */
+  readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
+  /** モジュール `moduleName` で表示するブランチを選ぶ. モジュール・パーツ・型環境はそのブランチのものになる */
+  readonly selectBranch: (moduleName: string, branch: string) => void;
   /**
    * `moduleName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
    * definy 製の型チェッカーで検査する. ログインしていなければ空
@@ -139,7 +143,9 @@ export function DefinyProvider({
   const working = useWorkingChanges({
     currentAccount: account.currentAccount,
     modules: events.modules,
-    decodedCommits: events.decodedCommits,
+    branchesByModule: events.branchesByModule,
+    displayedBranches: events.displayedBranches,
+    selectBranch: events.selectBranch,
     refreshEvents: events.refreshEvents,
   });
   const typeCheck = useTypeCheck({
@@ -174,6 +180,8 @@ export function DefinyProvider({
       createAccountAndLogin: account.createAccountAndLogin,
       logout: account.logout,
       commitWorkingChanges: working.commitWorkingChanges,
+      commitTargetFor: working.commitTargetFor,
+      selectBranch: events.selectBranch,
       checkCommitTypes: typeCheck.checkCommitTypes,
       partTypeCheckResults: typeCheck.partTypeCheckResults,
       checkPartType: typeCheck.checkPartType,
@@ -228,6 +236,8 @@ export function DefinyProvider({
       working.discardWorkingPart,
       working.discardAllWorkingChanges,
       working.commitWorkingChanges,
+      working.commitTargetFor,
+      events.selectBranch,
       typeCheck.checkCommitTypes,
       typeCheck.partTypeCheckResults,
       typeCheck.checkPartType,

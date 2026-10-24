@@ -2458,6 +2458,19 @@ a.account-card {
   text-decoration: underline;
 }
 
+.module-branch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+}
+
+.module-branch .text-muted {
+  font-size: 0.76rem;
+}
+
 .module-commit-meta {
   display: inline-flex;
   align-items: center;

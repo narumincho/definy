@@ -29,9 +29,14 @@ export type CommitPart = {
   readonly contentHash: string | null;
 };
 
+/** モジュールを作ったときのブランチ. モジュールの作成者だけがコミットできる (docs/branch.md) */
+export const MAIN_BRANCH = "main";
+
 /** モジュールのコミット (`core.module-commit`) */
 export type ModuleCommitContent = {
   readonly moduleName: string;
+  /** コミットするブランチの名前. モジュールを作った最初のコミットは `main` (docs/branch.md) */
+  readonly branch: string;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
@@ -76,6 +81,7 @@ export function encodeEventContent(content: EventContent): unknown {
       const { commit } = content;
       return variant("module_commit", {
         module_name: commit.moduleName,
+        branch: commit.branch,
         module_description: encodeLocalizedText(commit.moduleDescription),
         message: commit.message,
         parent_commit_hash: optionOf(commit.parentCommitHash),
@@ -124,6 +130,7 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
         type: "module_commit",
         commit: {
           moduleName: String(field(payload, "module_name")),
+          branch: String(field(payload, "branch")),
           moduleDescription: decodeLocalizedText(
             field(payload, "module_description"),
           ),

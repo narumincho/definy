@@ -20,7 +20,7 @@
 
 ## seed のパーツ参照は名前で書く
 
-seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列ではなく `{"$part": "core.expression"}`（`モジュール名.パーツ名`）で書きます。読み込み時にシステムアカウントから `derive_module_part_id(derive_module_id(account, module), part)` で ID を導出するため、**seed はシステムアカウントの鍵に依存しません**。鍵を変えても seed を書き換える必要はありません。
+seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列ではなく `{"$part": "core.expression"}`（`モジュール名.パーツ名`）で書きます。読み込み時に `derive_module_part_id(derive_module_id(module), part)` で ID を導出します。パーツ ID はモジュール名とパーツ名だけで決まるので、**seed はシステムアカウントの鍵に依存しません**。鍵を変えても seed を書き換える必要はありません。
 
 ## 編集フロー
 

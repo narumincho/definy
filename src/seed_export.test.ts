@@ -124,36 +124,51 @@ describe("exportSeeds", () => {
         store,
       );
       expect(attackerAccountRes.status).toBe(200);
-      const attackerCommit = await createSignedModuleCommitEvent({
-        credentials: attackerCreds,
-        moduleName: "sample",
-        moduleDescription: [
-          { language: "en", text: "Attacker hijacked sample" },
-        ],
-        message: "Attacker commit should be ignored",
-        parts: [
-          {
-            name: "malicious-part",
-            description: [{ language: "en", text: "Malicious" }],
-            partType: { "#number": null },
-            expression: { "#number": 999 },
-          },
-        ],
-      });
-
-      // 攻撃者のイベントを投稿 (サーバーは有効な署名として受理するが、システムアカウントではない)
-      const attackerSubmitRes = await handleWorkerRequest(
-        new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            signedEventBytes: attackerCommit.signedEventBytes,
-          }),
-        }),
-        env,
+      const sampleHead = await latestCommitHashOf(
+        await deriveModuleIdBytes("sample"),
         store,
+        env,
       );
-      expect(attackerSubmitRes.status).toBe(200);
+      const submitAttackerCommit = async (branch: string): Promise<number> => {
+        const attackerCommit = await createSignedModuleCommitEvent({
+          credentials: attackerCreds,
+          moduleName: "sample",
+          branch,
+          moduleDescription: [
+            { language: "en", text: "Attacker hijacked sample" },
+          ],
+          message: "Attacker commit should be ignored",
+          parentCommitHash: sampleHead,
+          parts: [
+            {
+              name: "malicious-part",
+              description: [{ language: "en", text: "Malicious" }],
+              partType: { "#number": null },
+              expression: { "#number": 999 },
+            },
+          ],
+        });
+        return (
+          await handleWorkerRequest(
+            new Request(
+              "https://definy.local/definy.v1.EventService/SubmitEvent",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  signedEventBytes: attackerCommit.signedEventBytes,
+                }),
+              },
+            ),
+            env,
+            store,
+          )
+        ).status;
+      };
+      // システムアカウントの main ブランチにはコミットできない (ブランチの作成者だけがコミットできる)
+      expect(await submitAttackerCommit("main")).toBe(400);
+      // 自分のブランチは作れるが, 書き戻すのは main だけなので無視される
+      expect(await submitAttackerCommit("attacker")).toBe(200);
 
       // sample モジュールの現在のパーツ定義を読み込み、core のパーツを参照する新パーツを追加
       const currentSampleSeed = JSON.parse(
@@ -173,14 +188,11 @@ describe("exportSeeds", () => {
           currentSampleSeed.parts.map(async (p) => {
             const partType =
               p.part_type != null
-                ? await resolvePartPlaceholders(p.part_type, systemAccountBytes)
+                ? await resolvePartPlaceholders(p.part_type)
                 : null;
             const expression =
               p.expression != null
-                ? await resolvePartPlaceholders(
-                    p.expression,
-                    systemAccountBytes,
-                  )
+                ? await resolvePartPlaceholders(p.expression)
                 : null;
             return {
               name: p.name,
@@ -192,7 +204,7 @@ describe("exportSeeds", () => {
         );
 
       // core.eval-ast のパーツ ID を導出
-      const coreModId = await deriveModuleIdBytes(systemAccountBytes, "core");
+      const coreModId = await deriveModuleIdBytes("core");
       const coreEvalAstIdStr = await deriveModulePartId(coreModId, "eval-ast");
 
       // 新パーツ: core.eval-ast を呼び出す式
@@ -234,7 +246,7 @@ describe("exportSeeds", () => {
         message: "Add test-new-sample-part referencing core.eval-ast",
         // 親はシステムアカウントの sample の最新のコミット (seed のコミット)
         parentCommitHash: await latestCommitHashOf(
-          await deriveModuleIdBytes(systemAccountBytes, "sample"),
+          await deriveModuleIdBytes("sample"),
           store,
           env,
         ),
@@ -358,10 +370,7 @@ describe("exportSeeds", () => {
         ],
         message: "Commit with CAS hydrated expression",
         parentCommitHash: await latestCommitHashOf(
-          await deriveModuleIdBytes(
-            base64ToBytes(sysCreds.accountId),
-            "sample",
-          ),
+          await deriveModuleIdBytes("sample"),
           store,
           env,
         ),

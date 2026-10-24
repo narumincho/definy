@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { checkEvent, eventRejectionMessage } from "./event_check.ts";
+import {
+  checkEvent,
+  eventRejectionMessage,
+  NO_MODULE_STATE,
+  type EventCheckState,
+} from "./event_check.ts";
 import type { CommitPart, EventContent } from "./event_content.ts";
 
 const checker = new WebAssembly.Module(
@@ -15,24 +20,29 @@ const part = (name: string): CommitPart => ({
   contentHash: null,
 });
 
-const commit = (
-  moduleName: string,
-  parentCommitHash: string | null,
-  parts: ReadonlyArray<CommitPart>,
-): EventContent => ({
+const commit = (options: {
+  readonly moduleName?: string;
+  readonly branch?: string;
+  readonly parent?: string | null;
+  readonly parts?: ReadonlyArray<CommitPart>;
+}): EventContent => ({
   type: "module_commit",
   commit: {
-    moduleName,
+    moduleName: options.moduleName ?? "math",
+    branch: options.branch ?? "main",
     moduleDescription: [],
     message: "m",
-    parentCommitHash,
-    parts,
+    parentCommitHash: options.parent ?? null,
+    parts: options.parts ?? [part("a")],
   },
 });
 
+/** アカウントを作っていて, モジュールにまだコミットが無い状態 */
+const fresh: EventCheckState = { accountCreated: true, ...NO_MODULE_STATE };
+
 const tags = (
   content: EventContent,
-  state: Parameters<typeof checkEvent>[2],
+  state: EventCheckState,
 ): ReadonlyArray<string> =>
   checkEvent(checker, content, state).map(
     (rejection) =>
@@ -46,64 +56,81 @@ describe("core.check-event", () => {
       type: "create_account",
       accountName: "alice",
     };
-    expect(
-      tags(create, { accountCreated: false, latestCommitHash: null }),
-    ).toEqual([]);
-    expect(
-      tags(create, { accountCreated: true, latestCommitHash: null }),
-    ).toEqual(["account_already_created"]);
+    expect(tags(create, { ...fresh, accountCreated: false })).toEqual([]);
+    expect(tags(create, fresh)).toEqual(["account_already_created"]);
     expect(
       tags(
         { type: "create_account", accountName: "" },
-        { accountCreated: false, latestCommitHash: null },
+        { ...fresh, accountCreated: false },
       ),
     ).toEqual(["empty_account_name"]);
   });
 
-  it("モジュールのコミットは, アカウントを作ってから最新のコミットを親にする", () => {
+  it("モジュールの最初のコミットは親の無い main で, アカウントを作ってから", () => {
+    expect(tags(commit({}), fresh)).toEqual([]);
+    expect(tags(commit({}), { ...fresh, accountCreated: false })).toEqual([
+      "account_not_created",
+    ]);
+    expect(tags(commit({ branch: "dev", parent: "h0" }), fresh)).toEqual([
+      "first_branch_must_be_main",
+      "parent_commit_mismatch",
+    ]);
+  });
+
+  it("ブランチには作成者だけが, 最新のコミットを親にしてコミットできる", () => {
+    const onBranch: EventCheckState = {
+      ...fresh,
+      branchLatestCommitHash: "h1",
+      isBranchCreator: true,
+      moduleHasCommits: true,
+      parentInModule: true,
+    };
+    expect(tags(commit({ parent: "h1" }), onBranch)).toEqual([]);
     expect(
-      tags(commit("math", null, [part("a")]), {
-        accountCreated: true,
-        latestCommitHash: null,
-      }),
-    ).toEqual([]);
+      tags(commit({ parent: "h1" }), { ...onBranch, isBranchCreator: false }),
+    ).toEqual(["not_branch_creator"]);
+    expect(tags(commit({ parent: "h0" }), onBranch)).toEqual([
+      "parent_commit_mismatch",
+    ]);
+    expect(tags(commit({ parent: null }), onBranch)).toEqual([
+      "parent_commit_mismatch",
+    ]);
+  });
+
+  it("新しいブランチは誰でも, モジュールのコミットを親にして作れる", () => {
+    const newBranch: EventCheckState = {
+      ...fresh,
+      moduleHasCommits: true,
+      parentInModule: true,
+    };
+    expect(tags(commit({ branch: "alice", parent: "h1" }), newBranch)).toEqual(
+      [],
+    );
     expect(
-      tags(commit("math", "h1", [part("a")]), {
-        accountCreated: true,
-        latestCommitHash: "h1",
-      }),
-    ).toEqual([]);
-    expect(
-      tags(commit("math", "h0", [part("a")]), {
-        accountCreated: false,
-        latestCommitHash: "h1",
-      }),
-    ).toEqual(["account_not_created", "parent_commit_mismatch"]);
-    // 新しいモジュールに親を付けた・既存のモジュールに親を付けなかった
-    expect(
-      tags(commit("math", "h0", []), {
-        accountCreated: true,
-        latestCommitHash: null,
-      }),
-    ).toEqual(["parent_commit_mismatch"]);
-    expect(
-      tags(commit("math", null, []), {
-        accountCreated: true,
-        latestCommitHash: "h1",
+      tags(commit({ branch: "alice", parent: null }), {
+        ...newBranch,
+        parentInModule: false,
       }),
     ).toEqual(["parent_commit_mismatch"]);
   });
 
-  it("モジュール名・パーツ名は空にできず, パーツ名は重複できない", () => {
+  it("モジュール名・ブランチ名・パーツ名は空にできず, パーツ名は重複できない", () => {
     expect(
-      tags(commit("", null, [part("a"), part(""), part("b"), part("a")]), {
-        accountCreated: true,
-        latestCommitHash: null,
-      }),
+      tags(
+        commit({
+          moduleName: "",
+          parts: [part("a"), part(""), part("b"), part("a")],
+        }),
+        fresh,
+      ),
     ).toEqual([
       "empty_module_name",
       "empty_part_name",
       "duplicate_part_name:a",
+    ]);
+    expect(tags(commit({ branch: "" }), fresh)).toEqual([
+      "empty_branch_name",
+      "first_branch_must_be_main",
     ]);
   });
 

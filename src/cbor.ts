@@ -348,30 +348,16 @@ export function sha256EventHashIdSync(bytes: Uint8Array): string {
 
 const TEXT_ENCODER = new TextEncoder();
 const MODULE_PREFIX_BYTES = TEXT_ENCODER.encode("definy:module:");
-const COLON_SEP_BYTES = TEXT_ENCODER.encode(":");
 const PART_SEP_BYTES = TEXT_ENCODER.encode(":part:");
 
 /**
  * `worker/cbor.ts` の `deriveModuleIdBytes` と同一のアルゴリズムで Module ID を同期的に導出する
  */
-export function deriveModuleIdBytesSync(
-  accountBytes: Uint8Array,
-  moduleName: string,
-): Uint8Array {
+export function deriveModuleIdBytesSync(moduleName: string): Uint8Array {
   const nameBytes = TEXT_ENCODER.encode(moduleName);
-  const buf = new Uint8Array(
-    MODULE_PREFIX_BYTES.length +
-      accountBytes.length +
-      COLON_SEP_BYTES.length +
-      nameBytes.length,
-  );
+  const buf = new Uint8Array(MODULE_PREFIX_BYTES.length + nameBytes.length);
   buf.set(MODULE_PREFIX_BYTES, 0);
-  buf.set(accountBytes, MODULE_PREFIX_BYTES.length);
-  buf.set(COLON_SEP_BYTES, MODULE_PREFIX_BYTES.length + accountBytes.length);
-  buf.set(
-    nameBytes,
-    MODULE_PREFIX_BYTES.length + accountBytes.length + COLON_SEP_BYTES.length,
-  );
+  buf.set(nameBytes, MODULE_PREFIX_BYTES.length);
   return sha256BytesSync(sha256BytesSync(buf));
 }
 
@@ -428,7 +414,9 @@ export type DecodedPart = {
 
 export type DecodedModuleCommit = {
   readonly moduleName: string;
-  /** モジュール ID (アカウントとモジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
+  /** コミット先のブランチ (docs/branch.md) */
+  readonly branch: string;
+  /** モジュール ID (モジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
   readonly moduleIdHash: string | null;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
@@ -468,10 +456,11 @@ export function extractModuleCommit(
     if (decoded?.content.type !== "module_commit") return null;
     const { commit } = decoded.content;
     const moduleIdBytes = decoded.accountBytes
-      ? deriveModuleIdBytesSync(decoded.accountBytes, commit.moduleName)
+      ? deriveModuleIdBytesSync(commit.moduleName)
       : null;
     return {
       moduleName: commit.moduleName,
+      branch: commit.branch,
       moduleIdHash: moduleIdBytes
         ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
         : null,

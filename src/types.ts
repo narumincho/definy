@@ -1,6 +1,7 @@
 /**
  * definy の TypeScript フロントエンド共通型定義
  */
+import type { BranchSummary } from "./branches.ts";
 import type { LocalizedText } from "./cbor.ts";
 import type { EventVerification } from "./signed_event.ts";
 
@@ -32,6 +33,10 @@ export type ModulePartSnapshot = {
 export type ModuleSnapshot = {
   readonly moduleId: string;
   readonly name: string;
+  /** 表示しているブランチ (docs/branch.md) */
+  readonly branch: string;
+  /** モジュールの全ブランチ (main が先頭) */
+  readonly branches: ReadonlyArray<BranchSummary>;
   readonly description: LocalizedText;
   readonly latestEventHash: string;
   readonly parentCommitHash: string | null;

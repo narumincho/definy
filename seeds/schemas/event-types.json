@@ -39,6 +39,12 @@
         }
       },
       {
+        "key": "branch",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
         "key": "module_description",
         "value": {
           "#type_list": {

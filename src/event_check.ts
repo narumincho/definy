@@ -3,7 +3,7 @@
  *
  * `core.check-event` は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` を使う
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). TypeScript 側は, 規則が使う状態
- * (アカウントを作ったか, コミット先のモジュールの最新のコミット) を集めて渡し, 返った理由をメッセージにするだけ
+ * (アカウントを作ったか, コミット先のブランチの最新のコミットと作成者など. docs/branch.md) を集めて渡し, 返った理由をメッセージにするだけ
  */
 import { none, some, variant, variantOf } from "./definy_value.ts";
 import { encodeEventContent, type EventContent } from "./event_content.ts";
@@ -13,12 +13,26 @@ import {
   type Stage1CompilerInstance,
 } from "./stage1_compiler.ts";
 
-/** イベントを受け付ける前にサーバーが知っていること (`core.event-check-state`) */
+/** イベントを受け付ける前にサーバーが知っていること (`core.event-check-state`. docs/branch.md) */
 export type EventCheckState = {
   /** このイベントのアカウントの `create_account` を受け付けたか */
   readonly accountCreated: boolean;
-  /** モジュールのコミットなら, コミット先のモジュール (アカウントとモジュール名で決まる) の最新のコミットのイベントハッシュ */
-  readonly latestCommitHash: string | null;
+  /** モジュールのコミットなら, コミット先のブランチの最新のコミットのイベントハッシュ. 新しいブランチなら `null` */
+  readonly branchLatestCommitHash: string | null;
+  /** このイベントのアカウントがコミット先のブランチを作ったか (ブランチの最初のコミットのアカウントか) */
+  readonly isBranchCreator: boolean;
+  /** コミット先のモジュールに (どのブランチにでも) コミットがあるか */
+  readonly moduleHasCommits: boolean;
+  /** `parent_commit_hash` がコミット先のモジュールの (どのブランチの) コミットか. 親が無ければ `false` */
+  readonly parentInModule: boolean;
+};
+
+/** モジュールのコミット以外のイベントの状態 (使わない値) */
+export const NO_MODULE_STATE: Omit<EventCheckState, "accountCreated"> = {
+  branchLatestCommitHash: null,
+  isBranchCreator: false,
+  moduleHasCommits: false,
+  parentInModule: false,
 };
 
 /** `core.event-rejection` の値. `tag` はバリアント名 (`parent_commit_mismatch` など) */
@@ -86,10 +100,13 @@ export function checkEvent(
       instance.writeArgument(encodeEventContent(contentForCheck(content))),
       instance.writeArgument({
         account_created: state.accountCreated,
-        latest_commit_hash:
-          state.latestCommitHash === null
+        branch_latest_commit_hash:
+          state.branchLatestCommitHash === null
             ? none()
-            : some(state.latestCommitHash),
+            : some(state.branchLatestCommitHash),
+        is_branch_creator: state.isBranchCreator,
+        module_has_commits: state.moduleHasCommits,
+        parent_in_module: state.parentInModule,
       }),
     ]),
   );
@@ -116,8 +133,14 @@ export function eventRejectionMessage(rejection: EventRejection): string {
       return "the account name is empty";
     case "empty_module_name":
       return "the module name is empty";
+    case "empty_branch_name":
+      return "the branch name is empty";
+    case "first_branch_must_be_main":
+      return "the first commit of a module must be on the main branch";
+    case "not_branch_creator":
+      return "only the account that created the branch can commit to it (create a new branch instead)";
     case "parent_commit_mismatch":
-      return "parent_commit_hash is not the latest commit of the module (fetch the latest events and commit again)";
+      return "parent_commit_hash must be the latest commit of the branch, or a commit of the module for a new branch (fetch the latest events and commit again)";
     case "empty_part_name":
       return "a part name is empty";
     case "duplicate_part_name":

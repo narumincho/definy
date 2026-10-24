@@ -11,7 +11,11 @@ import {
   type DecodedPart,
   type LocalizedText,
 } from "./cbor.ts";
-import { encodeEventContent, type EventContent } from "./event_content.ts";
+import {
+  encodeEventContent,
+  MAIN_BRANCH,
+  type EventContent,
+} from "./event_content.ts";
 
 export type AccountCredentials = {
   readonly accountId: string;
@@ -33,6 +37,8 @@ export type SubmitEventResult = {
 export type CreateModuleCommitParams = {
   readonly credentials: AccountCredentials;
   readonly moduleName: string;
+  /** コミットするブランチ. 省略すると `main` */
+  readonly branch?: string;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash?: string | null;
@@ -183,6 +189,7 @@ export async function createSignedModuleCommitEvent(
       type: "module_commit",
       commit: {
         moduleName: params.moduleName,
+        branch: params.branch ?? MAIN_BRANCH,
         moduleDescription: params.moduleDescription,
         message: params.message,
         parentCommitHash: params.parentCommitHash ?? null,

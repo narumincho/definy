@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AccountState } from "../types.ts";
 import type { DecodedPart } from "../cbor.ts";
 import {
-  base64ToBytes,
   bytesToUrlSafeBase64NoPad,
   deriveModuleIdBytesSync,
   deriveModulePartIdSync,
@@ -234,10 +233,7 @@ export function useTypeCheck({
         return [];
       }
       const typeChecker = await loadTypeChecker();
-      const moduleIdBytes = deriveModuleIdBytesSync(
-        base64ToBytes(currentAccount.accountId),
-        moduleName,
-      );
+      const moduleIdBytes = deriveModuleIdBytesSync(moduleName);
       const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
       const committed: ReadonlyArray<LatestPart> = partsList.map((part) => ({
         partId: deriveModulePartIdSync(moduleIdBytes, part.name),

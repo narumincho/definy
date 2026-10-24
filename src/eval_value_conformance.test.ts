@@ -9,7 +9,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import cases from "../conformance/eval_cases.json" with { type: "json" };
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
@@ -67,22 +66,17 @@ function coreValueToConformanceValue(value: unknown): unknown {
 
 const wasmBytes = readFileSync("wasm/stage1.wasm");
 const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 const evalValueReference = await resolvePartPlaceholders(
   variant("part_reference", {
     part_definition_event_hash: { $part: "core.eval-value" },
   }),
-  accountBytes,
 );
 
 describe("eval conformance (core.eval-value)", () => {
   for (const testCase of cases.cases) {
     it(testCase.name, async () => {
-      const expression = await resolvePartPlaceholders(
-        testCase.expression,
-        accountBytes,
-      );
+      const expression = await resolvePartPlaceholders(testCase.expression);
       const referenced = collectReferencedParts(expression, (id) =>
         seedPartExpressions.get(id),
       );

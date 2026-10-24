@@ -4483,17 +4483,23 @@
       "description": [
         {
           "language": "en",
-          "text": "A commit of a module: the whole list of its parts at that point"
+          "text": "A commit of a module on a branch: the whole list of its parts at that point. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "モジュールのコミット. その時点のモジュールのパーツをすべて持つ"
+          "text": "モジュールのブランチへのコミット. その時点のモジュールのパーツをすべて持つ. docs/branch.md を参照"
         }
       ],
       "expression": {
         "#type_record": [
           {
             "key": "module_name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "branch",
             "value": {
               "#type_string": null
             }
@@ -115816,6 +115822,24 @@
             }
           },
           {
+            "tag": "empty_branch_name",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "first_branch_must_be_main",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "not_branch_creator",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
             "tag": "parent_commit_mismatch",
             "payload_type": {
               "#none": null
@@ -115846,11 +115870,11 @@
       "description": [
         {
           "language": "en",
-          "text": "What the server knows before accepting an event: whether the account has been created, and the latest commit of the module the event commits to"
+          "text": "What the server knows before accepting an event. For a module commit: the latest commit of the branch (none if the branch is new), whether the account created the branch, whether the module has any commit, and whether parent_commit_hash is a commit of the module. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "イベントを受け付ける前にサーバーが知っていること: アカウントを作ったか, コミット先のモジュールの最新のコミット"
+          "text": "イベントを受け付ける前にサーバーが知っていること. モジュールのコミットなら, ブランチの最新のコミット (新しいブランチなら none), そのアカウントがブランチを作ったか, モジュールにコミットがあるか, parent_commit_hash がモジュールのコミットか. docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -115862,7 +115886,7 @@
             }
           },
           {
-            "key": "latest_commit_hash",
+            "key": "branch_latest_commit_hash",
             "value": {
               "#type_union": [
                 {
@@ -115880,6 +115904,24 @@
                   }
                 }
               ]
+            }
+          },
+          {
+            "key": "is_branch_creator",
+            "value": {
+              "#type_boolean": null
+            }
+          },
+          {
+            "key": "module_has_commits",
+            "value": {
+              "#type_boolean": null
+            }
+          },
+          {
+            "key": "parent_in_module",
+            "value": {
+              "#type_boolean": null
             }
           }
         ]
@@ -116883,35 +116925,44 @@
                                                   "function": {
                                                     "#part_reference": {
                                                       "part_definition_event_hash": {
-                                                        "$part": "core.option-string-same"
+                                                        "$part": "core.equal"
                                                       }
                                                     }
                                                   },
                                                   "arguments": [
                                                     {
-                                                      "name": "a",
+                                                      "name": "left",
                                                       "value": {
-                                                        "#record_get": {
-                                                          "record": {
-                                                            "#variable": {
-                                                              "variable_id": 3
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.string-length"
+                                                              }
                                                             }
                                                           },
-                                                          "key": "parent_commit_hash"
+                                                          "arguments": [
+                                                            {
+                                                              "name": "value",
+                                                              "value": {
+                                                                "#record_get": {
+                                                                  "record": {
+                                                                    "#variable": {
+                                                                      "variable_id": 3
+                                                                    }
+                                                                  },
+                                                                  "key": "branch"
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
                                                         }
                                                       }
                                                     },
                                                     {
-                                                      "name": "b",
+                                                      "name": "right",
                                                       "value": {
-                                                        "#record_get": {
-                                                          "record": {
-                                                            "#variable": {
-                                                              "variable_id": 1
-                                                            }
-                                                          },
-                                                          "key": "latest_commit_hash"
-                                                        }
+                                                        "#number": 0
                                                       }
                                                     }
                                                   ]
@@ -116923,18 +116974,10 @@
                                                   "variable_id": -1,
                                                   "variable_name": "",
                                                   "body": {
-                                                    "#list": []
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": -1,
-                                                  "variable_name": "",
-                                                  "body": {
                                                     "#list": [
                                                       {
                                                         "#variant": {
-                                                          "tag": "parent_commit_mismatch",
+                                                          "tag": "empty_branch_name",
                                                           "payload": {
                                                             "#none": null
                                                           },
@@ -116946,6 +116989,14 @@
                                                         }
                                                       }
                                                     ]
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "false",
+                                                  "variable_id": -1,
+                                                  "variable_name": "",
+                                                  "body": {
+                                                    "#list": []
                                                   }
                                                 }
                                               ]
@@ -116959,38 +117010,543 @@
                                               "function": {
                                                 "#part_reference": {
                                                   "part_definition_event_hash": {
-                                                    "$part": "core.check-event-part-names"
+                                                    "$part": "core.list-concat"
                                                   }
                                                 }
                                               },
                                               "arguments": [
                                                 {
-                                                  "name": "parts",
+                                                  "name": "left",
                                                   "value": {
-                                                    "#record_get": {
-                                                      "record": {
-                                                        "#variable": {
-                                                          "variable_id": 3
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.check-event-branch"
+                                                          }
                                                         }
                                                       },
-                                                      "key": "parts"
+                                                      "arguments": [
+                                                        {
+                                                          "name": "commit",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "state",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
                                                     }
                                                   }
                                                 },
                                                 {
-                                                  "name": "seen",
+                                                  "name": "right",
                                                   "value": {
-                                                    "#list": []
-                                                  }
-                                                },
-                                                {
-                                                  "name": "index",
-                                                  "value": {
-                                                    "#number": 0
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.check-event-part-names"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "parts",
+                                                          "value": {
+                                                            "#record_get": {
+                                                              "record": {
+                                                                "#variable": {
+                                                                  "variable_id": 3
+                                                                }
+                                                              },
+                                                              "key": "parts"
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "seen",
+                                                          "value": {
+                                                            "#list": []
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "#number": 0
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
                                                   }
                                                 }
                                               ]
                                             }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "check-event-branch",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "commit",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.module-commit"
+                  }
+                }
+              }
+            },
+            {
+              "name": "state",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-check-state"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-rejection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Branch rules of a module commit: only the creator of a branch can commit to it, and the parent is the latest commit of the branch. A new branch starts from a commit of the module, and the first branch of a module is main without a parent. See docs/branch.md"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミットのブランチの規則: ブランチにはそれを作ったアカウントだけがコミットでき, 親はブランチの最新のコミット. 新しいブランチはモジュールのコミットから作り, モジュールの最初のブランチは親の無い main. docs/branch.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "commit"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "state"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#record_get": {
+                  "record": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "key": "branch_latest_commit_hash"
+                }
+              },
+              "arms": [
+                {
+                  "tag": "some",
+                  "variable_id": 2,
+                  "variable_name": "latest",
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-concat"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#match": {
+                              "target": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "key": "is_branch_creator"
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": []
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": [
+                                      {
+                                        "#variant": {
+                                          "tag": "not_branch_creator",
+                                          "payload": {
+                                            "#none": null
+                                          },
+                                          "type_part": {
+                                            "#some": {
+                                              "$part": "core.event-rejection"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.option-string-same"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "a",
+                                      "value": {
+                                        "#record_get": {
+                                          "record": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          },
+                                          "key": "parent_commit_hash"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "b",
+                                      "value": {
+                                        "#record_get": {
+                                          "record": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          },
+                                          "key": "branch_latest_commit_hash"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": []
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": [
+                                      {
+                                        "#variant": {
+                                          "tag": "parent_commit_mismatch",
+                                          "payload": {
+                                            "#none": null
+                                          },
+                                          "type_part": {
+                                            "#some": {
+                                              "$part": "core.event-rejection"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "none",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#record_get": {
+                          "record": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "key": "module_has_commits"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "key": "parent_in_module"
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": []
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": [
+                                      {
+                                        "#variant": {
+                                          "tag": "parent_commit_mismatch",
+                                          "payload": {
+                                            "#none": null
+                                          },
+                                          "type_part": {
+                                            "#some": {
+                                              "$part": "core.event-rejection"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.equal"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  },
+                                                  "key": "branch"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#string": "main"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": []
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": [
+                                              {
+                                                "#variant": {
+                                                  "tag": "first_branch_must_be_main",
+                                                  "payload": {
+                                                    "#none": null
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "core.event-rejection"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#match": {
+                                      "target": {
+                                        "#match": {
+                                          "target": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              },
+                                              "key": "parent_commit_hash"
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "tag": "none",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#boolean": true
+                                              }
+                                            },
+                                            {
+                                              "tag": "some",
+                                              "variable_id": 9,
+                                              "variable_name": "p",
+                                              "body": {
+                                                "#boolean": false
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": []
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": [
+                                              {
+                                                "#variant": {
+                                                  "tag": "parent_commit_mismatch",
+                                                  "payload": {
+                                                    "#none": null
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "core.event-rejection"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
                                           }
                                         }
                                       ]

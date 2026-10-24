@@ -1089,6 +1089,10 @@ test.describe("definy UI E2E", () => {
     const changeCard = page.locator(".change-card", { hasText: "e2e-part" });
     await expect(changeCard).toBeVisible({ timeout: 10000 });
 
+    // sample の main は system アカウントのブランチなので, 自分の名前の新しいブランチを作ってコミットする (docs/branch.md)
+    const branchInput = page.locator("input#commit-branch-input");
+    await expect(branchInput).toHaveValue(accountName);
+
     const messageInput = page.locator("#commit-message-input");
     await expect(messageInput).toBeVisible();
     await messageInput.fill("Add e2e-part via test");
@@ -1110,6 +1114,51 @@ test.describe("definy UI E2E", () => {
           /No uncommitted changes|未コミットの変更はありません|Neniuj neenmetitaj ŝanĝoj/,
       }),
     ).toBeVisible();
+
+    // コミットしたブランチを表示する. main に切り替えると e2e-part は無い
+    await page.goto("/module/sample");
+    const branchSelect = page.locator("#module-branch-select");
+    await expect(branchSelect).toHaveValue(accountName, { timeout: 10000 });
+    const partGrid = page.locator(".part-grid");
+    await expect(
+      partGrid.locator(".part-card", { hasText: "e2e-part" }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".module-commit-message", {
+        hasText: "Add e2e-part via test",
+      }),
+    ).toBeVisible();
+    await branchSelect.selectOption("main");
+    await expect(
+      partGrid.locator(".part-card", { hasText: "e2e-part" }),
+    ).toHaveCount(0);
+    await branchSelect.selectOption(accountName);
+
+    // 自分のブランチを表示していれば, 次のコミットはそのブランチに
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "definy.working_changes.v4",
+        JSON.stringify({
+          parts: {
+            "sample.e2e-part": {
+              moduleDefinitionEventHash: "sample",
+              partDefinitionEventHash: "sample.e2e-part",
+              name: "e2e-part",
+              description: [],
+              partType: { "#number": null },
+              expression: { "#number": 1000 },
+            },
+          },
+        }),
+      );
+    });
+    await page.goto("/changes");
+    await expect(page.locator("p#commit-branch-input")).toContainText(
+      accountName,
+    );
+    await messageInput.fill("Update e2e-part");
+    await commitBtn.click();
+    await expect(commitSuccess).toBeVisible({ timeout: 10000 });
   });
 
   test("definy logo and icon match definy.app styling and assets", async ({

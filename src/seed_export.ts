@@ -7,7 +7,11 @@ import {
   decodeCborItem,
 } from "./cbor.ts";
 import { devSystemAccountBytes } from "./seed_parts.ts";
-import type { CommitPart, ModuleCommitContent } from "./event_content.ts";
+import {
+  MAIN_BRANCH,
+  type CommitPart,
+  type ModuleCommitContent,
+} from "./event_content.ts";
 import { decodeVerifiedSignedEvent } from "./signed_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
@@ -85,7 +89,7 @@ export async function buildPartReferenceTable(
 ): Promise<ReadonlyMap<string, string>> {
   const table = new Map<string, string>();
   for (const seed of seeds) {
-    const moduleId = await deriveModuleIdBytes(accountBytes, seed.module_name);
+    const moduleId = await deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       table.set(
         await deriveModulePartId(moduleId, part.name),
@@ -163,7 +167,7 @@ type LatestCommitEntry = {
 };
 
 /**
- * サーバーから `GetEvents` をページングして取得し、モジュールごとにシステムアカウントの最新コミットを収集する
+ * サーバーから `GetEvents` をページングして取得し、モジュールごとにシステムアカウントの main ブランチの最新コミットを収集する
  */
 async function fetchLatestSystemModuleCommits(
   fetchFn: typeof fetch,
@@ -203,7 +207,11 @@ async function fetchLatestSystemModuleCommits(
       if (meta.accountId !== systemAccountId) {
         continue;
       }
-      if (content.type !== "module_commit") {
+      // seed に書き戻すのはシステムアカウントの main ブランチだけ (docs/branch.md)
+      if (
+        content.type !== "module_commit" ||
+        content.commit.branch !== MAIN_BRANCH
+      ) {
         continue;
       }
       const { commit } = content;

@@ -6,12 +6,9 @@ export {
   devSystemAccountBytes,
 } from "./system_account.ts";
 
-async function seedPartId(
-  name: string,
-  accountBytes: Uint8Array,
-): Promise<string> {
+async function seedPartId(name: string): Promise<string> {
   const dot = name.indexOf(".");
-  const moduleId = await deriveModuleIdBytes(accountBytes, name.slice(0, dot));
+  const moduleId = await deriveModuleIdBytes(name.slice(0, dot));
   return await deriveModulePartId(moduleId, name.slice(dot + 1));
 }
 
@@ -19,24 +16,19 @@ async function seedPartId(
  * `{"$part": "module.name"}` をパーツ ID の文字列 (URL-safe Base64) に置き換える.
  * 式の `part_reference` も `core.type-ast` の `reference` もパーツ ID を文字列で持つ (docs/value-encoding.md)
  */
-export async function resolvePartPlaceholders(
-  expr: unknown,
-  accountBytes: Uint8Array,
-): Promise<unknown> {
+export async function resolvePartPlaceholders(expr: unknown): Promise<unknown> {
   if (Array.isArray(expr)) {
-    return await Promise.all(
-      expr.map((item) => resolvePartPlaceholders(item, accountBytes)),
-    );
+    return await Promise.all(expr.map((item) => resolvePartPlaceholders(item)));
   }
   if (expr && typeof expr === "object") {
     const obj = expr as Record<string, unknown>;
     if (typeof obj.$part === "string") {
-      return await seedPartId(obj.$part, accountBytes);
+      return await seedPartId(obj.$part);
     }
     const entries = await Promise.all(
       Object.entries(obj).map(async ([key, value]) => [
         key,
-        await resolvePartPlaceholders(value, accountBytes),
+        await resolvePartPlaceholders(value),
       ]),
     );
     return Object.fromEntries(entries);
@@ -45,9 +37,9 @@ export async function resolvePartPlaceholders(
 }
 
 /** `seeds/*.json` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
-export async function loadSeedPartExpressions(
-  accountBytes: Uint8Array,
-): Promise<ReadonlyMap<string, unknown>> {
+export async function loadSeedPartExpressions(): Promise<
+  ReadonlyMap<string, unknown>
+> {
   const map = new Map<string, unknown>();
   for (const file of readdirSync("seeds")) {
     // seed_bundle_fingerprint.json はモジュールの seed ではない
@@ -61,11 +53,11 @@ export async function loadSeedPartExpressions(
         readonly expression?: unknown;
       }>;
     };
-    const moduleId = await deriveModuleIdBytes(accountBytes, seed.module_name);
+    const moduleId = await deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       map.set(
         await deriveModulePartId(moduleId, part.name),
-        await resolvePartPlaceholders(part.expression ?? null, accountBytes),
+        await resolvePartPlaceholders(part.expression ?? null),
       );
     }
   }

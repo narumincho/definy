@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
@@ -51,14 +50,12 @@ function cloudflareApi(
 const compiler = createStage1Compiler(
   new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
 );
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 
 async function compilePart(name: string): Promise<WebAssembly.Module> {
-  const expression = await resolvePartPlaceholders(
-    { "#part_reference": { part_definition_event_hash: { $part: name } } },
-    accountBytes,
-  );
+  const expression = await resolvePartPlaceholders({
+    "#part_reference": { part_definition_event_hash: { $part: name } },
+  });
   const { parts, unresolved } = collectReferencedParts(expression, (id) =>
     seedPartExpressions.get(id),
   );

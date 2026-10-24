@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  devSystemAccountBytes,
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
@@ -15,21 +14,18 @@ import {
 const compiler = createStage1Compiler(
   new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
 );
-const accountBytes = await devSystemAccountBytes();
-const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
+const seedPartExpressions = await loadSeedPartExpressions();
 
 async function partReference(name: string): Promise<unknown> {
-  return await resolvePartPlaceholders(
-    { "#part_reference": { part_definition_event_hash: { $part: name } } },
-    accountBytes,
-  );
+  return await resolvePartPlaceholders({
+    "#part_reference": { part_definition_event_hash: { $part: name } },
+  });
 }
 
 const stdAbs = await partReference("std.abs");
-const stdAbsId = (await resolvePartPlaceholders(
-  { $part: "std.abs" },
-  accountBytes,
-)) as string;
+const stdAbsId = (await resolvePartPlaceholders({
+  $part: "std.abs",
+})) as string;
 
 type TestPart = {
   readonly id: string;
