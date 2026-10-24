@@ -53,7 +53,7 @@ data = [
     `position-anchor` でそのノードを参照する. top layer に出すので
     エディタの `overflow` で切り取られない.
     - 複数行カプセルは子を含む全体ではなく見出しのバッジに anchor を付け,
-      メニューがバッジのすぐ下に出るようにする.
+      メニューがバッジのすぐ下に出るようにする. 見出しのバッジの無いカプセル (関数呼び出しなど) は見出しの行に付ける.
     - 配置は `.expression-node-dropdown` の
       `position-area: block-end span-inline-end` (ノードの左端揃えで下に出す).
   - ブラウザの popover 既定スタイル (User Agent stylesheet の `inset: 0`)
@@ -65,15 +65,15 @@ data = [
   - Anchor Positioning / Popover 未対応ブラウザでは (`CSS.supports` で判定),
     popover にせず式全体の下に通常のフローでメニューを表示する.
   - ドロップダウンパネル本体 (`.dropdown-popover-panel`), オプションリスト (`overflow-x: hidden`),
-    ヘッダーおよびオプションのメタデータ (`display_meta`) にも省略表示 (`ellipsis`)
+    ヘッダーおよびオプションの補足 (型など) にも省略表示 (`ellipsis`)
     や最大幅制限を設け, 長い識別子や型名による右はみ出しを確実に防止する.
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).
   - 選択肢は期待型に合うものを先に並べ, 合わないもの
-    (`RankedSelectorOption::is_type_mismatch`) は
+    (`isTypeMismatch`, `src/tree_layout/selector_options.ts`) は
     「その他 (型が合わない)」の区切りの下に薄く表示する
-    (`SearchableDropdownPanel` の `secondary_values` / `secondary_heading`).
+    (`src/tree_layout/ExpressionPopoverMenu.tsx`).
     期待型が無い位置では区切りを出さない.
   - 期待型は definy 製の型チェッカーに聞く (`findExpectedType`, `src/state/useTypeCheck.ts`).
     選んだ位置を `{"Hole": {"probe": true}}` (`EXPECTED_TYPE_PROBE`, `src/tree_layout/type_inference.ts`) に
@@ -114,22 +114,16 @@ data = [
     やり直すと確実 (dev サーバーは seed の指紋 `seeds/seed_bundle_fingerprint.json` が変わると D1 に入れ直す)
   - パーツの選択肢には型 (`function → number` など) を表示する. `core.plus` などの組み込みのパーツも型を持つが,
     どの型の値にも使える `core.equal` や `core.list-get` などは型を持たないので表示しない ([builtin-parts.md](builtin-parts.md)).
-  - メニューを開いたときは, 現在の値の選択肢 (`data-selected="true"`)
-    がリスト中央付近に来るようにリスト (`.dropdown-option-list`) をスクロールする.
-    クリックイベント内では新しい選択肢がまだ描画されていないため,
-    `requestAnimationFrame` を 2 回挟んで Dioxus の再描画後に行う.
-  - 選択中の式だけを未入力にできる. 子の式は `Expression::Hole` (`□` と表示)
-    に, ルートの式は式なし (`None`) になる (`clear_expression_at_path`).
+  - メニューを開いたときは, 現在の値の選択肢 (`data-current="true"`)
+    がリスト中央付近に来るようにリストをスクロールする (`ExpressionPopoverMenu` の `useEffect`).
+    キー操作でハイライトを動かしたときは `scrollIntoView({ block: "nearest" })` で追従する.
+  - 選択中の式だけを未入力にできる. 式は `{ Hole: {} }` (`□` と表示) になる
+    (`clearExpressionAtPath`, `src/tree_layout/path.ts`).
     - 検索欄が空のときの Delete / Backspace キー (Mac の delete キーは Backspace),
       数値・文字列リテラルの入力欄が空のときの Delete / Backspace キー,
       メニュー見出しの ⌫ ボタンのいずれかで行う. 文字が残っている間は通常どおり文字を消す.
     - 未入力にした後は検索欄にフォーカスし, すぐ別の式を選べるようにする.
-    - `Hole` は型検査で `Unfilled expression.` の診断を出し,
-      Wasm へのコンパイル (評価) はエラーになる.
-  - Dioxus 0.7 ではコンポーネント描画中に無条件で子コンポーネントが購読する
-    `Signal::set` を呼ぶと, 常に dirty scope が残って `use_effect`
-    等が実行されなくなるため, `diagnostics` / `expected_types` の `Signal`
-    更新は値が変わったとき (`*sig.peek() != new_val`) のみ行う.
+    - 未入力はコミットの検査や評価で受け付けない (上の「期待型」の項目を参照).
 - ノードの枠は常に丸くする. 1 行に収まるバッジ・インラインカプセルは
   `--radius-full` (ピル型), 高さのある複数行カプセル・テーブルは `--radius-lg`
   を使う.
@@ -142,29 +136,51 @@ data = [
     `[popover]` および `:popover-open`, `.dropdown-popover-panel` に
     `background-color: var(--surface-opaque); color: var(--text);` を指定して
     Top Layer で確実に不透明ダーク背景を保つ.
-  - Dioxus の DOM パッチ適用処理 (`setAttributeInner`) では,
-    直接操作されたインラインスタイルとショートハンド (`background`, `border`)
-    の競合により再レンダリング時にスタイルが脱落する場合があるため,
-    装飾スタイルはインラインではなく CSS クラス (`.dropdown-popover-panel`)
-    で確実に管理する.
+  - ポップオーバーの装飾スタイルはインラインではなく CSS クラス (`.dropdown-popover-panel`) で管理する.
 
 ## 関数呼び出しの名前付きパラメーター表示
 
-関数呼び出し (`call`) の各引数は `パラメーター名: 値` の形で表示する.
+関数呼び出しの各引数は `パラメーター名: 値` の形で表示する.
 
 ```
-call f width: 1 height: 2
+f width: 1 height: 2
 ```
 
-パラメーター名は型解析 (`TypeAnalysis::call_parameter_names`) で呼び出し先関数の型から引く.
-型チェックと同じく, 引数に保存された名前 (`CallArgument::name`) と一致するパラメーターを優先し,
-無ければ同じ位置のパラメーターの名前を使う.
-呼び出し先の型が分からないときや, 型解析をしないプレビュー (`ExpressionTreeSummary`) では
-引数に保存された名前をそのまま表示する.
+関数呼び出しには `call` のような見出しのバッジを出さない (LayoutNode の `label` が空).
+以前は `call` を出していたが, 演算子を `core.plus` などのパーツの呼び出しにした (#725) ことで
+`call core.plus left: 1 right: 2` のように `call` だらけになったので消した.
+呼び出す関数と引数名の並びで呼び出しだと分かる.
+
+- `label` が空のノードは `TreeLayoutRenderer` がバッジを描かない.
+  呼び出しそのもの (結果の型のホバー・置換メニュー) はカプセルの枠 (左端の余白など) をクリック・ホバーして選ぶ
+- 複数行になったときは, 見出しの行 (折りたたみボタンの横) に最初の子 (呼び出す関数) を出し,
+  引数だけを字下げして並べる. 置換メニューは見出しの行の下に出す
+- 複数行のカプセルを折りたたんだときは見出しの行だけを出す (以前の `... (N args)` は出さない)
+- E2E で呼び出しを選ぶときは, 呼び出す関数のノード (ID が `.fn` で終わる) を含むカプセルを探す (`e2e/ui.test.ts` の `callCapsule`)
+
+パラメーター名は呼び出しの引数に保存された名前 (`Call.arguments[].name`) をそのまま出し,
+空なら `arg0:` のように位置で出す (`src/tree_layout/ast_to_layout/functions.ts`).
+呼び出し先の型からパラメーター名を引き直すことはしない. 名前が呼び出し先の引数名と合わなければ型チェッカーが型エラーにする.
+
+## let の束縛の表示
+
+`let` は見出し (`let`) の下に束縛を `名前 = 値` の形で並べ, 最後に本体を置く.
+
+```
+let
+  base = 10
+  height = 5
+  core.divide left: ... right: 2
+```
+
+- 束縛には見出しのバッジを出さず (`label` が空), 名前・`=` (`delimiter` のノード)・値の順に並べる.
+  以前は `=` を見出しのバッジにしていたので `= base 10` と表示されていた
+- 以前は束縛をまとめた `list` という見出しのカプセルがあったが, 内部の構造が見えているだけなのでなくした
+- 束縛の名前・`=`・値はどれも束縛の値の位置 (`letBindingValue`) を指すので, どれをクリックしても値を選ぶ
 
 ## 変数とパーツ参照の名前表示
 
-式の AST は変数を ID (`VariableExpression::variable_id`), パーツ参照をパーツ定義イベントのハッシュで持つが,
+式の AST は変数を ID (`Variable.variable_id`), パーツ参照をパーツ定義イベントのハッシュで持つが,
 ツリーでは名前で表示する.
 
 - 変数は, その位置から見える束縛の名前を出す. 束縛は関数のパラメーター, `let` の束縛
@@ -173,13 +189,10 @@ call f width: 1 height: 2
   (`core.eval-value` など) ので, 式全体から ID → 名前を集めるのではなくスコープを辿る
 - 値を束縛する `match` のアームは `some(value) =>` のようにタグの後ろに変数名を出す
 - 名前が空 (追加直後の let 束縛など) かスコープ外の変数は `var_{id}` と表示する
-- パーツ参照はパーツ名を出す. 名前はイベントキャッシュのパーツから引く
-  (`part_projection::part_names`. ツリーエディタは `TypeAnalysis::part_names`,
-  一覧のプレビュー `ExpressionTreeSummary` は `part_names` プロパティで受け取る).
+- パーツ参照はパーツ名を出す. 名前はイベントから集めたパーツ ID → 名前の表 (`partNames`, `src/state/useEvents.ts`) から引き,
+  `expressionToLayoutNode` の `partNames` で渡す.
   見つからないときは `@part:` とハッシュの先頭 6 文字を出す
-- パーツの型の文字列 (エクスプローラー, パーツ一覧, コマンドパレット, モジュール詳細) も,
-  型パーツの参照を `type-part(ハッシュ)` ではなくパーツ名で書く
-  (`PartType::to_string_with_type_part_names`, UI では `part_projection::part_type_text`)
+- ホバーで出す型 (`formatTypeAst`) も, 型パーツの参照を `partNames` でパーツ名にして書く
 - **パーツ参照の実データと UI 選択肢・永続化の整合性**:
   - 式の AST におけるパーツ参照の実データは `{ PartReference: { part_definition_event_hash: <32 バイトの Uint8Array> } }` であり,
     CBOR のバイト列 (major type 2) にエンコードされる. パーツ名文字列や数値配列を直接格納してはならない.

@@ -55,9 +55,13 @@ export function tryBuildFunctionNode(
         bindingNodes.push({
           id: `${idPrefix}.b_${idx}`,
           path: bindingPath,
-          label: "=",
-          kind: "symbol",
-          children: [nameChild, valChild],
+          label: "",
+          kind: "group",
+          children: [
+            nameChild,
+            letEqualSign(`${idPrefix}.b_${idx}.eq`, bindingPath),
+            valChild,
+          ],
           computedWidth: 0,
           computedHeight: 0,
           layoutMode: "inline",
@@ -87,26 +91,19 @@ export function tryBuildFunctionNode(
       bindingNodes.push({
         id: `${idPrefix}.b_0`,
         path: bindingPath,
-        label: "=",
-        kind: "symbol",
-        children: [nameChild, valChild],
+        label: "",
+        kind: "group",
+        children: [
+          nameChild,
+          letEqualSign(`${idPrefix}.b_0.eq`, bindingPath),
+          valChild,
+        ],
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "inline",
       });
       nextScopeVars.set(varId, varName);
     }
-
-    const bindingsGroup: LayoutNode = {
-      id: `${idPrefix}.bindings`,
-      path: currentPath,
-      label: "list",
-      kind: "block",
-      children: bindingNodes,
-      computedWidth: 0,
-      computedHeight: 0,
-      layoutMode: "multiline",
-    };
 
     const bodyChild = buildLayoutNode(
       letNode.body,
@@ -120,7 +117,8 @@ export function tryBuildFunctionNode(
       path: currentPath,
       label: "let",
       kind: "block",
-      children: [bindingsGroup, bodyChild],
+      // 束縛を並べ, 最後に本体を置く
+      children: [...bindingNodes, bodyChild],
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "multiline",
@@ -214,10 +212,12 @@ export function tryBuildFunctionNode(
       };
     });
 
+    // 見出しは出さない. 呼び出す関数と引数の並びで呼び出しだと分かる.
+    // 呼び出し自体はカプセルの枠をクリック・ホバーして選ぶ
     return {
       id: idPrefix,
       path: currentPath,
-      label: "call",
+      label: "",
       kind: "group",
       children: [fnChild, ...argChildren],
       computedWidth: 0,
@@ -227,4 +227,24 @@ export function tryBuildFunctionNode(
   }
 
   return null;
+}
+
+/**
+ * let の束縛の `名前 = 値` の `=`.
+ * 束縛には見出しのバッジを出さず, 名前と値の間にこの記号を置く
+ */
+function letEqualSign(
+  id: string,
+  bindingPath: ReadonlyArray<PathStep>,
+): LayoutNode {
+  return {
+    id,
+    path: bindingPath,
+    label: "=",
+    kind: "delimiter",
+    children: [],
+    computedWidth: 0,
+    computedHeight: 0,
+    layoutMode: "inline",
+  };
 }
