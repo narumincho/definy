@@ -5,7 +5,6 @@ import { ExplorerSidebar } from "./ExplorerSidebar.tsx";
 import { Header } from "./Header.tsx";
 import { RunPanel } from "./RunPanel.tsx";
 import { ShortcutList } from "./ShortcutList.tsx";
-import { StatusBar } from "./StatusBar.tsx";
 import { useDefiny } from "../state.tsx";
 
 export function Workbench({
@@ -34,7 +33,6 @@ export function Workbench({
         <RunPanel />
       </main>
 
-      <StatusBar />
       <CommandPalette />
       <ShortcutList />
     </div>

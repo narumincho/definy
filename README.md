@@ -14,7 +14,7 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
 - `pages/`: React 19 ページルーティング (`@void/react`)
   - イベントタイムライン、パーツ一覧/詳細、モジュール、コミット履歴、デプロイセンター等
 - `src/`: UI ワークベンチ実装
-  - `components/`: VS Code 風ワークベンチ、ActivityBar、ExplorerSidebar、CommandPalette、StatusBar 等
+  - `components/`: VS Code 風ワークベンチ、ActivityBar、ExplorerSidebar、CommandPalette、ConnectionStatus 等
   - `stage1_compiler.ts`: definy 自己記述コンパイラ (`wasm/stage1.wasm`) の TypeScript 実行パイプライン
   - `state.tsx`: AppState, i18n, イベント管理 Context
   - `auth.ts` / `rpc_auth.ts`: Ed25519 アカウント・イベント署名と RPC の Authorization ヘッダー ([仕様](docs/rpc-authorization.md))

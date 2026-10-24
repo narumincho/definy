@@ -89,7 +89,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 ├── wasm/
 │   └── stage1.wasm           # definy 自己記述コンパイラ
 ├── src/
-│   ├── components/           # Workbench, Header, ActivityBar, Sidebar, StatusBar...
+│   ├── components/           # Workbench, Header, ActivityBar, Sidebar, ConnectionStatus...
 │   ├── stage1_compiler.ts    # Wasm コンパイラ・評価パイプライン
 │   ├── state.tsx             # React Context (AppState, i18n, イベント)
 │   └── main.css              # IDE ダークテーマ スタイルシート
@@ -112,6 +112,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
    - サイドバー開閉トグル
    - definy ロゴ
    - コマンドパレット起動ボタン（`⌘P` / `Ctrl+P`）
+   - 接続状態インジケータ（[src/components/ConnectionStatus.tsx](../src/components/ConnectionStatus.tsx)。緑=接続済み / 黄=確認中 / 赤=オフライン。接続済み以外は文字でも表示）
    - 言語切替（英語 `en` / 日本語 `ja` / エスペラント語 `eo`）
    - アカウント表示 / ログインダイアログ
 2. **アクティビティバー ([src/components/ActivityBar.tsx](../src/components/ActivityBar.tsx))**:
@@ -121,11 +122,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
    - モジュール → パーツのツリービュー
    - インクリメンタル検索・絞り込み
    - マウスドラッグによるサイドバー幅の無段階リサイズ（`localStorage` に永続化）
-4. **ステータスバー ([src/components/StatusBar.tsx](../src/components/StatusBar.tsx))**:
-   - 接続状態インジケータ（緑=接続中 / 黄=確認中 / 灰=オフライン）
-   - 未コミット変更ショートカット
-   - 現在の言語名
-5. **パーツ詳細 ([pages/part/[id].tsx](../pages/part/[id].tsx)) と実行パネル ([src/components/RunPanel.tsx](../src/components/RunPanel.tsx))**:
+4. **パーツ詳細 ([pages/part/[id].tsx](../pages/part/[id].tsx)) と実行パネル ([src/components/RunPanel.tsx](../src/components/RunPanel.tsx))**:
    - **実行パネル**: ヘッダーのボタンか Ctrl + \` で出す。木構造のエディタで入力した式を、バックエンド通信なしでブラウザ内の `stage1.wasm` で Wasm にコンパイルして実行し、実行履歴に残す。式が参照するパーツも集めて stage1 に渡す（[run-panel.md](run-panel.md)）。
 
 ---
