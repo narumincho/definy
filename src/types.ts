@@ -20,6 +20,11 @@ export type PartChange = {
 
 export type WorkingChanges = {
   readonly parts: ReadonlyMap<string, PartChange>;
+  /**
+   * モジュール名 → 取り込んでいる他のブランチのコミット. 次のそのモジュールのコミットが `merged_commit_hash` に持つ
+   * (docs/branch.md「取り込み」)
+   */
+  readonly merges?: ReadonlyMap<string, string>;
 };
 
 export type ModulePartSnapshot = {

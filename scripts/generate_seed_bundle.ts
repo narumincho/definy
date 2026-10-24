@@ -207,6 +207,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
           branch: MAIN_BRANCH,
           moduleDescription: mod.module_description,
           parentCommitHash: null,
+          mergedCommitHash: null,
           message: mod.message,
           parts: mod.parts.map((part) => ({
             name: String(part.name),

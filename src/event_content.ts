@@ -40,6 +40,8 @@ export type ModuleCommitContent = {
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
+  /** このコミットで取り込んだ他のブランチのコミット. 取り込みでなければ `null` (docs/branch.md「取り込み」) */
+  readonly mergedCommitHash: string | null;
   readonly parts: ReadonlyArray<CommitPart>;
 };
 
@@ -85,6 +87,7 @@ export function encodeEventContent(content: EventContent): unknown {
         module_description: encodeLocalizedText(commit.moduleDescription),
         message: commit.message,
         parent_commit_hash: optionOf(commit.parentCommitHash),
+        merged_commit_hash: optionOf(commit.mergedCommitHash),
         parts: commit.parts.map((part) => ({
           name: part.name,
           description: encodeLocalizedText(part.description),
@@ -126,6 +129,9 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
       const parentCommitHash = optionOrNull(
         field(payload, "parent_commit_hash"),
       );
+      const mergedCommitHash = optionOrNull(
+        field(payload, "merged_commit_hash"),
+      );
       return {
         type: "module_commit",
         commit: {
@@ -137,6 +143,8 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
           message: String(field(payload, "message")),
           parentCommitHash:
             typeof parentCommitHash === "string" ? parentCommitHash : null,
+          mergedCommitHash:
+            typeof mergedCommitHash === "string" ? mergedCommitHash : null,
           parts: (Array.isArray(parts) ? parts : []).map((part) => {
             const contentHash = optionOrNull(field(part, "content_hash"));
             return {

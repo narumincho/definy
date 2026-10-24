@@ -86,6 +86,27 @@
         }
       },
       {
+        "key": "merged_commit_hash",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#type_string": null
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
         "key": "parts",
         "value": {
           "#type_list": {

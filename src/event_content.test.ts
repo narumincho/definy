@@ -19,6 +19,7 @@ const moduleCommit: EventContent = {
     moduleDescription: [{ language: "en", text: "Math functions" }],
     message: "Add answer",
     parentCommitHash: null,
+    mergedCommitHash: null,
     parts: [
       {
         name: "answer",
@@ -70,6 +71,7 @@ describe("core.event-content", () => {
         module_description: [{ language: "en", text: "Math functions" }],
         message: "Add answer",
         parent_commit_hash: { "#none": null },
+        merged_commit_hash: { "#none": null },
         parts: [
           {
             name: "answer",

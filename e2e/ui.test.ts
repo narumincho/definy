@@ -1,7 +1,9 @@
 import { expect, test, type Locator } from "@playwright/test";
 import {
   createSignedAccountEvent,
+  createSignedModuleCommitEvent,
   generateAccountCredentials,
+  type AccountCredentials,
 } from "../src/auth.ts";
 
 /**
@@ -340,6 +342,107 @@ test.describe("definy UI E2E", () => {
       timeout: 15000,
     });
     await expect(page.locator(".part-grid .part-card")).toContainText("square");
+  });
+
+  test("the creator of main merges another account's branch into main", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now().toString().slice(-6);
+    const alice = await generateAccountCredentials(`alice_m${suffix}`);
+    const bob = await generateAccountCredentials(`bob_m${suffix}`);
+    const submit = async (signedEventBytes: string): Promise<string> => {
+      const res = await request.post("/definy.v1.EventService/SubmitEvent", {
+        data: { signedEventBytes },
+      });
+      expect(res.ok(), await res.text()).toBe(true);
+      return ((await res.json()) as { readonly eventHash: string }).eventHash;
+    };
+    for (const credentials of [alice, bob]) {
+      await submit(
+        (await createSignedAccountEvent(credentials)).signedEventBytes,
+      );
+    }
+    const moduleName = `merge_${suffix}`;
+    let time = Math.floor(Date.now() / 1000) - 60;
+    const commit = async (
+      credentials: AccountCredentials,
+      branch: string,
+      parentCommitHash: string | null,
+      values: Readonly<Record<string, number>>,
+    ): Promise<string> =>
+      submit(
+        (
+          await createSignedModuleCommitEvent(
+            {
+              credentials,
+              moduleName,
+              branch,
+              moduleDescription: [],
+              message: `${branch} ${JSON.stringify(values)}`,
+              parentCommitHash,
+              parts: Object.entries(values).map(([name, value]) => ({
+                name,
+                description: [],
+                partType: { "#number": null },
+                expression: { "#number": value },
+              })),
+            },
+            (time += 1),
+          )
+        ).signedEventBytes,
+      );
+    // alice の main と, そこから分かれた bob のブランチ. 両方とも先へ進める
+    const main1 = await commit(alice, "main", null, { a: 1, b: 2 });
+    await commit(alice, "main", main1, { a: 10, b: 2 });
+    await commit(bob, "bob", main1, { a: 1, b: 20, c: 3 });
+
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, alice);
+    await page.goto(`/module/${moduleName}`);
+    const branchSelect = page.locator("#module-branch-select");
+    await expect(branchSelect).toBeVisible({ timeout: 15000 });
+    await branchSelect.selectOption("bob");
+    await page.locator(".module-merge-button").click();
+    // main に切り替わり, 取り込んだ変更が作業中の変更になる
+    await expect(page.locator(".module-merge-notice")).toBeVisible();
+    await expect(branchSelect).toHaveValue("main");
+    await page.goto("/changes");
+    await expect(page.locator(".change-card")).toHaveCount(2, {
+      timeout: 15000,
+    });
+    await expect(page.locator(".commit-merge-info")).toBeVisible();
+    await page.locator("#commit-message-input").fill("Merge bob");
+    await page
+      .locator("button[type='submit']", { hasText: /Sign & Commit/ })
+      .click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+    // main は a を alice のまま, b と c を bob から取り込んだもの. 履歴に取り込みが出る
+    await page.goto(`/module/${moduleName}`);
+    await expect(branchSelect).toHaveValue("main", { timeout: 15000 });
+    await expect(page.locator(".part-grid .part-card")).toHaveCount(3);
+    await expect(
+      page
+        .locator(".module-commit", { hasText: "Merge bob" })
+        .locator(".badge"),
+    ).toBeVisible();
+    await page.goto(`/part/${moduleName}.b`);
+    await expect(
+      page
+        .locator("#part-definition-value-tree, .part-definition-tree")
+        .first()
+        .locator(".tree-badge", { hasText: /^20$/ }),
+    ).toBeVisible({ timeout: 15000 });
+    await page.goto(`/part/${moduleName}.a`);
+    await expect(
+      page
+        .locator("#part-definition-value-tree, .part-definition-tree")
+        .first()
+        .locator(".tree-badge", { hasText: /^10$/ }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({

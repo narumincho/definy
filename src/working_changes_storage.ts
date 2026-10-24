@@ -4,7 +4,10 @@ export function serializeWorkingChanges(changes: WorkingChanges): string {
   const plainParts: Record<string, PartChange> = Object.fromEntries(
     changes.parts,
   );
-  return JSON.stringify({ parts: plainParts });
+  return JSON.stringify({
+    parts: plainParts,
+    merges: Object.fromEntries(changes.merges ?? new Map<string, string>()),
+  });
 }
 
 /** `serializeWorkingChanges` の結果を復元する。壊れた JSON のときは空の WorkingChanges を返す */
@@ -32,7 +35,18 @@ export function deserializeWorkingChanges(text: string): WorkingChanges {
         partsMap.set(k, v as PartChange);
       }
     }
-    return { parts: partsMap };
+    const mergesRecord = (parsed as { readonly merges?: unknown }).merges;
+    const merges = new Map<string, string>();
+    if (
+      typeof mergesRecord === "object" &&
+      mergesRecord !== null &&
+      !Array.isArray(mergesRecord)
+    ) {
+      for (const [k, v] of Object.entries(mergesRecord)) {
+        if (typeof v === "string") merges.set(k, v);
+      }
+    }
+    return { parts: partsMap, merges };
   } catch {
     return { parts: new Map<string, PartChange>() };
   }
