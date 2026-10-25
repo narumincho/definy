@@ -254,6 +254,7 @@ export function conformsInDefiny(
       instance.writeArgument(
         variant("part_reference", { part_definition_event_hash: typeName }),
       ),
+      // 型の宣言の一覧は同じオブジェクトなので, 並べた結果を使い回せる (writeArgument)
       instance.writeArgument(TYPE_DECLARATIONS),
     ]),
   );
