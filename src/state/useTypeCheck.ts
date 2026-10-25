@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AccountState } from "../types.ts";
-import type { DecodedPart } from "../cbor.ts";
+import type { CommitModulesResult } from "./useWorkingChanges.ts";
 import {
   bytesToUrlSafeBase64NoPad,
   deriveModuleIdBytesSync,
@@ -47,9 +47,7 @@ export type TypeCheckParams = {
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   readonly partNames: ReadonlyMap<string, string>;
   readonly currentAccount: AccountState | null;
-  readonly buildCommitParts: (moduleName: string) => {
-    readonly partsList: ReadonlyArray<DecodedPart>;
-  };
+  readonly buildCommitModules: (projectName: string) => CommitModulesResult;
   /**
    * システムアカウント (seed の core の main を作ったアカウント). 分からなければ `null`.
    * サーバーはシステムアカウント以外のコミットの未入力・型の無いパーツ・コンパイラ組み込みを拒否する
@@ -68,7 +66,7 @@ export type TypeCheckOperations = {
     readonly expression: unknown;
   }) => Promise<SelfHostedTypeCheckOutcome>;
   readonly checkCommitTypes: (
-    moduleName: string,
+    projectName: string,
   ) => Promise<ReadonlyArray<CommitTypeError>>;
   readonly findExpectedType: (part: {
     readonly partType: unknown;
@@ -84,7 +82,7 @@ export function useTypeCheck({
   committedParts,
   partNames,
   currentAccount,
-  buildCommitParts,
+  buildCommitModules,
   systemAccountId,
 }: TypeCheckParams): TypeCheckOperations {
   const typeCheckMessage = useCallback(
@@ -230,29 +228,44 @@ export function useTypeCheck({
   );
 
   const checkCommitTypes = useCallback(
-    async (moduleName: string): Promise<ReadonlyArray<CommitTypeError>> => {
+    async (projectName: string): Promise<ReadonlyArray<CommitTypeError>> => {
       if (!currentAccount) {
         return [];
       }
-      const { partsList } = buildCommitParts(moduleName);
-      if (partsList.length === 0) {
+      const { project, modules, changedModuleNames } =
+        buildCommitModules(projectName);
+      if (modules.length === 0) {
         return [];
       }
       const typeChecker = await loadTypeChecker();
-      const moduleIdBytes = deriveModuleIdBytesSync(moduleName);
-      const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
-      const committed: ReadonlyArray<LatestPart> = partsList.map((part) => ({
-        partId: deriveModulePartIdSync(moduleIdBytes, part.name),
-        moduleId,
-        name: part.name,
-        partType: part.partType ?? null,
-        expression: part.expression ?? null,
-        // 型環境のパーツのキー (イベントごと) とは比べられないので, 変更の有無にかかわらず検査する
-        expressionKey: null,
-      }));
+      const moduleIdOf = (name: string): string =>
+        bytesToUrlSafeBase64NoPad(deriveModuleIdBytesSync(name));
+      const committed: ReadonlyArray<LatestPart> = modules.flatMap((module) => {
+        const moduleIdBytes = deriveModuleIdBytesSync(module.name);
+        const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
+        const changed = changedModuleNames.has(module.name);
+        return module.parts.map((part) => {
+          const partId = deriveModulePartIdSync(moduleIdBytes, part.name);
+          return {
+            partId,
+            moduleId,
+            name: `${module.name}.${part.name}`,
+            partType: part.partType ?? null,
+            expression: part.expression ?? null,
+            // 変更の無いモジュールのパーツは型環境のパーツと同じキーにする (型が変わらなければ検査しない).
+            // 変更のあるモジュールのパーツは, 型環境のパーツのキー (イベントごと) と比べられないので検査する
+            expressionKey: changed
+              ? null
+              : (committedParts.get(partId)?.expressionKey ?? null),
+          };
+        });
+      });
       return checkModuleCommitParts({
         typeChecker,
-        moduleId,
+        replacedModuleIds: new Set([
+          ...modules.map((module) => moduleIdOf(module.name)),
+          ...(project?.moduleNames ?? []).map(moduleIdOf),
+        ]),
         committed,
         latestParts: committedParts,
         // 未入力・式の無いパーツ・コンパイラ組み込みを受け入れるのはシステムアカウントのコミットだけ (サーバーと同じ).
@@ -267,7 +280,7 @@ export function useTypeCheck({
     },
     [
       currentAccount,
-      buildCommitParts,
+      buildCommitModules,
       committedParts,
       typeCheckMessage,
       systemAccountId,

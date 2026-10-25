@@ -10,10 +10,9 @@ import { base64ToBytes } from "../src/cbor.ts";
 import {
   checkEvent,
   eventRejectionMessage,
-  NO_MODULE_STATE,
+  NO_PROJECT_STATE,
 } from "../src/event_check.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
-import { deriveModuleIdBytes } from "./cbor.ts";
 import { branchStateOf, type PartStoreReader } from "./type_check.ts";
 import type { Env } from "./types.ts";
 
@@ -57,20 +56,21 @@ export async function checkSubmittedEvent(
   // ストアのイベントの accountId と同じ形 (署名済みイベントのメタデータ)
   const accountId = decoded.meta.accountId;
   const { content } = decoded;
-  const moduleState =
-    content.type === "module_commit"
+  const projectState =
+    content.type === "project_commit"
       ? await branchStateOf(
-          await deriveModuleIdBytes(content.commit.moduleName),
+          content.commit.projectName,
           content.commit.branch,
           accountId,
           content.commit.parentCommitHash,
           content.commit.mergedCommitHash,
+          content.commit.modules.map((module) => module.name),
           store,
           env,
         )
-      : NO_MODULE_STATE;
+      : NO_PROJECT_STATE;
   return checkEvent(eventCheckerModule, content, {
     accountCreated: await isAccountCreated(accountId, store, env),
-    ...moduleState,
+    ...projectState,
   }).map(eventRejectionMessage);
 }

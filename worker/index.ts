@@ -1,8 +1,8 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { checkSubmittedEvent } from "./event_check.ts";
 import {
-  checkSubmittedModuleCommit,
-  loadModuleBranchHeads,
+  checkSubmittedProjectCommit,
+  loadProjectBranchHeads,
 } from "./type_check.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
@@ -13,11 +13,11 @@ import type {
   GetContentRequest,
   GetEventRequest,
   GetEventsRequest,
-  GetModuleBranchesResponse,
+  GetProjectBranchesResponse,
   HttpProxyFetchRequest,
   HttpProxyFetchResponse,
   HttpProxyHeader,
-  ModuleBranchItem,
+  ProjectBranchItem,
   SubmitEventRequest,
   UploadContentRequest,
 } from "./types.ts";
@@ -317,14 +317,14 @@ async function handleRpc(
       return jsonResponse({ events: await store.getEvents(req, env) });
     }
 
-    case "/definy.v1.EventService/GetModuleBranches": {
-      const heads = await loadModuleBranchHeads(store, env);
-      const branches: Array<ModuleBranchItem> = [];
+    case "/definy.v1.EventService/GetProjectBranches": {
+      const heads = await loadProjectBranchHeads(store, env);
+      const branches: Array<ProjectBranchItem> = [];
       for (const head of heads) {
         const latestEvent = await store.getEvent(head.latestEventHash, env);
         if (latestEvent !== undefined) {
           branches.push({
-            moduleName: head.moduleName,
+            projectName: head.projectName,
             branch: head.name,
             creatorAccountId: head.creatorAccountId,
             commitCount: head.commitCount,
@@ -334,7 +334,7 @@ async function handleRpc(
       }
       return jsonResponse({
         branches,
-      } satisfies GetModuleBranchesResponse);
+      } satisfies GetProjectBranchesResponse);
     }
 
     case "/definy.v1.EventService/GetEvent": {
@@ -364,8 +364,12 @@ async function handleRpc(
       if (rejections.length > 0) {
         throw new ConnectError("invalid_argument", rejections.join("\n"));
       }
-      // 型エラーのあるモジュールのコミットは保存しない
-      const typeErrors = await checkSubmittedModuleCommit(rawEvent, store, env);
+      // 型エラーのあるプロジェクトのコミットは保存しない
+      const typeErrors = await checkSubmittedProjectCommit(
+        rawEvent,
+        store,
+        env,
+      );
       if (typeErrors.length > 0) {
         throw new ConnectError("invalid_argument", typeErrors.join("\n"));
       }

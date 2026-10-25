@@ -17,12 +17,12 @@
         }
       },
       {
-        "tag": "module_commit",
+        "tag": "project_commit",
         "payload_type": {
           "#some": {
             "#part_reference": {
               "part_definition_event_hash": {
-                "$part": "core.module-commit"
+                "$part": "core.project-commit"
               }
             }
           }
@@ -30,10 +30,10 @@
       }
     ]
   },
-  "core.module-commit": {
+  "core.project-commit": {
     "#type_record": [
       {
-        "key": "module_name",
+        "key": "project_name",
         "value": {
           "#type_string": null
         }
@@ -45,7 +45,7 @@
         }
       },
       {
-        "key": "module_description",
+        "key": "project_description",
         "value": {
           "#type_list": {
             "item_type": {
@@ -107,13 +107,13 @@
         }
       },
       {
-        "key": "parts",
+        "key": "modules",
         "value": {
           "#type_list": {
             "item_type": {
               "#part_reference": {
                 "part_definition_event_hash": {
-                  "$part": "core.module-commit-part"
+                  "$part": "core.project-commit-module"
                 }
               }
             }
@@ -134,6 +134,44 @@
         "key": "text",
         "value": {
           "#type_string": null
+        }
+      }
+    ]
+  },
+  "core.project-commit-module": {
+    "#type_record": [
+      {
+        "key": "name",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "description",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.localized-text"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "parts",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.module-commit-part"
+                }
+              }
+            }
+          }
         }
       }
     ]

@@ -217,7 +217,7 @@ function signedEventByteLength(event: EventRecord): number {
   return Math.floor((base64.length * 3) / 4) - padding;
 }
 
-/** モジュールコミットの中身: モジュール, 親・子のコミット, メッセージ, パーツ一覧 */
+/** プロジェクトのコミットの中身: プロジェクト, 親・子のコミット, メッセージ, モジュールとパーツの一覧 */
 function CommitSection({
   commit,
   language,
@@ -226,7 +226,8 @@ function CommitSection({
   readonly language: LanguageCode;
 }): JSX.Element {
   const { decodedCommits } = useDefiny();
-  const { moduleName, parentCommitHash, message, parts } = commit.commit;
+  const { projectName, branch, parentCommitHash, message, modules } =
+    commit.commit;
   const children = decodedCommits.filter(
     (c) => c.commit.parentCommitHash === commit.event.eventHash,
   );
@@ -237,10 +238,18 @@ function CommitSection({
         {label(language, "Commit", "コミット", "Enmeto")}
       </h3>
       <dl className="detail-meta-grid">
-        <MetaItem label={label(language, "Module", "モジュール", "Modulo")}>
-          <Link href={`/module/${moduleName}`} className="meta-link">
-            {moduleName}
+        <MetaItem
+          label={label(language, "Project", "プロジェクト", "Projekto")}
+        >
+          <Link
+            href={`/project/${encodeURIComponent(projectName)}`}
+            className="meta-link"
+          >
+            {projectName}
           </Link>
+        </MetaItem>
+        <MetaItem label={label(language, "Branch", "ブランチ", "Branĉo")}>
+          {branch}
         </MetaItem>
         <MetaItem
           label={label(
@@ -289,36 +298,44 @@ function CommitSection({
       </dl>
       {message.length > 0 && <p className="event-detail-message">{message}</p>}
 
-      <h4 className="event-detail-subtitle">
-        {label(language, "Parts", "パーツ", "Partoj")}
-        <span className="chip-count">{parts.length}</span>
-      </h4>
-      <ul className="event-detail-parts">
-        {parts.map((part) => {
-          const description = localizedText(part.description, language);
-          return (
-            <li key={part.name}>
-              <Link
-                href={`/part/${moduleName}.${part.name}`}
-                className="event-detail-part"
-              >
-                <span className="event-detail-part-name">{part.name}</span>
-                {description.length > 0 && (
-                  <span className="event-detail-part-desc">{description}</span>
-                )}
-                {part.contentHash != null && (
-                  <code
-                    className="event-detail-part-hash"
-                    title={part.contentHash}
+      {modules.map((module) => (
+        <div key={module.name} className="event-detail-module">
+          <h4 className="event-detail-subtitle">
+            <Link href={`/module/${module.name}`} className="meta-link">
+              {module.name}
+            </Link>
+            <span className="chip-count">{module.parts.length}</span>
+          </h4>
+          <ul className="event-detail-parts">
+            {module.parts.map((part) => {
+              const description = localizedText(part.description, language);
+              return (
+                <li key={part.name}>
+                  <Link
+                    href={`/part/${module.name}.${part.name}`}
+                    className="event-detail-part"
                   >
-                    {part.contentHash.slice(0, 8)}
-                  </code>
-                )}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                    <span className="event-detail-part-name">{part.name}</span>
+                    {description.length > 0 && (
+                      <span className="event-detail-part-desc">
+                        {description}
+                      </span>
+                    )}
+                    {part.contentHash != null && (
+                      <code
+                        className="event-detail-part-hash"
+                        title={part.contentHash}
+                      >
+                        {part.contentHash.slice(0, 8)}
+                      </code>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </section>
   );
 }

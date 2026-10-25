@@ -7,6 +7,7 @@ import {
   newPartId,
   parseParameterNames,
   validateNewPart,
+  validateProjectName,
   type NewPartError,
   type NewPartKind,
 } from "../src/new_part.ts";
@@ -18,8 +19,16 @@ import type { LanguageCode } from "../src/types.ts";
  */
 export default function NewPartPage(): JSX.Element {
   const router = useRouter();
-  const { language, modules, parts, workingChanges, updateWorkingPart } =
-    useDefiny();
+  const {
+    language,
+    projects,
+    modules,
+    parts,
+    workingChanges,
+    updateWorkingPart,
+    setNewModuleProject,
+    projectOfModule,
+  } = useDefiny();
   const [moduleName, setModuleName] = useState(
     () => router.query.get("module") ?? "",
   );
@@ -27,6 +36,8 @@ export default function NewPartPage(): JSX.Element {
   const [kind, setKind] = useState<NewPartKind>("function");
   const [parameters, setParameters] = useState("x");
   const [submitted, setSubmitted] = useState(false);
+  /** 新しいモジュールを入れるプロジェクト. 決めていなければモジュール名と同じ名前のプロジェクト */
+  const [chosenProject, setChosenProject] = useState<string | null>(null);
 
   const input = {
     moduleName,
@@ -38,12 +49,31 @@ export default function NewPartPage(): JSX.Element {
   const isNewModule =
     moduleName.trim() !== "" &&
     !modules.some((m) => m.name === moduleName.trim());
+  const projectName = (
+    chosenProject ??
+    projectOfModule(moduleName.trim()) ??
+    moduleName
+  ).trim();
+  const projectError =
+    isNewModule && error === null ? validateProjectName(projectName) : null;
+  const isNewProject =
+    isNewModule &&
+    projectName !== "" &&
+    !projects.some((p) => p.name === projectName) &&
+    ![...(workingChanges.newModuleProjects?.values() ?? [])].includes(
+      projectName,
+    );
+
+  const shownError = error ?? projectError;
 
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     setSubmitted(true);
-    if (error !== null) return;
+    if (shownError !== null) return;
     const partId = newPartId(input);
+    if (isNewModule) {
+      setNewModuleProject(moduleName.trim(), projectName);
+    }
     updateWorkingPart(partId, newPartChange(input));
     router.visit(withLanguage(`/part/${partId}`, language));
   };
@@ -87,6 +117,44 @@ export default function NewPartPage(): JSX.Element {
             </p>
           )}
         </div>
+
+        {isNewModule && (
+          <div className="form-group">
+            <label htmlFor="new-part-project">
+              {label(language, "Project", "プロジェクト", "Projekto")}
+            </label>
+            <input
+              id="new-part-project"
+              type="text"
+              list="new-part-project-list"
+              value={projectName}
+              onChange={(e) => {
+                setChosenProject(e.target.value);
+              }}
+              required
+            />
+            <datalist id="new-part-project-list">
+              {projects.map((p) => (
+                <option key={p.name} value={p.name} />
+              ))}
+            </datalist>
+            <p className="text-muted">
+              {isNewProject
+                ? label(
+                    language,
+                    "This project does not exist yet. It is created with the module when you commit.",
+                    "まだ無いプロジェクトです。コミットするとモジュールと一緒に作られます。",
+                    "Ĉi tiu projekto ankoraŭ ne ekzistas.",
+                  )
+                : label(
+                    language,
+                    "The module is added to this project. A commit contains every module of the project.",
+                    "モジュールはこのプロジェクトに入ります。コミットにはプロジェクトの全モジュールが入ります。",
+                    "La modulo estas aldonita al ĉi tiu projekto.",
+                  )}
+            </p>
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="new-part-name">
@@ -158,9 +226,9 @@ export default function NewPartPage(): JSX.Element {
           </div>
         )}
 
-        {submitted && error !== null && (
+        {submitted && shownError !== null && (
           <div className="alert alert-danger" role="alert">
-            {newPartErrorMessage(error, language)}
+            {newPartErrorMessage(shownError, language)}
           </div>
         )}
 
@@ -190,6 +258,20 @@ function newPartErrorMessage(
         "A module name cannot contain '.' or spaces",
         "モジュール名に「.」や空白は使えません",
         "Nomo de modulo ne povas enhavi '.' aŭ spacojn",
+      );
+    case "empty_project_name":
+      return label(
+        language,
+        "Enter a project name",
+        "プロジェクト名を入力してください",
+        "Enigu nomon de projekto",
+      );
+    case "invalid_project_name":
+      return label(
+        language,
+        "A project name cannot contain '.' or spaces",
+        "プロジェクト名に「.」や空白は使えません",
+        "Nomo de projekto ne povas enhavi '.' aŭ spacojn",
       );
     case "empty_part_name":
       return label(

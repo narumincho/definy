@@ -7,9 +7,9 @@ service EventService {
   // GetEvents retrieves a paginated list of events, optionally filtered by event type.
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
 
-  // GetModuleBranches returns every branch of every module with its latest commit event,
-  // so that clients can know the current modules without reading every event (docs/branch.md).
-  rpc GetModuleBranches(GetModuleBranchesRequest) returns (GetModuleBranchesResponse);
+  // GetProjectBranches returns every branch of every project with its latest commit event,
+  // so that clients can know the current projects and modules without reading every event (docs/branch.md).
+  rpc GetProjectBranches(GetProjectBranchesRequest) returns (GetProjectBranchesResponse);
 
   // GetEvent retrieves a single event by its URL-safe base64 hash.
   rpc GetEvent(GetEventRequest) returns (GetEventResponse);
@@ -72,7 +72,7 @@ message EventItem {
   bytes signed_event_bytes = 2;
   // Account ID of the author
   string account_id = 3;
-  // Event type name (e.g. "create_account", "change_profile", "module_commit")
+  // Event type name (e.g. "create_account", "project_commit")
   string event_type = 4;
   // Timestamp in RFC 3339 format
   string created_at_rfc3339 = 5;
@@ -88,10 +88,10 @@ message GetEventsResponse {
   repeated EventItem events = 1;
 }
 
-message GetModuleBranchesRequest {}
+message GetProjectBranchesRequest {}
 
-message ModuleBranch {
-  string module_name = 1;
+message ProjectBranch {
+  string project_name = 1;
   string branch = 2;
   // Account ID of the earliest commit on the branch (only this account can commit to it)
   string creator_account_id = 3;
@@ -100,8 +100,8 @@ message ModuleBranch {
   EventItem latest_event = 5;
 }
 
-message GetModuleBranchesResponse {
-  repeated ModuleBranch branches = 1;
+message GetProjectBranchesResponse {
+  repeated ProjectBranch branches = 1;
 }
 
 message GetEventRequest {

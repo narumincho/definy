@@ -24,7 +24,7 @@ export type EventTypeInfo = {
 /** イベント種別ごとの表示名とアイコン. 色は CSS の `[data-event-type=...]` で付ける */
 export const EVENT_TYPES: ReadonlyArray<EventTypeInfo> = [
   {
-    type: "module_commit",
+    type: "project_commit",
     en: "Commit",
     ja: "コミット",
     eo: "Enmeto",
@@ -171,7 +171,10 @@ function EventItem({
   const Icon = info.icon;
   const isInvalid = event.verification.status === "invalid";
   const time = new Date(event.timeMs);
-  const parts = commit?.commit.parts ?? [];
+  const parts =
+    commit?.commit.modules.flatMap((module) =>
+      module.parts.map((part) => ({ moduleName: module.name, part })),
+    ) ?? [];
 
   return (
     <li
@@ -221,10 +224,10 @@ function EventItem({
         </div>
         {parts.length > 0 && commit !== undefined && (
           <ul className="event-part-chips">
-            {parts.slice(0, MAX_PART_CHIPS).map((part) => (
-              <li key={part.name}>
+            {parts.slice(0, MAX_PART_CHIPS).map(({ moduleName, part }) => (
+              <li key={`${moduleName}.${part.name}`}>
                 <Link
-                  href={`/part/${commit.commit.moduleName}.${part.name}`}
+                  href={`/part/${moduleName}.${part.name}`}
                   className="event-part-chip"
                 >
                   {part.name}
@@ -294,23 +297,23 @@ export function EventSummary({
     );
   }
   if (commit !== undefined) {
-    const moduleName = (
+    const projectName = (
       <Link
-        href={`/module/${commit.commit.moduleName}`}
+        href={`/project/${encodeURIComponent(commit.commit.projectName)}`}
         className="event-summary-subject event-summary-link"
       >
-        {commit.commit.moduleName}
+        {commit.commit.projectName}
       </Link>
     );
     return (
       <>
         <p className="event-summary-text">
           {language === "ja" ? (
-            <>{moduleName} モジュール</>
+            <>{projectName} プロジェクト</>
           ) : language === "eo" ? (
-            <>Modulo {moduleName}</>
+            <>Projekto {projectName}</>
           ) : (
-            <>Module {moduleName}</>
+            <>Project {projectName}</>
           )}
         </p>
         {commit.commit.message.length > 0 && (

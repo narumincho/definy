@@ -3,6 +3,7 @@ import type {
   AccountState,
   ModuleSnapshot,
   PartChange,
+  ProjectSnapshot,
   WorkingChanges,
 } from "../types.ts";
 import {
@@ -10,20 +11,20 @@ import {
   serializeWorkingChanges,
 } from "../working_changes_storage.ts";
 import {
-  createSignedModuleCommitEvent,
-  submitModuleCommitEvent,
+  createSignedProjectCommitEvent,
+  submitProjectCommitEvent,
+  type CommitModuleParams,
 } from "../auth.ts";
-import { toContentAddressedParts } from "../content_store.ts";
-import type { DecodedPart } from "../cbor.ts";
+import { toContentAddressedParts, type ContentItem } from "../content_store.ts";
 import {
   commitTarget,
   type BranchSummary,
   type CommitTarget,
 } from "../branches.ts";
 import { MAIN_BRANCH } from "../event_content.ts";
-import { overlayWorkingChanges } from "../new_part.ts";
+import { moduleOfPartId, overlayWorkingChanges } from "../new_part.ts";
 
-const STORAGE_KEY_CHANGES = "definy.working_changes.v4";
+const STORAGE_KEY_CHANGES = "definy.working_changes.v5";
 
 function loadStoredChanges(): WorkingChanges {
   if (typeof window === "undefined") {
@@ -42,7 +43,7 @@ function saveStoredChanges(changes: WorkingChanges): void {
 }
 
 export type CommitWorkingChangesParams = {
-  readonly moduleName: string;
+  readonly projectName: string;
   readonly message: string;
   /** 表示しているブランチが他のアカウントのものなら, 作る新しいブランチの名前 (docs/branch.md) */
   readonly newBranchName?: string;
@@ -50,14 +51,25 @@ export type CommitWorkingChangesParams = {
 
 export type WorkingChangesParams = {
   readonly currentAccount: AccountState | null;
+  readonly projects: ReadonlyArray<ProjectSnapshot>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
-  /** モジュール名 → ブランチ. コミット先のブランチと親を決めるのに使う */
-  readonly branchesByModule: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
-  /** モジュール名 → 表示しているブランチ. 変更はこのブランチに重ねる */
+  /** プロジェクト名 → ブランチ. コミット先のブランチと親を決めるのに使う */
+  readonly branchesByProject: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
+  /** プロジェクト名 → 表示しているブランチ. 変更はこのブランチに重ねる */
   readonly displayedBranches: ReadonlyMap<string, string>;
   /** 新しいブランチにコミットしたら, そのブランチを表示する */
-  readonly selectBranch: (moduleName: string, branch: string) => void;
+  readonly selectBranch: (projectName: string, branch: string) => void;
   readonly refreshEvents: () => Promise<void>;
+};
+
+/** プロジェクトにコミットするモジュール (今のモジュールに作業中の変更を重ねたもの) */
+export type CommitModulesResult = {
+  readonly project: ProjectSnapshot | undefined;
+  readonly modules: ReadonlyArray<CommitModuleParams>;
+  /** コミットに入れた作業中の変更のキー (コミットしたら消す) */
+  readonly committedPartIds: ReadonlySet<string>;
+  /** 作業中の変更のあるモジュールの名前 */
+  readonly changedModuleNames: ReadonlySet<string>;
 };
 
 export type WorkingChangesOperations = {
@@ -65,28 +77,82 @@ export type WorkingChangesOperations = {
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
   readonly discardAllWorkingChanges: () => void;
-  readonly buildCommitParts: (moduleName: string) => {
-    readonly existingModule: ModuleSnapshot | undefined;
-    readonly partsList: ReadonlyArray<DecodedPart>;
-    readonly committedPartIds: ReadonlySet<string>;
-  };
+  /** 新しいモジュール `moduleName` を入れるプロジェクトを決める (docs/project.md) */
+  readonly setNewModuleProject: (
+    moduleName: string,
+    projectName: string,
+  ) => void;
+  /** モジュールが入っている (新しいモジュールなら入れる) プロジェクト. 分からなければ `undefined` */
+  readonly projectOfModule: (moduleName: string) => string | undefined;
+  readonly buildCommitModules: (projectName: string) => CommitModulesResult;
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
   ) => Promise<string>;
-  /** `moduleName` へコミットする先 (docs/branch.md). ログインしていなければ `null` */
-  readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
+  /** `projectName` へコミットする先 (docs/branch.md). ログインしていなければ `null` */
+  readonly commitTargetFor: (projectName: string) => CommitTarget | null;
   readonly startMerge: (
-    moduleName: string,
+    projectName: string,
     mergedCommitHash: string,
     changes: ReadonlyMap<string, PartChange>,
   ) => void;
-  readonly cancelMerge: (moduleName: string) => void;
+  readonly cancelMerge: (projectName: string) => void;
 };
+
+/**
+ * 作業中の変更 `workingChanges` を, プロジェクト `projectName` のモジュールに重ねる.
+ * `projectOf` はモジュール名から入っているプロジェクトを返す. パーツの無くなったモジュールはコミットに入れない
+ */
+export function overlayProjectChanges(
+  projectName: string,
+  project: ProjectSnapshot | undefined,
+  modules: ReadonlyArray<ModuleSnapshot>,
+  workingChanges: WorkingChanges,
+  projectOf: (moduleName: string) => string | undefined,
+): CommitModulesResult {
+  const moduleNames = [...(project?.moduleNames ?? [])];
+  for (const partId of workingChanges.parts.keys()) {
+    const name = moduleOfPartId(partId);
+    if (projectOf(name) === projectName && !moduleNames.includes(name)) {
+      moduleNames.push(name);
+    }
+  }
+  const committedPartIds = new Set<string>();
+  const changedModuleNames = new Set<string>();
+  const commitModules: CommitModuleParams[] = [];
+  for (const name of moduleNames) {
+    const existing = modules.find((m) => m.name === name);
+    const overlaid = overlayWorkingChanges(
+      name,
+      existing?.parts ?? [],
+      workingChanges,
+    );
+    for (const id of overlaid.committedPartIds) {
+      committedPartIds.add(id);
+    }
+    if (overlaid.committedPartIds.size > 0) {
+      changedModuleNames.add(name);
+    }
+    if (overlaid.partsList.length > 0) {
+      commitModules.push({
+        name,
+        description: existing?.description ?? [],
+        parts: overlaid.partsList,
+      });
+    }
+  }
+  return {
+    project,
+    modules: commitModules,
+    committedPartIds,
+    changedModuleNames,
+  };
+}
 
 export function useWorkingChanges({
   currentAccount,
+  projects,
   modules,
-  branchesByModule,
+  branchesByProject,
   displayedBranches,
   selectBranch,
   refreshEvents,
@@ -99,72 +165,88 @@ export function useWorkingChanges({
     setWorkingChanges(loadStoredChanges());
   }, []);
 
-  const updateWorkingPart = useCallback(
-    (partId: string, change: PartChange) => {
-      setWorkingChanges((prev) => {
-        const nextParts = new Map<string, PartChange>(prev.parts);
-        nextParts.set(partId, change);
-        const next = { ...prev, parts: nextParts };
-        saveStoredChanges(next);
-        return next;
-      });
-    },
-    [],
-  );
-
-  const discardWorkingPart = useCallback((partId: string) => {
+  const update = useCallback((f: (prev: WorkingChanges) => WorkingChanges) => {
     setWorkingChanges((prev) => {
-      const nextParts = new Map<string, PartChange>(prev.parts);
-      nextParts.delete(partId);
-      const next = { ...prev, parts: nextParts };
+      const next = f(prev);
       saveStoredChanges(next);
       return next;
     });
   }, []);
 
-  const discardAllWorkingChanges = useCallback(() => {
-    const next = { parts: new Map<string, PartChange>() };
-    setWorkingChanges(next);
-    saveStoredChanges(next);
-  }, []);
-
-  /** `moduleName` に作業中の変更をコミットするときのパーツ (今のモジュールのパーツに変更を重ねたもの) */
-  const buildCommitParts = useCallback(
-    (
-      moduleName: string,
-    ): {
-      readonly existingModule: ModuleSnapshot | undefined;
-      readonly partsList: ReadonlyArray<DecodedPart>;
-      readonly committedPartIds: ReadonlySet<string>;
-    } => {
-      const existingModule = modules.find((m) => m.name === moduleName);
-
-      const { partsList, committedPartIds } = overlayWorkingChanges(
-        moduleName,
-        existingModule?.parts ?? [],
-        workingChanges,
-      );
-      return { existingModule, partsList, committedPartIds };
+  const updateWorkingPart = useCallback(
+    (partId: string, change: PartChange) => {
+      update((prev) => ({
+        ...prev,
+        parts: new Map(prev.parts).set(partId, change),
+      }));
     },
+    [update],
+  );
+
+  const discardWorkingPart = useCallback(
+    (partId: string) => {
+      update((prev) => {
+        const nextParts = new Map<string, PartChange>(prev.parts);
+        nextParts.delete(partId);
+        return { ...prev, parts: nextParts };
+      });
+    },
+    [update],
+  );
+
+  const discardAllWorkingChanges = useCallback(() => {
+    update(() => ({ parts: new Map<string, PartChange>() }));
+  }, [update]);
+
+  const setNewModuleProject = useCallback(
+    (moduleName: string, projectName: string) => {
+      update((prev) => ({
+        ...prev,
+        newModuleProjects: new Map(prev.newModuleProjects).set(
+          moduleName,
+          projectName,
+        ),
+      }));
+    },
+    [update],
+  );
+
+  const projectOfModule = useCallback(
+    (moduleName: string): string | undefined =>
+      modules.find((m) => m.name === moduleName)?.projectName ??
+      workingChanges.newModuleProjects?.get(moduleName),
     [modules, workingChanges],
   );
 
+  /** `projectName` に作業中の変更をコミットするときのモジュール (今のモジュールに変更を重ねたもの) */
+  const buildCommitModules = useCallback(
+    (projectName: string): CommitModulesResult =>
+      overlayProjectChanges(
+        projectName,
+        projects.find((p) => p.name === projectName),
+        modules,
+        workingChanges,
+        projectOfModule,
+      ),
+    [projects, modules, workingChanges, projectOfModule],
+  );
+
   const commitTargetFor = useCallback(
-    (moduleName: string): CommitTarget | null =>
+    (projectName: string): CommitTarget | null =>
       currentAccount === null
         ? null
         : commitTarget(
-            branchesByModule.get(moduleName) ?? [],
-            displayedBranches.get(moduleName) ?? MAIN_BRANCH,
+            branchesByProject.get(projectName) ?? [],
+            displayedBranches.get(projectName) ?? MAIN_BRANCH,
             currentAccount.accountId,
             currentAccount.accountName,
           ),
-    [currentAccount, branchesByModule, displayedBranches],
+    [currentAccount, branchesByProject, displayedBranches],
   );
 
   const commitWorkingChanges = useCallback(
     async ({
-      moduleName,
+      projectName,
       message,
       newBranchName,
     }: CommitWorkingChangesParams): Promise<string> => {
@@ -172,19 +254,24 @@ export function useWorkingChanges({
         throw new Error("You must be logged in to commit changes");
       }
 
-      const { existingModule, partsList, committedPartIds } =
-        buildCommitParts(moduleName);
-      if (partsList.length === 0) {
-        throw new Error(`No parts found to commit for module '${moduleName}'`);
+      const {
+        project,
+        modules: commitModules,
+        committedPartIds,
+      } = buildCommitModules(projectName);
+      if (commitModules.length === 0) {
+        throw new Error(
+          `No parts found to commit for project '${projectName}'`,
+        );
       }
       // 表示しているブランチが自分のものならそこへ, 他のアカウントのものならそこから新しいブランチを作る
       // (他のアカウントのブランチにはコミットできない. docs/branch.md)
-      const target = commitTargetFor(moduleName);
+      const target = commitTargetFor(projectName);
       if (target === null) {
         throw new Error("You must be logged in to commit changes");
       }
       const branch =
-        target.kind === "new_module"
+        target.kind === "new_project"
           ? MAIN_BRANCH
           : target.kind === "own_branch"
             ? target.branch
@@ -194,38 +281,48 @@ export function useWorkingChanges({
       }
       if (
         target.kind === "new_branch" &&
-        (branchesByModule.get(moduleName) ?? []).some((b) => b.name === branch)
+        (branchesByProject.get(projectName) ?? []).some(
+          (b) => b.name === branch,
+        )
       ) {
         throw new Error(
           `The branch '${branch}' already exists and was created by another account`,
         );
       }
       const parentCommitHash =
-        target.kind === "new_module" ? null : target.parentCommitHash;
+        target.kind === "new_project" ? null : target.parentCommitHash;
       // コミットには式の content hash だけを入れ, サーバーに無い式だけを送る
-      const { parts, contents } = await toContentAddressedParts(partsList);
+      const contents = new Map<string, ContentItem>();
+      const addressedModules: CommitModuleParams[] = [];
+      for (const module of commitModules) {
+        const addressed = await toContentAddressedParts(module.parts);
+        for (const [hash, item] of addressed.contents) {
+          contents.set(hash, item);
+        }
+        addressedModules.push({ ...module, parts: addressed.parts });
+      }
 
       const { signedEventBytes, eventHash } =
-        await createSignedModuleCommitEvent({
+        await createSignedProjectCommitEvent({
           credentials: {
             accountId: currentAccount.accountId,
             accountName: currentAccount.accountName,
             secretKeyBase64: currentAccount.secretKeyBase64,
           },
-          moduleName,
+          projectName,
           branch,
-          moduleDescription: existingModule?.description ?? [],
+          projectDescription: project?.description ?? [],
           message,
           parentCommitHash,
-          // 取り込みは自分のブランチへのコミットだけ (新しいブランチ・モジュールには入れない)
+          // 取り込みは自分のブランチへのコミットだけ (新しいブランチ・プロジェクトには入れない)
           mergedCommitHash:
             target.kind === "own_branch"
-              ? (workingChanges.merges?.get(moduleName) ?? null)
+              ? (workingChanges.merges?.get(projectName) ?? null)
               : null,
-          parts,
+          modules: addressedModules,
         });
 
-      const submitRes = await submitModuleCommitEvent(
+      const submitRes = await submitProjectCommitEvent(
         signedEventBytes,
         contents,
       );
@@ -233,81 +330,109 @@ export function useWorkingChanges({
         throw new Error(`Commit rejected with status: ${submitRes.status}`);
       }
 
-      setWorkingChanges((prev) => {
+      const committedModuleNames = new Set(commitModules.map((m) => m.name));
+      update((prev) => {
         const nextParts = new Map<string, PartChange>(prev.parts);
         for (const id of committedPartIds) {
           nextParts.delete(id);
         }
         const nextMerges = new Map(prev.merges);
-        nextMerges.delete(moduleName);
-        const next = { parts: nextParts, merges: nextMerges };
-        saveStoredChanges(next);
-        return next;
+        nextMerges.delete(projectName);
+        const nextNewModuleProjects = new Map(prev.newModuleProjects);
+        for (const [name, p] of prev.newModuleProjects ?? []) {
+          if (p === projectName && committedModuleNames.has(name)) {
+            nextNewModuleProjects.delete(name);
+          }
+        }
+        return {
+          parts: nextParts,
+          merges: nextMerges,
+          newModuleProjects: nextNewModuleProjects,
+        };
       });
 
       if (target.kind === "new_branch") {
-        selectBranch(moduleName, branch);
+        selectBranch(projectName, branch);
       }
       await refreshEvents();
       return eventHash;
     },
     [
       currentAccount,
-      buildCommitParts,
+      buildCommitModules,
       commitTargetFor,
-      branchesByModule,
+      branchesByProject,
       selectBranch,
       refreshEvents,
       workingChanges,
+      update,
     ],
   );
 
   /**
    * 他のブランチのコミット `mergedCommitHash` の取り込みを始める: 取り込んだ後のパーツへの変更 (`changes`) を作業中の変更にし,
-   * 次のコミットで `merged_commit_hash` に入れる
+   * 次のコミットで `merged_commit_hash` に入れる. 取り込むブランチにだけあるモジュールはこのプロジェクトの新しいモジュールにする
    */
   const startMerge = useCallback(
     (
-      moduleName: string,
+      projectName: string,
       mergedCommitHash: string,
       changes: ReadonlyMap<string, PartChange>,
     ) => {
-      setWorkingChanges((prev) => {
-        const next = {
+      const knownModules = new Set(modules.map((m) => m.name));
+      update((prev) => {
+        const newModuleProjects = new Map(prev.newModuleProjects);
+        for (const partId of changes.keys()) {
+          const name = moduleOfPartId(partId);
+          if (!knownModules.has(name)) {
+            newModuleProjects.set(name, projectName);
+          }
+        }
+        return {
           parts: new Map([...prev.parts, ...changes]),
-          merges: new Map(prev.merges).set(moduleName, mergedCommitHash),
+          merges: new Map(prev.merges).set(projectName, mergedCommitHash),
+          newModuleProjects,
         };
-        saveStoredChanges(next);
-        return next;
       });
     },
-    [],
+    [modules, update],
   );
 
-  /** 取り込みをやめる (取り込みで作った作業中の変更も捨てる) */
-  const cancelMerge = useCallback((moduleName: string) => {
-    setWorkingChanges((prev) => {
-      const nextMerges = new Map(prev.merges);
-      nextMerges.delete(moduleName);
-      const next = {
-        parts: new Map(
-          [...prev.parts].filter(
-            ([partId]) => !partId.startsWith(`${moduleName}.`),
+  /** 取り込みをやめる (そのプロジェクトの作業中の変更も捨てる) */
+  const cancelMerge = useCallback(
+    (projectName: string) => {
+      update((prev) => {
+        const nextMerges = new Map(prev.merges);
+        nextMerges.delete(projectName);
+        const inProject = (moduleName: string): boolean =>
+          (modules.find((m) => m.name === moduleName)?.projectName ??
+            prev.newModuleProjects?.get(moduleName)) === projectName;
+        return {
+          parts: new Map(
+            [...prev.parts].filter(
+              ([partId]) => !inProject(moduleOfPartId(partId)),
+            ),
           ),
-        ),
-        merges: nextMerges,
-      };
-      saveStoredChanges(next);
-      return next;
-    });
-  }, []);
+          merges: nextMerges,
+          newModuleProjects: new Map(
+            [...(prev.newModuleProjects ?? [])].filter(
+              ([, p]) => p !== projectName,
+            ),
+          ),
+        };
+      });
+    },
+    [modules, update],
+  );
 
   return {
     workingChanges,
     updateWorkingPart,
     discardWorkingPart,
     discardAllWorkingChanges,
-    buildCommitParts,
+    setNewModuleProject,
+    projectOfModule,
+    buildCommitModules,
     commitWorkingChanges,
     commitTargetFor,
     startMerge,

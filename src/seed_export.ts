@@ -10,20 +10,17 @@ import { devSystemAccountBytes } from "./seed_parts.ts";
 import {
   MAIN_BRANCH,
   type CommitPart,
-  type ModuleCommitContent,
+  type ProjectCommitContent,
 } from "./event_content.ts";
+import {
+  loadProjectSeeds,
+  PROJECT_SEEDS_DIR,
+  projectSeedToJson,
+  type ProjectSeedData,
+} from "./seed_projects.ts";
 import { decodeVerifiedSignedEvent } from "./signed_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
-
-/** ビルトインモジュールの名前一覧 (正本 seeds/*.json の対象) */
-export const BUILTIN_MODULE_NAMES: ReadonlyArray<string> = [
-  "definy",
-  "core",
-  "std",
-  "wasi",
-  "sample",
-];
 
 const PAGE_SIZE = 500;
 
@@ -37,7 +34,6 @@ export type PartSeedData = {
 export type ModuleSeedData = {
   readonly module_name: string;
   readonly module_description: unknown;
-  readonly message: string;
   readonly parts: ReadonlyArray<PartSeedData>;
 };
 
@@ -163,17 +159,17 @@ async function postConnectJson<T>(
 
 type LatestCommitEntry = {
   readonly time: number;
-  readonly commit: ModuleCommitContent;
+  readonly commit: ProjectCommitContent;
 };
 
 /**
- * サーバーから `GetEvents` をページングして取得し、モジュールごとにシステムアカウントの main ブランチの最新コミットを収集する
+ * サーバーから `GetEvents` をページングして取得し、プロジェクトごとにシステムアカウントの main ブランチの最新コミットを収集する
  */
-async function fetchLatestSystemModuleCommits(
+async function fetchLatestSystemProjectCommits(
   fetchFn: typeof fetch,
   baseUrl: string,
   systemAccountId: string,
-): Promise<ReadonlyMap<string, ModuleCommitContent>> {
+): Promise<ReadonlyMap<string, ProjectCommitContent>> {
   const latest = new Map<string, LatestCommitEntry>();
   let offset = 0;
 
@@ -183,7 +179,7 @@ async function fetchLatestSystemModuleCommits(
       baseUrl,
       "GetEvents",
       {
-        eventType: "module_commit",
+        eventType: "project_commit",
         limit: PAGE_SIZE,
         offset,
       },
@@ -209,20 +205,20 @@ async function fetchLatestSystemModuleCommits(
       }
       // seed に書き戻すのはシステムアカウントの main ブランチだけ (docs/branch.md)
       if (
-        content.type !== "module_commit" ||
+        content.type !== "project_commit" ||
         content.commit.branch !== MAIN_BRANCH
       ) {
         continue;
       }
       const { commit } = content;
-      const moduleName = commit.moduleName;
-      if (!moduleName) {
+      const projectName = commit.projectName;
+      if (!projectName) {
         continue;
       }
 
-      const existing = latest.get(moduleName);
+      const existing = latest.get(projectName);
       if (!existing || existing.time < meta.timeMs) {
-        latest.set(moduleName, { time: meta.timeMs, commit });
+        latest.set(projectName, { time: meta.timeMs, commit });
       }
     }
 
@@ -232,9 +228,9 @@ async function fetchLatestSystemModuleCommits(
     offset += count;
   }
 
-  const result = new Map<string, ModuleCommitContent>();
-  for (const [modName, entry] of latest) {
-    result.set(modName, entry.commit);
+  const result = new Map<string, ProjectCommitContent>();
+  for (const [projectName, entry] of latest) {
+    result.set(projectName, entry.commit);
   }
   return result;
 }
@@ -312,7 +308,6 @@ async function tryReadSeedFile(
     return {
       module_name: String(parsed.module_name ?? ""),
       module_description: parsed.module_description,
-      message: String(parsed.message ?? ""),
       parts,
     };
   } catch {
@@ -322,7 +317,7 @@ async function tryReadSeedFile(
 
 /**
  * ModuleSeed を JSON 文字列にシリアライズする。
- * - トップレベルのキー順: `$schema`, `module_name`, `module_description`, `message`, `parts`
+ * - トップレベルのキー順: `$schema`, `module_name`, `module_description`, `parts`
  * - パーツのキー順: `name`, `part_type` (ある場合), `description`, `expression` (ある場合)
  * - インデント 2、末尾改行なし
  */
@@ -350,7 +345,6 @@ export function moduleSeedToJson(
     $schema: "./schemas/module-seed.schema.json",
     module_name: seed.module_name,
     module_description: seed.module_description,
-    message: seed.message,
     parts,
   };
 
@@ -358,9 +352,10 @@ export function moduleSeedToJson(
 }
 
 /**
- * 稼働中の definy サーバーからビルトインモジュールの最新コミットを取得し、seed JSON として書き出す。
- * システムアカウントのコミットが見つからないモジュールのファイルは書き換えない。
- * `BUILTIN_MODULE_NAMES` 以外のモジュールは `npm run build:seeds` が読まないので書き出さない。
+ * 稼働中の definy サーバーからビルトインのプロジェクト (seeds/projects/*.json) の最新コミットを取得し、
+ * プロジェクトの seed (seeds/projects/<プロジェクト名>.json) と各モジュールの seed (seeds/<モジュール名>.json) として書き出す。
+ * システムアカウントのコミットが見つからないプロジェクトのファイルは書き換えない。
+ * ビルトイン以外のプロジェクトは `npm run build:seeds` が読まないので書き出さない。
  *
  * @returns 書き出したモジュール名の一覧
  */
@@ -375,58 +370,64 @@ export async function exportSeeds(
   );
   const systemAccountId = bytesToUrlSafeBase64NoPad(accountBytes);
 
-  // 1. サーバーからシステムアカウントのモジュールコミットを取得
-  const latestCommits = await fetchLatestSystemModuleCommits(
+  // 1. サーバーからシステムアカウントのプロジェクトのコミットを取得
+  const latestCommits = await fetchLatestSystemProjectCommits(
     fetchFn,
     options.baseUrl,
     systemAccountId,
   );
 
-  // 2. ディスク上の初期 seed を読み込み (outDir または seedsDir から)
+  // 2. ディスク上の初期 seed を読み込み (seedsDir のプロジェクトと, outDir または seedsDir のモジュール)
+  const projectSeeds = loadProjectSeeds(seedsDir);
   const currentSeedsMap = new Map<string, ModuleSeedData>();
-  for (const name of BUILTIN_MODULE_NAMES) {
-    const fromOutDir = await tryReadSeedFile(resolve(outDir, `${name}.json`));
-    if (fromOutDir) {
-      currentSeedsMap.set(name, fromOutDir);
-      continue;
-    }
-    const fromSeedsDir = await tryReadSeedFile(
-      resolve(seedsDir, `${name}.json`),
-    );
-    if (fromSeedsDir) {
-      currentSeedsMap.set(name, fromSeedsDir);
+  for (const name of projectSeeds.flatMap((project) => project.modules)) {
+    const seed =
+      (await tryReadSeedFile(resolve(outDir, `${name}.json`))) ??
+      (await tryReadSeedFile(resolve(seedsDir, `${name}.json`)));
+    if (seed) {
+      currentSeedsMap.set(name, seed);
     }
   }
 
-  // 3. 最新コミットでモジュール seed を更新し、書き出すモジュールを決定
+  // 3. 最新コミットでプロジェクトとモジュールの seed を更新し、書き出すものを決定
   const updatedSeedsMap = new Map<string, ModuleSeedData>(currentSeedsMap);
+  const exportedProjects: Array<ProjectSeedData> = [];
   const exportedList: Array<string> = [];
 
-  for (const name of BUILTIN_MODULE_NAMES) {
-    const commit = latestCommits.get(name);
+  for (const projectSeed of projectSeeds) {
+    const commit = latestCommits.get(projectSeed.project_name);
     if (!commit) {
       continue;
     }
-    const hydratedParts = await hydrateCommitParts(
-      fetchFn,
-      options.baseUrl,
-      commit.parts,
-    );
-    updatedSeedsMap.set(name, {
-      module_name: commit.moduleName,
-      module_description: commit.moduleDescription,
+    for (const module of commit.modules) {
+      updatedSeedsMap.set(module.name, {
+        module_name: module.name,
+        module_description: module.description,
+        parts: await hydrateCommitParts(fetchFn, options.baseUrl, module.parts),
+      });
+      exportedList.push(module.name);
+    }
+    exportedProjects.push({
+      project_name: commit.projectName,
+      project_description: commit.projectDescription,
       message: commit.message,
-      parts: hydratedParts,
+      modules: commit.modules.map((module) => module.name),
     });
-    exportedList.push(name);
   }
 
   // 4. 書き出し後の全モジュールからパーツ参照対応表を作成
   const allSeeds = Array.from(updatedSeedsMap.values());
   const table = await buildPartReferenceTable(accountBytes, allSeeds);
 
-  // 5. 更新対象のモジュールのみディスクに書き出し (システムアカウントのコミットが見つからないものは書き換えない)
-  await mkdir(outDir, { recursive: true });
+  // 5. 更新対象のプロジェクトとモジュールのみディスクに書き出し (システムアカウントのコミットが見つからないものは書き換えない)
+  await mkdir(resolve(outDir, PROJECT_SEEDS_DIR), { recursive: true });
+  for (const project of exportedProjects) {
+    await writeFile(
+      resolve(outDir, PROJECT_SEEDS_DIR, `${project.project_name}.json`),
+      projectSeedToJson(project),
+      "utf-8",
+    );
+  }
   for (const name of exportedList) {
     const seed = updatedSeedsMap.get(name);
     if (!seed) continue;

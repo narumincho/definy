@@ -19,15 +19,20 @@ SignedEvent = { signature: bytes(64), event_binary: tag24(内側のイベント�
 ```text
 core.event-content = union {
   create_account: { account_name: string },
-  module_commit: core.module-commit,
+  project_commit: core.project-commit,
 }
-core.module-commit = {
-  module_name: string,
+core.project-commit = {               // docs/project.md
+  project_name: string,
   branch: string,                 // docs/branch.md
-  module_description: list<core.localized-text>,
+  project_description: list<core.localized-text>,
   message: string,
   parent_commit_hash: option<string>,
   merged_commit_hash: option<string>,   // 取り込んだ他のブランチのコミット (docs/branch.md「取り込み」)
+  modules: list<core.project-commit-module>,
+}
+core.project-commit-module = {
+  name: string,
+  description: list<core.localized-text>,
   parts: list<core.module-commit-part>,
 }
 core.module-commit-part = {
@@ -44,20 +49,26 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 
 ```json
 {
-  "#module_commit": {
-    "module_name": "math",
+  "#project_commit": {
+    "project_name": "math",
     "branch": "main",
-    "module_description": [{ "language": "en", "text": "Math" }],
+    "project_description": [],
     "message": "Add answer",
     "parent_commit_hash": { "#none": null },
     "merged_commit_hash": { "#none": null },
-    "parts": [
+    "modules": [
       {
-        "name": "answer",
-        "description": [],
-        "part_type": { "#some": { "#number": null } },
-        "expression": { "#some": { "#number": 42 } },
-        "content_hash": { "#none": null }
+        "name": "math",
+        "description": [{ "language": "en", "text": "Math" }],
+        "parts": [
+          {
+            "name": "answer",
+            "description": [],
+            "part_type": { "#some": { "#number": null } },
+            "expression": { "#some": { "#number": 42 } },
+            "content_hash": { "#none": null }
+          }
+        ]
       }
     ]
   }
@@ -89,34 +100,35 @@ core.event-check-state = {
   account_created: boolean,
   branch_latest_commit_hash: option<string>,  // コミット先のブランチの最新のコミット
   is_branch_creator: boolean,                 // このアカウントがコミット先のブランチを作ったか
-  merged_in_module: boolean,                  // merged_commit_hash がそのモジュールのコミットか
-  module_has_commits: boolean,
-  parent_in_module: boolean,                  // parent_commit_hash がそのモジュールのコミットか
-  merged_in_module: boolean,                  // merged_commit_hash がそのモジュールのコミットか
+  merged_in_project: boolean,                 // merged_commit_hash がそのプロジェクトのコミットか
+  modules_in_other_projects: list<string>,    // コミットのモジュール名のうち他のプロジェクトのもの (docs/project.md)
+  parent_in_project: boolean,                 // parent_commit_hash がそのプロジェクトのコミットか
+  project_has_commits: boolean,
 }
 ```
 
 返した理由が空なら受け付ける。今の規則:
 
-| イベント         | 規則                                                               | 理由 (`core.event-rejection`)                                               |
-| :--------------- | :----------------------------------------------------------------- | :-------------------------------------------------------------------------- |
-| `create_account` | 同じアカウントで 2 回作れない                                      | `account_already_created`                                                   |
-| `create_account` | 名前は空にできない                                                 | `empty_account_name`                                                        |
-| `module_commit`  | 先にアカウントを作る                                               | `account_not_created`                                                       |
-| `module_commit`  | モジュール名は空にできない                                         | `empty_module_name`                                                         |
-| `module_commit`  | ブランチ名は空にできない                                           | `empty_branch_name`                                                         |
-| `module_commit`  | ブランチの規則 (`core.check-event-branch`. [branch.md](branch.md)) | `first_branch_must_be_main`, `not_branch_creator`, `parent_commit_mismatch` |
-| `module_commit`  | 取り込むのは同じモジュールのコミット (`core.check-event-merge`)    | `merged_commit_not_in_module`                                               |
-| `module_commit`  | パーツ名は空にできず, 重複できない (`core.check-event-part-names`) | `empty_part_name`, `duplicate_part_name(name)`                              |
+| イベント         | 規則                                                                                                     | 理由 (`core.event-rejection`)                                                       |
+| :--------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `create_account` | 同じアカウントで 2 回作れない                                                                            | `account_already_created`                                                           |
+| `create_account` | 名前は空にできない                                                                                       | `empty_account_name`                                                                |
+| `project_commit` | 先にアカウントを作る                                                                                     | `account_not_created`                                                               |
+| `project_commit` | プロジェクト名は空にできない                                                                             | `empty_project_name`                                                                |
+| `project_commit` | ブランチ名は空にできない                                                                                 | `empty_branch_name`                                                                 |
+| `project_commit` | ブランチの規則 (`core.check-event-branch`. [branch.md](branch.md))                                       | `first_branch_must_be_main`, `not_branch_creator`, `parent_commit_mismatch`         |
+| `project_commit` | 取り込むのは同じプロジェクトのコミット (`core.check-event-merge`)                                        | `merged_commit_not_in_project`                                                      |
+| `project_commit` | モジュール名は空にできず, 重複できず, 他のプロジェクトのものは使えない (`core.check-event-module-names`) | `empty_module_name`, `duplicate_module_name(name)`, `module_in_other_project(name)` |
+| `project_commit` | パーツ名はモジュールの中で空にできず, 重複できない (`core.check-event-part-names`)                       | `empty_part_name`, `duplicate_part_name(name)`                                      |
 
-- モジュールはモジュール名だけで決まり (`deriveModuleIdBytes`), ブランチを持つ。ブラウザは表示しているブランチから
+- プロジェクトはプロジェクト名だけで決まり, ブランチを持つ ([project.md](project.md))。ブラウザは表示しているブランチから
   コミット先のブランチと親を決める (`commitTarget`, `src/branches.ts`. [branch.md](branch.md))
-- 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerModule`)。同じ秒の 2 つのコミットは先のものが最新のままになる
+- 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerProject`)。同じ秒の 2 つのコミットは先のものが最新のままになる
 - 規則は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` (コミットしない) で動く。
   Worker は `?module` で取り込み (`worker/event_check.ts`), TypeScript 側は規則が使う状態 (アカウントを作ったか, コミット先のブランチの最新のコミットと作成者など) を
   ストアから集めて渡し, 返った理由を英語のメッセージにするだけ (`src/event_check.ts`)。拒否は Connect-RPC の `invalid_argument` (400)
-- 規則は式を見ないので, モジュールのコミットはパーツ名だけにしてから線形メモリに書く (core のコミットは式で数 MB ある)
-- 型検査 (`checkSubmittedModuleCommit`) はこの規則に通ってから行う
+- 規則は式を見ないので, プロジェクトのコミットはモジュール名とパーツ名だけにしてから線形メモリに書く (core のコミットは式で数 MB ある)
+- 型検査 (`checkSubmittedProjectCommit`) はこの規則に通ってから行う
 - 型チェッカーと同じく, 本番で `core.check-event` を編集しても seed に書き戻してデプロイするまでサーバーには反映されない
 - デバッグ用の `DebugService/SubmitUnverifiedEvent` は規則も確かめない
 
@@ -125,6 +137,7 @@ core.event-check-state = {
 - 以前は中身を `{"ModuleCommit": {...}}` / `{"CreateAccount": {...}}` の TypeScript 側の形で書き,
   `content_hash` はバイト列, `part_type` / `parent_commit_hash` は `null` で無いことを表していた。
   サーバーは中身の形を検査していなかった。
+- (2026-10-25) コミットはモジュール単位の `module_commit` だったのを, プロジェクト単位の `project_commit` にした ([project.md](project.md))。
 - 作られることのなかった `ChangeProfile` (プロファイル変更) は `core.event-content` に入れず, UI の表示も消した。
 - 以前の形のイベントは読めない (署名の検証で拒否される)。seed のイベントは指紋が変わるので新しいものに入れ替わる。
 

@@ -51,6 +51,8 @@ const INVALID_NAME = /[.\s]/u;
 export type NewPartError =
   | "empty_module_name"
   | "invalid_module_name"
+  | "empty_project_name"
+  | "invalid_project_name"
   | "empty_part_name"
   | "invalid_part_name"
   | "duplicate_part_name"
@@ -80,6 +82,16 @@ export function validateNewPart(
       return "duplicate_parameter_name";
     }
   }
+  return null;
+}
+
+/** 新しいモジュールを入れるプロジェクトの名前を確かめる (モジュール名と同じ規則. docs/project.md) */
+export function validateProjectName(
+  projectName: string,
+): "empty_project_name" | "invalid_project_name" | null {
+  const name = projectName.trim();
+  if (name === "") return "empty_project_name";
+  if (INVALID_NAME.test(name)) return "invalid_project_name";
   return null;
 }
 
@@ -323,6 +335,7 @@ export function withNewParts(
       ...newModules.map((name): ModuleSnapshot => ({
         moduleId: name,
         name,
+        projectName: workingChanges.newModuleProjects?.get(name) ?? name,
         branch: MAIN_BRANCH,
         branches: [],
         description: [],

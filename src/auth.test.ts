@@ -3,17 +3,17 @@ import {
   generateAccountCredentials,
   importAccountCredentials,
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   submitSignedEvent,
 } from "./auth.ts";
 import {
   base64ToBytes,
   decodeCborItem,
   extractCreateAccount,
-  extractModuleCommit,
+  extractProjectCommit,
   toUint8Array,
 } from "./cbor.ts";
 import { verifySignedEvent } from "../worker/cbor.ts";
+import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 
 describe("auth and signed event pipeline", () => {
   it("generates and re-imports Ed25519 credentials", async () => {
@@ -74,42 +74,45 @@ describe("auth and signed event pipeline", () => {
     expect(valid).toBe(true);
   });
 
-  it("creates, signs, and decodes ModuleCommit events", async () => {
+  it("creates, signs, and decodes ProjectCommit events", async () => {
     const creds = await generateAccountCredentials("carol");
-    const { signedEventBytes, eventHash } = await createSignedModuleCommitEvent(
-      {
-        credentials: creds,
-        moduleName: "math",
-        moduleDescription: [{ language: "en", text: "Math functions" }],
-        message: "Add multiply part",
-        parentCommitHash: "parent-hash-123",
-        parts: [
-          {
-            name: "multiply",
-            description: [
-              { language: "en", text: "Multiplies two numbers" },
-              { language: "ja", text: "2 つの数を掛ける" },
-            ],
-            partType: { "#number": null },
-            expression: { "#number": 42 },
-          },
-        ],
-      },
-      1700000005,
-    );
+    const { signedEventBytes, eventHash } =
+      await createSignedSingleModuleCommitEvent(
+        {
+          credentials: creds,
+          moduleName: "math",
+          moduleDescription: [{ language: "en", text: "Math functions" }],
+          message: "Add multiply part",
+          parentCommitHash: "parent-hash-123",
+          parts: [
+            {
+              name: "multiply",
+              description: [
+                { language: "en", text: "Multiplies two numbers" },
+                { language: "ja", text: "2 つの数を掛ける" },
+              ],
+              partType: { "#number": null },
+              expression: { "#number": 42 },
+            },
+          ],
+        },
+        1700000005,
+      );
 
     expect(typeof eventHash).toBe("string");
 
-    // Verify with extractModuleCommit
-    const commit = extractModuleCommit(signedEventBytes);
-    expect(commit).not.toBeNull();
-    expect(commit?.moduleName).toBe("math");
-    expect(commit?.message).toBe("Add multiply part");
-    expect(commit?.parentCommitHash).toBe("parent-hash-123");
+    // Verify with extractProjectCommit
+    const project = extractProjectCommit(signedEventBytes);
+    expect(project).not.toBeNull();
+    expect(project?.projectName).toBe("math");
+    expect(project?.message).toBe("Add multiply part");
+    expect(project?.parentCommitHash).toBe("parent-hash-123");
+    const commit = project?.modules[0];
+    expect(commit?.name).toBe("math");
     expect(commit?.parts.length).toBe(1);
     expect(commit?.parts[0]?.name).toBe("multiply");
     // 言語ごとの説明文は連結されずそのまま往復する
-    expect(commit?.moduleDescription).toEqual([
+    expect(commit?.description).toEqual([
       { language: "en", text: "Math functions" },
     ]);
     expect(commit?.parts[0]?.description).toEqual([
@@ -120,7 +123,7 @@ describe("auth and signed event pipeline", () => {
     // Verify signature and metadata with worker's verifySignedEvent
     const meta = await verifySignedEvent(base64ToBytes(signedEventBytes));
     expect(meta.accountId).toBe(creds.accountId);
-    expect(meta.eventType).toBe("module_commit");
+    expect(meta.eventType).toBe("project_commit");
     expect(meta.timeMs).toBe(1700000005000);
   });
 

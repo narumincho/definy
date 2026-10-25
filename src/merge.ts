@@ -1,11 +1,12 @@
 /**
  * ブランチの取り込み (docs/branch.md「取り込み」). 他のブランチの最新のコミットを, 自分のブランチ (main) に
- * パーツごとの 3 方向マージで重ね, 作業中の変更にする. コミットは `merged_commit_hash` に取り込んだコミットを持つ
+ * パーツごとの 3 方向マージで重ね, 作業中の変更にする. コミットは `merged_commit_hash` に取り込んだコミットを持つ.
+ * ブランチはプロジェクトにあるので, パーツはプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べて扱う
  */
 import type { LocalizedText } from "./cbor.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
 
-/** 取り込みに使うコミット (親と, 取り込んだコミットと, パーツ) */
+/** 取り込みに使うコミット (親と, 取り込んだコミットと, プロジェクトの全パーツ) */
 export type MergeCommit = {
   readonly eventHash: string;
   readonly parentCommitHash: string | null;
@@ -14,6 +15,7 @@ export type MergeCommit = {
 };
 
 export type MergePart = {
+  /** `モジュール名.パーツ名` */
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
@@ -148,50 +150,58 @@ export function mergeParts(
 
 /**
  * 取り込んだ後のパーツ (`merged`) を, 今のパーツ (`ours`) への作業中の変更にする.
- * キーは `モジュール名.パーツ名`. 無くなったパーツは削除 (`deleted`) にする
+ * パーツ名もキーも `モジュール名.パーツ名`. 無くなったパーツは削除 (`deleted`) にする
  */
 export function mergeToWorkingChanges(
-  moduleName: string,
   ours: ReadonlyArray<MergePart>,
   merged: ReadonlyArray<MergePart>,
 ): ReadonlyMap<string, PartChange> {
   const changes = new Map<string, PartChange>();
   const mergedMap = new Map(merged.map((part) => [part.name, part]));
-  const change = (part: MergePart, deleted: boolean): PartChange => ({
-    moduleDefinitionEventHash: moduleName,
-    partDefinitionEventHash: `${moduleName}.${part.name}`,
-    name: part.name,
-    description: part.description,
-    partType: part.partType,
-    expression: part.expression ?? null,
-    ...(deleted ? { deleted: true } : {}),
-  });
+  const change = (part: MergePart, deleted: boolean): PartChange => {
+    const dot = part.name.indexOf(".");
+    return {
+      moduleDefinitionEventHash: part.name.slice(0, dot),
+      partDefinitionEventHash: part.name,
+      name: part.name.slice(dot + 1),
+      description: part.description,
+      partType: part.partType,
+      expression: part.expression ?? null,
+      ...(deleted ? { deleted: true } : {}),
+    };
+  };
   for (const part of ours) {
     const next = mergedMap.get(part.name);
     if (next === undefined) {
-      changes.set(`${moduleName}.${part.name}`, change(part, true));
+      changes.set(part.name, change(part, true));
     } else if (!samePart(part, next)) {
-      changes.set(`${moduleName}.${part.name}`, change(next, false));
+      changes.set(part.name, change(next, false));
     }
   }
   const oursNames = new Set(ours.map((part) => part.name));
   for (const part of merged) {
     if (!oursNames.has(part.name)) {
-      changes.set(`${moduleName}.${part.name}`, change(part, false));
+      changes.set(part.name, change(part, false));
     }
   }
   return changes;
 }
 
-/** モジュール `moduleName` に作業中の変更があるか (取り込む前に無いことを確かめる) */
+/**
+ * プロジェクト `projectName` (モジュール `moduleNames`) に作業中の変更があるか (取り込む前に無いことを確かめる)
+ */
 export function hasWorkingChangesIn(
-  moduleName: string,
+  projectName: string,
+  moduleNames: ReadonlyArray<string>,
   workingChanges: WorkingChanges,
 ): boolean {
   return (
     [...workingChanges.parts.keys()].some((partId) =>
-      partId.startsWith(`${moduleName}.`),
+      moduleNames.some((name) => partId.startsWith(`${name}.`)),
     ) ||
-    (workingChanges.merges?.has(moduleName) ?? false)
+    [...(workingChanges.newModuleProjects ?? new Map()).values()].includes(
+      projectName,
+    ) ||
+    (workingChanges.merges?.has(projectName) ?? false)
   );
 }

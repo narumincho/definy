@@ -86,21 +86,35 @@ describe("mergeParts", () => {
 
 describe("mergeToWorkingChanges", () => {
   it("変わったパーツ・増えたパーツを変更に, 無くなったパーツを削除にする", () => {
+    // パーツ名はプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べる
     const changes = mergeToWorkingChanges(
-      "app",
-      [part("keep", 1), part("edit", 1), part("drop", 1)],
-      [part("keep", 1), part("edit", 2), part("add", 1)],
+      [part("app.keep", 1), part("app.edit", 1), part("app.drop", 1)],
+      [
+        part("app.keep", 1),
+        part("app.edit", 2),
+        part("app.add", 1),
+        part("lib.new", 1),
+      ],
     );
-    expect([...changes.keys()]).toEqual(["app.edit", "app.drop", "app.add"]);
+    expect([...changes.keys()]).toEqual([
+      "app.edit",
+      "app.drop",
+      "app.add",
+      "lib.new",
+    ]);
     expect(changes.get("app.drop")?.deleted).toBe(true);
     expect(changes.get("app.edit")?.expression).toEqual({ "#number": 2 });
+    expect(changes.get("lib.new")).toMatchObject({
+      moduleDefinitionEventHash: "lib",
+      name: "new",
+    });
   });
 });
 
 describe("hasWorkingChangesIn", () => {
-  it("そのモジュールのパーツの変更か取り込みがあるか", () => {
+  it("そのプロジェクトのモジュールのパーツの変更か取り込みがあるか", () => {
     expect(
-      hasWorkingChangesIn("app", {
+      hasWorkingChangesIn("app", ["app", "lib"], {
         parts: new Map([
           [
             "other.x",
@@ -115,9 +129,24 @@ describe("hasWorkingChangesIn", () => {
       }),
     ).toBe(false);
     expect(
-      hasWorkingChangesIn("app", {
+      hasWorkingChangesIn("app", ["app", "lib"], {
         parts: new Map(),
         merges: new Map([["app", "h"]]),
+      }),
+    ).toBe(true);
+    expect(
+      hasWorkingChangesIn("app", ["app", "lib"], {
+        parts: new Map([
+          [
+            "lib.x",
+            {
+              ...part("x", 1),
+              expression: { "#number": 1 },
+              moduleDefinitionEventHash: "lib",
+              partDefinitionEventHash: "lib.x",
+            },
+          ],
+        ]),
       }),
     ).toBe(true);
   });

@@ -4,11 +4,9 @@ import {
   serializeWorkingChanges,
 } from "./working_changes_storage.ts";
 import type { WorkingChanges } from "./types.ts";
-import {
-  generateAccountCredentials,
-  createSignedModuleCommitEvent,
-} from "./auth.ts";
-import { extractModuleCommit } from "./cbor.ts";
+import { generateAccountCredentials } from "./auth.ts";
+import { extractProjectCommit } from "./cbor.ts";
+import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 
 describe("working_changes_storage", () => {
   it("パーツの式と型を JSON のまま保存して復元する", () => {
@@ -67,7 +65,7 @@ describe("working_changes_storage", () => {
     const restoredPart = restored.parts.get("sample.calc");
     expect(restoredPart).toBeDefined();
 
-    const { signedEventBytes } = await createSignedModuleCommitEvent(
+    const { signedEventBytes } = await createSignedSingleModuleCommitEvent(
       {
         credentials: creds,
         moduleName: "sample",
@@ -85,7 +83,7 @@ describe("working_changes_storage", () => {
       1700000000,
     );
 
-    const decodedCommit = extractModuleCommit(signedEventBytes);
+    const decodedCommit = extractProjectCommit(signedEventBytes)?.modules[0];
     expect(decodedCommit?.parts[0]).toMatchObject({
       partType: { "#number": null },
       expression: {

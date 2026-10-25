@@ -48,9 +48,11 @@ export default function AccountDetailPage(): JSX.Element {
     }
     for (const { event, commit } of decodedCommits) {
       if (event.accountId !== accountId) continue;
-      const prev = latest.get(commit.moduleName);
-      if (prev === undefined || prev < event.timeMs) {
-        latest.set(commit.moduleName, event.timeMs);
+      for (const module of commit.modules) {
+        const prev = latest.get(module.name);
+        if (prev === undefined || prev < event.timeMs) {
+          latest.set(module.name, event.timeMs);
+        }
       }
     }
     return [...latest].sort((a, b) => b[1] - a[1]).map(([name]) => name);
@@ -67,7 +69,7 @@ export default function AccountDetailPage(): JSX.Element {
     (e) => e.eventType === "create_account",
   );
   const commitCount = accountEvents.filter(
-    (e) => e.eventType === "module_commit",
+    (e) => e.eventType === "project_commit",
   ).length;
 
   return (

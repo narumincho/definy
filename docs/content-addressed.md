@@ -83,21 +83,26 @@ graph TD
 
 ## 4. モジュールコミットによる複数パーツの一括送信 (ModuleCommitEvent)
 
+> 2026-10-25: コミットはモジュール単位からプロジェクト単位 (`project_commit`) に変わった ([project.md](project.md))。
+
 従来はパーツを 1 つ作成・更新するたびに `PartDefinitionEvent` や
 `PartUpdateEvent` を個別に送信していた。 これを Git
 のコミットモデルに移行し、**`ModuleCommitEvent`**
 によってモジュール内の複数のパーツ定義（Tree）を 1
 つの署名付きイベントとして一度に送信・公開する。
 
-署名するイベントの中身は `core.event-content` の `module_commit` (definy の値。形は [event.md](event.md)):
+署名するイベントの中身は `core.event-content` の `project_commit` (definy の値。形は [event.md](event.md))。
+コミットはプロジェクトの全モジュールを持つ ([project.md](project.md)):
 
 ```text
-module_commit {
-  module_name: string,
-  module_description: list<localized-text>,
+project_commit {
+  project_name: string,
+  branch: string,
+  project_description: list<localized-text>,
   message: string,
   parent_commit_hash: option<EventHashId>,
-  parts: [{ name, description, part_type: option, expression: option, content_hash: option }],
+  merged_commit_hash: option<EventHashId>,
+  modules: [{ name, description, parts: [{ name, description, part_type: option, expression: option, content_hash: option }] }],
 }
 ```
 
@@ -214,7 +219,7 @@ definy では、Git のディレクトリ（Tree）構造と同様に **「モ�
 
 ## 9. バージョン管理 UI
 
-- 編集は作業中の変更として貯め, 変更ページ (`/changes`) でコミットメッセージを付けてモジュールごとにコミットする ([ui.md](ui.md))
+- 編集は作業中の変更として貯め, 変更ページ (`/changes`) でコミットメッセージを付けてプロジェクトごとにコミットする ([ui.md](ui.md))
 - 履歴ページ (`/history`) とイベント詳細 (`/event/{hash}`) でコミットと署名の検証結果を見る
 
 Rust 版の UI には, パーツ参照を特定の `ContentHash` に固定する (Pin / Unpin / Upgrade) 操作や,
@@ -233,7 +238,7 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 
 ### ネゴシエーションの通信手順
 
-> ブラウザ ([src/content_store.ts](../src/content_store.ts), `submitModuleCommitEvent`) と seed のコミットは式を CAS に預け,
+> ブラウザ ([src/content_store.ts](../src/content_store.ts), `submitProjectCommitEvent`) と seed のコミットは式を CAS に預け,
 > コミットのパーツには `content_hash` だけを入れる (`expression` は `none`. #763)。
 > 以前はブラウザが全パーツの式をコミットに入れていたので, core の 1 パーツを直すたびに約 2.2MB のイベントが増えていた
 > (今の core の seed のコミットは約 0.44MB. 残りはパーツの名前・説明・型)。
@@ -251,7 +256,7 @@ sequenceDiagram
 
     User->>Client: パーツの式を編集
     Client->>Client: 修正された式の ContentHash を算出 (SHA-256)
-    Client->>Client: 各パーツの content_hash を格納した ModuleCommitEvent を Ed25519 署名
+    Client->>Client: 各パーツの content_hash を格納したプロジェクトのコミット (project_commit) を Ed25519 署名
     Client->>Gateway: POST /definy.v1.EventService/SubmitEvent
     Gateway->>CAS: 参照されている全 content_hash の存在確認 (filter_missing)
     alt 全ハッシュが既に CAS に存在する場合 (1 RTT)

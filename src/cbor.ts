@@ -412,18 +412,26 @@ export type DecodedPart = {
   readonly partIdHash?: string | null;
 };
 
-export type DecodedModuleCommit = {
-  readonly moduleName: string;
-  /** コミット先のブランチ (docs/branch.md) */
-  readonly branch: string;
+/** プロジェクトのコミットのモジュール */
+export type DecodedModule = {
+  readonly name: string;
   /** モジュール ID (モジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
   readonly moduleIdHash: string | null;
-  readonly moduleDescription: LocalizedText;
+  readonly description: LocalizedText;
+  readonly parts: ReadonlyArray<DecodedPart>;
+};
+
+/** プロジェクトのコミット (docs/project.md) */
+export type DecodedProjectCommit = {
+  readonly projectName: string;
+  /** コミット先のブランチ (docs/branch.md) */
+  readonly branch: string;
+  readonly projectDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
   /** このコミットで取り込んだ他のブランチのコミット (docs/branch.md「取り込み」) */
   readonly mergedCommitHash: string | null;
-  readonly parts: ReadonlyArray<DecodedPart>;
+  readonly modules: ReadonlyArray<DecodedModule>;
 };
 
 /** SignedEvent (Base64) の内側のイベントの `account_id` (バイト列) と中身. 署名は検証しない */
@@ -450,32 +458,38 @@ function decodeInnerEvent(signedBytesBase64: string):
     : { accountBytes: toUint8Array(innerObj.account_id), content };
 }
 
-export function extractModuleCommit(
+export function extractProjectCommit(
   signedBytesBase64: string,
-): DecodedModuleCommit | null {
+): DecodedProjectCommit | null {
   try {
     const decoded = decodeInnerEvent(signedBytesBase64);
-    if (decoded?.content.type !== "module_commit") return null;
+    if (decoded?.content.type !== "project_commit") return null;
     const { commit } = decoded.content;
-    const moduleIdBytes = decoded.accountBytes
-      ? deriveModuleIdBytesSync(commit.moduleName)
-      : null;
     return {
-      moduleName: commit.moduleName,
+      projectName: commit.projectName,
       branch: commit.branch,
-      moduleIdHash: moduleIdBytes
-        ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
-        : null,
-      moduleDescription: commit.moduleDescription,
+      projectDescription: commit.projectDescription,
       message: commit.message,
       parentCommitHash: commit.parentCommitHash,
       mergedCommitHash: commit.mergedCommitHash,
-      parts: commit.parts.map((part) => ({
-        ...part,
-        partIdHash: moduleIdBytes
-          ? deriveModulePartIdSync(moduleIdBytes, part.name)
-          : null,
-      })),
+      modules: commit.modules.map((module) => {
+        const moduleIdBytes = decoded.accountBytes
+          ? deriveModuleIdBytesSync(module.name)
+          : null;
+        return {
+          name: module.name,
+          moduleIdHash: moduleIdBytes
+            ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
+            : null,
+          description: module.description,
+          parts: module.parts.map((part) => ({
+            ...part,
+            partIdHash: moduleIdBytes
+              ? deriveModulePartIdSync(moduleIdBytes, part.name)
+              : null,
+          })),
+        };
+      }),
     };
   } catch {
     return null;

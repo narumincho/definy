@@ -1,5 +1,5 @@
 /**
- * モジュールのブランチ (docs/branch.md). サーバーの規則 (`core.check-event-branch`) と同じ考え方で,
+ * プロジェクトのブランチ (docs/branch.md). サーバーの規則 (`core.check-event-branch`) と同じ考え方で,
  * ブラウザが表示するブランチとコミット先を決める純粋関数
  */
 import { MAIN_BRANCH } from "./event_content.ts";
@@ -7,13 +7,13 @@ import { MAIN_BRANCH } from "./event_content.ts";
 /** ブランチを調べるのに使うコミット */
 export type BranchCommit = {
   readonly accountId: string;
-  readonly moduleName: string;
+  readonly projectName: string;
   readonly branch: string;
   readonly eventHash: string;
   readonly timeMs: number;
 };
 
-/** モジュールの 1 つのブランチ */
+/** プロジェクトの 1 つのブランチ */
 export type BranchSummary = {
   readonly name: string;
   /** ブランチを作ったアカウント (ブランチの最初の, 時刻が最小のコミットのアカウント). このアカウントだけがコミットできる */
@@ -24,18 +24,18 @@ export type BranchSummary = {
   readonly commitCount: number;
 };
 
-/** モジュール名付きのブランチ */
-export type ModuleBranchSummary = BranchSummary & {
-  readonly moduleName: string;
+/** プロジェクト名付きのブランチ */
+export type ProjectBranchSummary = BranchSummary & {
+  readonly projectName: string;
 };
 
 /**
- * コミットを全モジュールのブランチにまとめる. サーバーの `GetModuleBranches` が使う
+ * コミットを全プロジェクトのブランチにまとめる. サーバーの `GetProjectBranches` が使う
  * (ブラウザは全コミットを読まず, その結果を受け取る)
  */
 export function summarizeBranches(
   commits: Iterable<BranchCommit>,
-): ReadonlyArray<ModuleBranchSummary> {
+): ReadonlyArray<ProjectBranchSummary> {
   const branches = new Map<
     string,
     {
@@ -45,7 +45,7 @@ export function summarizeBranches(
     }
   >();
   for (const commit of commits) {
-    const key = JSON.stringify([commit.moduleName, commit.branch]);
+    const key = JSON.stringify([commit.projectName, commit.branch]);
     const existing = branches.get(key);
     branches.set(
       key,
@@ -61,7 +61,7 @@ export function summarizeBranches(
     );
   }
   return Array.from(branches.values(), ({ first, latest, count }) => ({
-    moduleName: latest.moduleName,
+    projectName: latest.projectName,
     name: latest.branch,
     creatorAccountId: first.accountId,
     latestEventHash: latest.eventHash,
@@ -96,8 +96,8 @@ export function displayedBranch(
 
 /** 作業中の変更をどこへコミットするか */
 export type CommitTarget =
-  /** モジュールにまだコミットが無い. main に親無しでコミットする */
-  | { readonly kind: "new_module" }
+  /** プロジェクトにまだコミットが無い. main に親無しでコミットする */
+  | { readonly kind: "new_project" }
   /** 表示しているブランチは自分が作ったもの. その最新のコミットを親にする */
   | {
       readonly kind: "own_branch";
@@ -121,7 +121,7 @@ export function commitTarget(
 ): CommitTarget {
   const current = branches.find((branch) => branch.name === displayed);
   if (current === undefined) {
-    return { kind: "new_module" };
+    return { kind: "new_project" };
   }
   if (current.creatorAccountId === accountId) {
     return {

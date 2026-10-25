@@ -12,28 +12,28 @@ import {
 const commits = [
   {
     accountId: "alice",
-    moduleName: "app",
+    projectName: "app",
     branch: "main",
     eventHash: "m1",
     timeMs: 100,
   },
   {
     accountId: "alice",
-    moduleName: "app",
+    projectName: "app",
     branch: "main",
     eventHash: "m2",
     timeMs: 300,
   },
   {
     accountId: "bob",
-    moduleName: "app",
+    projectName: "app",
     branch: "bob",
     eventHash: "b1",
     timeMs: 200,
   },
   {
     accountId: "bob",
-    moduleName: "app",
+    projectName: "app",
     branch: "bob",
     eventHash: "b2",
     timeMs: 400,
@@ -41,28 +41,28 @@ const commits = [
   // 他のアカウントが bob のブランチに出したコミットは受け付けられないが, 作成者は最初のコミットで決まる
   {
     accountId: "carol",
-    moduleName: "app",
+    projectName: "app",
     branch: "bob",
     eventHash: "c1",
     timeMs: 150,
   },
   {
     accountId: "alice",
-    moduleName: "other",
+    projectName: "other",
     branch: "main",
     eventHash: "o1",
     timeMs: 50,
   },
 ];
 
-/** モジュール `moduleName` のブランチ (main が先頭) */
-function moduleBranches(
+/** プロジェクト `projectName` のブランチ (main が先頭) */
+function projectBranches(
   commits: ReadonlyArray<BranchCommit>,
-  moduleName: string,
+  projectName: string,
 ): ReadonlyArray<BranchSummary> {
   return sortBranches(
     summarizeBranches(commits)
-      .filter((branch) => branch.moduleName === moduleName)
+      .filter((branch) => branch.projectName === projectName)
       .map((branch) => ({
         name: branch.name,
         creatorAccountId: branch.creatorAccountId,
@@ -75,7 +75,7 @@ function moduleBranches(
 
 describe("summarizeBranches", () => {
   it("main を先頭にブランチをまとめ, 作成者は最初のコミットのアカウント", () => {
-    expect(moduleBranches(commits, "app")).toEqual([
+    expect(projectBranches(commits, "app")).toEqual([
       {
         name: "main",
         creatorAccountId: "alice",
@@ -91,13 +91,13 @@ describe("summarizeBranches", () => {
         commitCount: 3,
       },
     ]);
-    expect(moduleBranches(commits, "none")).toEqual([]);
+    expect(projectBranches(commits, "none")).toEqual([]);
   });
 });
 
 describe("displayedBranch", () => {
   it("選んだブランチが無ければ main", () => {
-    const branches = moduleBranches(commits, "app");
+    const branches = projectBranches(commits, "app");
     expect(displayedBranch(branches, "bob")).toBe("bob");
     expect(displayedBranch(branches, "gone")).toBe("main");
     expect(displayedBranch(branches, undefined)).toBe("main");
@@ -105,11 +105,11 @@ describe("displayedBranch", () => {
 });
 
 describe("commitTarget", () => {
-  const branches = moduleBranches(commits.slice(0, 4), "app");
+  const branches = projectBranches(commits.slice(0, 4), "app");
 
-  it("コミットの無いモジュールは main に親無しで", () => {
+  it("コミットの無いプロジェクトは main に親無しで", () => {
     expect(commitTarget([], "main", "bob", "bob")).toEqual({
-      kind: "new_module",
+      kind: "new_project",
     });
   });
 
@@ -133,7 +133,7 @@ describe("commitTarget", () => {
 
 describe("unusedBranchName", () => {
   it("使われている名前には番号を付ける", () => {
-    const branches = moduleBranches(commits.slice(0, 4), "app");
+    const branches = projectBranches(commits.slice(0, 4), "app");
     expect(unusedBranchName(branches, "carol")).toBe("carol");
     expect(unusedBranchName(branches, "main")).toBe("main-2");
     expect(unusedBranchName(branches, " ")).toBe("branch");

@@ -1,12 +1,11 @@
 import { expect, it } from "vitest";
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   generateAccountCredentials,
-  submitModuleCommitEvent,
+  submitProjectCommitEvent,
   submitSignedEvent,
 } from "../src/auth.ts";
-import { extractModuleCommit, type DecodedPart } from "../src/cbor.ts";
+import { extractProjectCommit, type DecodedPart } from "../src/cbor.ts";
 import {
   cachedContent,
   loadContents,
@@ -16,6 +15,7 @@ import {
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
+import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 
 /** docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」 */
 it("コミットには式の content hash だけを入れ, サーバーに無い式だけを送る", async () => {
@@ -48,7 +48,7 @@ it("コミットには式の content hash だけを入れ, サーバーに無い
     parentCommitHash: string | null,
   ) => {
     const prepared = await toContentAddressedParts(parts);
-    const signed = await createSignedModuleCommitEvent({
+    const signed = await createSignedSingleModuleCommitEvent({
       credentials,
       moduleName: "app",
       moduleDescription: [],
@@ -57,7 +57,7 @@ it("コミットには式の content hash だけを入れ, サーバーに無い
       parts: prepared.parts,
     });
     calls.length = 0;
-    const result = await submitModuleCommitEvent(
+    const result = await submitProjectCommitEvent(
       signed.signedEventBytes,
       prepared.contents,
       fetchFn,
@@ -75,7 +75,8 @@ it("コミットには式の content hash だけを入れ, サーバーに無い
   const first = await commit([answer(42)], null);
   expect(first.result.status).toBe("accepted");
   expect(calls).toEqual(["SubmitEvent", "UploadContent", "SubmitEvent"]);
-  const committed = extractModuleCommit(first.signed.signedEventBytes);
+  const committed = extractProjectCommit(first.signed.signedEventBytes)
+    ?.modules[0];
   expect(committed?.parts[0]?.expression).toBeNull();
   const hash = committed?.parts[0]?.contentHash ?? "";
   expect(hash).not.toBe("");
@@ -133,7 +134,7 @@ it("CAS に預けた式が core.expression の形でなければ受け付けな�
       expression: { "#not_an_expression": 1 },
     },
   ]);
-  const signed = await createSignedModuleCommitEvent({
+  const signed = await createSignedSingleModuleCommitEvent({
     credentials,
     moduleName: "bad",
     moduleDescription: [],
@@ -142,7 +143,7 @@ it("CAS に預けた式が core.expression の形でなければ受け付けな�
     parts: prepared.parts,
   });
   await expect(
-    submitModuleCommitEvent(
+    submitProjectCommitEvent(
       signed.signedEventBytes,
       prepared.contents,
       fetchFn,

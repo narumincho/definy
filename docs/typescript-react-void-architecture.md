@@ -224,7 +224,7 @@ npm run test:e2e
 
 1. **タイムライン画面 (`/`)**:
    - バックエンドの Connect-RPC (`/definy.v1.EventService/GetEvents`) からイベント一覧が取得され、`.event-card` が正常にレンダリングされること。
-   - イベント種別（`module_commit`, `create_account`）のフィルターチップ（「アカウント作成」「すべて」）の切り替えが正しく機能すること。
+   - イベント種別（`project_commit`, `create_account`）のフィルターチップ（「アカウント作成」「すべて」）の切り替えが正しく機能すること。
 2. **モジュール一覧画面 (`/modules`)**:
    - `core`, `sample` 等の組み込みモジュールがカード形式で一覧表示されること。
 3. **パーツ一覧・詳細画面 (`/parts`, `/part/:id`)**:

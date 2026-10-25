@@ -14,10 +14,6 @@
         "null"
       ]
     },
-    "message": {
-      "default": "",
-      "type": "string"
-    },
     "module_description": {
       "default": "",
       "allOf": [
@@ -1702,30 +1698,30 @@
         {
           "type": "object",
           "required": [
-            "#module_commit"
+            "#project_commit"
           ],
           "properties": {
-            "#module_commit": {
-              "$ref": "#/definitions/core.module-commit"
+            "#project_commit": {
+              "$ref": "#/definitions/core.project-commit"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "core.module-commit": {
+    "core.project-commit": {
       "type": "object",
       "required": [
-        "module_name",
+        "project_name",
         "branch",
-        "module_description",
+        "project_description",
         "message",
         "parent_commit_hash",
         "merged_commit_hash",
-        "parts"
+        "modules"
       ],
       "properties": {
-        "module_name": {
+        "project_name": {
           "anyOf": [
             {
               "type": "string"
@@ -1745,7 +1741,7 @@
             }
           ]
         },
-        "module_description": {
+        "project_description": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/core.localized-text"
@@ -1830,6 +1826,39 @@
               "additionalProperties": false
             }
           ]
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.project-commit-module"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.project-commit-module": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "parts"
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "description": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.localized-text"
+          }
         },
         "parts": {
           "type": "array",
@@ -2563,10 +2592,10 @@
         {
           "type": "object",
           "required": [
-            "#empty_module_name"
+            "#empty_project_name"
           ],
           "properties": {
-            "#empty_module_name": {
+            "#empty_project_name": {
               "type": "null"
             }
           },
@@ -2623,11 +2652,61 @@
         {
           "type": "object",
           "required": [
-            "#merged_commit_not_in_module"
+            "#merged_commit_not_in_project"
           ],
           "properties": {
-            "#merged_commit_not_in_module": {
+            "#merged_commit_not_in_project": {
               "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#empty_module_name"
+          ],
+          "properties": {
+            "#empty_module_name": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#duplicate_module_name"
+          ],
+          "properties": {
+            "#duplicate_module_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#module_in_other_project"
+          ],
+          "properties": {
+            "#module_in_other_project": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -2671,9 +2750,10 @@
         "account_created",
         "branch_latest_commit_hash",
         "is_branch_creator",
-        "merged_in_module",
-        "module_has_commits",
-        "parent_in_module"
+        "merged_in_project",
+        "modules_in_other_projects",
+        "parent_in_project",
+        "project_has_commits"
       ],
       "properties": {
         "account_created": {
@@ -2717,13 +2797,26 @@
         "is_branch_creator": {
           "type": "boolean"
         },
-        "merged_in_module": {
+        "merged_in_project": {
           "type": "boolean"
         },
-        "module_has_commits": {
+        "modules_in_other_projects": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/PartPlaceholder"
+              }
+            ]
+          }
+        },
+        "parent_in_project": {
           "type": "boolean"
         },
-        "parent_in_module": {
+        "project_has_commits": {
           "type": "boolean"
         }
       },

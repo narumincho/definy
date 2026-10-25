@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   checkEvent,
   eventRejectionMessage,
-  NO_MODULE_STATE,
+  NO_PROJECT_STATE,
   type EventCheckState,
 } from "./event_check.ts";
-import type { CommitPart, EventContent } from "./event_content.ts";
+import type {
+  CommitModule,
+  CommitPart,
+  EventContent,
+} from "./event_content.ts";
 
 const checker = new WebAssembly.Module(
   await readFile("wasm/event_checker.wasm"),
@@ -20,27 +24,32 @@ const part = (name: string): CommitPart => ({
   contentHash: null,
 });
 
+const module = (
+  name: string,
+  parts: ReadonlyArray<CommitPart> = [part("a")],
+): CommitModule => ({ name, description: [], parts });
+
 const commit = (options: {
-  readonly moduleName?: string;
+  readonly projectName?: string;
   readonly branch?: string;
   readonly parent?: string | null;
   readonly merged?: string | null;
-  readonly parts?: ReadonlyArray<CommitPart>;
+  readonly modules?: ReadonlyArray<CommitModule>;
 }): EventContent => ({
-  type: "module_commit",
+  type: "project_commit",
   commit: {
-    moduleName: options.moduleName ?? "math",
+    projectName: options.projectName ?? "math",
     branch: options.branch ?? "main",
-    moduleDescription: [],
+    projectDescription: [],
     message: "m",
     parentCommitHash: options.parent ?? null,
     mergedCommitHash: options.merged ?? null,
-    parts: options.parts ?? [part("a")],
+    modules: options.modules ?? [module("math")],
   },
 });
 
-/** アカウントを作っていて, モジュールにまだコミットが無い状態 */
-const fresh: EventCheckState = { accountCreated: true, ...NO_MODULE_STATE };
+/** アカウントを作っていて, プロジェクトにまだコミットが無い状態 */
+const fresh: EventCheckState = { accountCreated: true, ...NO_PROJECT_STATE };
 
 const tags = (
   content: EventContent,
@@ -68,7 +77,7 @@ describe("core.check-event", () => {
     ).toEqual(["empty_account_name"]);
   });
 
-  it("モジュールの最初のコミットは親の無い main で, アカウントを作ってから", () => {
+  it("プロジェクトの最初のコミットは親の無い main で, アカウントを作ってから", () => {
     expect(tags(commit({}), fresh)).toEqual([]);
     expect(tags(commit({}), { ...fresh, accountCreated: false })).toEqual([
       "account_not_created",
@@ -84,8 +93,8 @@ describe("core.check-event", () => {
       ...fresh,
       branchLatestCommitHash: "h1",
       isBranchCreator: true,
-      moduleHasCommits: true,
-      parentInModule: true,
+      projectHasCommits: true,
+      parentInProject: true,
     };
     expect(tags(commit({ parent: "h1" }), onBranch)).toEqual([]);
     expect(
@@ -99,11 +108,11 @@ describe("core.check-event", () => {
     ]);
   });
 
-  it("新しいブランチは誰でも, モジュールのコミットを親にして作れる", () => {
+  it("新しいブランチは誰でも, プロジェクトのコミットを親にして作れる", () => {
     const newBranch: EventCheckState = {
       ...fresh,
-      moduleHasCommits: true,
-      parentInModule: true,
+      projectHasCommits: true,
+      parentInProject: true,
     };
     expect(tags(commit({ branch: "alice", parent: "h1" }), newBranch)).toEqual(
       [],
@@ -111,41 +120,44 @@ describe("core.check-event", () => {
     expect(
       tags(commit({ branch: "alice", parent: null }), {
         ...newBranch,
-        parentInModule: false,
+        parentInProject: false,
       }),
     ).toEqual(["parent_commit_mismatch"]);
   });
 
-  it("他のブランチの取り込みは, 同じモジュールのコミットを取り込む", () => {
+  it("他のブランチの取り込みは, 同じプロジェクトのコミットを取り込む", () => {
     const onMain: EventCheckState = {
       ...fresh,
       branchLatestCommitHash: "h1",
       isBranchCreator: true,
-      moduleHasCommits: true,
-      parentInModule: true,
+      projectHasCommits: true,
+      parentInProject: true,
     };
     expect(
       tags(commit({ parent: "h1", merged: "b1" }), {
         ...onMain,
-        mergedInModule: true,
+        mergedInProject: true,
       }),
     ).toEqual([]);
     expect(tags(commit({ parent: "h1", merged: "x" }), onMain)).toEqual([
-      "merged_commit_not_in_module",
+      "merged_commit_not_in_project",
     ]);
   });
 
-  it("モジュール名・ブランチ名・パーツ名は空にできず, パーツ名は重複できない", () => {
+  it("プロジェクト名・ブランチ名・パーツ名は空にできず, パーツ名はモジュールの中で重複できない", () => {
     expect(
       tags(
         commit({
-          moduleName: "",
-          parts: [part("a"), part(""), part("b"), part("a")],
+          projectName: "",
+          modules: [
+            module("math", [part("a"), part(""), part("b"), part("a")]),
+            module("other", [part("a")]),
+          ],
         }),
         fresh,
       ),
     ).toEqual([
-      "empty_module_name",
+      "empty_project_name",
       "empty_part_name",
       "duplicate_part_name:a",
     ]);
@@ -155,9 +167,38 @@ describe("core.check-event", () => {
     ]);
   });
 
+  it("モジュール名は空にできず, 重複できず, 他のプロジェクトのものは使えない", () => {
+    expect(
+      tags(
+        commit({
+          modules: [
+            module("math"),
+            module(""),
+            module("math"),
+            module("core"),
+            module("std"),
+          ],
+        }),
+        { ...fresh, modulesInOtherProjects: ["core"] },
+      ),
+    ).toEqual([
+      "empty_module_name",
+      "duplicate_module_name:math",
+      "module_in_other_project:core",
+    ]);
+    // モジュールの無いプロジェクトも作れる
+    expect(tags(commit({ modules: [] }), fresh)).toEqual([]);
+  });
+
   it("理由をメッセージにする", () => {
     expect(
       eventRejectionMessage({ tag: "duplicate_part_name", payload: "a" }),
     ).toBe("the part name 'a' is duplicated");
+    expect(
+      eventRejectionMessage({
+        tag: "module_in_other_project",
+        payload: "core",
+      }),
+    ).toBe("the module 'core' belongs to another project");
   });
 });

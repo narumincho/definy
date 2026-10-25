@@ -5,10 +5,15 @@ import type {
   ModulePartSnapshot,
   ModuleSnapshot,
   PartSnapshot,
+  ProjectSnapshot,
 } from "../types.ts";
-import { extractCreateAccount, extractModuleCommit } from "../cbor.ts";
+import {
+  extractCreateAccount,
+  extractProjectCommit,
+  type DecodedPart,
+  type DecodedProjectCommit,
+} from "../cbor.ts";
 import { verifyEventRecord } from "../signed_event.ts";
-import { pickLatestCommitPerModule } from "../latest_commits.ts";
 import {
   displayedBranch,
   sortBranches,
@@ -21,53 +26,49 @@ import {
   withCachedContents,
 } from "../content_store.ts";
 
-/** 署名の正しいモジュールコミットのイベントと, その中身 */
+/** 署名の正しいプロジェクトのコミットのイベントと, その中身 */
 export type DecodedCommitEvent = {
   readonly event: EventRecord;
-  readonly commit: NonNullable<ReturnType<typeof extractModuleCommit>>;
+  readonly commit: DecodedProjectCommit;
 };
 
+/** コミットの全モジュールのパーツ */
+export function commitParts(
+  commit: DecodedProjectCommit,
+): ReadonlyArray<DecodedPart> {
+  return commit.modules.flatMap((module) => module.parts);
+}
+
 /**
- * 署名の正しいイベントから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
+ * プロジェクトのコミット (各プロジェクトの表示しているブランチの最新のもの) のパーツを集める (キーはパーツ ID).
  * 型チェッカーの型環境に使う
  */
 export function latestParts(
   decodedCommits: ReadonlyArray<DecodedCommitEvent>,
 ): ReadonlyMap<string, LatestPart> {
-  const candidates: Array<{
-    readonly moduleId: string;
-    readonly timeMs: number;
-    readonly eventHash: string;
-    readonly commit: NonNullable<ReturnType<typeof extractModuleCommit>>;
-  }> = [];
-  for (const { event: ev, commit } of decodedCommits) {
-    if (commit.moduleIdHash == null) {
-      continue;
-    }
-    candidates.push({
-      moduleId: commit.moduleIdHash,
-      timeMs: ev.timeMs,
-      eventHash: ev.eventHash,
-      commit,
-    });
-  }
-  const commits = pickLatestCommitPerModule(candidates);
   const parts = new Map<string, LatestPart>();
-  for (const [moduleId, { commit, eventHash }] of commits) {
-    for (const part of commit.parts) {
-      if (part.partIdHash == null) {
+  for (const { event, commit } of decodedCommits) {
+    for (const module of commit.modules) {
+      if (module.moduleIdHash == null) {
         continue;
       }
-      parts.set(part.partIdHash, {
-        partId: part.partIdHash,
-        moduleId,
-        name: part.name,
-        partType: part.partType ?? null,
-        expression: part.expression ?? null,
-        // CAS に預けた式は content hash で表す. 式を直接入れたコミットは (全パーツの式のハッシュを毎回計算すると重いので)
-        // どのイベントの定義かで表す. 同じ式でもコミットし直すと別のキーになり検査し直すが, 結果は変わらない
-        expressionKey: part.contentHash ?? `${eventHash}:${part.name}`,
-      });
+      for (const part of module.parts) {
+        if (part.partIdHash == null) {
+          continue;
+        }
+        parts.set(part.partIdHash, {
+          partId: part.partIdHash,
+          moduleId: module.moduleIdHash,
+          name: part.name,
+          partType: part.partType ?? null,
+          expression: part.expression ?? null,
+          // CAS に預けた式は content hash で表す. 式を直接入れたコミットは (全パーツの式のハッシュを毎回計算すると重いので)
+          // どのイベントの定義かで表す. 同じ式でもコミットし直すと別のキーになり検査し直すが, 結果は変わらない
+          expressionKey:
+            part.contentHash ??
+            `${event.eventHash}:${module.name}.${part.name}`,
+        });
+      }
     }
   }
   return parts;
@@ -75,12 +76,14 @@ export function latestParts(
 
 export type EventsState = {
   /**
-   * 読んだイベント (新しい順). 全イベントではなく, 最新の 100 件, 各モジュールの各ブランチの最新のコミット,
+   * 読んだイベント (新しい順). 全イベントではなく, 最新の 100 件, 各プロジェクトの各ブランチの最新のコミット,
    * 全アカウントの作成, `loadEvent` で読んだもの
    */
   readonly events: ReadonlyArray<EventRecord>;
   readonly refreshEvents: () => Promise<void>;
   readonly connectionStatus: ConnectionStatus;
+  /** 各プロジェクトの表示しているブランチの最新のコミット (docs/project.md) */
+  readonly projects: ReadonlyArray<ProjectSnapshot>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
@@ -88,21 +91,22 @@ export type EventsState = {
   readonly accountNames: ReadonlyMap<string, string>;
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
-  /** モジュール名 → そのモジュールのブランチ (main が先頭) */
-  readonly branchesByModule: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
-  /** モジュール名 → 表示しているブランチ (選んでいなければ main) */
+  /** プロジェクト名 → そのプロジェクトのブランチ (main が先頭) */
+  readonly branchesByProject: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
+  /** プロジェクト名 → 表示しているブランチ (選んでいなければ main) */
   readonly displayedBranches: ReadonlyMap<string, string>;
-  /** モジュール `moduleName` で表示するブランチを選ぶ (localStorage に残す) */
-  readonly selectBranch: (moduleName: string, branch: string) => void;
+  /** プロジェクト `projectName` で表示するブランチを選ぶ (localStorage に残す) */
+  readonly selectBranch: (projectName: string, branch: string) => void;
   /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
   readonly loadEvent: (eventHash: string) => Promise<boolean>;
-  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  /** プロジェクトのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
   readonly fetchCommit: (
     eventHash: string,
   ) => Promise<DecodedCommitEvent | null>;
 };
 
-const STORAGE_KEY_SELECTED_BRANCHES = "definy.selected_branches.v1";
+/** プロジェクト名 → 表示するブランチ */
+const STORAGE_KEY_SELECTED_BRANCHES = "definy.selected_branches.v2";
 
 function loadSelectedBranches(): ReadonlyMap<string, string> {
   try {
@@ -131,7 +135,7 @@ function saveSelectedBranches(selected: ReadonlyMap<string, string>): void {
   }
 }
 
-/** サーバーの `GetEvents` / `GetEvent` / `GetModuleBranches` が返すイベント 1 件 (検証前) */
+/** サーバーの `GetEvents` / `GetEvent` / `GetProjectBranches` が返すイベント 1 件 (検証前) */
 type ServerEvent = Omit<EventRecord, "verification">;
 
 /** タイムラインに出す最新のイベントの数 */
@@ -139,9 +143,9 @@ const RECENT_EVENTS_LIMIT = 100;
 /** アカウントの作成イベントを読む 1 ページの数 (全件読む) */
 const ACCOUNT_EVENTS_PAGE_SIZE = 500;
 
-/** モジュールのブランチ (`GetModuleBranches`). 最新のコミットのイベントは `events` に入れる */
+/** プロジェクトのブランチ (`GetProjectBranches`). 最新のコミットのイベントは `events` に入れる */
 type BranchHead = {
-  readonly moduleName: string;
+  readonly projectName: string;
   readonly branch: string;
   readonly creatorAccountId: string;
   readonly commitCount: number;
@@ -214,7 +218,7 @@ const decodedCommitCache = new WeakMap<
 function decodeCommitEvent(event: EventRecord): DecodedCommitEvent | null {
   let decoded = decodedCommitCache.get(event);
   if (decoded === undefined) {
-    const commit = extractModuleCommit(event.signedEventBytes);
+    const commit = extractProjectCommit(event.signedEventBytes);
     decoded = commit === null ? null : { event, commit };
     decodedCommitCache.set(event, decoded);
   }
@@ -235,16 +239,30 @@ function resolveCommitContents(
   if (cached?.contentsVersion === contentsVersion) {
     return cached.resolved;
   }
-  const parts = withCachedContents(decoded.commit.parts);
+  const modules = withModuleContents(decoded.commit);
   const resolved =
-    parts === decoded.commit.parts
+    modules === decoded.commit.modules
       ? decoded
-      : { event: decoded.event, commit: { ...decoded.commit, parts } };
+      : { event: decoded.event, commit: { ...decoded.commit, modules } };
   resolvedCommitCache.set(decoded, { contentsVersion, resolved });
   return resolved;
 }
 
-/** 署名の正しいモジュールのコミットのうち, CAS から式を読む必要があるものを読む. 読んだら `true` */
+/** コミットのモジュールのパーツの式を CAS から読んだもので埋める. 変わらなければ同じ配列 */
+function withModuleContents(
+  commit: DecodedProjectCommit,
+): DecodedProjectCommit["modules"] {
+  let changed = false;
+  const modules = commit.modules.map((module) => {
+    const parts = withCachedContents(module.parts);
+    if (parts === module.parts) return module;
+    changed = true;
+    return { ...module, parts };
+  });
+  return changed ? modules : commit.modules;
+}
+
+/** 署名の正しいプロジェクトのコミットのうち, CAS から式を読む必要があるものを読む. 読んだら `true` */
 async function loadCommitContents(
   records: ReadonlyArray<EventRecord>,
 ): Promise<boolean> {
@@ -252,13 +270,13 @@ async function loadCommitContents(
   for (const record of records) {
     if (
       record.verification.status !== "valid" ||
-      record.eventType !== "module_commit"
+      record.eventType !== "project_commit"
     ) {
       continue;
     }
     const decoded = decodeCommitEvent(record);
     if (decoded === null) continue;
-    for (const hash of missingContentHashes(decoded.commit.parts)) {
+    for (const hash of missingContentHashes(commitParts(decoded.commit))) {
       hashes.add(hash);
     }
   }
@@ -295,7 +313,7 @@ export function useEvents(): EventsState {
     });
   }, []);
 
-  // モジュールの状態は全イベントを読まずに, 各ブランチの最新のコミットから作る (docs/branch.md)
+  // プロジェクトとモジュールの状態は全イベントを読まずに, 各ブランチの最新のコミットから作る (docs/branch.md)
   const refreshEvents = useCallback(async (): Promise<void> => {
     try {
       const [recent, branches, accounts] = await Promise.all([
@@ -309,7 +327,7 @@ export function useEvents(): EventsState {
               readonly latestEvent: ServerEvent;
             }
           >;
-        }>("GetModuleBranches", {}),
+        }>("GetProjectBranches", {}),
         fetchAllAccountEvents(),
       ]);
       const verified = await Promise.all(
@@ -324,7 +342,7 @@ export function useEvents(): EventsState {
       addEvents(verified);
       setBranchHeads(
         (branches.branches ?? []).map((b) => ({
-          moduleName: b.moduleName,
+          projectName: b.projectName,
           branch: b.branch,
           creatorAccountId: b.creatorAccountId,
           commitCount: Number(b.commitCount),
@@ -361,7 +379,7 @@ export function useEvents(): EventsState {
   const eventMapRef = useRef(eventMap);
   eventMapRef.current = eventMap;
 
-  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  /** プロジェクトのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
   const fetchCommit = useCallback(
     async (eventHash: string): Promise<DecodedCommitEvent | null> => {
       let record = eventMapRef.current.get(eventHash);
@@ -380,7 +398,7 @@ export function useEvents(): EventsState {
       }
       if (
         record.verification.status !== "valid" ||
-        record.eventType !== "module_commit"
+        record.eventType !== "project_commit"
       ) {
         return null;
       }
@@ -396,7 +414,7 @@ export function useEvents(): EventsState {
         event: decoded.event,
         commit: {
           ...decoded.commit,
-          parts: withCachedContents(decoded.commit.parts),
+          modules: withModuleContents(decoded.commit),
         },
       };
     },
@@ -433,11 +451,11 @@ export function useEvents(): EventsState {
     return map;
   }, [validEvents]);
 
-  // モジュールコミットの中身は大きい (seed の core だけで数 MB) ので, デコードは 1 度だけにして使い回す
+  // プロジェクトのコミットの中身は大きい (seed の core だけで数 MB) ので, デコードは 1 度だけにして使い回す
   const decodedCommits = useMemo<ReadonlyArray<DecodedCommitEvent>>(
     () =>
       validEvents.flatMap((event) => {
-        if (event.eventType !== "module_commit") return [];
+        if (event.eventType !== "project_commit") return [];
         const decoded = decodeCommitEvent(event);
         return decoded === null
           ? []
@@ -452,23 +470,23 @@ export function useEvents(): EventsState {
   useEffect(() => {
     setSelectedBranches(loadSelectedBranches());
   }, []);
-  const selectBranch = useCallback((moduleName: string, branch: string) => {
+  const selectBranch = useCallback((projectName: string, branch: string) => {
     setSelectedBranches((prev) => {
       const next = new Map(prev);
-      next.set(moduleName, branch);
+      next.set(projectName, branch);
       saveSelectedBranches(next);
       return next;
     });
   }, []);
 
-  // モジュールごとのブランチと, 表示するブランチ (docs/branch.md)
-  const { branchesByModule, displayedBranches, displayedCommits } =
+  // プロジェクトごとのブランチと, 表示するブランチ (docs/branch.md)
+  const { branchesByProject, displayedBranches, displayedCommits } =
     useMemo(() => {
       const branchesMap = new Map<string, BranchSummary[]>();
       for (const head of branchHeads) {
         const latest = eventMap.get(head.latestEventHash);
         if (latest?.verification.status !== "valid") continue;
-        const list = branchesMap.get(head.moduleName) ?? [];
+        const list = branchesMap.get(head.projectName) ?? [];
         list.push({
           name: head.branch,
           creatorAccountId: head.creatorAccountId,
@@ -476,24 +494,24 @@ export function useEvents(): EventsState {
           latestTimeMs: latest.timeMs,
           commitCount: head.commitCount,
         });
-        branchesMap.set(head.moduleName, list);
+        branchesMap.set(head.projectName, list);
       }
       const sortedMap = new Map<string, ReadonlyArray<BranchSummary>>();
       const displayedMap = new Map<string, string>();
       const displayedHashes = new Set<string>();
-      for (const [moduleName, branches] of branchesMap) {
+      for (const [projectName, branches] of branchesMap) {
         const sorted = sortBranches(branches);
-        sortedMap.set(moduleName, sorted);
+        sortedMap.set(projectName, sorted);
         const displayed = displayedBranch(
           sorted,
-          selectedBranches.get(moduleName),
+          selectedBranches.get(projectName),
         );
-        displayedMap.set(moduleName, displayed);
+        displayedMap.set(projectName, displayed);
         const head = sorted.find((b) => b.name === displayed);
         if (head !== undefined) displayedHashes.add(head.latestEventHash);
       }
       return {
-        branchesByModule: sortedMap,
+        branchesByProject: sortedMap,
         displayedBranches: displayedMap,
         displayedCommits: decodedCommits.filter(({ event }) =>
           displayedHashes.has(event.eventHash),
@@ -501,8 +519,9 @@ export function useEvents(): EventsState {
       };
     }, [branchHeads, eventMap, decodedCommits, selectedBranches]);
 
-  // 表示するブランチのコミットから, モジュールとパーツを導出する
-  const { modules, parts, partNames, partsByIdHash } = useMemo(() => {
+  // 表示するブランチのコミットから, プロジェクトとモジュールとパーツを導出する
+  const { projects, modules, parts, partNames, partsByIdHash } = useMemo(() => {
+    const projectMap = new Map<string, ProjectSnapshot>();
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
     const partIdHashMap = new Map<string, PartSnapshot>();
@@ -514,70 +533,86 @@ export function useEvents(): EventsState {
     );
 
     for (const { event: ev, commit } of sorted) {
-      const moduleParts: ReadonlyArray<ModulePartSnapshot> = commit.parts.map(
-        (p) => {
-          const partId = `${commit.moduleName}.${p.name}`;
-          const partSnapshot: PartSnapshot = {
-            partId,
-            moduleId: commit.moduleName,
-            moduleName: commit.moduleName,
-            name: p.name,
-            description: p.description,
-            partType: p.partType,
-            contentHash: p.contentHash ?? null,
-            partIdHash: p.partIdHash ?? null,
-            expression: p.expression ?? null,
-            updatedAtMs: ev.timeMs,
-          };
-          partMap.set(partId, partSnapshot);
-          if (p.partIdHash) {
-            partIdHashMap.set(p.partIdHash, partSnapshot);
-          }
-
-          // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
-          nameMap.set(partId, partId);
-          if (p.partIdHash) {
-            nameMap.set(p.partIdHash, partId);
-          }
-          if (p.contentHash) {
-            nameMap.set(p.contentHash, partId);
-          }
-
-          return {
-            partId,
-            name: p.name,
-            description: p.description,
-            partType: p.partType,
-            contentHash: p.contentHash ?? null,
-            partIdHash: p.partIdHash ?? null,
-            expression: p.expression ?? null,
-          };
-        },
-      );
-
-      moduleMap.set(commit.moduleName, {
-        moduleId: commit.moduleName,
-        name: commit.moduleName,
+      const branches = branchesByProject.get(commit.projectName) ?? [];
+      projectMap.set(commit.projectName, {
+        name: commit.projectName,
         branch: commit.branch,
-        branches: branchesByModule.get(commit.moduleName) ?? [],
-        description: commit.moduleDescription,
+        branches,
+        description: commit.projectDescription,
         latestEventHash: ev.eventHash,
         parentCommitHash: commit.parentCommitHash,
         message: commit.message,
-        parts: moduleParts,
+        moduleNames: commit.modules.map((module) => module.name),
         updatedAtMs: ev.timeMs,
       });
+      for (const module of commit.modules) {
+        const moduleParts: ReadonlyArray<ModulePartSnapshot> = module.parts.map(
+          (p) => {
+            const partId = `${module.name}.${p.name}`;
+            const partSnapshot: PartSnapshot = {
+              partId,
+              moduleId: module.name,
+              moduleName: module.name,
+              name: p.name,
+              description: p.description,
+              partType: p.partType,
+              contentHash: p.contentHash ?? null,
+              partIdHash: p.partIdHash ?? null,
+              expression: p.expression ?? null,
+              updatedAtMs: ev.timeMs,
+            };
+            partMap.set(partId, partSnapshot);
+            if (p.partIdHash) {
+              partIdHashMap.set(p.partIdHash, partSnapshot);
+            }
+
+            // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
+            nameMap.set(partId, partId);
+            if (p.partIdHash) {
+              nameMap.set(p.partIdHash, partId);
+            }
+            if (p.contentHash) {
+              nameMap.set(p.contentHash, partId);
+            }
+
+            return {
+              partId,
+              name: p.name,
+              description: p.description,
+              partType: p.partType,
+              contentHash: p.contentHash ?? null,
+              partIdHash: p.partIdHash ?? null,
+              expression: p.expression ?? null,
+            };
+          },
+        );
+
+        moduleMap.set(module.name, {
+          moduleId: module.name,
+          name: module.name,
+          projectName: commit.projectName,
+          branch: commit.branch,
+          branches,
+          description: module.description,
+          latestEventHash: ev.eventHash,
+          parentCommitHash: commit.parentCommitHash,
+          message: commit.message,
+          parts: moduleParts,
+          updatedAtMs: ev.timeMs,
+        });
+      }
     }
 
     return {
+      projects: Array.from(projectMap.values()),
       modules: Array.from(moduleMap.values()),
       parts: Array.from(partMap.values()),
       partNames: nameMap,
       partsByIdHash: partIdHashMap,
     };
-  }, [displayedCommits, branchesByModule]);
+  }, [displayedCommits, branchesByProject]);
 
-  // 型チェッカーの型環境に使う, 全モジュールの表示しているブランチの最新のパーツ
+  // 型チェッカーの型環境に使う, 全プロジェクトの表示しているブランチの最新のパーツ
   const committedParts = useMemo(
     () => latestParts(displayedCommits),
     [displayedCommits],
@@ -587,6 +622,7 @@ export function useEvents(): EventsState {
     events,
     refreshEvents,
     connectionStatus,
+    projects,
     modules,
     parts,
     partNames,
@@ -594,7 +630,7 @@ export function useEvents(): EventsState {
     accountNames,
     committedParts,
     decodedCommits,
-    branchesByModule,
+    branchesByProject,
     displayedBranches,
     selectBranch,
     loadEvent,

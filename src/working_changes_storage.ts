@@ -7,6 +7,9 @@ export function serializeWorkingChanges(changes: WorkingChanges): string {
   return JSON.stringify({
     parts: plainParts,
     merges: Object.fromEntries(changes.merges ?? new Map<string, string>()),
+    newModuleProjects: Object.fromEntries(
+      changes.newModuleProjects ?? new Map<string, string>(),
+    ),
   });
 }
 
@@ -35,19 +38,25 @@ export function deserializeWorkingChanges(text: string): WorkingChanges {
         partsMap.set(k, v as PartChange);
       }
     }
-    const mergesRecord = (parsed as { readonly merges?: unknown }).merges;
-    const merges = new Map<string, string>();
-    if (
-      typeof mergesRecord === "object" &&
-      mergesRecord !== null &&
-      !Array.isArray(mergesRecord)
-    ) {
-      for (const [k, v] of Object.entries(mergesRecord)) {
-        if (typeof v === "string") merges.set(k, v);
-      }
-    }
-    return { parts: partsMap, merges };
+    return {
+      parts: partsMap,
+      merges: stringRecord((parsed as { readonly merges?: unknown }).merges),
+      newModuleProjects: stringRecord(
+        (parsed as { readonly newModuleProjects?: unknown }).newModuleProjects,
+      ),
+    };
   } catch {
     return { parts: new Map<string, PartChange>() };
   }
+}
+
+/** JSON のオブジェクトの, 値が文字列のものだけの Map */
+function stringRecord(value: unknown): ReadonlyMap<string, string> {
+  const map = new Map<string, string>();
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    for (const [k, v] of Object.entries(value)) {
+      if (typeof v === "string") map.set(k, v);
+    }
+  }
+  return map;
 }

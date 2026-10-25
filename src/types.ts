@@ -21,10 +21,15 @@ export type PartChange = {
 export type WorkingChanges = {
   readonly parts: ReadonlyMap<string, PartChange>;
   /**
-   * モジュール名 → 取り込んでいる他のブランチのコミット. 次のそのモジュールのコミットが `merged_commit_hash` に持つ
+   * プロジェクト名 → 取り込んでいる他のブランチのコミット. 次のそのプロジェクトのコミットが `merged_commit_hash` に持つ
    * (docs/branch.md「取り込み」)
    */
   readonly merges?: ReadonlyMap<string, string>;
+  /**
+   * まだコミットしていない新しいモジュールの名前 → 入れるプロジェクトの名前 (docs/project.md).
+   * まだ無いプロジェクトなら, コミットするとプロジェクトができる
+   */
+  readonly newModuleProjects?: ReadonlyMap<string, string>;
 };
 
 export type ModulePartSnapshot = {
@@ -40,15 +45,33 @@ export type ModulePartSnapshot = {
 export type ModuleSnapshot = {
   readonly moduleId: string;
   readonly name: string;
-  /** 表示しているブランチ (docs/branch.md) */
+  /** モジュールが入っているプロジェクト (docs/project.md) */
+  readonly projectName: string;
+  /** プロジェクトの表示しているブランチ (docs/branch.md) */
   readonly branch: string;
-  /** モジュールの全ブランチ (main が先頭) */
+  /** プロジェクトの全ブランチ (main が先頭) */
   readonly branches: ReadonlyArray<BranchSummary>;
   readonly description: LocalizedText;
   readonly latestEventHash: string;
   readonly parentCommitHash: string | null;
   readonly message: string;
   readonly parts: ReadonlyArray<ModulePartSnapshot>;
+  readonly updatedAtMs: number;
+};
+
+/** プロジェクトの, 表示しているブランチの最新のコミット (docs/project.md) */
+export type ProjectSnapshot = {
+  readonly name: string;
+  /** 表示しているブランチ (docs/branch.md) */
+  readonly branch: string;
+  /** プロジェクトの全ブランチ (main が先頭) */
+  readonly branches: ReadonlyArray<BranchSummary>;
+  readonly description: LocalizedText;
+  readonly latestEventHash: string;
+  readonly parentCommitHash: string | null;
+  readonly message: string;
+  /** プロジェクトのモジュールの名前 (コミットの順) */
+  readonly moduleNames: ReadonlyArray<string>;
   readonly updatedAtMs: number;
 };
 

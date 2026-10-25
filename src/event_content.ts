@@ -17,7 +17,7 @@ import {
 } from "./definy_value.ts";
 import { conformsToTypeDeclaration } from "./seed_schema.ts";
 
-/** モジュールのコミットのパーツ (`core.module-commit-part`) */
+/** プロジェクトのコミットのモジュールのパーツ (`core.module-commit-part`) */
 export type CommitPart = {
   readonly name: string;
   readonly description: LocalizedText;
@@ -29,26 +29,34 @@ export type CommitPart = {
   readonly contentHash: string | null;
 };
 
-/** モジュールを作ったときのブランチ. モジュールの作成者だけがコミットできる (docs/branch.md) */
+/** プロジェクトを作ったときのブランチ. プロジェクトの作成者だけがコミットできる (docs/branch.md) */
 export const MAIN_BRANCH = "main";
 
-/** モジュールのコミット (`core.module-commit`) */
-export type ModuleCommitContent = {
-  readonly moduleName: string;
-  /** コミットするブランチの名前. モジュールを作った最初のコミットは `main` (docs/branch.md) */
+/** プロジェクトのコミットのモジュール (`core.project-commit-module`) */
+export type CommitModule = {
+  readonly name: string;
+  readonly description: LocalizedText;
+  readonly parts: ReadonlyArray<CommitPart>;
+};
+
+/** プロジェクトのコミット (`core.project-commit`. docs/project.md) */
+export type ProjectCommitContent = {
+  readonly projectName: string;
+  /** コミットするブランチの名前. プロジェクトを作った最初のコミットは `main` (docs/branch.md) */
   readonly branch: string;
-  readonly moduleDescription: LocalizedText;
+  readonly projectDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
   /** このコミットで取り込んだ他のブランチのコミット. 取り込みでなければ `null` (docs/branch.md「取り込み」) */
   readonly mergedCommitHash: string | null;
-  readonly parts: ReadonlyArray<CommitPart>;
+  /** その時点のプロジェクトのモジュールすべて */
+  readonly modules: ReadonlyArray<CommitModule>;
 };
 
 /** イベントの中身 (`core.event-content`) */
 export type EventContent =
   | { readonly type: "create_account"; readonly accountName: string }
-  | { readonly type: "module_commit"; readonly commit: ModuleCommitContent };
+  | { readonly type: "project_commit"; readonly commit: ProjectCommitContent };
 
 export type EventType = EventContent["type"];
 
@@ -89,21 +97,25 @@ export function encodeEventContent(content: EventContent): unknown {
   switch (content.type) {
     case "create_account":
       return variant("create_account", { account_name: content.accountName });
-    case "module_commit": {
+    case "project_commit": {
       const { commit } = content;
-      return variant("module_commit", {
-        module_name: commit.moduleName,
+      return variant("project_commit", {
+        project_name: commit.projectName,
         branch: commit.branch,
-        module_description: encodeLocalizedText(commit.moduleDescription),
+        project_description: encodeLocalizedText(commit.projectDescription),
         message: commit.message,
         parent_commit_hash: optionOf(commit.parentCommitHash),
         merged_commit_hash: optionOf(commit.mergedCommitHash),
-        parts: commit.parts.map((part) => ({
-          name: part.name,
-          description: encodeLocalizedText(part.description),
-          part_type: optionOf(part.partType),
-          expression: optionOf(part.expression),
-          content_hash: optionOf(part.contentHash),
+        modules: commit.modules.map((module) => ({
+          name: module.name,
+          description: encodeLocalizedText(module.description),
+          parts: module.parts.map((part) => ({
+            name: part.name,
+            description: encodeLocalizedText(part.description),
+            part_type: optionOf(part.partType),
+            expression: optionOf(part.expression),
+            content_hash: optionOf(part.contentHash),
+          })),
         })),
       });
     }
@@ -121,6 +133,19 @@ function optionOrNull(value: unknown): unknown {
   return optionValue(value) ?? null;
 }
 
+function decodeParts(value: unknown): ReadonlyArray<CommitPart> {
+  return (Array.isArray(value) ? value : []).map((part) => {
+    const contentHash = optionOrNull(field(part, "content_hash"));
+    return {
+      name: String(field(part, "name")),
+      description: decodeLocalizedText(field(part, "description")),
+      partType: optionOrNull(field(part, "part_type")),
+      expression: optionOrNull(field(part, "expression")),
+      contentHash: typeof contentHash === "string" ? contentHash : null,
+    };
+  });
+}
+
 /** definy の値 (`core.event-content`) をイベントの中身にする. 形が違えば `undefined` */
 export function decodeEventContent(value: unknown): EventContent | undefined {
   if (!isEventContent(value)) {
@@ -134,8 +159,8 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
         type: "create_account",
         accountName: String(field(payload, "account_name")),
       };
-    case "module_commit": {
-      const parts = field(payload, "parts");
+    case "project_commit": {
+      const modules = field(payload, "modules");
       const parentCommitHash = optionOrNull(
         field(payload, "parent_commit_hash"),
       );
@@ -143,28 +168,23 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
         field(payload, "merged_commit_hash"),
       );
       return {
-        type: "module_commit",
+        type: "project_commit",
         commit: {
-          moduleName: String(field(payload, "module_name")),
+          projectName: String(field(payload, "project_name")),
           branch: String(field(payload, "branch")),
-          moduleDescription: decodeLocalizedText(
-            field(payload, "module_description"),
+          projectDescription: decodeLocalizedText(
+            field(payload, "project_description"),
           ),
           message: String(field(payload, "message")),
           parentCommitHash:
             typeof parentCommitHash === "string" ? parentCommitHash : null,
           mergedCommitHash:
             typeof mergedCommitHash === "string" ? mergedCommitHash : null,
-          parts: (Array.isArray(parts) ? parts : []).map((part) => {
-            const contentHash = optionOrNull(field(part, "content_hash"));
-            return {
-              name: String(field(part, "name")),
-              description: decodeLocalizedText(field(part, "description")),
-              partType: optionOrNull(field(part, "part_type")),
-              expression: optionOrNull(field(part, "expression")),
-              contentHash: typeof contentHash === "string" ? contentHash : null,
-            };
-          }),
+          modules: (Array.isArray(modules) ? modules : []).map((module) => ({
+            name: String(field(module, "name")),
+            description: decodeLocalizedText(field(module, "description")),
+            parts: decodeParts(field(module, "parts")),
+          })),
         },
       };
     }
