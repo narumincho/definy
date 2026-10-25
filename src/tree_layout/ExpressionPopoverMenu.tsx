@@ -1,4 +1,11 @@
-import { useEffect, useRef, type JSX, type KeyboardEvent } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  type JSX,
+  type KeyboardEvent,
+} from "react";
 import { Link } from "../components/Link.tsx";
 import type { LanguageCode } from "../types.ts";
 import { label } from "../language.ts";
@@ -87,6 +94,23 @@ export function ExpressionPopoverMenu({
 }: ExpressionPopoverMenuProps): JSX.Element {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // 候補 (memo) に渡す関数は変えず, 呼ぶときに最新のものを使う
+  const latest = useRef({ setChosenIndex, onApplyOption, onClose });
+  latest.current = { setChosenIndex, onApplyOption, onClose };
+  const optionCallbacks = useMemo(
+    () => ({
+      highlight: (index: number) => {
+        latest.current.setChosenIndex(index);
+      },
+      apply: (value: string) => {
+        latest.current.onApplyOption(value);
+      },
+      close: () => {
+        latest.current.onClose();
+      },
+    }),
+    [],
+  );
 
   const anchoredMenu = supportsAnchoredPopover();
 
@@ -300,13 +324,9 @@ export function ExpressionPopoverMenu({
                   "パーツのページを開く",
                   "Malfermi la paĝon de la parto",
                 )}
-                onHighlight={() => {
-                  setChosenIndex(idx);
-                }}
-                onSelect={() => {
-                  onApplyOption(opt.value);
-                }}
-                onOpenLink={onClose}
+                onHighlight={optionCallbacks.highlight}
+                onSelect={optionCallbacks.apply}
+                onOpenLink={optionCallbacks.close}
               />
             );
           })
@@ -316,7 +336,46 @@ export function ExpressionPopoverMenu({
   );
 }
 
-function OptionItem({
+/** 候補が前と同じ見た目か. 式を変えるたびに候補のオブジェクトは作り直されるので中身で比べる */
+function sameOptionItemProps(
+  prev: OptionItemProps,
+  next: OptionItemProps,
+): boolean {
+  return (
+    prev.option.value === next.option.value &&
+    prev.option.name === next.option.name &&
+    prev.option.detail === next.option.detail &&
+    prev.option.category === next.option.category &&
+    prev.option.partId === next.option.partId &&
+    prev.index === next.index &&
+    prev.headingBefore === next.headingBefore &&
+    prev.isHighlighted === next.isHighlighted &&
+    prev.isCurrent === next.isCurrent &&
+    prev.isSecondary === next.isSecondary &&
+    prev.linkTitle === next.linkTitle &&
+    prev.onHighlight === next.onHighlight &&
+    prev.onSelect === next.onSelect &&
+    prev.onOpenLink === next.onOpenLink
+  );
+}
+
+type OptionItemProps = {
+  readonly option: SelectorOption;
+  readonly index: number;
+  readonly headingBefore: string | null;
+  readonly isHighlighted: boolean;
+  readonly isCurrent: boolean;
+  readonly isSecondary: boolean;
+  readonly linkTitle: string;
+  readonly onHighlight: (index: number) => void;
+  readonly onSelect: (value: string) => void;
+  readonly onOpenLink: () => void;
+};
+
+// 大きなパーツでは式を変えるたびにメニューも描き直すので, 変わらない候補は描かない (#762)
+const OptionItem = memo(OptionItemView, sameOptionItemProps);
+
+function OptionItemView({
   option,
   index,
   headingBefore,
@@ -327,18 +386,7 @@ function OptionItem({
   onHighlight,
   onSelect,
   onOpenLink,
-}: {
-  readonly option: SelectorOption;
-  readonly index: number;
-  readonly headingBefore: string | null;
-  readonly isHighlighted: boolean;
-  readonly isCurrent: boolean;
-  readonly isSecondary: boolean;
-  readonly linkTitle: string;
-  readonly onHighlight: () => void;
-  readonly onSelect: () => void;
-  readonly onOpenLink: () => void;
-}): JSX.Element {
+}: OptionItemProps): JSX.Element {
   return (
     <>
       {headingBefore !== null && (
@@ -352,7 +400,9 @@ function OptionItem({
         }
         data-current={isCurrent ? "true" : undefined}
         data-secondary={isSecondary ? "true" : "false"}
-        onMouseEnter={onHighlight}
+        onMouseEnter={() => {
+          onHighlight(index);
+        }}
       >
         <button
           type="button"
@@ -360,7 +410,9 @@ function OptionItem({
           onMouseDown={(e) => {
             e.preventDefault();
           }}
-          onClick={onSelect}
+          onClick={() => {
+            onSelect(option.value);
+          }}
         >
           <span className="dropdown-option-check">{isCurrent ? "✓" : ""}</span>
           <span className="dropdown-option-name">{option.name}</span>

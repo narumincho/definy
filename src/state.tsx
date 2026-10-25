@@ -143,6 +143,11 @@ export type DefinyContextValue = {
 };
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
+/**
+ * 表示言語だけのコンテキスト. `DefinyContext` は式を変えるたびに変わるので, 言語だけを使う多くの部品
+ * (`Link` など) はこちらを使い, 描き直さないようにする (#762)
+ */
+const LanguageContext = createContext<LanguageCode>("en");
 
 export function DefinyProvider({
   children,
@@ -277,7 +282,9 @@ export function DefinyProvider({
 
   return (
     <DefinyContext.Provider value={value}>
-      {children}
+      <LanguageContext.Provider value={ui.language}>
+        {children}
+      </LanguageContext.Provider>
       <AccountModal
         open={ui.accountModalOpen}
         onClose={() => {
@@ -286,6 +293,11 @@ export function DefinyProvider({
       />
     </DefinyContext.Provider>
   );
+}
+
+/** 表示言語 (`useDefiny().language` と同じ. 言語が変わったときだけ描き直す) */
+export function useLanguage(): LanguageCode {
+  return useContext(LanguageContext);
 }
 
 export function useDefiny(): DefinyContextValue {

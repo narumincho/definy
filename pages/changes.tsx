@@ -21,6 +21,7 @@ export default function ChangesPage(): JSX.Element {
     commitTargetFor,
     checkCommitTypes,
     parts,
+    connectionStatus,
   } = useDefiny();
 
   const [commitMessage, setCommitMessage] = useState("");
@@ -524,8 +525,12 @@ export default function ChangesPage(): JSX.Element {
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm"
+                    // 各ブランチの最新のコミットを読むまではコミット先 (親のコミット) が分からない
                     disabled={
-                      committing || !commitMessage.trim() || hasTypeErrors
+                      committing ||
+                      !commitMessage.trim() ||
+                      hasTypeErrors ||
+                      connectionStatus !== "connected"
                     }
                   >
                     {committing

@@ -7,7 +7,11 @@ import {
   useId,
   type JSX,
 } from "react";
-import { computeLayout, expressionToLayoutNode } from "./engine.ts";
+import {
+  computeLayout,
+  expressionToLayoutNode,
+  reuseUnchangedNodes,
+} from "./engine.ts";
 import {
   applySelection,
   clearExpressionAtPath,
@@ -18,7 +22,7 @@ import {
   variableParameters,
 } from "./mutation.ts";
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
-import { pathToString, type PathStep } from "./types.ts";
+import { pathToString, type LayoutNode, type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
 import { label, localizedText, withLanguage } from "../language.ts";
 import { useRouter } from "@void/react";
@@ -139,9 +143,16 @@ export function ExpressionTreeEditor({
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  // 変わっていない部分木は前のノードを使い, 描画を飛ばせるようにする (#762)
+  const previousLayoutRoot = useRef<LayoutNode | null>(null);
   const layoutRoot = useMemo(() => {
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
-    return computeLayout(rawTree, { maxWidth });
+    const root = reuseUnchangedNodes(
+      previousLayoutRoot.current,
+      computeLayout(rawTree, { maxWidth }),
+    );
+    previousLayoutRoot.current = root;
+    return root;
   }, [expression, partNames, maxWidth]);
 
   // 関数の引数の型. 関数型の変数を置換メニューで選んだときに, その引数名で呼び出しにする

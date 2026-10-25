@@ -1,6 +1,15 @@
-import { useState, useEffect, type JSX, type KeyboardEvent } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+  type KeyboardEvent,
+} from "react";
 import {
   isSamePath,
+  pathToString,
   type LayoutNode,
   type NodeKind,
   type PathStep,
@@ -125,14 +134,150 @@ export function nodeBadgeColors(kind: NodeKind): {
   }
 }
 
+/**
+ * 部分木に入っているノードの ID とパス (行きがけ順の番号で引く). 選択やホバーが変わったとき,
+ * それを含まない部分木の描画を飛ばすのに使う (ID もパスも親子で入れ子になるとは限らないので番号で比べる)
+ */
+type SubtreeIndex = {
+  /** ノード → 部分木の行きがけ順の番号の範囲 [start, end] */
+  readonly ranges: WeakMap<LayoutNode, readonly [number, number]>;
+  /** ID → その ID のノードの番号 */
+  readonly idOrders: ReadonlyMap<string, ReadonlyArray<number>>;
+  /** パス (`pathToString`) → そのパスのノードの番号 */
+  readonly pathOrders: ReadonlyMap<string, ReadonlyArray<number>>;
+};
+
+function buildSubtreeIndex(root: LayoutNode): SubtreeIndex {
+  const ranges = new WeakMap<LayoutNode, readonly [number, number]>();
+  const idOrders = new Map<string, number[]>();
+  const pathOrders = new Map<string, number[]>();
+  let order = 0;
+  const push = (map: Map<string, number[]>, key: string, value: number) => {
+    const list = map.get(key);
+    if (list === undefined) map.set(key, [value]);
+    else list.push(value);
+  };
+  const visit = (node: LayoutNode): void => {
+    const start = order++;
+    push(idOrders, node.id, start);
+    push(pathOrders, pathToString(node.path), start);
+    for (const child of node.children) visit(child);
+    ranges.set(node, [start, order - 1]);
+  };
+  visit(root);
+  return { ranges, idOrders, pathOrders };
+}
+
+function subtreeContains(
+  index: SubtreeIndex,
+  node: LayoutNode,
+  orders: ReadonlyMap<string, ReadonlyArray<number>>,
+  key: string | null | undefined,
+): boolean {
+  if (key == null) return false;
+  const range = index.ranges.get(node);
+  if (range === undefined) return true;
+  return (orders.get(key) ?? []).some((o) => o >= range[0] && o <= range[1]);
+}
+
+type TreeNodeProps = TreeLayoutRendererProps & {
+  readonly collapsedIds: ReadonlySet<string>;
+  readonly index: SubtreeIndex;
+};
+
+/** 部分木の描画が前と変わらないか. 関数の props は TreeLayoutRenderer が変わらないものにしている */
+function sameTreeNodeProps(prev: TreeNodeProps, next: TreeNodeProps): boolean {
+  if (
+    prev.node !== next.node ||
+    prev.collapsedIds !== next.collapsedIds ||
+    prev.inlineEdit !== next.inlineEdit ||
+    prev.editable !== next.editable ||
+    prev.selectionAnchorName !== next.selectionAnchorName
+  ) {
+    return false;
+  }
+  // 前か後の値のノードがこの部分木にあれば描画し直す
+  const affects = (
+    orders: (index: SubtreeIndex) => ReadonlyMap<string, ReadonlyArray<number>>,
+    prevKey: string | null | undefined,
+    nextKey: string | null | undefined,
+  ): boolean =>
+    prevKey !== nextKey &&
+    (subtreeContains(prev.index, prev.node, orders(prev.index), prevKey) ||
+      subtreeContains(next.index, next.node, orders(next.index), nextKey));
+  const ids = (index: SubtreeIndex) => index.idOrders;
+  const paths = (index: SubtreeIndex) => index.pathOrders;
+  const pathKey = (path: ReadonlyArray<PathStep> | null | undefined) =>
+    path == null ? null : pathToString(path);
+  return !(
+    affects(paths, pathKey(prev.selectedPath), pathKey(next.selectedPath)) ||
+    affects(ids, prev.hoveredId, next.hoveredId) ||
+    affects(ids, prev.linkNodeId, next.linkNodeId) ||
+    affects(ids, prev.typeErrorNodeId, next.typeErrorNodeId) ||
+    (prev.typeErrorMessage !== next.typeErrorMessage &&
+      subtreeContains(
+        next.index,
+        next.node,
+        next.index.idOrders,
+        next.typeErrorNodeId,
+      ))
+  );
+}
+
+const EMPTY_COLLAPSED_IDS: ReadonlySet<string> = new Set();
+
+/**
+ * 式のツリーを描く. 大きなパーツ (core の数千ノード) でも 1 回の変更で全部を描き直さないよう,
+ * 変わっていない部分木 (同じノードのオブジェクトで, 選択などがその中で変わっていない) は描画を飛ばす (#762).
+ * 変わっていない部分木を同じオブジェクトにするのは `reuseUnchangedNodes` (engine.ts)
+ */
 export function TreeLayoutRenderer(
   props: TreeLayoutRendererProps,
 ): JSX.Element {
+  // 関数の props は毎回作られることが多いので, 最新のものを呼ぶ変わらない関数にして memo を効かせる
+  const latest = useRef(props);
+  latest.current = props;
+  const callbacks = useMemo(
+    () => ({
+      onSelectNode: (id: string, path: ReadonlyArray<PathStep>) => {
+        latest.current.onSelectNode?.(id, path);
+      },
+      onGoToDefinition: (path: ReadonlyArray<PathStep>) =>
+        latest.current.onGoToDefinition?.(path) ?? false,
+      onToggleCollapse: (id: string) => {
+        latest.current.onToggleCollapse?.(id);
+      },
+      onChangeNumber: (path: ReadonlyArray<PathStep>, value: number) => {
+        latest.current.onChangeNumber?.(path, value);
+      },
+      onChangeString: (path: ReadonlyArray<PathStep>, value: string) => {
+        latest.current.onChangeString?.(path, value);
+      },
+      onClear: (path: ReadonlyArray<PathStep>) => {
+        latest.current.onClear?.(path);
+      },
+    }),
+    [],
+  );
+  const index = useMemo(() => buildSubtreeIndex(props.node), [props.node]);
+  return (
+    <TreeNode
+      {...props}
+      {...callbacks}
+      collapsedIds={props.collapsedIds ?? EMPTY_COLLAPSED_IDS}
+      index={index}
+    />
+  );
+}
+
+const TreeNode = memo(TreeNodeView, sameTreeNodeProps);
+
+function TreeNodeView(props: TreeNodeProps): JSX.Element {
   const {
     node,
     selectedPath,
     hoveredId,
-    collapsedIds = new Set<string>(),
+    collapsedIds,
     inlineEdit = true,
     editable = false,
     onSelectNode,
@@ -280,7 +425,7 @@ export function TreeLayoutRenderer(
                     whiteSpace: "nowrap",
                   }}
                 >
-                  <TreeLayoutRenderer {...props} node={cell} />
+                  <TreeNode {...props} node={cell} />
                 </div>
               ))}
             </div>
@@ -395,7 +540,7 @@ export function TreeLayoutRenderer(
             </div>
           )}
           {headerChild !== undefined && (
-            <TreeLayoutRenderer {...props} node={headerChild} />
+            <TreeNode {...props} node={headerChild} />
           )}
           {typeErrorMarker}
         </div>
@@ -418,7 +563,7 @@ export function TreeLayoutRenderer(
                 key={child.id}
                 style={{ width: "fit-content", maxWidth: "100%" }}
               >
-                <TreeLayoutRenderer {...props} node={child} />
+                <TreeNode {...props} node={child} />
               </div>
             ))}
           </div>
@@ -472,7 +617,7 @@ export function TreeLayoutRenderer(
         </div>
       )}
       {node.children.map((child) => (
-        <TreeLayoutRenderer key={child.id} {...props} node={child} />
+        <TreeNode key={child.id} {...props} node={child} />
       ))}
       {typeErrorMarker}
     </div>
