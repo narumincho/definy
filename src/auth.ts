@@ -16,6 +16,7 @@ import {
   MAIN_BRANCH,
   type EventContent,
 } from "./event_content.ts";
+import type { ContentItem } from "./content_store.ts";
 
 export type AccountCredentials = {
   readonly accountId: string;
@@ -229,4 +230,37 @@ export async function submitSignedEvent(
 
   const data = (await res.json()) as SubmitEventResult;
   return data;
+}
+
+/**
+ * モジュールのコミットを提出する. サーバーの CAS に足りない式があれば (`missing_content`),
+ * その式だけを `UploadContent` で送ってから出し直す (docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」)
+ */
+export async function submitModuleCommitEvent(
+  signedEventBytes: string,
+  contents: ReadonlyMap<string, ContentItem>,
+  fetchFn: typeof fetch = fetch,
+): Promise<SubmitEventResult> {
+  const first = await submitSignedEvent(signedEventBytes, fetchFn);
+  if (first.status !== "missing_content") {
+    return first;
+  }
+  const items = (first.missingContentHashes ?? []).map((hash) => {
+    const item = contents.get(hash);
+    if (item === undefined) {
+      throw new Error(`The content ${hash} is not on the server`);
+    }
+    return item;
+  });
+  const res = await fetchFn("/definy.v1.EventService/UploadContent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `UploadContent failed (${res.status}): ${await res.text()}`,
+    );
+  }
+  return await submitSignedEvent(signedEventBytes, fetchFn);
 }

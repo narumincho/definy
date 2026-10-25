@@ -209,13 +209,21 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
           parentCommitHash: null,
           mergedCommitHash: null,
           message: mod.message,
-          parts: mod.parts.map((part) => ({
-            name: String(part.name),
-            description: part.description as LocalizedText,
-            partType: part.part_type ?? null,
-            expression: part.expression ?? null,
-            contentHash: null,
-          })),
+          // 式は CAS (contents) に入れ, コミットには content hash だけを入れる
+          parts: await Promise.all(
+            mod.parts.map(async (part) => ({
+              name: String(part.name),
+              description: part.description as LocalizedText,
+              partType: part.part_type ?? null,
+              expression: null,
+              contentHash:
+                part.expression == null
+                  ? null
+                  : bytesToUrlSafeBase64NoPad(
+                      await sha256Bytes(encodeCborItem(part.expression)),
+                    ),
+            })),
+          ),
         },
       }),
     };

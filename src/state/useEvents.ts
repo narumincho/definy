@@ -15,6 +15,11 @@ import {
   type BranchSummary,
 } from "../branches.ts";
 import type { LatestPart } from "../self_hosted_type_check.ts";
+import {
+  loadContents,
+  missingContentHashes,
+  withCachedContents,
+} from "../content_store.ts";
 
 /** 署名の正しいモジュールコミットのイベントと, その中身 */
 export type DecodedCommitEvent = {
@@ -59,9 +64,9 @@ export function latestParts(
         name: part.name,
         partType: part.partType ?? null,
         expression: part.expression ?? null,
-        // 全パーツの式のハッシュを毎回計算すると重い (seed の core だけで数 MB) ので, どのイベントの定義かで表す.
-        // 同じ式でもコミットし直すと別のキーになり検査し直すが, 結果は変わらない
-        expressionKey: `${eventHash}:${part.name}`,
+        // CAS に預けた式は content hash で表す. 式を直接入れたコミットは (全パーツの式のハッシュを毎回計算すると重いので)
+        // どのイベントの定義かで表す. 同じ式でもコミットし直すと別のキーになり検査し直すが, 結果は変わらない
+        expressionKey: part.contentHash ?? `${eventHash}:${part.name}`,
       });
     }
   }
@@ -216,6 +221,51 @@ function decodeCommitEvent(event: EventRecord): DecodedCommitEvent | null {
   return decoded;
 }
 
+/** コミットのパーツの式を, CAS から読んだもので埋める (`decodeCommitEvent` の結果は変えない) */
+const resolvedCommitCache = new WeakMap<
+  DecodedCommitEvent,
+  { readonly contentsVersion: number; readonly resolved: DecodedCommitEvent }
+>();
+
+function resolveCommitContents(
+  decoded: DecodedCommitEvent,
+  contentsVersion: number,
+): DecodedCommitEvent {
+  const cached = resolvedCommitCache.get(decoded);
+  if (cached?.contentsVersion === contentsVersion) {
+    return cached.resolved;
+  }
+  const parts = withCachedContents(decoded.commit.parts);
+  const resolved =
+    parts === decoded.commit.parts
+      ? decoded
+      : { event: decoded.event, commit: { ...decoded.commit, parts } };
+  resolvedCommitCache.set(decoded, { contentsVersion, resolved });
+  return resolved;
+}
+
+/** 署名の正しいモジュールのコミットのうち, CAS から式を読む必要があるものを読む. 読んだら `true` */
+async function loadCommitContents(
+  records: ReadonlyArray<EventRecord>,
+): Promise<boolean> {
+  const hashes = new Set<string>();
+  for (const record of records) {
+    if (
+      record.verification.status !== "valid" ||
+      record.eventType !== "module_commit"
+    ) {
+      continue;
+    }
+    const decoded = decodeCommitEvent(record);
+    if (decoded === null) continue;
+    for (const hash of missingContentHashes(decoded.commit.parts)) {
+      hashes.add(hash);
+    }
+  }
+  if (hashes.size === 0) return false;
+  return await loadContents([...hashes], postRpc);
+}
+
 export function useEvents(): EventsState {
   /** サーバーから読んだイベント (最新のもの, 各ブランチの最新のコミット, 全アカウントの作成, 個別に読んだもの) */
   const [eventMap, setEventMap] = useState<ReadonlyMap<string, EventRecord>>(
@@ -224,6 +274,16 @@ export function useEvents(): EventsState {
   const [branchHeads, setBranchHeads] = useState<ReadonlyArray<BranchHead>>([]);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
+  /** CAS から式を読むたびに増やす (パーツの式を埋め直す) */
+  const [contentsVersion, setContentsVersion] = useState(0);
+  const loadContentsOf = useCallback(
+    async (records: ReadonlyArray<EventRecord>): Promise<void> => {
+      if (await loadCommitContents(records)) {
+        setContentsVersion((v) => v + 1);
+      }
+    },
+    [],
+  );
 
   const addEvents = useCallback((records: ReadonlyArray<EventRecord>) => {
     setEventMap((prev) => {
@@ -259,6 +319,8 @@ export function useEvents(): EventsState {
           ...accounts,
         ].map(verifyCached),
       );
+      // コミットのパーツの式 (CAS) を読んでから表示する
+      await loadContentsOf(verified);
       addEvents(verified);
       setBranchHeads(
         (branches.branches ?? []).map((b) => ({
@@ -273,7 +335,7 @@ export function useEvents(): EventsState {
     } catch (e) {
       setConnectionStatus(e instanceof RpcHttpError ? "error" : "offline");
     }
-  }, [addEvents]);
+  }, [addEvents, loadContentsOf]);
 
   /** 読んでいないイベント (古いコミットなど) を 1 件読む. 見つからなければ `false` */
   const loadEvent = useCallback(
@@ -284,13 +346,15 @@ export function useEvents(): EventsState {
           { eventHash },
         );
         if (event === undefined) return false;
-        addEvents([await verifyCached(event)]);
+        const record = await verifyCached(event);
+        await loadContentsOf([record]);
+        addEvents([record]);
         return true;
       } catch {
         return false;
       }
     },
-    [addEvents],
+    [addEvents, loadContentsOf],
   );
 
   // fetchCommit が最新のイベントを見るため
@@ -320,9 +384,23 @@ export function useEvents(): EventsState {
       ) {
         return null;
       }
-      return decodeCommitEvent(record);
+      const decoded = decodeCommitEvent(record);
+      if (decoded === null) return null;
+      try {
+        await loadContentsOf([record]);
+      } catch {
+        return null;
+      }
+      // 読んだ式で埋める (読めなかった式は `null` のまま)
+      return {
+        event: decoded.event,
+        commit: {
+          ...decoded.commit,
+          parts: withCachedContents(decoded.commit.parts),
+        },
+      };
     },
-    [addEvents],
+    [addEvents, loadContentsOf],
   );
 
   useEffect(() => {
@@ -361,9 +439,11 @@ export function useEvents(): EventsState {
       validEvents.flatMap((event) => {
         if (event.eventType !== "module_commit") return [];
         const decoded = decodeCommitEvent(event);
-        return decoded === null ? [] : [decoded];
+        return decoded === null
+          ? []
+          : [resolveCommitContents(decoded, contentsVersion)];
       }),
-    [validEvents],
+    [validEvents, contentsVersion],
   );
 
   const [selectedBranches, setSelectedBranches] = useState<
