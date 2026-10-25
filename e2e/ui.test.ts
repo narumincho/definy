@@ -284,7 +284,7 @@ test.describe("definy UI E2E", () => {
       ).toBeVisible({ timeout: 15000 });
     }
     // 本体が未入力のままではコミットできない (サーバーと同じく未入力を拒否する)
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(
       page.locator(".commit-type-check .alert-danger"),
     ).toContainText("unfilled hole", { timeout: 15000 });
@@ -325,7 +325,7 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
 
     // コミットするとモジュールができる
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(page.locator(".connection-status-connected")).toBeVisible({
       timeout: 15000,
     });
@@ -350,7 +350,7 @@ test.describe("definy UI E2E", () => {
     await page.goto(`/part/${moduleName}.add`);
     await page.locator(".part-delete-button").click();
     await expect(page.locator(".part-deleted-banner")).toBeVisible();
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(page.locator(".connection-status-connected")).toBeVisible({
       timeout: 15000,
     });
@@ -410,7 +410,7 @@ test.describe("definy UI E2E", () => {
     await expect(moduleVisibility).toHaveValue("public", { timeout: 15000 });
     await moduleVisibility.selectOption("private");
 
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(page.locator(".module-visibility-change")).toBeVisible({
       timeout: 15000,
     });
@@ -494,7 +494,7 @@ test.describe("definy UI E2E", () => {
     // main に切り替わり, 取り込んだ変更が作業中の変更になる
     await expect(page.locator(".module-merge-notice")).toBeVisible();
     await expect(branchSelect).toHaveValue("main");
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(page.locator(".change-card")).toHaveCount(2, {
       timeout: 15000,
     });
@@ -579,6 +579,68 @@ test.describe("definy UI E2E", () => {
         hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
       }),
     ).toHaveCount(0);
+  });
+
+  test("parts page shows new and deleted parts and filters to changes only", async ({
+    page,
+  }) => {
+    await page.goto("/parts?lang=en");
+    await page.evaluate(() => {
+      const part = {
+        moduleDefinitionEventHash: "sample",
+        description: [],
+        partType: { "#number": null },
+        expression: { "#number": 1 },
+      };
+      localStorage.setItem(
+        "definy.working_changes.v5",
+        JSON.stringify({
+          parts: {
+            "sample.e2e-new": {
+              ...part,
+              partDefinitionEventHash: "sample.e2e-new",
+              name: "e2e-new",
+            },
+            "sample.triangle-area": {
+              ...part,
+              partDefinitionEventHash: "sample.triangle-area",
+              name: "triangle-area",
+              deleted: true,
+            },
+          },
+        }),
+      );
+    });
+    await page.reload();
+
+    // 一覧にはコミット前の新しいパーツも出て, 削除したパーツは取り消し線で出る
+    const newCard = page.locator(".part-card", { hasText: "e2e-new" });
+    await expect(newCard).toHaveAttribute("data-status", "new", {
+      timeout: 15000,
+    });
+    const deletedCard = page.locator(".part-card", {
+      hasText: "triangle-area",
+    });
+    await expect(deletedCard).toHaveAttribute("data-status", "deleted");
+    await expect(deletedCard.locator(".part-breadcrumb")).toHaveCSS(
+      "text-decoration-line",
+      "line-through",
+    );
+
+    // 「変更のみ表示」で変更だけになり, そこからコミットできる
+    const toggle = page.locator(".changes-only-toggle");
+    await expect(toggle).toContainText("2");
+    await toggle.click();
+    await expect(page).toHaveURL(/changes=only/);
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".change-card")).toHaveCount(2);
+    await expect(page.locator(".part-grid")).toHaveCount(0);
+    await expect(page.locator(".commit-panel")).toBeVisible();
+    await toggle.click();
+    await expect(page.locator(".part-grid")).toBeVisible();
+    await page.evaluate(() => {
+      localStorage.removeItem("definy.working_changes.v5");
+    });
   });
 
   test("expression tree editor renders AST structure, supports selection, and evaluates with stage1.wasm", async ({
@@ -1474,7 +1536,7 @@ test.describe("definy UI E2E", () => {
       /You|あなた|Vi/,
     );
 
-    // 7. Test commit flow: stage a working change and commit from /changes
+    // 7. Test commit flow: stage a working change and commit from /parts?changes=only
     await page.evaluate(() => {
       const changes = {
         parts: {
@@ -1494,7 +1556,7 @@ test.describe("definy UI E2E", () => {
       );
     });
 
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     const changeCard = page.locator(".change-card", { hasText: "e2e-part" });
     await expect(changeCard).toBeVisible({ timeout: 10000 });
 
@@ -1571,7 +1633,7 @@ test.describe("definy UI E2E", () => {
         }),
       );
     });
-    await page.goto("/changes");
+    await page.goto("/parts?changes=only");
     await expect(page.locator("p#commit-branch-input")).toContainText(
       accountName,
     );

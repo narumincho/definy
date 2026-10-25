@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, type JSX } from "react";
 import { useRouter } from "@void/react";
+import { CHANGES_ONLY_HREF } from "./WorkingChanges.tsx";
 import {
   AboutIcon,
   AccountsIcon,
@@ -189,9 +190,14 @@ export function CommandPalette(): JSX.Element | null {
     },
     {
       id: "page-changes",
-      label: label(language, "Changes", "変更", "Ŝanĝoj"),
+      label: label(
+        language,
+        "Parts (changes only)",
+        "パーツ一覧 (変更のみ表示)",
+        "Partoj (nur ŝanĝoj)",
+      ),
       detail: pageDetail,
-      target: { type: "page", href: "/changes" },
+      target: { type: "page", href: CHANGES_ONLY_HREF },
       icon: ChangesIcon,
     },
     {

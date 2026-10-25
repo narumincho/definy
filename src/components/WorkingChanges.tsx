@@ -5,14 +5,23 @@ import {
   type JSX,
   type FormEvent,
 } from "react";
-import { Link } from "../src/components/Link.tsx";
-import { label, localizedText } from "../src/language.ts";
-import { useDefiny, type CommitTypeError } from "../src/state.tsx";
-import { moduleOfPartId } from "../src/new_part.ts";
-import { DEFAULT_VISIBILITY } from "../src/event_content.ts";
-import { visibilityLabel } from "../src/components/Visibility.tsx";
+import { Link } from "./Link.tsx";
+import { label, localizedText } from "../language.ts";
+import { useDefiny, type CommitTypeError } from "../state.tsx";
+import { moduleOfPartId } from "../new_part.ts";
+import { DEFAULT_VISIBILITY } from "../event_content.ts";
+import { visibilityLabel } from "./Visibility.tsx";
 
-export default function ChangesPage(): JSX.Element {
+/** パーツ一覧の「変更のみ表示」. URL の `?changes=only` で持つ (リンクやコマンドパレットから直接開ける) */
+export const CHANGES_ONLY_HREF = "/parts?changes=only";
+
+/**
+ * 作業中の変更の一覧とコミット. パーツ一覧 (`/parts?changes=only`) の「変更のみ表示」で出す.
+ * `search` で変更をパーツ名・モジュール名で絞り込む
+ */
+export function WorkingChanges(props: {
+  readonly search: string;
+}): JSX.Element {
   const {
     language,
     workingChanges,
@@ -35,21 +44,32 @@ export default function ChangesPage(): JSX.Element {
   const [commitError, setCommitError] = useState<string | null>(null);
   const [committedHash, setCommittedHash] = useState<string | null>(null);
 
-  const changeEntries = Array.from(workingChanges.parts.entries());
+  const allChangeEntries = Array.from(workingChanges.parts.entries());
   // モジュールの公開/非公開の変更 (docs/visibility.md)
-  const moduleVisibilityEntries = Array.from(
+  const allModuleVisibilityEntries = Array.from(
     workingChanges.moduleVisibilities ?? [],
   );
   const hasChanges =
-    changeEntries.length > 0 || moduleVisibilityEntries.length > 0;
+    allChangeEntries.length > 0 || allModuleVisibilityEntries.length > 0;
+  const q = props.search.trim().toLowerCase();
+  const changeEntries = q
+    ? allChangeEntries.filter(([partId, change]) =>
+        `${moduleOfPartId(partId)}.${change.name}`.toLowerCase().includes(q),
+      )
+    : allChangeEntries;
+  const moduleVisibilityEntries = q
+    ? allModuleVisibilityEntries.filter(([moduleName]) =>
+        moduleName.toLowerCase().includes(q),
+      )
+    : allModuleVisibilityEntries;
 
   // 変更のあるモジュールの入っているプロジェクト (コミットはプロジェクト単位. docs/project.md).
   // 入れるプロジェクトの分からない新しいモジュールは, モジュール名と同じ名前のプロジェクトに入れる
   const affectedProjects: ReadonlyArray<string> = Array.from(
     new Set(
       [
-        ...changeEntries.map(([partId]) => moduleOfPartId(partId)),
-        ...moduleVisibilityEntries.map(([moduleName]) => moduleName),
+        ...allChangeEntries.map(([partId]) => moduleOfPartId(partId)),
+        ...allModuleVisibilityEntries.map(([moduleName]) => moduleName),
       ].map((moduleName) => projectOfModule(moduleName) ?? moduleName),
     ),
   );
@@ -145,29 +165,6 @@ export default function ChangesPage(): JSX.Element {
 
   return (
     <div className="changes-view">
-      <div className="view-header">
-        <h2 className="view-title">
-          {label(
-            language,
-            "Working Changes",
-            "作業中の変更",
-            "Laborkontrolaj ŝanĝoj",
-          )}
-        </h2>
-        {hasChanges && (
-          <div className="view-actions">
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              onClick={discardAllWorkingChanges}
-              disabled={committing}
-            >
-              {label(language, "Discard all", "すべて破棄", "Forĵeti ĉiujn")}
-            </button>
-          </div>
-        )}
-      </div>
-
       {committedHash && (
         <div
           className="alert alert-success card"
@@ -251,6 +248,24 @@ export default function ChangesPage(): JSX.Element {
         </div>
       ) : (
         <div className="changes-layout">
+          <div className="changes-toolbar">
+            <span className="text-muted">
+              {label(
+                language,
+                `${allChangeEntries.length + allModuleVisibilityEntries.length} uncommitted changes`,
+                `未コミットの変更 ${allChangeEntries.length + allModuleVisibilityEntries.length} 件`,
+                `${allChangeEntries.length + allModuleVisibilityEntries.length} neenmetitaj ŝanĝoj`,
+              )}
+            </span>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={discardAllWorkingChanges}
+              disabled={committing}
+            >
+              {label(language, "Discard all", "すべて破棄", "Forĵeti ĉiujn")}
+            </button>
+          </div>
           <div className="changes-list">
             {moduleVisibilityEntries.map(([moduleName, visibility]) => (
               <div

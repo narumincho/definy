@@ -2,9 +2,7 @@ import type { JSX } from "react";
 import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
 import {
-  AboutIcon,
   AccountsIcon,
-  ChangesIcon,
   EventsIcon,
   HistoryIcon,
   ModuleIcon,
@@ -46,13 +44,6 @@ const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
     eo: "Moduloj",
   },
   {
-    path: "/changes",
-    icon: ChangesIcon,
-    en: "Changes",
-    ja: "変更",
-    eo: "Ŝanĝoj",
-  },
-  {
     path: "/history",
     icon: HistoryIcon,
     en: "History",
@@ -90,8 +81,9 @@ export function ActivityBar(): JSX.Element {
           target.path === "/"
             ? currentPath === "/" || currentPath.startsWith("/event/")
             : currentPath.startsWith(target.path);
+        // 作業中の変更はパーツ一覧の「変更のみ表示」で見るので, 件数はパーツに出す
         const itemLabel = label(language, target.en, target.ja, target.eo);
-        const badge = target.path === "/changes" ? changesCount : 0;
+        const badge = target.path === "/parts" ? changesCount : 0;
 
         return (
           <Link
@@ -111,19 +103,9 @@ export function ActivityBar(): JSX.Element {
       <div className="activity-bar-spacer" />
 
       <Link
-        href="/about"
-        className={`activity-item ${currentPath.startsWith("/about") ? "active" : ""}`}
-        title={label(language, "About", "About", "Pri")}
-      >
-        <AboutIcon size={22} className="activity-icon" />
-        <span className="activity-label">
-          {label(language, "About", "About", "Pri")}
-        </span>
-      </Link>
-
-      <Link
         href="/settings"
-        className={`activity-item ${currentPath.startsWith("/settings") ? "active" : ""}`}
+        // About は設定の中から開く
+        className={`activity-item ${currentPath.startsWith("/settings") || currentPath.startsWith("/about") ? "active" : ""}`}
         title={label(language, "Settings", "設定", "Agordoj")}
       >
         <SettingsIcon size={22} className="activity-icon" />

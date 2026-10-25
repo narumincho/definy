@@ -13,14 +13,14 @@
 | 領域               | 内容                                                                                          | 実装                                 |
 | ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------ |
 | タイトルバー       | エクスプローラーのドロワーを開くボタン (狭い画面だけ)・ロゴ・検索・接続状態・言語・アカウント | `src/components/Header.tsx`          |
-| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え            | `src/components/ActivityBar.tsx`     |
+| アクティビティバー | イベント / パーツ / モジュール / 履歴 / アカウント / 設定 への切り替え                        | `src/components/ActivityBar.tsx`     |
 | エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                           | `src/components/ExplorerSidebar.tsx` |
 | エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする            | `pages/` 各ページコンポーネント      |
 
 - 画面下部のステータスバーは置かない (Issue #747. VS Code に寄せすぎず definy に合った画面にするため).
   接続状態はタイトルバー右側の `src/components/ConnectionStatus.tsx` に出す.
   接続済みのときは緑の点だけ, 確認中 (黄) ・オフライン (赤) のときは文字でも知らせる.
-  未コミット変更の件数はアクティビティバーの「変更」のバッジ, 言語はタイトルバーの言語切替で分かる
+  未コミット変更の件数はアクティビティバーの「パーツ」のバッジ, 言語はタイトルバーの言語切替で分かる
 - `body` はスクロールさせず, エディタ領域 (`.workbench-editor-scroll`) が独立してスクロールする.
   ページ側で `window` のスクロール位置に依存する処理は書かないこと
 - エクスプローラーのモジュールの開閉は `<details>` を使い, 状態を持たない
@@ -30,6 +30,8 @@
     エクスプローラーの要素だけに幅を書くとグリッドの列とずれてエディタ領域に重なる.
     ドラッグ中は React の state を変えない (エクスプローラーの大きな木を毎回描画し直さない) で, 離したときに保存する
 - 幅 760px 以下 (スマホ) ではアクティビティバーが下部のタブバーになる.
+  タブが多いと文字が小さく切れるので, アクティビティバーの項目は 6 つ (イベント / パーツ / モジュール / 履歴 / アカウント / 設定) に抑える.
+  About (`/about`) は設定のページのリンクから開く (開いているときは設定を強調表示する)
   エクスプローラーはタイトルバー左のボタンで開くドロワーになり, パーツを選ぶか外側を押すと閉じる.
   開閉は `sidebarOpen` (`src/state/useUiState.ts`) で持ち, SSR と揃えるため閉じた状態から始める
 - スマホのレイアウトには `<meta name="viewport">` が必要 (無いと幅 980px で描画され `@media (max-width: 760px)` が効かない).
@@ -78,7 +80,7 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 
 - 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が
   ハッシュ付きアセットとして読み込んでコンパイルする (1 度だけ). サーバーと同じものなので, UI で通ればサーバーでも通る
-- 変更ページ (`/changes`) はコミットする前に `checkCommitTypes` (`src/state.tsx`) で検査する.
+- パーツ一覧の「変更のみ表示」 (`/parts?changes=only`, 以下「変更ページ」) はコミットする前に `checkCommitTypes` (`src/state.tsx`) で検査する.
   コミットと同じパーツ (プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの, `buildCommitModules`) を,
   署名の正しいイベントから集めた全モジュールの最新のパーツを型環境にして `checkModuleCommitParts` に渡す.
   型エラーがあればパーツ名と理由を出し, コミットボタンを押せなくする
@@ -107,19 +109,23 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
   `DebugService/SubmitUnverifiedEvent` (型検査をしない) に, 正しく署名した型エラーのあるコミットを送る
 - 動作確認のノウハウ: 作業中の変更は localStorage の `definy.working_changes.v4` に
   `{"parts": {"myapp.bad": {"name": "bad", "partType": {"#number": null}, "expression": {"#string": "x"}, ...}}}`
-  の形 (`src/working_changes_storage.ts`) で入れて `/changes` を開けば再現できる
+  の形 (`src/working_changes_storage.ts`) で入れて `/parts?changes=only` を開けば再現できる
 
 ### 作業中の変更とまとめてコミット
 
 git の作業ツリーのように, パーツの編集はすぐにはコミットせず, ブラウザの localStorage
-(`definy.working_changes.v4`, JSON. 式と型は [value-encoding.md](value-encoding.md) の形のまま) に記録しておき, 変更ページ (`/changes`) でまとめてコミットする.
+(`definy.working_changes.v4`, JSON. 式と型は [value-encoding.md](value-encoding.md) の形のまま) に記録しておき, パーツ一覧の「変更のみ表示」 (`/parts?changes=only`) でまとめてコミットする.
 実装は [src/state/useWorkingChanges.ts](../src/state/useWorkingChanges.ts) (記録・コミット),
-[src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [pages/changes.tsx](../pages/changes.tsx) (変更ページ).
+[src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [src/components/WorkingChanges.tsx](../src/components/WorkingChanges.tsx) (変更の一覧とコミット).
 
 - 記録はパーツの定義全体 (`PartChange`) をパーツ ID ごとに 1 つ持つ
 - コミットはプロジェクトごとの `project_commit` ([project.md](project.md)). プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの
   (`buildCommitModules`) を, 表示しているブランチの最新コミットを親にして署名して送る. 受け付けられたらそのプロジェクトのモジュールの変更を記録から消す
-- 未コミットの変更があるパーツはエクスプローラーに印を出し, アクティビティバーの「変更」に件数を出す
+- 未コミットの変更があるパーツはエクスプローラーに印を出し, アクティビティバーの「パーツ」に件数を出す
+- 「変更」ページは置かず, パーツ一覧 (`pages/parts.tsx`) で見る. 一覧はコミット済みのパーツに作業中の変更を重ねて出し,
+  新しいパーツは「新規」, 変えたパーツは「●」, 削除したパーツは取り消し線と「削除」のバッジ (`.part-card[data-status]`).
+  「変更のみ表示」ボタンで `?changes=only` にすると, 変更の一覧 (破棄・すべて破棄) とコミットの欄 (`WorkingChanges`) になる.
+  状態を URL に持つので, 取り込み (`MergeBranchPanel`) やコマンドパレットからは `CHANGES_ONLY_HREF` へリンクする
 - コミット前の型検査は上の「型エラー表示」を参照
 - パーツとモジュールの公開/非公開の変更も作業中の変更になる. 参照できないパーツへの参照はコミット前の検査で出し,
   式エディタの選択肢からも外す ([visibility.md](visibility.md))
