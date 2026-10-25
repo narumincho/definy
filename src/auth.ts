@@ -12,9 +12,11 @@ import {
   type LocalizedText,
 } from "./cbor.ts";
 import {
+  DEFAULT_VISIBILITY,
   encodeEventContent,
   MAIN_BRANCH,
   type EventContent,
+  type Visibility,
 } from "./event_content.ts";
 import type { ContentItem } from "./content_store.ts";
 
@@ -39,6 +41,8 @@ export type SubmitEventResult = {
 export type CommitModuleParams = {
   readonly name: string;
   readonly description: LocalizedText;
+  /** 省くと公開 (docs/visibility.md) */
+  readonly visibility?: Visibility;
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
@@ -208,9 +212,11 @@ export async function createSignedProjectCommitEvent(
         modules: params.modules.map((module) => ({
           name: module.name,
           description: module.description,
+          visibility: module.visibility ?? DEFAULT_VISIBILITY,
           parts: module.parts.map((p) => ({
             name: p.name,
             description: p.description,
+            visibility: p.visibility ?? DEFAULT_VISIBILITY,
             partType: p.partType ?? null,
             expression: p.expression ?? null,
             contentHash: p.contentHash ?? null,

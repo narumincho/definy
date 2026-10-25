@@ -11,6 +11,7 @@ import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
 import { findSecretUsages, secretLiteralOf } from "../../src/secret.ts";
 import { SecretPanel } from "../../src/components/SecretPanel.tsx";
+import { VisibilitySelect } from "../../src/components/Visibility.tsx";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
@@ -109,6 +110,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     change !== undefined ? change.partType : part.partType;
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
+  const currentVisibility = change?.visibility ?? part.visibility;
 
   // 元に戻す (Undo) / やり直す (Redo). このパーツの作業中の変更 (無ければ undefined) を変える前ごとに積む.
   // 履歴はこのページを開いている間だけ持つ (別のパーツへ移ると消える)
@@ -171,7 +173,12 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     fields: Partial<
       Pick<
         PartChange,
-        "name" | "description" | "partType" | "expression" | "deleted"
+        | "name"
+        | "description"
+        | "partType"
+        | "expression"
+        | "deleted"
+        | "visibility"
       >
     >,
     mergeKey: string | null,
@@ -183,6 +190,9 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
       description: currentDescription,
       partType: currentPartType,
       expression: currentExpression,
+      ...(change?.visibility !== undefined
+        ? { visibility: change.visibility }
+        : {}),
       ...(isDeleted ? { deleted: true } : {}),
       ...fields,
     };
@@ -363,6 +373,15 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
           className="part-actions"
           style={{ display: "flex", gap: "0.5rem" }}
         >
+          <VisibilitySelect
+            id="part-visibility-select"
+            language={language}
+            value={currentVisibility}
+            disabled={isDeleted}
+            onChange={(visibility) => {
+              editPart({ visibility }, null);
+            }}
+          />
           {hasChange && !isNewPart && (
             <button
               type="button"

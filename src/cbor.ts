@@ -2,7 +2,11 @@
  * Pure browser- and worker-safe CBOR decoder, encoder & module commit extractor for definy.
  * Free of node:crypto and other Node.js specific APIs.
  */
-import { decodeEventContent, type EventContent } from "./event_content.ts";
+import {
+  decodeEventContent,
+  type EventContent,
+  type Visibility,
+} from "./event_content.ts";
 
 /**
  * Base64 文字列（標準 / URL-safe / パディング省略すべて対応）を Uint8Array にデコードする
@@ -406,6 +410,8 @@ export type LocalizedText = ReadonlyArray<LocalizedTextEntry>;
 export type DecodedPart = {
   readonly name: string;
   readonly description: LocalizedText;
+  /** 公開/非公開 (docs/visibility.md). 省くと公開 */
+  readonly visibility?: Visibility;
   readonly partType: unknown;
   readonly expression?: unknown;
   readonly contentHash?: string | null;
@@ -418,6 +424,8 @@ export type DecodedModule = {
   /** モジュール ID (モジュール名から導出, URL-safe Base64). アカウントが読めなければ `null` */
   readonly moduleIdHash: string | null;
   readonly description: LocalizedText;
+  /** 公開/非公開 (docs/visibility.md) */
+  readonly visibility: Visibility;
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
@@ -482,6 +490,7 @@ export function extractProjectCommit(
             ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
             : null,
           description: module.description,
+          visibility: module.visibility ?? "public",
           parts: module.parts.map((part) => ({
             ...part,
             partIdHash: moduleIdBytes

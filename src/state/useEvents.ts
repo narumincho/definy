@@ -1,3 +1,5 @@
+import { DEFAULT_VISIBILITY } from "../event_content.ts";
+import type { VisibilityTarget } from "../visibility.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ConnectionStatus,
@@ -88,6 +90,8 @@ export type EventsState = {
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
+  /** 表示するブランチのパーツの, 参照されるパーツとしての公開/非公開 (キーはパーツ ID. docs/visibility.md) */
+  readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
   readonly accountNames: ReadonlyMap<string, string>;
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
@@ -520,8 +524,16 @@ export function useEvents(): EventsState {
     }, [branchHeads, eventMap, decodedCommits, selectedBranches]);
 
   // 表示するブランチのコミットから, プロジェクトとモジュールとパーツを導出する
-  const { projects, modules, parts, partNames, partsByIdHash } = useMemo(() => {
+  const {
+    projects,
+    modules,
+    parts,
+    partNames,
+    partsByIdHash,
+    visibilityTargets,
+  } = useMemo(() => {
     const projectMap = new Map<string, ProjectSnapshot>();
+    const targetMap = new Map<string, VisibilityTarget>();
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
     const partIdHashMap = new Map<string, PartSnapshot>();
@@ -555,6 +567,7 @@ export function useEvents(): EventsState {
               moduleName: module.name,
               name: p.name,
               description: p.description,
+              visibility: p.visibility ?? DEFAULT_VISIBILITY,
               partType: p.partType,
               contentHash: p.contentHash ?? null,
               partIdHash: p.partIdHash ?? null,
@@ -564,6 +577,13 @@ export function useEvents(): EventsState {
             partMap.set(partId, partSnapshot);
             if (p.partIdHash) {
               partIdHashMap.set(p.partIdHash, partSnapshot);
+              targetMap.set(p.partIdHash, {
+                name: partId,
+                moduleName: module.name,
+                projectName: commit.projectName,
+                visibility: partSnapshot.visibility,
+                moduleVisibility: module.visibility,
+              });
             }
 
             // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
@@ -579,6 +599,7 @@ export function useEvents(): EventsState {
               partId,
               name: p.name,
               description: p.description,
+              visibility: p.visibility ?? DEFAULT_VISIBILITY,
               partType: p.partType,
               contentHash: p.contentHash ?? null,
               partIdHash: p.partIdHash ?? null,
@@ -594,6 +615,7 @@ export function useEvents(): EventsState {
           branch: commit.branch,
           branches,
           description: module.description,
+          visibility: module.visibility,
           latestEventHash: ev.eventHash,
           parentCommitHash: commit.parentCommitHash,
           message: commit.message,
@@ -609,6 +631,7 @@ export function useEvents(): EventsState {
       parts: Array.from(partMap.values()),
       partNames: nameMap,
       partsByIdHash: partIdHashMap,
+      visibilityTargets: targetMap,
     };
   }, [displayedCommits, branchesByProject]);
 
@@ -627,6 +650,7 @@ export function useEvents(): EventsState {
     parts,
     partNames,
     partsByIdHash,
+    visibilityTargets,
     accountNames,
     committedParts,
     decodedCommits,

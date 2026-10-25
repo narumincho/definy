@@ -24,10 +24,12 @@ const projectCommit: EventContent = {
       {
         name: "math",
         description: [{ language: "en", text: "Math functions" }],
+        visibility: "private",
         parts: [
           {
             name: "answer",
             description: [{ language: "ja", text: "答え" }],
+            visibility: "private",
             partType: { "#number": null },
             expression: { "#number": 42 },
             contentHash: null,
@@ -35,6 +37,7 @@ const projectCommit: EventContent = {
           {
             name: "stored",
             description: [],
+            visibility: "public",
             partType: null,
             expression: null,
             contentHash: "AAAA",
@@ -82,10 +85,12 @@ describe("core.event-content", () => {
           {
             name: "math",
             description: [{ language: "en", text: "Math functions" }],
+            visibility: { "#private": null },
             parts: [
               {
                 name: "answer",
                 description: [{ language: "ja", text: "答え" }],
+                visibility: { "#private": null },
                 part_type: { "#some": { "#number": null } },
                 expression: { "#some": { "#number": 42 } },
                 content_hash: { "#none": null },
@@ -93,6 +98,7 @@ describe("core.event-content", () => {
               {
                 name: "stored",
                 description: [],
+                visibility: { "#public": null },
                 part_type: { "#none": null },
                 expression: { "#none": null },
                 content_hash: { "#some": "AAAA" },

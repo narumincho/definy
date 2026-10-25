@@ -21,7 +21,11 @@ import {
   type BranchSummary,
   type CommitTarget,
 } from "../branches.ts";
-import { MAIN_BRANCH } from "../event_content.ts";
+import {
+  DEFAULT_VISIBILITY,
+  MAIN_BRANCH,
+  type Visibility,
+} from "../event_content.ts";
 import { moduleOfPartId, overlayWorkingChanges } from "../new_part.ts";
 
 const STORAGE_KEY_CHANGES = "definy.working_changes.v5";
@@ -68,6 +72,8 @@ export type CommitModulesResult = {
   readonly modules: ReadonlyArray<CommitModuleParams>;
   /** コミットに入れた作業中の変更のキー (コミットしたら消す) */
   readonly committedPartIds: ReadonlySet<string>;
+  /** コミットに入れたモジュールの公開/非公開の変更のモジュール名 (コミットしたら消す) */
+  readonly committedModuleVisibilities: ReadonlySet<string>;
   /** 作業中の変更のあるモジュールの名前 */
   readonly changedModuleNames: ReadonlySet<string>;
 };
@@ -81,6 +87,11 @@ export type WorkingChangesOperations = {
   readonly setNewModuleProject: (
     moduleName: string,
     projectName: string,
+  ) => void;
+  /** モジュールの公開/非公開を変える. コミット済みと同じならその変更を消す (docs/visibility.md) */
+  readonly setModuleVisibility: (
+    moduleName: string,
+    visibility: Visibility,
   ) => void;
   /** モジュールが入っている (新しいモジュールなら入れる) プロジェクト. 分からなければ `undefined` */
   readonly projectOfModule: (moduleName: string) => string | undefined;
@@ -117,6 +128,7 @@ export function overlayProjectChanges(
     }
   }
   const committedPartIds = new Set<string>();
+  const committedModuleVisibilities = new Set<string>();
   const changedModuleNames = new Set<string>();
   const commitModules: CommitModuleParams[] = [];
   for (const name of moduleNames) {
@@ -132,10 +144,17 @@ export function overlayProjectChanges(
     if (overlaid.committedPartIds.size > 0) {
       changedModuleNames.add(name);
     }
+    const changedVisibility = workingChanges.moduleVisibilities?.get(name);
+    if (changedVisibility !== undefined) {
+      committedModuleVisibilities.add(name);
+      changedModuleNames.add(name);
+    }
     if (overlaid.partsList.length > 0) {
       commitModules.push({
         name,
         description: existing?.description ?? [],
+        visibility:
+          changedVisibility ?? existing?.visibility ?? DEFAULT_VISIBILITY,
         parts: overlaid.partsList,
       });
     }
@@ -144,6 +163,7 @@ export function overlayProjectChanges(
     project,
     modules: commitModules,
     committedPartIds,
+    committedModuleVisibilities,
     changedModuleNames,
   };
 }
@@ -211,6 +231,24 @@ export function useWorkingChanges({
     [update],
   );
 
+  const setModuleVisibility = useCallback(
+    (moduleName: string, visibility: Visibility) => {
+      const committed =
+        modules.find((m) => m.name === moduleName)?.visibility ??
+        DEFAULT_VISIBILITY;
+      update((prev) => {
+        const next = new Map(prev.moduleVisibilities);
+        if (visibility === committed) {
+          next.delete(moduleName);
+        } else {
+          next.set(moduleName, visibility);
+        }
+        return { ...prev, moduleVisibilities: next };
+      });
+    },
+    [modules, update],
+  );
+
   const projectOfModule = useCallback(
     (moduleName: string): string | undefined =>
       modules.find((m) => m.name === moduleName)?.projectName ??
@@ -258,6 +296,7 @@ export function useWorkingChanges({
         project,
         modules: commitModules,
         committedPartIds,
+        committedModuleVisibilities,
       } = buildCommitModules(projectName);
       if (commitModules.length === 0) {
         throw new Error(
@@ -344,10 +383,15 @@ export function useWorkingChanges({
             nextNewModuleProjects.delete(name);
           }
         }
+        const nextModuleVisibilities = new Map(prev.moduleVisibilities);
+        for (const name of committedModuleVisibilities) {
+          nextModuleVisibilities.delete(name);
+        }
         return {
           parts: nextParts,
           merges: nextMerges,
           newModuleProjects: nextNewModuleProjects,
+          moduleVisibilities: nextModuleVisibilities,
         };
       });
 
@@ -389,6 +433,7 @@ export function useWorkingChanges({
           }
         }
         return {
+          ...prev,
           parts: new Map([...prev.parts, ...changes]),
           merges: new Map(prev.merges).set(projectName, mergedCommitHash),
           newModuleProjects,
@@ -408,6 +453,7 @@ export function useWorkingChanges({
           (modules.find((m) => m.name === moduleName)?.projectName ??
             prev.newModuleProjects?.get(moduleName)) === projectName;
         return {
+          ...prev,
           parts: new Map(
             [...prev.parts].filter(
               ([partId]) => !inProject(moduleOfPartId(partId)),
@@ -431,6 +477,7 @@ export function useWorkingChanges({
     discardWorkingPart,
     discardAllWorkingChanges,
     setNewModuleProject,
+    setModuleVisibility,
     projectOfModule,
     buildCommitModules,
     commitWorkingChanges,

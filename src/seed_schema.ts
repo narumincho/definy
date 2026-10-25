@@ -140,6 +140,7 @@ export function buildModuleSeedSchema(
         allOf: [{ $ref: "#/definitions/Description" }],
       },
       module_name: { type: "string" },
+      module_visibility: { $ref: "#/definitions/Visibility" },
       parts: {
         type: "array",
         items: { $ref: "#/definitions/ModulePartEntry" },
@@ -152,10 +153,16 @@ export function buildModuleSeedSchema(
         properties: {
           name: { type: "string" },
           description: { $ref: "#/definitions/Description" },
+          visibility: { $ref: "#/definitions/Visibility" },
           part_type: nullable("#/definitions/core.type-ast"),
           expression: nullable("#/definitions/core.expression"),
           content_hash: nullable("#/definitions/ContentHash"),
         },
+      },
+      Visibility: {
+        description:
+          "公開/非公開 (core.visibility. docs/visibility.md). 省くと public",
+        enum: ["public", "private"],
       },
       Description: {
         anyOf: [

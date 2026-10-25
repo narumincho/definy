@@ -16,6 +16,7 @@ import { latestCommitHashOf } from "./type_check.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
+import type { Visibility } from "../src/event_content.ts";
 
 async function createSeededStore(): Promise<{
   readonly store: WorkerStore;
@@ -57,6 +58,7 @@ async function submitCommit(
   moduleName: string,
   parts: ReadonlyArray<DecodedPart>,
   projectName: string = moduleName,
+  moduleVisibility: Visibility = "public",
 ): Promise<{ readonly status: number; readonly message: string }> {
   const accounts = await store.getEvents(
     { eventType: "create_account", limit: 500 },
@@ -76,6 +78,7 @@ async function submitCommit(
     projectName,
     moduleName,
     moduleDescription: [],
+    moduleVisibility,
     message: "test",
     parentCommitHash: await latestCommitHashOf(projectName, store, env),
     parts,
@@ -140,6 +143,70 @@ describe("SubmitEvent の型検査", () => {
     ]);
     expect(result).toEqual({ status: 200, message: "" });
   });
+
+  it("非公開のパーツ・他のプロジェクトの非公開のモジュールのパーツへの参照は拒否する (docs/visibility.md)", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    // lib プロジェクト: 公開の open と非公開の secret. 同じモジュールからは secret を参照できる
+    expect(
+      await submitCommit(store, env, user, "lib", [
+        part("open", { "#number": null }, { "#number": 1 }),
+        {
+          ...part("secret", { "#number": null }, { "#number": 2 }),
+          visibility: "private",
+        },
+        part(
+          "uses-secret",
+          { "#number": null },
+          await partReference(user.accountId, "lib", "secret"),
+        ),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    // hidden プロジェクトの非公開のモジュール
+    expect(
+      await submitCommit(
+        store,
+        env,
+        user,
+        "hidden",
+        [part("value", { "#number": null }, { "#number": 3 })],
+        "hidden",
+        "private",
+      ),
+    ).toEqual({ status: 200, message: "" });
+
+    const app = (parts: ReadonlyArray<DecodedPart>) =>
+      submitCommit(store, env, user, "app", parts);
+    expect(
+      await app([
+        part(
+          "a",
+          { "#number": null },
+          await partReference(user.accountId, "lib", "open"),
+        ),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    const privatePart = await app([
+      part(
+        "a",
+        { "#number": null },
+        await partReference(user.accountId, "lib", "secret"),
+      ),
+    ]);
+    expect(privatePart.status).toBe(400);
+    expect(privatePart.message).toContain(
+      "part 'app.a': cannot reference the private part 'lib.secret'",
+    );
+    const privateModule = await app([
+      part(
+        "a",
+        { "#number": null },
+        await partReference(user.accountId, "hidden", "value"),
+      ),
+    ]);
+    expect(privateModule.status).toBe(400);
+    expect(privateModule.message).toContain("of a private module");
+  }, 60_000);
 
   it("型エラーのあるコミットは 400 で拒否し, パーツ名と理由を返す", async () => {
     const { store, env } = await createSeededStore();

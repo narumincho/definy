@@ -4,11 +4,22 @@ import { Link } from "../../src/components/Link.tsx";
 import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
-import { MAIN_BRANCH } from "../../src/event_content.ts";
+import { DEFAULT_VISIBILITY, MAIN_BRANCH } from "../../src/event_content.ts";
+import {
+  PrivateBadge,
+  VisibilitySelect,
+} from "../../src/components/Visibility.tsx";
 
 export default function ModuleDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const { language, modules, parts, projectOfModule } = useDefiny();
+  const {
+    language,
+    modules,
+    parts,
+    projectOfModule,
+    workingChanges,
+    setModuleVisibility,
+  } = useDefiny();
 
   const mod = modules.find((m) => m.moduleId === id) ?? {
     moduleId: id ?? "unknown",
@@ -17,6 +28,7 @@ export default function ModuleDetailPage(): JSX.Element {
     branch: MAIN_BRANCH,
     branches: [],
     description: [],
+    visibility: DEFAULT_VISIBILITY,
     latestEventHash: "",
     parentCommitHash: null,
     message: "",
@@ -27,6 +39,7 @@ export default function ModuleDetailPage(): JSX.Element {
   usePageTitle(mod.name);
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
+  const changedVisibility = workingChanges.moduleVisibilities?.get(mod.name);
 
   return (
     <div className="module-detail-view">
@@ -55,6 +68,22 @@ export default function ModuleDetailPage(): JSX.Element {
             >
               {mod.projectName}
             </Link>
+            <span>
+              {label(language, "Visibility", "公開範囲", "Videbleco")}
+            </span>
+            <VisibilitySelect
+              id="module-visibility-select"
+              language={language}
+              value={changedVisibility ?? mod.visibility}
+              onChange={(visibility) => {
+                setModuleVisibility(mod.name, visibility);
+              }}
+            />
+            {changedVisibility !== undefined && (
+              <span className="badge badge-warning">
+                {label(language, "Modified", "編集中の変更あり", "Modifita")}
+              </span>
+            )}
             {mod.branches.length > 0 && (
               <span className="text-muted">
                 {label(
@@ -103,7 +132,14 @@ export default function ModuleDetailPage(): JSX.Element {
                 href={`/part/${part.partId}`}
                 className="card part-card"
               >
-                <strong>{part.name}</strong>
+                <strong>{part.name}</strong>{" "}
+                <PrivateBadge
+                  visibility={
+                    workingChanges.parts.get(part.partId)?.visibility ??
+                    part.visibility
+                  }
+                  language={language}
+                />
                 {part.description.length > 0 && (
                   <p>{localizedText(part.description, language)}</p>
                 )}

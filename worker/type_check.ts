@@ -31,6 +31,12 @@ import {
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
+  checkReferenceVisibility,
+  visibilityViolationMessage,
+  type VisibilityTarget,
+} from "../src/visibility.ts";
+import {
+  DEFAULT_VISIBILITY,
   isExpression,
   MAIN_BRANCH,
   type CommitModule,
@@ -60,6 +66,12 @@ async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
 }
 
 const EVENTS_PAGE_SIZE = 500;
+
+/** 型環境に使う形のプロジェクトのコミットのパーツ. 公開/非公開の検査 (docs/visibility.md) に使う情報も持つ */
+type CommitLatestPart = LatestPart &
+  Omit<VisibilityTarget, "projectName" | "name"> & {
+    readonly contentHash: string | null;
+  };
 
 /** 式を CAS に預けているパーツの content hash. 式を持っていれば `null` */
 function partContentHash(part: CommitPart): string | null {
@@ -114,9 +126,7 @@ function builtinExpressionsByContentHash(): Promise<
  */
 async function moduleParts(
   module: CommitModule,
-): Promise<
-  ReadonlyArray<LatestPart & { readonly contentHash: string | null }>
-> {
+): Promise<ReadonlyArray<CommitLatestPart>> {
   const moduleIdBytes = await deriveModuleIdBytes(module.name);
   const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
   const parts = [];
@@ -131,6 +141,9 @@ async function moduleParts(
       partId: await deriveModulePartId(moduleIdBytes, part.name),
       moduleId,
       name: `${module.name}.${part.name}`,
+      moduleName: module.name,
+      visibility: part.visibility ?? DEFAULT_VISIBILITY,
+      moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
       partType: part.partType,
       expression,
       expressionKey:
@@ -147,9 +160,7 @@ async function moduleParts(
 /** コミットの全モジュールのパーツ */
 async function commitParts(
   modules: ReadonlyArray<CommitModule>,
-): Promise<
-  ReadonlyArray<LatestPart & { readonly contentHash: string | null }>
-> {
+): Promise<ReadonlyArray<CommitLatestPart>> {
   return (await Promise.all(modules.map(moduleParts))).flat();
 }
 
@@ -164,9 +175,7 @@ type CachedCommit = {
   readonly branch: string;
   readonly timeMs: number;
   /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
-  readonly parts: ReadonlyArray<
-    LatestPart & { readonly contentHash: string | null }
-  >;
+  readonly parts: ReadonlyArray<CommitLatestPart>;
 };
 
 /**
@@ -357,33 +366,31 @@ async function loadLatestParts(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<{
-  readonly parts: ReadonlyMap<
-    string,
-    LatestPart & { readonly contentHash: string | null }
-  >;
+  readonly parts: ReadonlyMap<string, CommitLatestPart>;
   readonly projectModuleIds: ReadonlyMap<string, ReadonlyArray<string>>;
+  /** 参照されるパーツとしての公開/非公開 (キーはパーツ ID) */
+  readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
 }> {
   const latestCommits = await loadLatestMainCommits(store, env);
-  const parts = new Map<
-    string,
-    LatestPart & { readonly contentHash: string | null }
-  >();
+  const parts = new Map<string, CommitLatestPart>();
   const projectModuleIds = new Map<string, ReadonlyArray<string>>();
+  const visibilityTargets = new Map<string, VisibilityTarget>();
   for (const [projectName, commit] of latestCommits) {
     projectModuleIds.set(projectName, commit.moduleIds);
     for (const part of commit.parts) {
       parts.set(part.partId, part);
+      visibilityTargets.set(part.partId, { ...part, projectName });
     }
   }
-  return { parts, projectModuleIds };
+  return { parts, projectModuleIds, visibilityTargets };
 }
 
 /** CAS に預けた式を読んで埋める. 読めなければ `expression` は `null` のまま */
 async function withExpression(
-  part: LatestPart & { readonly contentHash: string | null },
+  part: CommitLatestPart,
   store: PartStoreReader,
   env: Env | undefined,
-): Promise<LatestPart> {
+): Promise<CommitLatestPart> {
   if (part.expression != null || part.contentHash === null) {
     return part;
   }
@@ -461,6 +468,15 @@ export async function checkSubmittedProjectCommit(
   const allowBuiltinParts =
     bytesToUrlSafeBase64NoPad(decoded.accountIdBytes) ===
     bytesToUrlSafeBase64NoPad(await systemAccountBytes(env));
+  // 参照できない (非公開の) パーツへの参照は, 型を検査する前に拒否する (docs/visibility.md)
+  const violations = checkReferenceVisibility({
+    projectName: commit.projectName,
+    committed,
+    environment: latest.visibilityTargets,
+  });
+  if (violations.length > 0) {
+    return violations.map(visibilityViolationMessage);
+  }
   return checkModuleCommitParts({
     typeChecker: typeCheckerModule,
     // プロジェクトの今の (main の) モジュールも, コミットのモジュールで置き換える (無くなったモジュールのパーツは型環境から外れる)

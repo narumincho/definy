@@ -4583,6 +4583,38 @@
       }
     },
     {
+      "name": "visibility",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether a module or a part can be referenced from outside. A private module can be referenced only from its project, and a private part only from its module. See docs/visibility.md"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールやパーツを外から参照できるか. 非公開のモジュールは同じプロジェクトから, 非公開のパーツは同じモジュールからだけ参照できる. docs/visibility.md を参照"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "public",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "private",
+            "payload_type": {
+              "#none": null
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "project-commit-module",
       "part_type": {
         "#type": null
@@ -4615,6 +4647,16 @@
                       "$part": "core.localized-text"
                     }
                   }
+                }
+              }
+            }
+          },
+          {
+            "key": "visibility",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.visibility"
                 }
               }
             }
@@ -4669,6 +4711,16 @@
                       "$part": "core.localized-text"
                     }
                   }
+                }
+              }
+            }
+          },
+          {
+            "key": "visibility",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.visibility"
                 }
               }
             }

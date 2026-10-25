@@ -1,3 +1,4 @@
+import type { Visibility } from "./event_content.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
 /** 作業中の変更を localStorage に保存できる JSON 文字列にする. パーツの式と型は JSON の値そのもの (docs/value-encoding.md) */
 export function serializeWorkingChanges(changes: WorkingChanges): string {
@@ -9,6 +10,9 @@ export function serializeWorkingChanges(changes: WorkingChanges): string {
     merges: Object.fromEntries(changes.merges ?? new Map<string, string>()),
     newModuleProjects: Object.fromEntries(
       changes.newModuleProjects ?? new Map<string, string>(),
+    ),
+    moduleVisibilities: Object.fromEntries(
+      changes.moduleVisibilities ?? new Map<string, Visibility>(),
     ),
   });
 }
@@ -43,6 +47,16 @@ export function deserializeWorkingChanges(text: string): WorkingChanges {
       merges: stringRecord((parsed as { readonly merges?: unknown }).merges),
       newModuleProjects: stringRecord(
         (parsed as { readonly newModuleProjects?: unknown }).newModuleProjects,
+      ),
+      moduleVisibilities: new Map(
+        [
+          ...stringRecord(
+            (parsed as { readonly moduleVisibilities?: unknown })
+              .moduleVisibilities,
+          ),
+        ].flatMap(([name, v]): ReadonlyArray<[string, Visibility]> =>
+          v === "public" || v === "private" ? [[name, v]] : [],
+        ),
       ),
     };
   } catch {

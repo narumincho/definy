@@ -8,6 +8,7 @@ const part = (partId: string, expression: unknown): PartSnapshot => ({
   moduleName: "m",
   name: partId,
   description: [],
+  visibility: "public",
   partType: null,
   contentHash: null,
   partIdHash: partId,

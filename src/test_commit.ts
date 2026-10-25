@@ -8,6 +8,7 @@ import {
   type SignedEventResult,
 } from "./auth.ts";
 import type { DecodedPart, LocalizedText } from "./cbor.ts";
+import type { Visibility } from "./event_content.ts";
 
 export function createSignedSingleModuleCommitEvent(
   params: {
@@ -16,6 +17,8 @@ export function createSignedSingleModuleCommitEvent(
     readonly moduleName: string;
     readonly branch?: string;
     readonly moduleDescription: LocalizedText;
+    /** 省くと公開 (docs/visibility.md) */
+    readonly moduleVisibility?: Visibility;
     readonly message: string;
     readonly parentCommitHash?: string | null;
     readonly mergedCommitHash?: string | null;
@@ -36,6 +39,9 @@ export function createSignedSingleModuleCommitEvent(
         {
           name: params.moduleName,
           description: params.moduleDescription,
+          ...(params.moduleVisibility === undefined
+            ? {}
+            : { visibility: params.moduleVisibility }),
           parts: params.parts,
         },
       ],

@@ -72,7 +72,8 @@ export function ActivityBar(): JSX.Element {
   const { language, workingChanges } = useDefiny();
   // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
   const currentPath = useRouter().path;
-  const changesCount = workingChanges.parts.size;
+  const changesCount =
+    workingChanges.parts.size + (workingChanges.moduleVisibilities?.size ?? 0);
 
   return (
     <nav

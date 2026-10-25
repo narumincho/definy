@@ -344,6 +344,74 @@ test.describe("definy UI E2E", () => {
     await expect(page.locator(".part-grid .part-card")).toContainText("square");
   });
 
+  test("makes a part and a module private and commits it (#624)", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now().toString().slice(-6);
+    const credentials = await generateAccountCredentials(`vis_${suffix}`);
+    const submit = async (signedEventBytes: string): Promise<void> => {
+      const res = await request.post("/definy.v1.EventService/SubmitEvent", {
+        data: { signedEventBytes },
+      });
+      expect(res.ok(), await res.text()).toBe(true);
+    };
+    await submit(
+      (await createSignedAccountEvent(credentials)).signedEventBytes,
+    );
+    const moduleName = `vis_${suffix}`;
+    await submit(
+      (
+        await createSignedSingleModuleCommitEvent({
+          credentials,
+          moduleName,
+          moduleDescription: [],
+          message: "Create",
+          parts: ["secret", "open"].map((name) => ({
+            name,
+            description: [],
+            partType: { "#number": null },
+            expression: { "#number": 1 },
+          })),
+        })
+      ).signedEventBytes,
+    );
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, credentials);
+
+    await page.goto(`/part/${moduleName}.secret`);
+    const partVisibility = page.locator("#part-visibility-select");
+    await expect(partVisibility).toHaveValue("public", { timeout: 15000 });
+    await partVisibility.selectOption("private");
+    await page.goto(`/module/${moduleName}`);
+    const moduleVisibility = page.locator("#module-visibility-select");
+    await expect(moduleVisibility).toHaveValue("public", { timeout: 15000 });
+    await moduleVisibility.selectOption("private");
+
+    await page.goto("/changes");
+    await expect(page.locator(".module-visibility-change")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator(".change-visibility")).toContainText("Private");
+    await page.locator("#commit-message-input").fill("Make private");
+    await page
+      .locator("button[type='submit']", { hasText: /Sign & Commit/ })
+      .click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+
+    await page.goto(`/module/${moduleName}`);
+    await expect(moduleVisibility).toHaveValue("private", { timeout: 15000 });
+    await expect(page.locator(".part-card .private-badge")).toHaveCount(1);
+    await expect(
+      page
+        .locator(".part-card", { hasText: "secret" })
+        .locator(".private-badge"),
+    ).toBeVisible();
+  });
+
   test("the creator of main merges another account's branch into main", async ({
     page,
     request,

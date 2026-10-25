@@ -92,6 +92,18 @@ describe("working_changes_storage", () => {
     });
   });
 
+  it("モジュールの公開/非公開の変更を保存して復元する", () => {
+    const restored = deserializeWorkingChanges(
+      serializeWorkingChanges({
+        parts: new Map(),
+        moduleVisibilities: new Map([["app", "private"]]),
+      }),
+    );
+    expect([...(restored.moduleVisibilities ?? [])]).toEqual([
+      ["app", "private"],
+    ]);
+  });
+
   it("returns empty WorkingChanges on corrupted or invalid JSON", () => {
     const emptyResult = deserializeWorkingChanges("not valid json {");
     expect(emptyResult.parts.size).toBe(0);
