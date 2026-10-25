@@ -1,11 +1,12 @@
 # definy
 
-純粋な式と能力 (Capability) による自律的システムを目指すプログラミング言語・エッジ実行環境。
+シンプルな純粋関数型言語でビジュアルプログラミング言語, 実用を目指して開発しているプログラミング言語
 
 ![definyのスクリーンショット](https://repository-images.githubusercontent.com/168463361/72534f00-ec72-11e9-94f3-370ab473bc28)
 
-- [本番環境 (Cloudflare Workers)](https://definy.narumincho.com/)
-- [Workers.dev エンドポイント](https://definy.narumincho.workers.dev/)
+- [vibe coding版definy](https://definy.narumincho.com/)
+  開発中のためデータをよく削除しています
+- [firebase版definy](https://definy.app/)
 
 ## アーキテクチャとディレクトリ構成
 
