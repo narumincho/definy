@@ -12,6 +12,8 @@ import {
   type CommitPart,
   type ProjectCommitContent,
   type Visibility,
+  decodePartContent,
+  type PartContent,
 } from "./event_content.ts";
 import {
   loadProjectSeeds,
@@ -241,8 +243,7 @@ async function fetchLatestSystemProjectCommits(
 }
 
 /**
- * content hash だけを持つパーツの式を `GetContent` から取得して復元する。
- * 式を持つパーツの `content_hash` は書き出さない。
+ * パーツの中身 (説明・公開/非公開・型・式. `core.part-content`) を `GetContent` から取得して復元する
  */
 async function hydrateCommitParts(
   fetchFn: typeof fetch,
@@ -251,8 +252,8 @@ async function hydrateCommitParts(
 ): Promise<ReadonlyArray<PartSeedData>> {
   const parts: Array<PartSeedData> = [];
   for (const part of commitParts) {
-    let expression: unknown = part.expression ?? undefined;
-    if (expression === undefined && part.contentHash !== null) {
+    let content: PartContent = part;
+    if (part.unresolved === true && part.contentHash !== null) {
       const response = await postConnectJson<GetContentResponse>(
         fetchFn,
         baseUrl,
@@ -260,26 +261,30 @@ async function hydrateCommitParts(
         { contentHash: part.contentHash },
       );
       const item = response.item;
-      if (!item) {
+      const decoded =
+        item === undefined
+          ? undefined
+          : decodePartContent(
+              decodeCborItem(base64ToBytes(item.contentBytes))[0],
+            );
+      if (decoded === undefined) {
         throw new Error(
           `content ${part.contentHash} for part '${part.name}' was not found`,
         );
       }
-      const contentBytes = base64ToBytes(item.contentBytes);
-      const [decodedExpr] = decodeCborItem(contentBytes);
-      expression = decodedExpr;
+      content = decoded;
     }
 
     const partData: Record<string, unknown> = { name: part.name };
-    if (part.partType !== null) {
-      partData.part_type = part.partType;
+    if (content.partType !== null) {
+      partData.part_type = content.partType;
     }
-    partData.description = part.description;
-    if (part.visibility === "private") {
+    partData.description = content.description;
+    if (content.visibility === "private") {
       partData.visibility = "private";
     }
-    if (expression !== undefined) {
-      partData.expression = expression;
+    if (content.expression !== null) {
+      partData.expression = content.expression;
     }
     parts.push(partData as PartSeedData);
   }

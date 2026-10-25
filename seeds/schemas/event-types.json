@@ -30,6 +30,84 @@
       }
     ]
   },
+  "core.part-content": {
+    "#type_record": [
+      {
+        "key": "description",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.localized-text"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "visibility",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.visibility"
+            }
+          }
+        }
+      },
+      {
+        "key": "part_type",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "key": "expression",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
   "core.project-commit": {
     "#type_record": [
       {
@@ -138,54 +216,6 @@
       }
     ]
   },
-  "core.project-commit-module": {
-    "#type_record": [
-      {
-        "key": "name",
-        "value": {
-          "#type_string": null
-        }
-      },
-      {
-        "key": "description",
-        "value": {
-          "#type_list": {
-            "item_type": {
-              "#part_reference": {
-                "part_definition_event_hash": {
-                  "$part": "core.localized-text"
-                }
-              }
-            }
-          }
-        }
-      },
-      {
-        "key": "visibility",
-        "value": {
-          "#part_reference": {
-            "part_definition_event_hash": {
-              "$part": "core.visibility"
-            }
-          }
-        }
-      },
-      {
-        "key": "parts",
-        "value": {
-          "#type_list": {
-            "item_type": {
-              "#part_reference": {
-                "part_definition_event_hash": {
-                  "$part": "core.module-commit-part"
-                }
-              }
-            }
-          }
-        }
-      }
-    ]
-  },
   "core.visibility": {
     "#type_union": [
       {
@@ -198,111 +228,6 @@
         "tag": "private",
         "payload_type": {
           "#none": null
-        }
-      }
-    ]
-  },
-  "core.module-commit-part": {
-    "#type_record": [
-      {
-        "key": "name",
-        "value": {
-          "#type_string": null
-        }
-      },
-      {
-        "key": "description",
-        "value": {
-          "#type_list": {
-            "item_type": {
-              "#part_reference": {
-                "part_definition_event_hash": {
-                  "$part": "core.localized-text"
-                }
-              }
-            }
-          }
-        }
-      },
-      {
-        "key": "visibility",
-        "value": {
-          "#part_reference": {
-            "part_definition_event_hash": {
-              "$part": "core.visibility"
-            }
-          }
-        }
-      },
-      {
-        "key": "part_type",
-        "value": {
-          "#type_union": [
-            {
-              "tag": "none",
-              "payload_type": {
-                "#none": null
-              }
-            },
-            {
-              "tag": "some",
-              "payload_type": {
-                "#some": {
-                  "#part_reference": {
-                    "part_definition_event_hash": {
-                      "$part": "core.type-ast"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      {
-        "key": "expression",
-        "value": {
-          "#type_union": [
-            {
-              "tag": "none",
-              "payload_type": {
-                "#none": null
-              }
-            },
-            {
-              "tag": "some",
-              "payload_type": {
-                "#some": {
-                  "#part_reference": {
-                    "part_definition_event_hash": {
-                      "$part": "core.expression"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      {
-        "key": "content_hash",
-        "value": {
-          "#type_union": [
-            {
-              "tag": "none",
-              "payload_type": {
-                "#none": null
-              }
-            },
-            {
-              "tag": "some",
-              "payload_type": {
-                "#some": {
-                  "#type_string": null
-                }
-              }
-            }
-          ]
         }
       }
     ]
@@ -1118,6 +1043,54 @@
       }
     ]
   },
+  "core.project-commit-module": {
+    "#type_record": [
+      {
+        "key": "name",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "description",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.localized-text"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "visibility",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.visibility"
+            }
+          }
+        }
+      },
+      {
+        "key": "parts",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.module-commit-part"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
   "core.callee": {
     "#type_union": [
       {
@@ -1181,6 +1154,22 @@
               }
             ]
           }
+        }
+      }
+    ]
+  },
+  "core.module-commit-part": {
+    "#type_record": [
+      {
+        "key": "name",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "content_hash",
+        "value": {
+          "#type_string": null
         }
       }
     ]

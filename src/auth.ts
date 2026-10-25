@@ -18,7 +18,7 @@ import {
   type EventContent,
   type Visibility,
 } from "./event_content.ts";
-import type { ContentItem } from "./content_store.ts";
+import { toContentAddressedParts, type ContentItem } from "./content_store.ts";
 
 export type AccountCredentials = {
   readonly accountId: string;
@@ -29,6 +29,11 @@ export type AccountCredentials = {
 export type SignedEventResult = {
   readonly signedEventBytes: string;
   readonly eventHash: string;
+};
+
+/** 署名したプロジェクトのコミットと, パーツの中身 (CAS に預けるもの. キーは content hash) */
+export type SignedProjectCommitResult = SignedEventResult & {
+  readonly contents: ReadonlyMap<string, ContentItem>;
 };
 
 export type SubmitEventResult = {
@@ -192,13 +197,22 @@ export async function createSignedAccountEvent(
 }
 
 /**
- * プロジェクトのコミット (`project_commit`) イベントを作成・Ed25519 署名する (docs/project.md)
+ * プロジェクトのコミット (`project_commit`) イベントを作成・Ed25519 署名する (docs/project.md).
+ * パーツの中身は content hash にし, 中身は `contents` で返す (`submitProjectCommitEvent` で送る)
  */
 export async function createSignedProjectCommitEvent(
   params: CreateProjectCommitParams,
   timeSeconds: number = Math.floor(Date.now() / 1000),
-): Promise<SignedEventResult> {
-  return await signEvent(
+): Promise<SignedProjectCommitResult> {
+  const contents = new Map<string, ContentItem>();
+  const modules = params.modules.map((module) => {
+    const addressed = toContentAddressedParts(module.parts);
+    for (const [hash, item] of addressed.contents) {
+      contents.set(hash, item);
+    }
+    return { ...module, parts: addressed.parts };
+  });
+  const signed = await signEvent(
     params.credentials,
     {
       type: "project_commit",
@@ -209,7 +223,7 @@ export async function createSignedProjectCommitEvent(
         message: params.message,
         parentCommitHash: params.parentCommitHash ?? null,
         mergedCommitHash: params.mergedCommitHash ?? null,
-        modules: params.modules.map((module) => ({
+        modules: modules.map((module) => ({
           name: module.name,
           description: module.description,
           visibility: module.visibility ?? DEFAULT_VISIBILITY,
@@ -219,13 +233,14 @@ export async function createSignedProjectCommitEvent(
             visibility: p.visibility ?? DEFAULT_VISIBILITY,
             partType: p.partType ?? null,
             expression: p.expression ?? null,
-            contentHash: p.contentHash ?? null,
+            contentHash: p.contentHash,
           })),
         })),
       },
     },
     timeSeconds,
   );
+  return { ...signed, contents };
 }
 
 /**
@@ -251,8 +266,8 @@ export async function submitSignedEvent(
 }
 
 /**
- * プロジェクトのコミットを提出する. サーバーの CAS に足りない式があれば (`missing_content`),
- * その式だけを `UploadContent` で送ってから出し直す (docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」)
+ * プロジェクトのコミットを提出する. サーバーの CAS に足りないパーツの中身があれば (`missing_content`),
+ * その中身だけを `UploadContent` で送ってから出し直す (docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」)
  */
 export async function submitProjectCommitEvent(
   signedEventBytes: string,

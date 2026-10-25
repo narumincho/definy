@@ -71,7 +71,7 @@ export function compileEventChecker(options: {
 }
 
 /**
- * 規則が見ない式・型・説明を除いたイベントの中身. core のコミット (式で数 MB) をそのまま線形メモリに書くと重いため
+ * 規則が見ない説明・メッセージ・パーツの中身の content hash を除いたイベントの中身 (線形メモリに書く量を減らす)
  */
 function contentForCheck(content: EventContent): EventContent {
   if (content.type !== "project_commit") {
@@ -91,7 +91,7 @@ function contentForCheck(content: EventContent): EventContent {
           description: [],
           partType: null,
           expression: null,
-          contentHash: null,
+          contentHash: "",
         })),
       })),
     },

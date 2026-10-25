@@ -78,20 +78,22 @@ function samePart(a: MergePart | undefined, b: MergePart | undefined): boolean {
   if (a === undefined || b === undefined) {
     return a === b;
   }
+  // 中身の content hash が同じなら中身も同じ (docs/content-addressed.md)
+  if (a.contentHash != null && b.contentHash != null) {
+    return a.contentHash === b.contentHash;
+  }
   return (
     stableJson([
       a.description,
       a.visibility ?? DEFAULT_VISIBILITY,
       a.partType,
       a.expression ?? null,
-      a.contentHash ?? null,
     ]) ===
     stableJson([
       b.description,
       b.visibility ?? DEFAULT_VISIBILITY,
       b.partType,
       b.expression ?? null,
-      b.contentHash ?? null,
     ])
   );
 }

@@ -6,8 +6,11 @@ import {
 import { base64ToBytes, encodeCborItem } from "./cbor.ts";
 import {
   decodeEventContent,
+  decodePartContent,
   encodeEventContent,
+  encodePartContent,
   type EventContent,
+  type PartContent,
 } from "./event_content.ts";
 import { InvalidSignedEventError, verifySignedEvent } from "./signed_event.ts";
 
@@ -28,19 +31,11 @@ const projectCommit: EventContent = {
         parts: [
           {
             name: "answer",
-            description: [{ language: "ja", text: "答え" }],
-            visibility: "private",
-            partType: { "#number": null },
-            expression: { "#number": 42 },
-            contentHash: null,
-          },
-          {
-            name: "stored",
             description: [],
-            visibility: "public",
             partType: null,
             expression: null,
             contentHash: "AAAA",
+            unresolved: true,
           },
         ],
       },
@@ -86,29 +81,36 @@ describe("core.event-content", () => {
             name: "math",
             description: [{ language: "en", text: "Math functions" }],
             visibility: { "#private": null },
-            parts: [
-              {
-                name: "answer",
-                description: [{ language: "ja", text: "答え" }],
-                visibility: { "#private": null },
-                part_type: { "#some": { "#number": null } },
-                expression: { "#some": { "#number": 42 } },
-                content_hash: { "#none": null },
-              },
-              {
-                name: "stored",
-                description: [],
-                visibility: { "#public": null },
-                part_type: { "#none": null },
-                expression: { "#none": null },
-                content_hash: { "#some": "AAAA" },
-              },
-            ],
+            parts: [{ name: "answer", content_hash: "AAAA" }],
           },
         ],
       },
     });
     expect(decodeEventContent(encoded)).toEqual(projectCommit);
+  });
+
+  it("パーツの中身は definy の値 (core.part-content) として往復する", () => {
+    const content: PartContent = {
+      description: [{ language: "ja", text: "答え" }],
+      visibility: "private",
+      partType: { "#number": null },
+      expression: { "#number": 42 },
+    };
+    const encoded = encodePartContent(content);
+    expect(encoded).toEqual({
+      description: [{ language: "ja", text: "答え" }],
+      visibility: { "#private": null },
+      part_type: { "#some": { "#number": null } },
+      expression: { "#some": { "#number": 42 } },
+    });
+    expect(decodePartContent(encoded)).toEqual(content);
+    // 式が core.expression の形でない
+    expect(
+      decodePartContent({
+        ...(encoded as object),
+        expression: { "#some": { "#nope": 1 } },
+      }),
+    ).toBeUndefined();
   });
 
   it("アカウントの作成は definy の値として往復する", () => {
@@ -127,24 +129,29 @@ describe("core.event-content", () => {
     expect(
       decodeEventContent({ CreateAccount: { account_name: "alice" } }),
     ).toBeUndefined();
-    // 式が core.expression の形でない
     const encoded = encodeEventContent(projectCommit) as {
-      readonly "#project_commit": {
-        readonly modules: ReadonlyArray<{
-          readonly parts: ReadonlyArray<object>;
-        }>;
-      };
+      readonly "#project_commit": object;
     };
-    const [module] = encoded["#project_commit"].modules;
-    const [answer] = module?.parts ?? [];
+    // パーツの中身をコミットに直接書いた以前の形
     expect(
       decodeEventContent({
         "#project_commit": {
           ...encoded["#project_commit"],
           modules: [
             {
-              ...module,
-              parts: [{ ...answer, expression: { "#some": { "#nope": 1 } } }],
+              name: "math",
+              description: [],
+              visibility: { "#public": null },
+              parts: [
+                {
+                  name: "answer",
+                  description: [],
+                  visibility: { "#public": null },
+                  part_type: { "#none": null },
+                  expression: { "#none": null },
+                  content_hash: { "#some": "AAAA" },
+                },
+              ],
             },
           ],
         },

@@ -244,7 +244,10 @@ export function reachableTypeDeclarations(
 export function buildEventTypeDeclarations(
   coreParts: ReadonlyArray<SeedSchemaPart>,
 ): Readonly<Record<string, unknown>> {
-  return reachableTypeDeclarations(coreParts, ["core.event-content"]);
+  return reachableTypeDeclarations(coreParts, [
+    "core.event-content",
+    "core.part-content",
+  ]);
 }
 
 /**

@@ -7,6 +7,7 @@ import type { WorkingChanges } from "./types.ts";
 import { generateAccountCredentials } from "./auth.ts";
 import { extractProjectCommit } from "./cbor.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
+import { withCachedContents } from "./content_store.ts";
 
 describe("working_changes_storage", () => {
   it("パーツの式と型を JSON のまま保存して復元する", () => {
@@ -84,7 +85,7 @@ describe("working_changes_storage", () => {
     );
 
     const decodedCommit = extractProjectCommit(signedEventBytes)?.modules[0];
-    expect(decodedCommit?.parts[0]).toMatchObject({
+    expect(withCachedContents(decodedCommit?.parts ?? [])[0]).toMatchObject({
       partType: { "#number": null },
       expression: {
         "#part_reference": { part_definition_event_hash: partId },

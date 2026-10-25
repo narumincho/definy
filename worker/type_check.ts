@@ -10,10 +10,7 @@ import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
   decodeCborItem,
-  encodeCborItem,
-  sha256Bytes,
 } from "../src/cbor.ts";
-import { variant } from "../src/definy_value.ts";
 import {
   checkModuleCommitParts,
   isTypePartType,
@@ -25,10 +22,7 @@ import {
   summarizeBranches,
   type ProjectBranchSummary,
 } from "../src/branches.ts";
-import {
-  BUILTIN_PARAMETERS,
-  compilerBuiltinName,
-} from "../src/stage1_compiler.ts";
+import { compilerBuiltinName } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
   checkReferenceVisibility,
@@ -37,11 +31,12 @@ import {
 } from "../src/visibility.ts";
 import {
   DEFAULT_VISIBILITY,
-  isExpression,
+  decodePartContent,
   MAIN_BRANCH,
   type CommitModule,
-  type CommitPart,
+  type PartContent,
 } from "../src/event_content.ts";
+import type { ContentItem } from "../src/content_store.ts";
 import type { EventCheckState } from "../src/event_check.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
@@ -53,10 +48,10 @@ export type PartStoreReader = {
     req: GetEventsRequest,
     env?: Env,
   ) => Promise<ReadonlyArray<EventItem>>;
-  readonly getRawContentBytes: (
-    hash: string,
+  readonly getContentItems: (
+    hashes: ReadonlyArray<string>,
     env?: Env,
-  ) => Promise<Uint8Array | undefined>;
+  ) => Promise<ReadonlyArray<ContentItem>>;
 };
 
 /** システムアカウントの公開鍵. 未設定なら seed と同じ開発用の鍵 */
@@ -70,88 +65,113 @@ const EVENTS_PAGE_SIZE = 500;
 /** 型環境に使う形のプロジェクトのコミットのパーツ. 公開/非公開の検査 (docs/visibility.md) に使う情報も持つ */
 type CommitLatestPart = LatestPart &
   Omit<VisibilityTarget, "projectName" | "name"> & {
-    readonly contentHash: string | null;
+    readonly contentHash: string;
   };
 
-/** 式を CAS に預けているパーツの content hash. 式を持っていれば `null` */
-function partContentHash(part: CommitPart): string | null {
-  return part.expression === null ? part.contentHash : null;
+/** コミットのパーツのうち, 中身 (`core.part-content`) を読まなくても分かるもの */
+type CommitPartRef = Omit<
+  CommitLatestPart,
+  "visibility" | "partType" | "expression" | "expressionKey"
+>;
+
+/** パーツの中身の CBOR (Base64) を読む. 形が `core.part-content` でなければ `undefined` */
+function decodePartContentBytes(contentBytes: string): PartContent | undefined {
+  try {
+    return decodePartContent(decodeCborItem(base64ToBytes(contentBytes))[0]);
+  } catch {
+    return undefined;
+  }
 }
 
-/** 式の CBOR の SHA-256 (URL-safe Base64, CAS の content hash と同じ). ネイティブの非同期 SHA-256 を使う */
-async function expressionContentHashAsync(
-  expression: unknown,
-): Promise<string> {
-  return bytesToUrlSafeBase64NoPad(
-    await sha256Bytes(encodeCborItem(expression)),
+/** CAS から読むときの 1 回の content hash の数 */
+const CONTENT_CHUNK_SIZE = 200;
+
+/** CAS からパーツの中身を読む (キーは content hash). 無いものや形の違うものは入らない */
+async function readPartContents(
+  hashes: ReadonlyArray<string>,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyMap<string, PartContent>> {
+  const result = new Map<string, PartContent>();
+  const unique = [...new Set(hashes)];
+  for (let i = 0; i < unique.length; i += CONTENT_CHUNK_SIZE) {
+    for (const item of await store.getContentItems(
+      unique.slice(i, i + CONTENT_CHUNK_SIZE),
+      env,
+    )) {
+      const content = decodePartContentBytes(item.contentBytes);
+      if (content !== undefined) {
+        result.set(item.contentHash, content);
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * content hash ごとの, 型環境に使う形のパーツの中身 (CAS に無いか形が違えば `null`).
+ * 中身は変わらないので isolate の中で使い回す. 式は型パーツの宣言式とコンパイラ組み込みのもの (小さい) だけ持つ (メモリを節約する)
+ */
+const environmentContentCache = new Map<string, PartContent | null>();
+
+async function environmentContents(
+  hashes: ReadonlyArray<string>,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyMap<string, PartContent | null>> {
+  const missing = hashes.filter((hash) => !environmentContentCache.has(hash));
+  if (missing.length > 0) {
+    const read = await readPartContents(missing, store, env);
+    for (const hash of missing) {
+      const content = read.get(hash);
+      environmentContentCache.set(
+        hash,
+        content === undefined
+          ? null
+          : isTypePartType(content.partType) ||
+              compilerBuiltinName(content.expression) !== undefined
+            ? { ...content, description: [] }
+            : { ...content, description: [], expression: null },
+      );
+    }
+  }
+  return new Map(
+    hashes.map((hash) => [hash, environmentContentCache.get(hash) ?? null]),
   );
 }
 
-let builtinExpressionsPromise:
-  Promise<ReadonlyMap<string, unknown>> | undefined;
-
-/**
- * コンパイラ組み込みの式 (`{"#builtin": "plus"}` など) の content hash から式を引く表.
- * 型環境では組み込みのパーツの型を `builtin` にする (型チェッカーが呼び出しを名前で検査する) ので, パーツが組み込みかを知る必要がある.
- * CAS に預けた組み込みのパーツの式を読まなくても content hash で分かるようにする
- */
-function builtinExpressionsByContentHash(): Promise<
-  ReadonlyMap<string, unknown>
-> {
-  builtinExpressionsPromise ??= (async () =>
-    new Map(
-      await Promise.all(
-        [
-          ...BUILTIN_PARAMETERS.keys(),
-          // 引数名の表に無い (definy 側でまだ扱っていない) 組み込み
-          "let",
-          "number_literal",
-          "bit_and",
-          "bit_or",
-          "bit_xor",
-          "shift_left",
-          "shift_right",
-        ].map(async (name): Promise<readonly [string, unknown]> => {
-          const expression = variant("builtin", name);
-          return [await expressionContentHashAsync(expression), expression];
-        }),
-      ),
-    ))();
-  return builtinExpressionsPromise;
+/** パーツに中身を合わせる. 式が変わっていないかは中身の content hash で比べる */
+function withContent(
+  part: CommitPartRef,
+  content: PartContent | null,
+): CommitLatestPart {
+  return {
+    ...part,
+    visibility: content?.visibility ?? DEFAULT_VISIBILITY,
+    partType: content?.partType ?? null,
+    expression: content?.expression ?? null,
+    expressionKey: part.contentHash,
+  };
 }
 
 /**
- * プロジェクトのコミットのモジュールのパーツを `LatestPart` にする (CAS に預けた式はまだ読まない. コンパイラ組み込みの式は埋める).
+ * プロジェクトのコミットのモジュールのパーツ (中身は読まない).
  * `name` は型エラーのメッセージに使うので `モジュール名.パーツ名` にする
  */
 async function moduleParts(
   module: CommitModule,
-): Promise<ReadonlyArray<CommitLatestPart>> {
+): Promise<ReadonlyArray<CommitPartRef>> {
   const moduleIdBytes = await deriveModuleIdBytes(module.name);
   const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
   const parts = [];
   for (const part of module.parts) {
-    const contentHash = partContentHash(part);
-    const expression =
-      part.expression ??
-      (contentHash === null
-        ? null
-        : ((await builtinExpressionsByContentHash()).get(contentHash) ?? null));
     parts.push({
       partId: await deriveModulePartId(moduleIdBytes, part.name),
       moduleId,
       name: `${module.name}.${part.name}`,
       moduleName: module.name,
-      visibility: part.visibility ?? DEFAULT_VISIBILITY,
       moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
-      partType: part.partType,
-      expression,
-      expressionKey:
-        contentHash ??
-        (expression === null
-          ? null
-          : await expressionContentHashAsync(expression)),
-      contentHash,
+      contentHash: part.contentHash ?? "",
     });
   }
   return parts;
@@ -160,7 +180,7 @@ async function moduleParts(
 /** コミットの全モジュールのパーツ */
 async function commitParts(
   modules: ReadonlyArray<CommitModule>,
-): Promise<ReadonlyArray<CommitLatestPart>> {
+): Promise<ReadonlyArray<CommitPartRef>> {
   return (await Promise.all(modules.map(moduleParts))).flat();
 }
 
@@ -174,13 +194,13 @@ type CachedCommit = {
   readonly moduleIds: ReadonlyArray<string>;
   readonly branch: string;
   readonly timeMs: number;
-  /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
-  readonly parts: ReadonlyArray<CommitLatestPart>;
+  /** パーツ. 中身は使うときに CAS から読む */
+  readonly parts: ReadonlyArray<CommitPartRef>;
 };
 
 /**
  * イベントハッシュごとの, 署名を検証してデコードしたプロジェクトのコミット (プロジェクトのコミットでなければ `null`).
- * イベントは変わらないので isolate の中で使い回す (seed の core のコミットは数 MB あり, 毎回デコード・ハッシュすると重い)
+ * イベントは変わらないので isolate の中で使い回す
  */
 const commitCache = new Map<string, CachedCommit | null>();
 
@@ -210,13 +230,7 @@ async function decodeCommit(item: {
       ),
       branch: commit.branch,
       timeMs: decoded.meta.timeMs,
-      // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
-      parts: (await commitParts(commit.modules)).map((part) =>
-        isTypePartType(part.partType) ||
-        compilerBuiltinName(part.expression) !== undefined
-          ? part
-          : { ...part, expression: null },
-      ),
+      parts: await commitParts(commit.modules),
     };
   }
   commitCache.set(item.eventHash, result);
@@ -372,32 +386,25 @@ async function loadLatestParts(
   readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
 }> {
   const latestCommits = await loadLatestMainCommits(store, env);
+  const contents = await environmentContents(
+    [...latestCommits.values()].flatMap((commit) =>
+      commit.parts.map((part) => part.contentHash),
+    ),
+    store,
+    env,
+  );
   const parts = new Map<string, CommitLatestPart>();
   const projectModuleIds = new Map<string, ReadonlyArray<string>>();
   const visibilityTargets = new Map<string, VisibilityTarget>();
   for (const [projectName, commit] of latestCommits) {
     projectModuleIds.set(projectName, commit.moduleIds);
-    for (const part of commit.parts) {
+    for (const ref of commit.parts) {
+      const part = withContent(ref, contents.get(ref.contentHash) ?? null);
       parts.set(part.partId, part);
       visibilityTargets.set(part.partId, { ...part, projectName });
     }
   }
   return { parts, projectModuleIds, visibilityTargets };
-}
-
-/** CAS に預けた式を読んで埋める. 読めなければ `expression` は `null` のまま */
-async function withExpression(
-  part: CommitLatestPart,
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<CommitLatestPart> {
-  if (part.expression != null || part.contentHash === null) {
-    return part;
-  }
-  const bytes = await store.getRawContentBytes(part.contentHash, env);
-  return bytes === undefined
-    ? part
-    : { ...part, expression: decodeCborItem(bytes)[0] };
 }
 
 /**
@@ -432,38 +439,28 @@ export async function checkSubmittedProjectCommit(
   ) {
     return [];
   }
-  const rawParts = commit.modules.flatMap((module) =>
-    module.parts.map((part) => ({ moduleName: module.name, part })),
+  const refs = await commitParts(commit.modules);
+  const contents = await readPartContents(
+    refs.map((part) => part.contentHash),
+    store,
+    env,
   );
-  const committed = await Promise.all(
-    (await commitParts(commit.modules)).map((part) =>
-      withExpression(part, store, env),
-    ),
-  );
-  // CAS に預けた式は (イベントの形の検査を通らないので) ここで `core.expression` の形か確かめる
-  const malformed = rawParts.flatMap(({ moduleName, part }, index) =>
-    part.expression === null &&
-    part.contentHash !== null &&
-    !isExpression(committed[index]?.expression)
-      ? [
-          `${moduleName}.${part.name}: the content ${part.contentHash} is not a core.expression`,
-        ]
-      : [],
+  // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
+  const malformed = refs.flatMap((part) =>
+    contents.has(part.contentHash)
+      ? []
+      : [
+          `${part.name}: the content ${part.contentHash} is not a core.part-content`,
+        ],
   );
   if (malformed.length > 0) {
     return malformed;
   }
+  const committed = refs.map((part) =>
+    withContent(part, contents.get(part.contentHash) ?? null),
+  );
   const latest = await loadLatestParts(store, env);
-  const latestParts = new Map<string, LatestPart>();
-  for (const [partId, part] of latest.parts) {
-    // 型環境で中身を使うのは型パーツの宣言式だけ
-    latestParts.set(
-      partId,
-      isTypePartType(part.partType)
-        ? await withExpression(part, store, env)
-        : part,
-    );
-  }
+  const latestParts: ReadonlyMap<string, LatestPart> = latest.parts;
   // コンパイラ組み込みのパーツを置けるのはシステムアカウントのモジュールだけ
   const allowBuiltinParts =
     bytesToUrlSafeBase64NoPad(decoded.accountIdBytes) ===

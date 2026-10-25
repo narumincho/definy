@@ -17,7 +17,7 @@ issue #624 の後半。モジュールとパーツは公開 (`public`) か非公
 
 ## イベントの形
 
-- `core.project-commit-module` と `core.module-commit-part` に `visibility: core.visibility` がある ([event.md](event.md))。
+- `core.project-commit-module` と, パーツの中身 `core.part-content` (CAS に預ける) に `visibility: core.visibility` がある ([event.md](event.md))。
 - TypeScript では `Visibility = "public" | "private"` (`src/event_content.ts`)。`CommitPart` / `CommitModule` で省くと公開。
 - seed (`seeds/<モジュール名>.json`) は非公開のときだけモジュールに `"module_visibility": "private"`,
   パーツに `"visibility": "private"` を書く (省くと公開)。`npm run export:seeds` も非公開のときだけ書く。

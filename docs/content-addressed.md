@@ -102,7 +102,7 @@ project_commit {
   message: string,
   parent_commit_hash: option<EventHashId>,
   merged_commit_hash: option<EventHashId>,
-  modules: [{ name, description, parts: [{ name, description, part_type: option, expression: option, content_hash: option }] }],
+  modules: [{ name, description, visibility, parts: [{ name, content_hash }] }],
 }
 ```
 
@@ -238,12 +238,21 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 
 ### ネゴシエーションの通信手順
 
-> ブラウザ ([src/content_store.ts](../src/content_store.ts), `submitProjectCommitEvent`) と seed のコミットは式を CAS に預け,
-> コミットのパーツには `content_hash` だけを入れる (`expression` は `none`. #763)。
-> 以前はブラウザが全パーツの式をコミットに入れていたので, core の 1 パーツを直すたびに約 2.2MB のイベントが増えていた
-> (今の core の seed のコミットは約 0.44MB. 残りはパーツの名前・説明・型)。
-> 変えていないパーツは読んだときの `content_hash` をそのまま使い, 式を符号化し直さない。
-> 読む側は `GetContent` で式を読み, SHA-256 が content hash と合うものだけを使う。
+> コミットはパーツの名前と中身の content hash の一覧 (#763)。パーツの中身 (説明・公開/非公開・型・式. `core.part-content`.
+> [event.md](event.md)) は CAS に預ける。content hash は中身の CBOR の SHA-256 (URL-safe Base64)。
+> 以前はブラウザが全パーツの式をコミットに入れていたので, core の 1 パーツを直すたびに約 2.2MB のイベントが増えていた。
+> 式だけを CAS に分けると約 0.44MB, 名前以外をすべて分けた今は約 65KB (Base64)。
+>
+> - 作る: `createSignedProjectCommitEvent` ([src/auth.ts](../src/auth.ts)) が各パーツの中身を符号化してハッシュし,
+>   署名したイベントと中身 (`contents`) を返す。`submitProjectCommitEvent` が足りないと言われた中身だけを送る。
+>   中身を符号化し直しても同じバイト列になるので, 変えていないパーツは同じ content hash になり送られない。
+>   中身をまだ読んでいないパーツ (`unresolved`) は持っている content hash をそのまま使う。
+> - 読む (ブラウザ): コミットのパーツは中身を読むまで `unresolved` (説明などは空)。`GetContent` でまとめて読み,
+>   SHA-256 が content hash と合い `core.part-content` の形のものだけを使う ([src/content_store.ts](../src/content_store.ts))。
+> - 読む (サーバー): `SubmitEvent` はコミットの全パーツの中身を CAS から読んで形を確かめ, 公開/非公開と型を検査する。
+>   型環境に使う各プロジェクトの main の最新のパーツの中身は isolate の中で使い回し, 型パーツの宣言式とコンパイラ組み込みの式だけを持つ
+>   ([worker/type_check.ts](../worker/type_check.ts))。
+> - 署名が不正なサンプル ([invalid-signature-debug.md](invalid-signature-debug.md)) のパーツの中身も seed の CAS に入れる。
 
 ```mermaid
 sequenceDiagram

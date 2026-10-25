@@ -1918,10 +1918,6 @@
       "type": "object",
       "required": [
         "name",
-        "description",
-        "visibility",
-        "part_type",
-        "expression",
         "content_hash"
       ],
       "properties": {
@@ -1935,6 +1931,28 @@
             }
           ]
         },
+        "content_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.part-content": {
+      "type": "object",
+      "required": [
+        "description",
+        "visibility",
+        "part_type",
+        "expression"
+      ],
+      "properties": {
         "description": {
           "type": "array",
           "items": {
@@ -1994,41 +2012,6 @@
               "properties": {
                 "#some": {
                   "$ref": "#/definitions/core.expression"
-                }
-              },
-              "additionalProperties": false
-            }
-          ]
-        },
-        "content_hash": {
-          "anyOf": [
-            {
-              "type": "object",
-              "required": [
-                "#none"
-              ],
-              "properties": {
-                "#none": {
-                  "type": "null"
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "#some"
-              ],
-              "properties": {
-                "#some": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "$ref": "#/definitions/PartPlaceholder"
-                    }
-                  ]
                 }
               },
               "additionalProperties": false

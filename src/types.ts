@@ -46,6 +46,8 @@ export type ModulePartSnapshot = {
   readonly contentHash: string | null;
   readonly partIdHash: string | null;
   readonly expression: unknown | null;
+  /** 中身を CAS からまだ読んでいない (コミットしても中身は content hash のまま変えない) */
+  readonly unresolved?: true;
 };
 
 export type ModuleSnapshot = {

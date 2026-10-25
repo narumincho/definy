@@ -64,8 +64,7 @@ export function latestParts(
           name: part.name,
           partType: part.partType ?? null,
           expression: part.expression ?? null,
-          // CAS に預けた式は content hash で表す. 式を直接入れたコミットは (全パーツの式のハッシュを毎回計算すると重いので)
-          // どのイベントの定義かで表す. 同じ式でもコミットし直すと別のキーになり検査し直すが, 結果は変わらない
+          // パーツの中身の content hash で表す (無ければどのイベントの定義か)
           expressionKey:
             part.contentHash ??
             `${event.eventHash}:${module.name}.${part.name}`,
@@ -252,7 +251,7 @@ function resolveCommitContents(
   return resolved;
 }
 
-/** コミットのモジュールのパーツの式を CAS から読んだもので埋める. 変わらなければ同じ配列 */
+/** コミットのモジュールのパーツの中身を CAS から読んだもので埋める. 変わらなければ同じ配列 */
 function withModuleContents(
   commit: DecodedProjectCommit,
 ): DecodedProjectCommit["modules"] {
@@ -266,7 +265,7 @@ function withModuleContents(
   return changed ? modules : commit.modules;
 }
 
-/** 署名の正しいプロジェクトのコミットのうち, CAS から式を読む必要があるものを読む. 読んだら `true` */
+/** 署名の正しいプロジェクトのコミットのうち, CAS からパーツの中身を読む必要があるものを読む. 読んだら `true` */
 async function loadCommitContents(
   records: ReadonlyArray<EventRecord>,
 ): Promise<boolean> {
@@ -604,6 +603,7 @@ export function useEvents(): EventsState {
               contentHash: p.contentHash ?? null,
               partIdHash: p.partIdHash ?? null,
               expression: p.expression ?? null,
+              ...(p.unresolved === true ? { unresolved: true } : {}),
             };
           },
         );
