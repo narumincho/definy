@@ -1,6 +1,6 @@
 # システムアカウントと seed の編集フロー
 
-ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）は **システムアカウント** が所有します。
+ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `wasm`, `sample`）は **システムアカウント** が所有します。
 `src/auth.ts` / `worker/store.ts` / `src/seed_parts.ts` にてシステムアカウント鍵シードを扱います。
 
 ## 鍵の設定

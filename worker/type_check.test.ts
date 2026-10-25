@@ -4,6 +4,7 @@ import {
   createSignedAccountEvent,
   generateAccountCredentials,
   importAccountCredentials,
+  type CommitModuleParams,
   type AccountCredentials,
 } from "../src/auth.ts";
 import { bytesToUrlSafeBase64NoPad, type DecodedPart } from "../src/cbor.ts";
@@ -59,6 +60,7 @@ async function submitCommit(
   parts: ReadonlyArray<DecodedPart>,
   projectName: string = moduleName,
   moduleVisibility: Visibility = "public",
+  otherModules: ReadonlyArray<CommitModuleParams> = [],
 ): Promise<{ readonly status: number; readonly message: string }> {
   const accounts = await store.getEvents(
     { eventType: "create_account", limit: 500 },
@@ -82,6 +84,7 @@ async function submitCommit(
     message: "test",
     parentCommitHash: await latestCommitHashOf(projectName, store, env),
     parts,
+    otherModules,
   });
   await store.uploadContent([...commit.contents.values()], env);
   return submitEvent(store, env, commit.signedEventBytes);
@@ -274,30 +277,45 @@ describe("SubmitEvent の型検査", () => {
       bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
       "definy",
     );
-    const seed = JSON.parse(await readFile("seeds/core.json", "utf8")) as {
-      readonly parts: ReadonlyArray<{
-        readonly name: string;
-        readonly part_type?: unknown;
-        readonly expression?: unknown;
-      }>;
-    };
-    const parts = await Promise.all(
-      seed.parts.map(async (seedPart) =>
-        part(
-          // 組み込みかどうかは式 ({"#builtin": "bit_and"}) で決まり, 名前によらない.
-          // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
-          seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
-          await resolvePartPlaceholders(seedPart.part_type ?? null),
-          await resolvePartPlaceholders(seedPart.expression ?? null),
+    const seedParts = async (moduleName: string) => {
+      const seed = JSON.parse(
+        await readFile(`seeds/${moduleName}.json`, "utf8"),
+      ) as {
+        readonly parts: ReadonlyArray<{
+          readonly name: string;
+          readonly part_type?: unknown;
+          readonly expression?: unknown;
+        }>;
+      };
+      return await Promise.all(
+        seed.parts.map(async (seedPart) =>
+          part(
+            // 組み込みかどうかは式 ({"#builtin": "bit_and"}) で決まり, 名前によらない.
+            // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
+            seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
+            await resolvePartPlaceholders(seedPart.part_type ?? null),
+            await resolvePartPlaceholders(seedPart.expression ?? null),
+          ),
         ),
-      ),
-    );
+      );
+    };
+    const parts = await seedParts("core");
     expect(parts.find((p) => p.name === "bitwise-and")?.expression).toEqual({
       "#builtin": "bit_and",
     });
     // core は seed の definy プロジェクトのモジュール
     expect(
-      await submitCommit(store, env, system, "core", parts, "definy"),
+      // core のコンパイラは wasm モジュールのパーツを使うので, 同じプロジェクトの wasm も一緒にコミットする
+      await submitCommit(
+        store,
+        env,
+        system,
+        "core",
+        parts,
+        "definy",
+        "public",
+        [{ name: "wasm", description: [], parts: await seedParts("wasm") }],
+      ),
     ).toEqual({
       status: 200,
       message: "",

@@ -15,6 +15,7 @@
     "definy",
     "core",
     "std",
-    "wasi"
+    "wasi",
+    "wasm"
   ]
 }
