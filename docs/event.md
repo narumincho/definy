@@ -100,7 +100,7 @@ definy 製の `core.value-conforms(value: core.value, declaration: core.expressi
   `{ id: 型パーツ名, declaration }` の一覧にして渡すだけ (`conformsInDefiny`, `src/event_check.ts`)。宣言の中の型パーツの参照も名前にする
 - 形が違えばメッセージ `content must be a value of core.event-content` で拒否する (`worker/event_check.ts`)。
   パーツの中身は, 受け付けたコミットが参照していない (まだ確かめていない) ものだけを確かめる (`worker/type_check.ts`)。
-  core の全パーツの中身 (約 300) を確かめると 0.65 秒 (TypeScript は 0.06 秒) かかるため
+  core の全パーツの中身 (約 260) を確かめると 0.25 秒 (TypeScript は 0.06 秒) かかるため
 - ブラウザと, 確かめた後に TypeScript の型にする `decodeEventContent` は今も TypeScript の `conformsToTypeDeclaration` を使う。
   両者が同じ結果になることを `src/event_check.test.ts` が確かめる
 

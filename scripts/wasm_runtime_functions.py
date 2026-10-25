@@ -70,8 +70,8 @@ class A:
     def copy(self): return self.op(0xFC, 0x0A, 0x00, 0x00)  # memory.copy
 
 
-I32_EQZ, I32_EQ, I32_NE, I32_LT_U, I32_GE_U, I32_LE_U = 0x45, 0x46, 0x47, 0x49, 0x4F, 0x4D
-I32_ADD, I32_SUB, I32_AND, I32_OR, I32_SHL = 0x6A, 0x6B, 0x71, 0x72, 0x74
+I32_EQZ, I32_EQ, I32_NE, I32_LT_U, I32_GT_U, I32_GE_U, I32_LE_U = 0x45, 0x46, 0x47, 0x49, 0x4B, 0x4F, 0x4D
+I32_ADD, I32_SUB, I32_AND, I32_OR, I32_SHL, I32_SHR_U = 0x6A, 0x6B, 0x71, 0x72, 0x74, 0x76
 I64_EQ, I64_LT_S, I64_GT_S, I64_GE_S = 0x51, 0x53, 0x55, 0x59
 WRAP, EXTEND_U, SELECT, DROP, UNREACHABLE = 0xA7, 0xAD, 0x1B, 0x1A, 0x00
 
@@ -94,14 +94,16 @@ def helper(type_index, locals_, a):
     helpers.append((type_index, locals_, a.end().b))
 
 
-# 1 alloc(size) -> ptr. ヒープを 8 バイト境界に揃えて伸ばし, 足りなければ memory.grow する
+# 1 alloc(size) -> ptr. ヒープを 8 バイト境界に揃えて伸ばし, 足りなければ memory.grow する.
+# 1 ページずつ伸ばすと伸ばすたびにメモリを写し直すことがあるので, 足りない分と今の大きさの大きい方だけ伸ばす (倍々にする)
 a = A().op(0x23, 0).set(1)
 a.op(0x23, 0).get(0).op(I32_ADD).i32(7).op(I32_ADD).i32(-8).op(I32_AND).op(0x24, 0)
-a.block().loop()
-a.op(0x23, 0).op(0x3F, 0).i32(16).op(I32_SHL).op(I32_LE_U).br_if(1)
-a.i32(1).op(0x40, 0).i32(-1).op(I32_EQ).if_().op(UNREACHABLE).end().br(0)
-a.end().end().get(1)
-helper(1, [(1, I32)], a)
+a.op(0x23, 0).op(0x3F, 0).i32(16).op(I32_SHL).op(I32_GT_U).if_()
+a.op(0x23, 0).i32(65535).op(I32_ADD).i32(16).op(I32_SHR_U).op(0x3F, 0).op(I32_SUB).set(2)
+a.op(0x3F, 0).get(2).op(0x3F, 0).get(2).op(I32_GT_U).op(SELECT)
+a.op(0x40, 0).i32(-1).op(I32_EQ).if_().op(UNREACHABLE).end()
+a.end().get(1)
+helper(1, [(2, I32)], a)
 # 2 box_number(i64) -> ptr (タグ 0 は確保したばかりの 0 のまま)
 helper(2, [(1, I32)], A().i32(16).call(F_ALLOC).tee(1).get(0).store64(8).get(1))
 # 3 box_bool(i32) -> ptr

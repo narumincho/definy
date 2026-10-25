@@ -37,18 +37,52 @@ export type WasmExports = {
   readonly alloc: (size: number) => number;
 };
 
+/** 先頭 0 からの相対アドレスで書いた値 (`writeLiteral` が `alloc` した位置に合わせて写す) */
+type LaidOutLiteral = {
+  readonly bytes: Uint8Array;
+  /** ポインタを書いた位置. 写すときに先頭のアドレスを足す */
+  readonly pointerFields: Uint32Array;
+  readonly root: number;
+};
+
+/** 同じオブジェクトの値 (型環境や型の宣言の一覧など) を何度も書くときに, 並べ直さずに済ませる */
+const laidOutCache = new WeakMap<object, LaidOutLiteral>();
+
 /**
  * definy の値 (docs/value-encoding.md の JSON の形) を, definy の値の形 (タグ付きの箱, 8 バイト境界) で線形メモリに書き込み, ポインタを返す.
  * 1 度だけ走査して JavaScript 側のバッファに先頭 0 からの相対アドレスで書き, `alloc` した位置に合わせて
- * ポインタを直してからまとめて写す (型環境のような大きな値を書くので速さが要る)
+ * ポインタを直してからまとめて写す (型環境のような大きな値を書くので速さが要る).
+ * 値は書き換えられないので, 同じ文字列は 1 つの箱を共有する. オブジェクトの値は並べた結果を覚えておく
  */
 function writeLiteral(exports: WasmExports, node: unknown): number {
+  const laidOut =
+    node !== null && typeof node === "object"
+      ? (laidOutCache.get(node) ?? cacheLayout(node))
+      : layoutLiteral(node);
+  const base = exports.alloc(laidOut.bytes.length);
+  const memory = new Uint8Array(exports.memory.buffer);
+  memory.set(laidOut.bytes, base);
+  const view = new DataView(exports.memory.buffer);
+  for (const at of laidOut.pointerFields) {
+    view.setUint32(base + at, view.getUint32(base + at, true) + base, true);
+  }
+  return laidOut.root + base;
+}
+
+function cacheLayout(node: object): LaidOutLiteral {
+  const laidOut = layoutLiteral(node);
+  laidOutCache.set(node, laidOut);
+  return laidOut;
+}
+
+function layoutLiteral(node: unknown): LaidOutLiteral {
   let buffer = new Uint8Array(4096);
   let view = new DataView(buffer.buffer);
   let length = 0;
-  /** ポインタを書いた位置. 最後に先頭のアドレスを足す */
   const pointerFields: Array<number> = [];
   const encoder = new TextEncoder();
+  /** 書いた文字列の箱の相対アドレス */
+  const strings = new Map<string, number>();
 
   /** `size` バイト (8 バイト境界に揃える) を確保し, その相対アドレスを返す */
   function reserve(size: number): number {
@@ -71,11 +105,25 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
   }
 
   function writeString(value: string): number {
-    const bytes = encoder.encode(value);
-    const at = reserve(8 + bytes.length);
+    const written = strings.get(value);
+    if (written !== undefined) {
+      return written;
+    }
+    let at: number;
+    if (isAscii(value)) {
+      at = reserve(8 + value.length);
+      for (let i = 0; i < value.length; i++) {
+        buffer[at + 8 + i] = value.charCodeAt(i);
+      }
+      view.setUint32(at + 4, value.length, true);
+    } else {
+      const bytes = encoder.encode(value);
+      at = reserve(8 + bytes.length);
+      view.setUint32(at + 4, bytes.length, true);
+      buffer.set(bytes, at + 8);
+    }
     buffer[at] = 2;
-    view.setUint32(at + 4, bytes.length, true);
-    buffer.set(bytes, at + 8);
+    strings.set(value, at);
     return at;
   }
 
@@ -134,12 +182,18 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
   }
 
   const root = layout(node);
-  const base = exports.alloc(length);
-  for (const at of pointerFields) {
-    view.setUint32(at, view.getUint32(at, true) + base, true);
+  return {
+    bytes: buffer.subarray(0, length),
+    pointerFields: Uint32Array.from(pointerFields),
+    root,
+  };
+}
+
+function isAscii(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) >= 128) return false;
   }
-  new Uint8Array(exports.memory.buffer).set(buffer.subarray(0, length), base);
-  return root + base;
+  return true;
 }
 
 export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
