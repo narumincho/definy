@@ -2,10 +2,14 @@
  * 署名を確かめた後のイベントを受け付けるかを, definy 製の `core.check-event` で決める (docs/event.md「受け付ける規則」).
  *
  * `core.check-event` は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` を使う
- * (Cloudflare Workers は実行時に Wasm をコンパイルできない). TypeScript 側は, 規則が使う状態
- * (アカウントを作ったか, コミット先のブランチの最新のコミットと作成者など. docs/branch.md) を集めて渡し, 返った理由をメッセージにするだけ
+ * (Cloudflare Workers は実行時に Wasm をコンパイルできない). TypeScript 側は, 保存している事実
+ * (アカウントを作ったか, 受け付けたプロジェクトのコミット) を渡し, 返った理由をメッセージにするだけ.
+ * 規則が使う状態 (ブランチの最新のコミットと作成者など. docs/branch.md) は definy が求める.
+ *
+ * イベントの中身の形も, definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめられる ({@link conformsInDefiny})
  */
-import { none, some, variant, variantOf } from "./definy_value.ts";
+import eventTypeDeclarations from "../seeds/schemas/event-types.json" with { type: "json" };
+import { variant, variantOf } from "./definy_value.ts";
 import { encodeEventContent, type EventContent } from "./event_content.ts";
 import {
   collectReferencedParts,
@@ -13,32 +17,27 @@ import {
   type Stage1CompilerInstance,
 } from "./stage1_compiler.ts";
 
-/** イベントを受け付ける前にサーバーが知っていること (`core.event-check-state`. docs/branch.md, docs/project.md) */
-export type EventCheckState = {
-  /** このイベントのアカウントの `create_account` を受け付けたか */
-  readonly accountCreated: boolean;
-  /** プロジェクトのコミットなら, コミット先のブランチの最新のコミットのイベントハッシュ. 新しいブランチなら `null` */
-  readonly branchLatestCommitHash: string | null;
-  /** このイベントのアカウントがコミット先のブランチを作ったか (ブランチの最初のコミットのアカウントか) */
-  readonly isBranchCreator: boolean;
-  /** `merged_commit_hash` がコミット先のプロジェクトのコミットか. 取り込みでなければ `false` */
-  readonly mergedInProject: boolean;
-  /** コミットのモジュール名のうち, 他のプロジェクトのもの (モジュール名は全体で一意. docs/project.md) */
-  readonly modulesInOtherProjects: ReadonlyArray<string>;
-  /** `parent_commit_hash` がコミット先のプロジェクトの (どのブランチの) コミットか. 親が無ければ `false` */
-  readonly parentInProject: boolean;
-  /** コミット先のプロジェクトに (どのブランチにでも) コミットがあるか */
-  readonly projectHasCommits: boolean;
+/** サーバーが受け付けたプロジェクトのコミット (`core.commit-summary`) */
+export type CommitSummary = {
+  readonly eventHash: string;
+  readonly accountId: string;
+  readonly projectName: string;
+  readonly branch: string;
+  readonly timeMs: number;
+  readonly moduleNames: ReadonlyArray<string>;
 };
 
-/** プロジェクトのコミット以外のイベントの状態 (使わない値) */
-export const NO_PROJECT_STATE: Omit<EventCheckState, "accountCreated"> = {
-  branchLatestCommitHash: null,
-  isBranchCreator: false,
-  mergedInProject: false,
-  modulesInOtherProjects: [],
-  parentInProject: false,
-  projectHasCommits: false,
+/**
+ * サーバーが `core.check-event` に渡す事実 (`core.event-check-facts`. docs/event.md).
+ * 規則が使う状態 (ブランチの最新のコミット, 作成者など) は definy の `core.event-check-state-of` が求める
+ */
+export type EventCheckFacts = {
+  /** イベントのアカウント */
+  readonly accountId: string;
+  /** このアカウントの `create_account` を受け付けたか */
+  readonly accountCreated: boolean;
+  /** 受け付けたプロジェクトのコミット (ストアの順). プロジェクトのコミットのイベントでなければ空でよい */
+  readonly commits: ReadonlyArray<CommitSummary>;
 };
 
 /** `core.event-rejection` の値. `tag` はバリアント名 (`parent_commit_mismatch` など) */
@@ -48,15 +47,16 @@ export type EventRejection = {
 };
 
 /**
- * `core.check-event` を stage1 で Wasm にコンパイルする. `resolvePart` はパーツ ID (URL-safe Base64) から式を返す
+ * seed の関数のパーツ (`core.check-event`, `core.value-conforms`) を stage1 で Wasm にコンパイルする.
+ * `resolvePart` はパーツ ID (URL-safe Base64) から式を返す
  */
-export function compileEventChecker(options: {
+export function compileSeedFunction(options: {
   readonly compiler: Stage1CompilerInstance;
-  readonly checkEventPartId: string;
+  readonly partId: string;
   readonly resolvePart: (id: string) => unknown;
 }): Uint8Array {
   const expression = variant("part_reference", {
-    part_definition_event_hash: options.checkEventPartId,
+    part_definition_event_hash: options.partId,
   });
   const { parts, unresolved } = collectReferencedParts(
     expression,
@@ -64,7 +64,7 @@ export function compileEventChecker(options: {
   );
   if (unresolved.length > 0) {
     throw new Error(
-      `core.check-event references parts that cannot be compiled: ${unresolved.join(", ")}`,
+      `the part references parts that cannot be compiled: ${unresolved.join(", ")}`,
     );
   }
   return options.compiler.compile(expression, parts);
@@ -102,23 +102,23 @@ function contentForCheck(content: EventContent): EventContent {
 export function checkEvent(
   checker: WebAssembly.Module,
   content: EventContent,
-  state: EventCheckState,
+  facts: EventCheckFacts,
 ): ReadonlyArray<EventRejection> {
   const instance = instantiateCompiledFunction(checker);
   const result = instance.read(
     instance.call([
       instance.writeArgument(encodeEventContent(contentForCheck(content))),
       instance.writeArgument({
-        account_created: state.accountCreated,
-        branch_latest_commit_hash:
-          state.branchLatestCommitHash === null
-            ? none()
-            : some(state.branchLatestCommitHash),
-        is_branch_creator: state.isBranchCreator,
-        merged_in_project: state.mergedInProject,
-        modules_in_other_projects: state.modulesInOtherProjects,
-        parent_in_project: state.parentInProject,
-        project_has_commits: state.projectHasCommits,
+        account_id: facts.accountId,
+        account_created: facts.accountCreated,
+        commits: facts.commits.map((commit) => ({
+          event_hash: commit.eventHash,
+          account_id: commit.accountId,
+          project_name: commit.projectName,
+          branch: commit.branch,
+          time: commit.timeMs,
+          module_names: commit.moduleNames,
+        })),
       }),
     ]),
   );
@@ -167,4 +167,98 @@ export function eventRejectionMessage(rejection: EventRejection): string {
       return `the part name '${String(rejection.payload)}' is duplicated`;
   }
   return `rejected: ${rejection.tag}`;
+}
+
+/** CBOR から読んだ値を `core.value` の値にする (`core.value-conforms` に渡す) */
+export function toCoreValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    return variant("string", value);
+  }
+  if (typeof value === "boolean") {
+    return variant("boolean", value);
+  }
+  if (typeof value === "number") {
+    // definy の数は整数だけ
+    return Number.isSafeInteger(value)
+      ? variant("number", value)
+      : variant("unit");
+  }
+  if (Array.isArray(value)) {
+    return variant("list", value.map(toCoreValue));
+  }
+  const tagged = variantOf(value);
+  if (tagged !== undefined) {
+    return variant("variant", {
+      tag: tagged.tag,
+      payload:
+        tagged.payload === null ? variant("unit") : toCoreValue(tagged.payload),
+    });
+  }
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    !(value instanceof Uint8Array)
+  ) {
+    return variant(
+      "record",
+      Object.entries(value).map(([key, item]) => ({
+        key,
+        value: toCoreValue(item),
+      })),
+    );
+  }
+  return variant("unit");
+}
+
+/** 宣言の中の `{"$part": 名前}` (seed の参照) を名前の文字列にする. `core.value-conforms` は型パーツを名前で引く */
+function withPartNames(declaration: unknown): unknown {
+  if (Array.isArray(declaration)) {
+    return declaration.map(withPartNames);
+  }
+  if (typeof declaration === "object" && declaration !== null) {
+    const name = (declaration as { readonly $part?: unknown }).$part;
+    if (typeof name === "string") {
+      return name;
+    }
+    return Object.fromEntries(
+      Object.entries(declaration).map(([key, item]) => [
+        key,
+        withPartNames(item),
+      ]),
+    );
+  }
+  return declaration;
+}
+
+/** `core.value-conforms` に渡す型パーツの宣言 (`core.type-declaration-entry`. seeds/schemas/event-types.json から) */
+const TYPE_DECLARATIONS: ReadonlyArray<unknown> = Object.entries(
+  eventTypeDeclarations as Readonly<Record<string, unknown>>,
+).map(([id, declaration]) => ({
+  id,
+  declaration: withPartNames(declaration),
+}));
+
+/**
+ * CBOR から読んだ値 `value` が型パーツ `typeName` (`core.event-content` など. seeds/schemas/event-types.json にあるもの)
+ * の形かを, definy 製の `core.value-conforms` (コンパイルした `shapeChecker`) で確かめる
+ */
+export function conformsInDefiny(
+  shapeChecker: WebAssembly.Module,
+  value: unknown,
+  typeName: string,
+): boolean {
+  const instance = instantiateCompiledFunction(shapeChecker);
+  const result = instance.read(
+    instance.call([
+      instance.writeArgument(toCoreValue(value)),
+      instance.writeArgument(
+        variant("part_reference", { part_definition_event_hash: typeName }),
+      ),
+      instance.writeArgument(TYPE_DECLARATIONS),
+    ]),
+  );
+  if (typeof result !== "boolean") {
+    throw new Error("core.value-conforms returned a non-boolean value");
+  }
+  return result;
 }

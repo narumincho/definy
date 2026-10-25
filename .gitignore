@@ -10,3 +10,4 @@ playwright-report/
 /public/__definy_seed_bundle.json
 /wasm/type_checker.wasm
 /wasm/event_checker.wasm
+/wasm/shape_checker.wasm

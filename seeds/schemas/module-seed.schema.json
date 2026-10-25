@@ -2853,6 +2853,129 @@
         }
       },
       "additionalProperties": false
+    },
+    "core.type-declaration-entry": {
+      "type": "object",
+      "required": [
+        "id",
+        "declaration"
+      ],
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "declaration": {
+          "$ref": "#/definitions/core.expression"
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.commit-summary": {
+      "type": "object",
+      "required": [
+        "event_hash",
+        "account_id",
+        "project_name",
+        "branch",
+        "time",
+        "module_names"
+      ],
+      "properties": {
+        "event_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "account_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "project_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "branch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "time": {
+          "type": "integer"
+        },
+        "module_names": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/PartPlaceholder"
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.event-check-facts": {
+      "type": "object",
+      "required": [
+        "account_id",
+        "account_created",
+        "commits"
+      ],
+      "properties": {
+        "account_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "account_created": {
+          "type": "boolean"
+        },
+        "commits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.commit-summary"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

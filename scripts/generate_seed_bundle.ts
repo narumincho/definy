@@ -26,7 +26,7 @@ import {
 } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
-import { compileEventChecker } from "../src/event_check.ts";
+import { compileSeedFunction } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import { createStage1Compiler } from "../src/stage1_compiler.ts";
 import { resolvePartPlaceholders } from "../src/seed_parts.ts";
@@ -402,26 +402,41 @@ export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
  */
 export const EVENT_CHECKER_WASM_PATH = "wasm/event_checker.wasm";
 
-/** seed の `core.check-event` を stage1 でコンパイルする */
-export async function generateEventCheckerWasm(): Promise<Uint8Array> {
+/**
+ * seed の `core.value-conforms` (値が型パーツの宣言の形か) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
+ * サーバーがイベントの中身の形を確かめるのに使う (worker/event_check.ts)
+ */
+export const SHAPE_CHECKER_WASM_PATH = "wasm/shape_checker.wasm";
+
+/** seed の core の関数のパーツ `partName` を stage1 でコンパイルする */
+async function compileCorePart(partName: string): Promise<Uint8Array> {
   const partExpressions = await seedPartExpressions(await loadSeedModules());
-  return compileEventChecker({
+  return compileSeedFunction({
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
-    checkEventPartId: await deriveModulePartId(
+    partId: await deriveModulePartId(
       await deriveModuleIdBytes("core"),
-      "check-event",
+      partName,
     ),
     resolvePart: (id) => partExpressions.get(id),
   });
 }
 
-/** {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に書き出す */
+/** seed の `core.check-event` を stage1 でコンパイルする */
+export async function generateEventCheckerWasm(): Promise<Uint8Array> {
+  return compileCorePart("check-event");
+}
+
+/** {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に書き出す */
 export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
     resolve(EVENT_CHECKER_WASM_PATH),
     await generateEventCheckerWasm(),
+  );
+  await writeFile(
+    resolve(SHAPE_CHECKER_WASM_PATH),
+    await compileCorePart("value-conforms"),
   );
 }
 
@@ -450,6 +465,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}`,
   );
 }

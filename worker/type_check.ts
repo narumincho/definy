@@ -6,6 +6,7 @@
  * そのため本番で `core` の型チェッカーを編集しても, seed に書き戻してデプロイするまでサーバーの検査には反映されない
  */
 import typeCheckerModule from "../wasm/type_checker.wasm?module";
+import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
@@ -31,13 +32,13 @@ import {
 } from "../src/visibility.ts";
 import {
   DEFAULT_VISIBILITY,
-  decodePartContent,
+  partContentFromValue,
   MAIN_BRANCH,
   type CommitModule,
   type PartContent,
 } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
-import type { EventCheckState } from "../src/event_check.ts";
+import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -74,10 +75,21 @@ type CommitPartRef = Omit<
   "visibility" | "partType" | "expression" | "expressionKey"
 >;
 
-/** パーツの中身の CBOR (Base64) を読む. 形が `core.part-content` でなければ `undefined` */
-function decodePartContentBytes(contentBytes: string): PartContent | undefined {
+/**
+ * パーツの中身の CBOR (Base64) を読む. 形が `core.part-content` でなければ `undefined`.
+ * `trusted` (受け付けたコミットが参照している中身. 受け付けたときに確かめた) でなければ, 形を definy 製の
+ * `core.value-conforms` で確かめる (docs/event.md)
+ */
+function decodePartContentBytes(
+  contentBytes: string,
+  trusted: boolean,
+): PartContent | undefined {
   try {
-    return decodePartContent(decodeCborItem(base64ToBytes(contentBytes))[0]);
+    const value = decodeCborItem(base64ToBytes(contentBytes))[0];
+    return trusted ||
+      conformsInDefiny(shapeCheckerModule, value, "core.part-content")
+      ? partContentFromValue(value)
+      : undefined;
   } catch {
     return undefined;
   }
@@ -86,11 +98,12 @@ function decodePartContentBytes(contentBytes: string): PartContent | undefined {
 /** CAS から読むときの 1 回の content hash の数 */
 const CONTENT_CHUNK_SIZE = 200;
 
-/** CAS からパーツの中身を読む (キーは content hash). 無いものや形の違うものは入らない */
+/** CAS からパーツの中身を読む (キーは content hash). 無いものや形の違うものは入らない. `trusted` は形を確かめなくてよい中身 */
 async function readPartContents(
   hashes: ReadonlyArray<string>,
   store: PartStoreReader,
   env: Env | undefined,
+  trusted: (hash: string) => boolean,
 ): Promise<ReadonlyMap<string, PartContent>> {
   const result = new Map<string, PartContent>();
   const unique = [...new Set(hashes)];
@@ -99,7 +112,10 @@ async function readPartContents(
       unique.slice(i, i + CONTENT_CHUNK_SIZE),
       env,
     )) {
-      const content = decodePartContentBytes(item.contentBytes);
+      const content = decodePartContentBytes(
+        item.contentBytes,
+        trusted(item.contentHash),
+      );
       if (content !== undefined) {
         result.set(item.contentHash, content);
       }
@@ -121,7 +137,8 @@ async function environmentContents(
 ): Promise<ReadonlyMap<string, PartContent | null>> {
   const missing = hashes.filter((hash) => !environmentContentCache.has(hash));
   if (missing.length > 0) {
-    const read = await readPartContents(missing, store, env);
+    // 型環境の中身は受け付けたコミットのものなので, 形は確かめてある
+    const read = await readPartContents(missing, store, env, () => true);
     for (const hash of missing) {
       const content = read.get(hash);
       environmentContentCache.set(
@@ -314,61 +331,19 @@ function latestOnBranch(
   return latest;
 }
 
-/**
- * プロジェクト `projectName` のブランチ `branch` に, アカウント `accountId` が `parentCommitHash` を親にして
- * モジュール `moduleNames` をコミットするときの, 規則 (`core.check-event`) が使う状態.
- * ブランチの作成者はブランチの最初の (時刻が最小の) コミットのアカウント.
- * 他のプロジェクトのモジュールは, 他のプロジェクトの各ブランチの最新のコミットにあるモジュール (docs/project.md)
- */
-export async function branchStateOf(
-  projectName: string,
-  branch: string,
-  accountId: string,
-  parentCommitHash: string | null,
-  mergedCommitHash: string | null,
-  moduleNames: ReadonlyArray<string>,
+/** ストアの署名の正しいプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
+export async function loadCommitSummaries(
   store: PartStoreReader,
   env: Env | undefined,
-): Promise<Omit<EventCheckState, "accountCreated">> {
-  const commits = await loadCommits(store, env);
-  const projectCommits = commits.filter(
-    (commit) => commit.projectName === projectName,
-  );
-  let first: CachedCommit | undefined;
-  for (const commit of projectCommits) {
-    if (
-      commit.branch === branch &&
-      (first === undefined || commit.timeMs < first.timeMs)
-    ) {
-      first = commit;
-    }
-  }
-  const otherProjectModules = new Set<string>();
-  for (const head of summarizeBranches(
-    commits.filter((commit) => commit.projectName !== projectName),
-  )) {
-    const latest = commits.find(
-      (commit) => commit.eventHash === head.latestEventHash,
-    );
-    for (const name of latest?.moduleNames ?? []) {
-      otherProjectModules.add(name);
-    }
-  }
-  return {
-    branchLatestCommitHash:
-      latestOnBranch(projectCommits, branch)?.eventHash ?? null,
-    isBranchCreator: first?.accountId === accountId,
-    mergedInProject:
-      mergedCommitHash !== null &&
-      projectCommits.some((commit) => commit.eventHash === mergedCommitHash),
-    modulesInOtherProjects: moduleNames.filter((name) =>
-      otherProjectModules.has(name),
-    ),
-    parentInProject:
-      parentCommitHash !== null &&
-      projectCommits.some((commit) => commit.eventHash === parentCommitHash),
-    projectHasCommits: projectCommits.length > 0,
-  };
+): Promise<ReadonlyArray<CommitSummary>> {
+  return (await loadCommits(store, env)).map((commit) => ({
+    eventHash: commit.eventHash,
+    accountId: commit.accountId,
+    projectName: commit.projectName,
+    branch: commit.branch,
+    timeMs: commit.timeMs,
+    moduleNames: commit.moduleNames,
+  }));
 }
 
 /**
@@ -440,10 +415,17 @@ export async function checkSubmittedProjectCommit(
     return [];
   }
   const refs = await commitParts(commit.modules);
+  // 受け付けたコミットが参照している中身は, そのときに形を確かめてある
+  const accepted = new Set(
+    (await loadCommits(store, env)).flatMap((cached) =>
+      cached.parts.map((part) => part.contentHash),
+    ),
+  );
   const contents = await readPartContents(
     refs.map((part) => part.contentHash),
     store,
     env,
+    (hash) => accepted.has(hash),
   );
   // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
   const malformed = refs.flatMap((part) =>
