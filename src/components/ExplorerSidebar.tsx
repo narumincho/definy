@@ -1,4 +1,5 @@
 import {
+  memo,
   useState,
   useCallback,
   useEffect,
@@ -147,6 +148,11 @@ export function ExplorerSidebar(): JSX.Element {
     revealPendingRef.current = false;
     selectedElement.scrollIntoView({ block: "nearest" });
   });
+
+  // 狭い画面ではドロワーを閉じてパーツを見せる (広い画面では何も変わらない)
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, [setSidebarOpen]);
 
   const toggleModuleCollapse = useCallback((moduleId: string) => {
     setCollapsedModules((prev) => {
@@ -326,44 +332,16 @@ export function ExplorerSidebar(): JSX.Element {
                       const typeError = typeErrorOf(part);
                       const isSelected = part.partId === selectedPartId;
                       return (
-                        <Link
+                        <PartNode
                           key={part.partId}
-                          href={`/part/${part.partId}`}
-                          className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
-                          data-deleted={
-                            change?.deleted === true ? "" : undefined
-                          }
-                          aria-current={isSelected ? "page" : undefined}
-                          onClick={() => {
-                            // 狭い画面ではドロワーを閉じてパーツを見せる (広い画面では何も変わらない)
-                            setSidebarOpen(false);
-                          }}
-                        >
-                          <ModuleIcon
-                            size={15}
-                            className="sidebar-node-icon tree-icon-part"
-                          />
-                          <span className="sidebar-node-label">
-                            {change?.name ?? part.name}
-                          </span>
-                          {typeError !== null && (
-                            <span
-                              className="sidebar-type-error-dot"
-                              title={typeError}
-                              aria-label={typeError}
-                            >
-                              ●
-                            </span>
-                          )}
-                          {isChanged && (
-                            <span
-                              className="sidebar-dirty-dot"
-                              title="Modified"
-                            >
-                              ●
-                            </span>
-                          )}
-                        </Link>
+                          partId={part.partId}
+                          name={change?.name ?? part.name}
+                          deleted={change?.deleted === true}
+                          isChanged={isChanged}
+                          typeError={typeError}
+                          isSelected={isSelected}
+                          onNavigate={closeSidebar}
+                        />
                       );
                     })}
                   </div>
@@ -409,3 +387,52 @@ function partIdFromPath(path: string): string | null {
     return encoded;
   }
 }
+
+/**
+ * エクスプローラーのパーツ 1 つ. 式を変えるたびに作業中の変更が変わりエクスプローラー全体を描き直すので,
+ * 見た目の変わらない行は描かない (#762)
+ */
+const PartNode = memo(function PartNode({
+  partId,
+  name,
+  deleted,
+  isChanged,
+  typeError,
+  isSelected,
+  onNavigate,
+}: {
+  readonly partId: string;
+  readonly name: string;
+  readonly deleted: boolean;
+  readonly isChanged: boolean;
+  readonly typeError: string | null;
+  readonly isSelected: boolean;
+  readonly onNavigate: () => void;
+}): JSX.Element {
+  return (
+    <Link
+      href={`/part/${partId}`}
+      className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
+      data-deleted={deleted ? "" : undefined}
+      aria-current={isSelected ? "page" : undefined}
+      onClick={onNavigate}
+    >
+      <ModuleIcon size={15} className="sidebar-node-icon tree-icon-part" />
+      <span className="sidebar-node-label">{name}</span>
+      {typeError !== null && (
+        <span
+          className="sidebar-type-error-dot"
+          title={typeError}
+          aria-label={typeError}
+        >
+          ●
+        </span>
+      )}
+      {isChanged && (
+        <span className="sidebar-dirty-dot" title="Modified">
+          ●
+        </span>
+      )}
+    </Link>
+  );
+});

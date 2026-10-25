@@ -166,3 +166,50 @@ function layoutTableNode(
     children: updatedRows,
   };
 }
+
+/**
+ * `next` のうち `previous` と同じ部分木は `previous` のノード (同じオブジェクト) にする.
+ * 式を少し変えたとき, 変わっていない部分の描画 (TreeLayoutRenderer の memo) を飛ばすため
+ */
+export function reuseUnchangedNodes(
+  previous: LayoutNode | null,
+  next: LayoutNode,
+): LayoutNode {
+  if (previous === null || previous === next) {
+    return next;
+  }
+  let childrenChanged = previous.children.length !== next.children.length;
+  const children = next.children.map((child, index) => {
+    const reused = reuseUnchangedNodes(previous.children[index] ?? null, child);
+    if (reused !== previous.children[index]) {
+      childrenChanged = true;
+    }
+    return reused;
+  });
+  if (!childrenChanged && sameNodeFields(previous, next)) {
+    return previous;
+  }
+  return { ...next, children };
+}
+
+function sameNodeFields(a: LayoutNode, b: LayoutNode): boolean {
+  return (
+    a.id === b.id &&
+    a.label === b.label &&
+    a.kind === b.kind &&
+    a.layoutMode === b.layoutMode &&
+    a.computedWidth === b.computedWidth &&
+    a.computedHeight === b.computedHeight &&
+    sameJson(a.path, b.path) &&
+    sameJson(a.columnsWidth, b.columnsWidth) &&
+    sameJson(a.tableHeaders, b.tableHeaders) &&
+    sameJson(
+      a.scopeVariables === undefined ? undefined : [...a.scopeVariables],
+      b.scopeVariables === undefined ? undefined : [...b.scopeVariables],
+    )
+  );
+}
+
+function sameJson(a: unknown, b: unknown): boolean {
+  return a === b || JSON.stringify(a) === JSON.stringify(b);
+}
