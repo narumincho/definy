@@ -9,10 +9,7 @@ import {
 } from "./auth.ts";
 import {
   base64ToBytes,
-  bytesToBase64,
   bytesToUrlSafeBase64NoPad,
-  encodeCborItem,
-  sha256EventHashId,
   type DecodedPart,
   type LocalizedText,
 } from "./cbor.ts";
@@ -25,6 +22,7 @@ import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 import { latestCommitHashOf } from "../worker/type_check.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
+import { partContentItem } from "./content_store.ts";
 
 async function createTestServer(bundle: SeedBundle): Promise<{
   readonly store: WorkerStore;
@@ -249,6 +247,7 @@ describe("exportSeeds", () => {
         parentCommitHash: await latestCommitHashOf("sample", store, env),
         parts: [...resolvedExistingParts, newPart],
       });
+      await store.uploadContent([...systemCommit.contents.values()], env);
 
       const systemSubmitRes = await handleWorkerRequest(
         new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
@@ -326,7 +325,7 @@ describe("exportSeeds", () => {
     }
   });
 
-  it("CAS 式の復元: expression を持たず content_hash だけを持つパーツの式が GetContent 経由で復元される", async () => {
+  it("CAS の中身の復元: content_hash だけを持つパーツの中身が GetContent 経由で復元される", async () => {
     const seedBundle = await loadTestSeedBundle();
     const { store, env, mockFetch } = await createTestServer(seedBundle);
     const tempDir = await mkdtemp(join(tmpdir(), "definy-seed-export-cas-"));
@@ -338,10 +337,13 @@ describe("exportSeeds", () => {
       );
       const systemAccountBytes = base64ToBytes(sysCreds.accountId);
 
-      // 式を CBOR エンコードして CAS にアップロード
-      const expressionToUpload = { "#number": 42 };
-      const cborBytes = encodeCborItem(expressionToUpload);
-      const contentHash = await sha256EventHashId(cborBytes);
+      // パーツの中身を CBOR エンコードして CAS にアップロード
+      const { contentHash, contentBytes } = partContentItem({
+        description: [{ language: "en", text: "Hydrated from CAS" }],
+        visibility: "public",
+        partType: null,
+        expression: { "#number": 42 },
+      });
 
       const uploadRes = await handleWorkerRequest(
         new Request(
@@ -350,12 +352,7 @@ describe("exportSeeds", () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              items: [
-                {
-                  contentHash,
-                  contentBytes: bytesToBase64(cborBytes),
-                },
-              ],
+              items: [{ contentHash, contentBytes }],
             }),
           },
         ),
@@ -364,7 +361,7 @@ describe("exportSeeds", () => {
       );
       expect(uploadRes.status).toBe(200);
 
-      // expression を持たず content_hash だけを持つコミットを作成
+      // 中身を読んでいない (content_hash だけを持つ) パーツのコミットを作成
       const systemCommit = await createSignedSingleModuleCommitEvent({
         credentials: sysCreds,
         moduleName: "sample",
@@ -376,9 +373,10 @@ describe("exportSeeds", () => {
         parts: [
           {
             name: "cas-part",
-            description: [{ language: "en", text: "Hydrated from CAS" }],
+            description: [],
             partType: null,
             contentHash,
+            unresolved: true,
           },
         ],
       });
@@ -419,7 +417,10 @@ describe("exportSeeds", () => {
 
       const casPart = parsedSample.parts.find((p) => p.name === "cas-part");
       expect(casPart).toBeDefined();
-      expect(casPart?.expression).toEqual({ "#number": 42 });
+      expect(casPart).toMatchObject({
+        description: [{ language: "en", text: "Hydrated from CAS" }],
+        expression: { "#number": 42 },
+      });
       // content_hash は書き出されない
       expect(casPart?.content_hash).toBeUndefined();
     } finally {

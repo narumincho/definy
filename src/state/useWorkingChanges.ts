@@ -15,7 +15,6 @@ import {
   submitProjectCommitEvent,
   type CommitModuleParams,
 } from "../auth.ts";
-import { toContentAddressedParts, type ContentItem } from "../content_store.ts";
 import {
   commitTarget,
   type BranchSummary,
@@ -330,18 +329,8 @@ export function useWorkingChanges({
       }
       const parentCommitHash =
         target.kind === "new_project" ? null : target.parentCommitHash;
-      // コミットには式の content hash だけを入れ, サーバーに無い式だけを送る
-      const contents = new Map<string, ContentItem>();
-      const addressedModules: CommitModuleParams[] = [];
-      for (const module of commitModules) {
-        const addressed = await toContentAddressedParts(module.parts);
-        for (const [hash, item] of addressed.contents) {
-          contents.set(hash, item);
-        }
-        addressedModules.push({ ...module, parts: addressed.parts });
-      }
-
-      const { signedEventBytes, eventHash } =
+      // コミットにはパーツの中身の content hash だけを入れ, サーバーに無い中身だけを送る
+      const { signedEventBytes, eventHash, contents } =
         await createSignedProjectCommitEvent({
           credentials: {
             accountId: currentAccount.accountId,
@@ -358,7 +347,7 @@ export function useWorkingChanges({
             target.kind === "own_branch"
               ? (workingChanges.merges?.get(projectName) ?? null)
               : null,
-          modules: addressedModules,
+          modules: commitModules,
         });
 
       const submitRes = await submitProjectCommitEvent(

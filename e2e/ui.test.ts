@@ -1,10 +1,35 @@
-import { expect, test, type Locator } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+  type Locator,
+} from "@playwright/test";
 import {
   createSignedAccountEvent,
   generateAccountCredentials,
   type AccountCredentials,
+  type SignedEventResult,
+  type SignedProjectCommitResult,
 } from "../src/auth.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
+
+/** イベントを `SubmitEvent` で出す. プロジェクトのコミットなら先にパーツの中身を `UploadContent` で送る */
+async function submitEvent(
+  request: APIRequestContext,
+  signed: SignedEventResult | SignedProjectCommitResult,
+): Promise<APIResponse> {
+  if ("contents" in signed) {
+    const uploaded = await request.post(
+      "/definy.v1.EventService/UploadContent",
+      { data: { items: [...signed.contents.values()] } },
+    );
+    expect(uploaded.ok(), await uploaded.text()).toBe(true);
+  }
+  return request.post("/definy.v1.EventService/SubmitEvent", {
+    data: { signedEventBytes: signed.signedEventBytes },
+  });
+}
 
 /**
  * 関数 `functionName` を呼び出す式のカプセル.
@@ -350,31 +375,27 @@ test.describe("definy UI E2E", () => {
   }) => {
     const suffix = Date.now().toString().slice(-6);
     const credentials = await generateAccountCredentials(`vis_${suffix}`);
-    const submit = async (signedEventBytes: string): Promise<void> => {
-      const res = await request.post("/definy.v1.EventService/SubmitEvent", {
-        data: { signedEventBytes },
-      });
+    const submit = async (
+      signed: SignedEventResult | SignedProjectCommitResult,
+    ): Promise<void> => {
+      const res = await submitEvent(request, signed);
       expect(res.ok(), await res.text()).toBe(true);
     };
-    await submit(
-      (await createSignedAccountEvent(credentials)).signedEventBytes,
-    );
+    await submit(await createSignedAccountEvent(credentials));
     const moduleName = `vis_${suffix}`;
     await submit(
-      (
-        await createSignedSingleModuleCommitEvent({
-          credentials,
-          moduleName,
-          moduleDescription: [],
-          message: "Create",
-          parts: ["secret", "open"].map((name) => ({
-            name,
-            description: [],
-            partType: { "#number": null },
-            expression: { "#number": 1 },
-          })),
-        })
-      ).signedEventBytes,
+      await createSignedSingleModuleCommitEvent({
+        credentials,
+        moduleName,
+        moduleDescription: [],
+        message: "Create",
+        parts: ["secret", "open"].map((name) => ({
+          name,
+          description: [],
+          partType: { "#number": null },
+          expression: { "#number": 1 },
+        })),
+      }),
     );
     await page.addInitScript((account) => {
       localStorage.setItem("definy.account.v1", JSON.stringify(account));
@@ -419,17 +440,15 @@ test.describe("definy UI E2E", () => {
     const suffix = Date.now().toString().slice(-6);
     const alice = await generateAccountCredentials(`alice_m${suffix}`);
     const bob = await generateAccountCredentials(`bob_m${suffix}`);
-    const submit = async (signedEventBytes: string): Promise<string> => {
-      const res = await request.post("/definy.v1.EventService/SubmitEvent", {
-        data: { signedEventBytes },
-      });
+    const submit = async (
+      signed: SignedEventResult | SignedProjectCommitResult,
+    ): Promise<string> => {
+      const res = await submitEvent(request, signed);
       expect(res.ok(), await res.text()).toBe(true);
       return ((await res.json()) as { readonly eventHash: string }).eventHash;
     };
     for (const credentials of [alice, bob]) {
-      await submit(
-        (await createSignedAccountEvent(credentials)).signedEventBytes,
-      );
+      await submit(await createSignedAccountEvent(credentials));
     }
     const moduleName = `merge_${suffix}`;
     let time = Math.floor(Date.now() / 1000) - 60;
@@ -440,25 +459,23 @@ test.describe("definy UI E2E", () => {
       values: Readonly<Record<string, number>>,
     ): Promise<string> =>
       submit(
-        (
-          await createSignedSingleModuleCommitEvent(
-            {
-              credentials,
-              moduleName,
-              branch,
-              moduleDescription: [],
-              message: `${branch} ${JSON.stringify(values)}`,
-              parentCommitHash,
-              parts: Object.entries(values).map(([name, value]) => ({
-                name,
-                description: [],
-                partType: { "#number": null },
-                expression: { "#number": value },
-              })),
-            },
-            (time += 1),
-          )
-        ).signedEventBytes,
+        await createSignedSingleModuleCommitEvent(
+          {
+            credentials,
+            moduleName,
+            branch,
+            moduleDescription: [],
+            message: `${branch} ${JSON.stringify(values)}`,
+            parentCommitHash,
+            parts: Object.entries(values).map(([name, value]) => ({
+              name,
+              description: [],
+              partType: { "#number": null },
+              expression: { "#number": value },
+            })),
+          },
+          (time += 1),
+        ),
       );
     // alice の main と, そこから分かれた bob のブランチ. 両方とも先へ進める
     const main1 = await commit(alice, "main", null, { a: 1, b: 2 });

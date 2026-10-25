@@ -38,11 +38,14 @@ core.project-commit-module = {
 }
 core.module-commit-part = {
   name: string,
+  content_hash: string,           // core.part-content の CBOR の SHA-256 (URL-safe Base64)
+}
+// パーツの中身. イベントには入れず CAS に預ける (docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」)
+core.part-content = {
   description: list<core.localized-text>,
   visibility: core.visibility,
   part_type: option<core.type-ast>,
   expression: option<core.expression>,
-  content_hash: option<string>,   // 式を CAS に預けたとき (URL-safe Base64)
 }
 core.visibility = union { public, private }
 core.localized-text = { language: string, text: string }
@@ -64,16 +67,7 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
         "name": "math",
         "description": [{ "language": "en", "text": "Math" }],
         "visibility": { "#public": null },
-        "parts": [
-          {
-            "name": "answer",
-            "description": [],
-            "visibility": { "#public": null },
-            "part_type": { "#some": { "#number": null } },
-            "expression": { "#some": { "#number": 42 } },
-            "content_hash": { "#none": null }
-          }
-        ]
+        "parts": [{ "name": "answer", "content_hash": "Wm9v..." }]
       }
     ]
   }
@@ -90,9 +84,11 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
   (seeds/core.json は数 MB あるのでブラウザ・Worker に丸ごと載せない)。`src/seed_schema.test.ts` が作り直したものと同じかを確かめる。
 - 形が違うイベントは署名が正しくても `InvalidSignedEventError` になる (`src/signed_event.ts`)。
   サーバーの `SubmitEvent` は 400 で拒否し, ブラウザは受け取ったイベントを「不正」として表示から外す。
-  そのため, 式が `core.expression` の形でないコミットは型チェッカーに渡る前に拒否される。
+  CAS に預けたパーツの中身はイベントの形の検査を通らないので, サーバーは型を検査する前に
+  `core.part-content` の形か (`isPartContent`) を確かめ, 違えば拒否する (`worker/type_check.ts`)。
+  ブラウザも形の違う中身は読まない (`src/content_store.ts` の `loadContents`)。
 - seed の JSON だけで書けるパーツ名の参照 `{"$part": ...}` はイベントの中には書けない (文字列の位置でも拒否する)。
-- 検査の重さ: seed の core のコミット (CBOR で約 1.6 MB) で 50 ms 程度。CBOR のデコードのほうが重い。
+- 検査の重さ: パーツの中身を CAS に分けたので, seed の core のコミットは CBOR で約 48 KB (Base64 で約 65 KB) と軽い。
 
 ## 受け付ける規則 (`core.check-event`)
 

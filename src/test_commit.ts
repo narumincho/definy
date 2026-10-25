@@ -5,7 +5,7 @@
 import {
   createSignedProjectCommitEvent,
   type AccountCredentials,
-  type SignedEventResult,
+  type SignedProjectCommitResult,
 } from "./auth.ts";
 import type { DecodedPart, LocalizedText } from "./cbor.ts";
 import type { Visibility } from "./event_content.ts";
@@ -25,7 +25,7 @@ export function createSignedSingleModuleCommitEvent(
     readonly parts: ReadonlyArray<DecodedPart>;
   },
   timeSeconds?: number,
-): Promise<SignedEventResult> {
+): Promise<SignedProjectCommitResult> {
   return createSignedProjectCommitEvent(
     {
       credentials: params.credentials,

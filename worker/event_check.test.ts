@@ -3,6 +3,7 @@ import {
   createSignedAccountEvent,
   generateAccountCredentials,
   type AccountCredentials,
+  type SignedProjectCommitResult,
 } from "../src/auth.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
@@ -11,11 +12,17 @@ import { latestCommitHashOf } from "./type_check.ts";
 import type { Env, GetProjectBranchesResponse } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 
+/** イベントを出す. プロジェクトのコミットなら先にパーツの中身を CAS に入れる */
 async function submit(
   store: WorkerStore,
   env: Env,
-  signedEventBytes: string,
+  signed: string | SignedProjectCommitResult,
 ): Promise<{ readonly status: number; readonly message: string }> {
+  if (typeof signed !== "string") {
+    await store.uploadContent([...signed.contents.values()], env);
+  }
+  const signedEventBytes =
+    typeof signed === "string" ? signed : signed.signedEventBytes;
   const res = await handleWorkerRequest(
     new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
       method: "POST",
@@ -59,27 +66,25 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
       submit(
         store,
         env,
-        (
-          await createSignedSingleModuleCommitEvent(
-            {
-              credentials,
-              moduleName: "app",
-              branch,
-              moduleDescription: [],
-              message: "test",
-              parentCommitHash,
-              parts: [
-                {
-                  name: "answer",
-                  description: [],
-                  partType: { "#number": null },
-                  expression: { "#number": value },
-                },
-              ],
-            },
-            (time += 1),
-          )
-        ).signedEventBytes,
+        await createSignedSingleModuleCommitEvent(
+          {
+            credentials,
+            moduleName: "app",
+            branch,
+            moduleDescription: [],
+            message: "test",
+            parentCommitHash,
+            parts: [
+              {
+                name: "answer",
+                description: [],
+                partType: { "#number": null },
+                expression: { "#number": value },
+              },
+            ],
+          },
+          (time += 1),
+        ),
       );
     const head = async (branch: string) =>
       latestCommitHashOf("app", store, env, branch);
@@ -165,23 +170,21 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
       submit(
         store,
         env,
-        (
-          await createSignedSingleModuleCommitEvent({
-            credentials: alice,
-            projectName,
-            moduleName,
-            moduleDescription: [],
-            message: "test",
-            parts: [
-              {
-                name: "answer",
-                description: [],
-                partType: { "#number": null },
-                expression: { "#number": 1 },
-              },
-            ],
-          })
-        ).signedEventBytes,
+        await createSignedSingleModuleCommitEvent({
+          credentials: alice,
+          projectName,
+          moduleName,
+          moduleDescription: [],
+          message: "test",
+          parts: [
+            {
+              name: "answer",
+              description: [],
+              partType: { "#number": null },
+              expression: { "#number": 1 },
+            },
+          ],
+        }),
       );
     // core は seed の definy プロジェクトのモジュール
     const rejected = await commit("mine", "core");

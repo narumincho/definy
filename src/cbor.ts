@@ -414,7 +414,10 @@ export type DecodedPart = {
   readonly visibility?: Visibility;
   readonly partType: unknown;
   readonly expression?: unknown;
+  /** 中身 (`core.part-content`) の content hash. 作ったばかりのパーツなら `null` (docs/content-addressed.md) */
   readonly contentHash?: string | null;
+  /** 中身を CAS からまだ読んでいない (`description` などは空) */
+  readonly unresolved?: true;
   readonly partIdHash?: string | null;
 };
 

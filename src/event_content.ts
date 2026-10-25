@@ -26,18 +26,26 @@ export type Visibility = "public" | "private";
 /** 公開/非公開を省いたときの既定 */
 export const DEFAULT_VISIBILITY: Visibility = "public";
 
-/** プロジェクトのコミットのモジュールのパーツ (`core.module-commit-part`) */
-export type CommitPart = {
-  readonly name: string;
+/** パーツの中身 (`core.part-content`). CAS に預け, コミットには content hash だけを書く (docs/content-addressed.md) */
+export type PartContent = {
   readonly description: LocalizedText;
   /** 省くと公開 */
   readonly visibility?: Visibility;
   /** パーツの型 (`core.type-ast` の値). 型指定が無ければ `null` */
   readonly partType: unknown;
-  /** 式 (`core.expression` の値). CAS に預けているか, 式の無いパーツなら `null` */
+  /** 式 (`core.expression` の値). 式の無いパーツなら `null` */
   readonly expression: unknown;
-  /** CAS に預けた式の content hash (URL-safe Base64). 式をそのまま持つなら `null` */
+};
+
+/**
+ * プロジェクトのコミットのモジュールのパーツ. イベント (`core.module-commit-part`) には名前と中身の content hash だけが入り,
+ * 中身は CAS から読んで埋める. `unresolved` なら中身をまだ読んでいない (`description` などは空)
+ */
+export type CommitPart = PartContent & {
+  readonly name: string;
+  /** 中身 (`core.part-content`) の CBOR の SHA-256 (URL-safe Base64). 作ったばかりで決めていなければ `null` */
   readonly contentHash: string | null;
+  readonly unresolved?: true;
 };
 
 /** プロジェクトを作ったときのブランチ. プロジェクトの作成者だけがコミットできる (docs/branch.md) */
@@ -87,16 +95,6 @@ export function isEventContent(value: unknown): boolean {
   );
 }
 
-/** 値が `core.expression` の形か (CAS に預けた式を検査する. イベントの中の式は `isEventContent` が検査する) */
-export function isExpression(value: unknown): boolean {
-  return conformsToTypeDeclaration(
-    value,
-    resolveTypePart("core.expression"),
-    resolveTypePart,
-    false,
-  );
-}
-
 function optionOf(value: unknown): unknown {
   return value === null || value === undefined ? none() : some(value);
 }
@@ -131,14 +129,14 @@ export function encodeEventContent(content: EventContent): unknown {
           name: module.name,
           description: encodeLocalizedText(module.description),
           visibility: encodeVisibility(module.visibility),
-          parts: module.parts.map((part) => ({
-            name: part.name,
-            description: encodeLocalizedText(part.description),
-            visibility: encodeVisibility(part.visibility),
-            part_type: optionOf(part.partType),
-            expression: optionOf(part.expression),
-            content_hash: optionOf(part.contentHash),
-          })),
+          parts: module.parts.map((part) => {
+            if (part.contentHash === null) {
+              throw new Error(
+                `the part '${part.name}' has no content hash (use partContentItem)`,
+              );
+            }
+            return { name: part.name, content_hash: part.contentHash };
+          }),
         })),
       });
     }
@@ -156,18 +154,67 @@ function optionOrNull(value: unknown): unknown {
   return optionValue(value) ?? null;
 }
 
+/** 中身をまだ読んでいないパーツ */
+function unresolvedPart(name: string, contentHash: string): CommitPart {
+  return {
+    name,
+    contentHash,
+    description: [],
+    partType: null,
+    expression: null,
+    unresolved: true,
+  };
+}
+
 function decodeParts(value: unknown): ReadonlyArray<CommitPart> {
-  return (Array.isArray(value) ? value : []).map((part) => {
-    const contentHash = optionOrNull(field(part, "content_hash"));
-    return {
-      name: String(field(part, "name")),
-      description: decodeLocalizedText(field(part, "description")),
-      visibility: decodeVisibility(field(part, "visibility")),
-      partType: optionOrNull(field(part, "part_type")),
-      expression: optionOrNull(field(part, "expression")),
-      contentHash: typeof contentHash === "string" ? contentHash : null,
-    };
-  });
+  return (Array.isArray(value) ? value : []).map((part) =>
+    unresolvedPart(
+      String(field(part, "name")),
+      String(field(part, "content_hash")),
+    ),
+  );
+}
+
+/** パーツの中身を definy の値 (`core.part-content`) にする */
+export function encodePartContent(content: PartContent): unknown {
+  return {
+    description: encodeLocalizedText(content.description),
+    visibility: encodeVisibility(content.visibility),
+    part_type: optionOf(content.partType),
+    expression: optionOf(content.expression),
+  };
+}
+
+/** 値が `core.part-content` の形か */
+export function isPartContent(value: unknown): boolean {
+  return conformsToTypeDeclaration(
+    value,
+    resolveTypePart("core.part-content"),
+    resolveTypePart,
+    false,
+  );
+}
+
+/** definy の値 (`core.part-content`) をパーツの中身にする. 形が違えば `undefined` */
+export function decodePartContent(value: unknown): PartContent | undefined {
+  if (!isPartContent(value)) {
+    return undefined;
+  }
+  return {
+    description: decodeLocalizedText(field(value, "description")),
+    visibility: decodeVisibility(field(value, "visibility")),
+    partType: optionOrNull(field(value, "part_type")),
+    expression: optionOrNull(field(value, "expression")),
+  };
+}
+
+/** 中身を読んだパーツにする (content hash はそのまま) */
+export function withPartContent<T extends CommitPart>(
+  part: T,
+  content: PartContent,
+): T {
+  const { unresolved: _, ...rest } = part;
+  return { ...rest, ...content } as T;
 }
 
 /** definy の値 (`core.event-content`) をイベントの中身にする. 形が違えば `undefined` */

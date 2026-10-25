@@ -261,6 +261,7 @@ export function overlayWorkingChanges(
       expression: p.expression,
       contentHash: p.contentHash,
       partIdHash: p.partIdHash,
+      ...(p.unresolved === true ? { unresolved: true } : {}),
     });
   }
   const committedPartIds = new Set<string>();

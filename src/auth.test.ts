@@ -14,6 +14,7 @@ import {
 } from "./cbor.ts";
 import { verifySignedEvent } from "../worker/cbor.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
+import { cachedContent } from "./content_store.ts";
 
 describe("auth and signed event pipeline", () => {
   it("generates and re-imports Ed25519 credentials", async () => {
@@ -76,7 +77,7 @@ describe("auth and signed event pipeline", () => {
 
   it("creates, signs, and decodes ProjectCommit events", async () => {
     const creds = await generateAccountCredentials("carol");
-    const { signedEventBytes, eventHash } =
+    const { signedEventBytes, eventHash, contents } =
       await createSignedSingleModuleCommitEvent(
         {
           credentials: creds,
@@ -115,7 +116,11 @@ describe("auth and signed event pipeline", () => {
     expect(commit?.description).toEqual([
       { language: "en", text: "Math functions" },
     ]);
-    expect(commit?.parts[0]?.description).toEqual([
+    // パーツの中身は content hash だけがコミットに入り, 中身は CAS に預ける
+    expect(commit?.parts[0]?.unresolved).toBe(true);
+    const contentHash = commit?.parts[0]?.contentHash ?? "";
+    expect([...contents.keys()]).toEqual([contentHash]);
+    expect(cachedContent(contentHash)?.description).toEqual([
       { language: "en", text: "Multiplies two numbers" },
       { language: "ja", text: "2 つの数を掛ける" },
     ]);

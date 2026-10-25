@@ -4686,11 +4686,11 @@
       "description": [
         {
           "language": "en",
-          "text": "A part in a module of a project commit. The expression is either inline or stored in the content-addressed storage (content_hash)"
+          "text": "A part in a module of a project commit: its name and the content hash of its content (core.part-content) stored in the content-addressed storage"
         },
         {
           "language": "ja",
-          "text": "プロジェクトのコミットのモジュールのパーツ. 式はそのまま持つか, content-addressed storage に預けて content_hash で指す"
+          "text": "プロジェクトのコミットのモジュールのパーツ. 名前と, content-addressed storage に預けた中身 (core.part-content) の content hash"
         }
       ],
       "expression": {
@@ -4701,6 +4701,32 @@
               "#type_string": null
             }
           },
+          {
+            "key": "content_hash",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "part-content",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The content of a part stored in the content-addressed storage. Its content hash (SHA-256 of the CBOR) is written in core.module-commit-part"
+        },
+        {
+          "language": "ja",
+          "text": "content-addressed storage に預けるパーツの中身. CBOR の SHA-256 (content hash) を core.module-commit-part に書く"
+        }
+      ],
+      "expression": {
+        "#type_record": [
           {
             "key": "description",
             "value": {
@@ -4769,27 +4795,6 @@
                           "$part": "core.expression"
                         }
                       }
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "key": "content_hash",
-            "value": {
-              "#type_union": [
-                {
-                  "tag": "none",
-                  "payload_type": {
-                    "#none": null
-                  }
-                },
-                {
-                  "tag": "some",
-                  "payload_type": {
-                    "#some": {
-                      "#type_string": null
                     }
                   }
                 }

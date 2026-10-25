@@ -1,7 +1,10 @@
 import { expect, it } from "vitest";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { bytesToBase64 } from "./store.ts";
-import { createInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
+import {
+  createInvalidSignatureSamples,
+  invalidSignatureSampleContents,
+} from "../src/invalid_signature_samples.ts";
 import {
   type UnverifiedEventRecord,
   verifyEventRecord,
@@ -232,7 +235,10 @@ it("DebugService/SubmitUnverifiedEvent stores invalid signatures only when enabl
     });
 
   const store = new WorkerStore();
-  store.loadSeedBundle({ events: [], contents: [] });
+  store.loadSeedBundle({
+    events: [],
+    contents: [...invalidSignatureSampleContents()],
+  });
 
   // 通常の SubmitEvent は不正な署名をすべて拒否する
   for (const sample of samples) {

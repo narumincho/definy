@@ -43,7 +43,7 @@ type DecodedSignedEvent = {
   readonly meta: ParsedSignedEventMeta;
 };
 
-/** CAS に預けた式の content hash (コミットを受理する前に CAS に揃っている必要がある) */
+/** CAS に預けたパーツの中身の content hash (コミットを受理する前に CAS に揃っている必要がある) */
 function referencedContentHashesOf(
   content: EventContent,
 ): ReadonlyArray<string> {
@@ -53,7 +53,7 @@ function referencedContentHashesOf(
   const hashes = new Set<string>();
   for (const module of content.commit.modules) {
     for (const part of module.parts) {
-      if (part.expression === null && part.contentHash !== null) {
+      if (part.contentHash !== null) {
         hashes.add(part.contentHash);
       }
     }

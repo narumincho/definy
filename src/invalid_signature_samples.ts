@@ -4,6 +4,7 @@
  * どの環境でも表示を確かめられるようにしている (`createSeedInvalidSignatureSamples`)。
  * ローカル開発では `DebugService/SubmitUnverifiedEvent` で追加することもできる (docs/invalid-signature-debug.md)。
  */
+import { toContentAddressedParts, type ContentItem } from "./content_store.ts";
 import {
   createSignedAccountEvent,
   createSignedProjectCommitEvent,
@@ -62,6 +63,11 @@ const SAMPLE_PARTS: ReadonlyArray<DecodedPart> = [
     expression: { "#number": 42 },
   },
 ];
+
+/** サンプルのコミットのパーツの中身 (CAS に預けるもの. 署名は不正でもコミットの形は正しくする) */
+export function invalidSignatureSampleContents(): ReadonlyArray<ContentItem> {
+  return [...toContentAddressedParts(SAMPLE_PARTS).contents.values()];
+}
 
 type SignedEventParts = {
   readonly signature: Uint8Array;

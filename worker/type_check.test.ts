@@ -83,6 +83,7 @@ async function submitCommit(
     parentCommitHash: await latestCommitHashOf(projectName, store, env),
     parts,
   });
+  await store.uploadContent([...commit.contents.values()], env);
   return submitEvent(store, env, commit.signedEventBytes);
 }
 

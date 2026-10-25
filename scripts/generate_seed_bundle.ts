@@ -10,7 +10,6 @@ import {
   bytesToBase64,
   bytesToUrlSafeBase64NoPad,
   encodeCborItem,
-  sha256Bytes,
   sha256EventHashId,
   type LocalizedText,
 } from "../src/cbor.ts";
@@ -20,7 +19,11 @@ import {
   MAIN_BRANCH,
   type Visibility,
 } from "../src/event_content.ts";
-import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
+import { partContentItem } from "../src/content_store.ts";
+import {
+  createSeedInvalidSignatureSamples,
+  invalidSignatureSampleContents,
+} from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { compileEventChecker } from "../src/event_check.ts";
@@ -184,23 +187,35 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   ];
   const seenHashesSet = new Set<string>();
   const contentsList: Array<SeedContentEntry> = [];
+  /** パーツの中身 (`core.part-content`) の content hash (キーはモジュール名, 値はパーツの順) */
+  const partContentHashes = new Map<string, ReadonlyArray<string>>();
 
   for (const modName of contentOrder) {
     const mod = loadedModules.get(modName);
     if (!mod) continue;
-    for (const part of mod.parts) {
-      if (part.expression != null) {
-        const cborBytes = encodeCborItem(part.expression);
-        const hashBytes = await sha256Bytes(cborBytes);
-        const hashStr = bytesToUrlSafeBase64NoPad(hashBytes);
-        if (!seenHashesSet.has(hashStr)) {
-          seenHashesSet.add(hashStr);
-          contentsList.push({
-            contentHash: hashStr,
-            contentBytes: bytesToBase64(cborBytes),
-          });
+    partContentHashes.set(
+      modName,
+      mod.parts.map((part) => {
+        const item = partContentItem({
+          description: part.description as LocalizedText,
+          visibility:
+            part.visibility === "private" ? "private" : DEFAULT_VISIBILITY,
+          partType: part.part_type ?? null,
+          expression: part.expression ?? null,
+        });
+        if (!seenHashesSet.has(item.contentHash)) {
+          seenHashesSet.add(item.contentHash);
+          contentsList.push(item);
         }
-      }
+        return item.contentHash;
+      }),
+    );
+  }
+
+  for (const item of invalidSignatureSampleContents()) {
+    if (!seenHashesSet.has(item.contentHash)) {
+      seenHashesSet.add(item.contentHash);
+      contentsList.push(item);
     }
   }
 
@@ -223,25 +238,20 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
         name: mod.module_name,
         description: mod.module_description,
         visibility: mod.module_visibility ?? DEFAULT_VISIBILITY,
-        // 式は CAS (contents) に入れ, コミットには content hash だけを入れる
-        parts: await Promise.all(
-          mod.parts.map(async (part) => ({
+        // パーツの中身は CAS (contents) に入れ, コミットには名前と content hash だけを入れる
+        parts: mod.parts.map((part, index) => {
+          const contentHash = partContentHashes.get(name)?.[index];
+          if (contentHash === undefined) {
+            throw new Error(`no content hash for ${name}.${String(part.name)}`);
+          }
+          return {
             name: String(part.name),
-            description: part.description as LocalizedText,
-            visibility:
-              part.visibility === "private"
-                ? ("private" as const)
-                : DEFAULT_VISIBILITY,
-            partType: part.part_type ?? null,
+            description: [],
+            partType: null,
             expression: null,
-            contentHash:
-              part.expression == null
-                ? null
-                : bytesToUrlSafeBase64NoPad(
-                    await sha256Bytes(encodeCborItem(part.expression)),
-                  ),
-          })),
-        ),
+            contentHash,
+          };
+        }),
       });
     }
     const inner = {
