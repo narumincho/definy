@@ -4,6 +4,7 @@ import { CloseIcon, PlayIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { loadStage1Compiler } from "../stage1_browser.ts";
+import { CompilerRebuild } from "./CompilerRebuild.tsx";
 import {
   formatRunValue,
   formatWasiIoStep,
@@ -241,6 +242,11 @@ export function RunPanel(): JSX.Element {
       </div>
 
       <div className="run-panel-body">
+        <CompilerRebuild
+          language={language}
+          resolvePart={resolvePart}
+          partNames={partNames}
+        />
         <div className="run-panel-input">
           <span className="run-panel-prompt" aria-hidden="true">
             &gt;

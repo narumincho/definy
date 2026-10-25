@@ -1041,6 +1041,29 @@ body.sidebar-resizing {
   padding: 0.4rem 0.6rem !important;
 }
 
+/* 実行パネルの「コンパイラを作り直す」(src/components/CompilerRebuild.tsx) */
+.compiler-rebuild {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.compiler-rebuild-current[data-rebuilt="true"] {
+  color: var(--purple-text);
+}
+
+.compiler-rebuild-status {
+  flex: 1;
+  min-width: 0;
+}
+
+.compiler-rebuild-status[data-error="true"] {
+  color: var(--error);
+}
+
 .run-panel-empty {
   margin: 0;
   font-size: 0.85rem;

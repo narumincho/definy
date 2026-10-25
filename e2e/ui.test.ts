@@ -632,6 +632,49 @@ test.describe("definy UI E2E", () => {
     await expect(runPanel).toBeVisible();
   });
 
+  test("run panel rebuilds the compiler from the shown core parts and runs with it", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.triangle-area");
+    await expect(page.locator(".part-definition-tree")).toBeVisible({
+      timeout: 15000,
+    });
+    const runPanel = page.locator(".run-panel");
+    await page.locator(".run-panel-toggle").click();
+    await expect(runPanel).toBeVisible();
+    const current = runPanel.locator(".compiler-rebuild-current");
+    await expect(current).toHaveAttribute("data-rebuilt", "false");
+
+    // 表示中の core.compile-to-wasm を stage1 でコンパイルし直し, 不動点のコンパイラを使う
+    await runPanel.locator(".compiler-rebuild-button").click();
+    await expect(current).toHaveAttribute("data-rebuilt", "true", {
+      timeout: 60000,
+    });
+    await expect(runPanel.locator(".compiler-rebuild-status")).toHaveText(
+      /fixed point|不動点/,
+    );
+
+    // 作り直したコンパイラで実行できる
+    await runPanel.locator(".run-panel-use-part").click();
+    await runPanel.locator(".run-panel-run").click();
+    const entry = runPanel.locator(".run-history-entry").first();
+    await expect(entry).toHaveAttribute("data-outcome", "value", {
+      timeout: 15000,
+    });
+    await expect(entry.locator(".run-history-output")).toHaveText("25");
+
+    // 作り直したコンパイラは再読み込みしても使い, 同梱のものに戻せる
+    await page.reload();
+    await expect(page.locator(".part-definition-tree")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.locator(".run-panel-toggle").click();
+    await expect(runPanel).toBeVisible();
+    await expect(current).toHaveAttribute("data-rebuilt", "true");
+    await runPanel.locator(".compiler-rebuild-reset").click();
+    await expect(current).toHaveAttribute("data-rebuilt", "false");
+  });
+
   test("expression tree editor asks the definy type checker for the expected type and renames function parameters", async ({
     page,
   }) => {

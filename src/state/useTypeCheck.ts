@@ -19,6 +19,7 @@ import {
 } from "../self_hosted_type_check.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
 import { loadTypeChecker } from "../type_checker_browser.ts";
+import { onRebuiltCompilerChange } from "../rebuilt_compiler.ts";
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import {
   checkReferenceVisibility,
@@ -116,6 +117,25 @@ export function useTypeCheck({
     >
   >(new Map());
 
+  // 式エディタで選んだ位置の期待する型を聞くセッション. 選択を変えるたびに呼ばれるので,
+  // 型環境 (コミット済みの全パーツ) が同じ間は使い回す
+  const expectedTypeSession = useRef<{
+    readonly parts: ReadonlyMap<string, LatestPart>;
+    readonly session: TypeCheckSession;
+  } | null>(null);
+
+  // 実行パネルでコンパイラ (と型チェッカー) を作り直したら, 前の結果を捨てて検査し直す
+  const [typeCheckerVersion, setTypeCheckerVersion] = useState(0);
+  useEffect(
+    () =>
+      onRebuiltCompilerChange(() => {
+        partTypeCheckCache.current = new Map();
+        expectedTypeSession.current = null;
+        setTypeCheckerVersion((version) => version + 1);
+      }),
+    [],
+  );
+
   useEffect(() => {
     if (committedParts.size === 0) {
       return;
@@ -180,7 +200,7 @@ export function useTypeCheck({
     return () => {
       cancelled = true;
     };
-  }, [committedParts]);
+  }, [committedParts, typeCheckerVersion]);
 
   const checkPartType = useCallback(
     async (part: {
@@ -210,12 +230,6 @@ export function useTypeCheck({
     [committedParts],
   );
 
-  // 式エディタで選んだ位置の期待する型を聞くセッション. 選択を変えるたびに呼ばれるので,
-  // 型環境 (コミット済みの全パーツ) が同じ間は使い回す
-  const expectedTypeSession = useRef<{
-    readonly parts: ReadonlyMap<string, LatestPart>;
-    readonly session: TypeCheckSession;
-  } | null>(null);
   const findExpectedType = useCallback(
     async (part: {
       readonly partType: unknown;
