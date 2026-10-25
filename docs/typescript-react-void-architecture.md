@@ -116,7 +116,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
    - 言語切替（英語 `en` / 日本語 `ja` / エスペラント語 `eo`）
    - アカウント表示 / ログインダイアログ
 2. **アクティビティバー ([src/components/ActivityBar.tsx](../src/components/ActivityBar.tsx))**:
-   - 画面切替（イベント / パーツ / モジュール / 変更 / 履歴 / アカウント / デプロイ / About / 設定）
+   - 画面切替（イベント / パーツ / モジュール / 履歴 / アカウント / 設定）
    - 作業中の未コミット変更件数バッジ表示
 3. **エクスプローラーサイドバー ([src/components/ExplorerSidebar.tsx](../src/components/ExplorerSidebar.tsx))**:
    - モジュール → パーツのツリービュー

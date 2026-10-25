@@ -1,4 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
+import { Link } from "../src/components/Link.tsx";
+import { AboutIcon } from "../src/icons.tsx";
 import { label, languageNativeName } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 import type { LanguageCode } from "../src/types.ts";
@@ -117,6 +119,24 @@ export default function SettingsPage(): JSX.Element {
           </span>
         </div>
       </div>
+
+      <Link href="/about" className="card settings-card settings-about-link">
+        <AboutIcon size={22} />
+        <span className="settings-about-text">
+          <strong>
+            {label(language, "About definy", "definy について", "Pri definy")}
+          </strong>
+          <span className="text-muted">
+            {label(
+              language,
+              "What definy is, how it compares, and the built-in modules",
+              "definy とは何か, 他との比較, ビルトインモジュールなど",
+              "Kio estas definy, komparoj kaj la enkonstruitaj moduloj",
+            )}
+          </span>
+        </span>
+        <span aria-hidden="true">→</span>
+      </Link>
 
       <div className="card settings-card">
         <h3>

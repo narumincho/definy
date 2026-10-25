@@ -11,11 +11,10 @@
 | /modules                  | モジュール一覧                                            |
 | /project/{projectName}    | プロジェクトのページ (モジュール・ブランチ・コミット履歴) |
 | /module/{moduleName}      | モジュールのページ (プロジェクト・パーツ)                 |
-| /parts                    | パーツ一覧                                                |
+| /parts                    | パーツ一覧 (`?changes=only` で作業中の変更とコミット)     |
 | /part/{moduleName}.{name} | パーツのページ (式エディタ)                               |
-| /changes                  | 作業中の変更とコミット                                    |
 | /history                  | コミット履歴                                              |
 | /settings                 | 設定                                                      |
-| /about                    | definy について                                           |
+| /about                    | definy について (設定のページから開く)                    |
 
 表示言語はクエリパラメータ `lang` で指定できる ([ui.md](ui.md) の「表示言語の決め方」).

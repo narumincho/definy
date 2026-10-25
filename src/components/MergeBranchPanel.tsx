@@ -1,5 +1,6 @@
 import { useState, type JSX } from "react";
 import { Link } from "./Link.tsx";
+import { CHANGES_ONLY_HREF } from "./WorkingChanges.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { MAIN_BRANCH } from "../event_content.ts";
@@ -182,7 +183,7 @@ export function MergeStartedNotice({
           )}{" "}
         </span>
       )}
-      <Link href="/changes" className="btn btn-primary btn-xs">
+      <Link href={CHANGES_ONLY_HREF} className="btn btn-primary btn-xs">
         {label(language, "Review changes", "変更を見る", "Vidi ŝanĝojn")}
       </Link>{" "}
       <button

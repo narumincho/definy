@@ -2489,9 +2489,74 @@ a.account-card {
 }
 
 .part-node[data-deleted] .sidebar-node-label,
-.change-card[data-deleted] strong {
+.change-card[data-deleted] strong,
+.part-card[data-status="deleted"] .part-breadcrumb,
+.part-card[data-status="deleted"] .part-card-desc {
   text-decoration: line-through;
   opacity: 0.7;
+}
+
+/* パーツ一覧の「変更のみ表示」 (pages/parts.tsx) */
+.changes-only-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.changes-only-count {
+  min-width: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-full);
+  background: var(--overlay-2);
+  font-size: 0.75rem;
+  line-height: 1.2rem;
+  text-align: center;
+}
+
+.change-card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.change-card-header > button {
+  margin-left: auto;
+}
+
+.change-desc {
+  margin: 0.4rem 0;
+}
+
+.changes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+/* 設定から開く About (pages/settings.tsx) */
+.settings-card.settings-about-link {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.settings-about-link:hover {
+  border-color: var(--primary);
+}
+
+.settings-about-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.88rem;
 }
 
 .new-part-form {
@@ -3378,7 +3443,7 @@ a.account-card {
   flex-shrink: 0;
 }
 
-/* コミット前の型検査の結果 (pages/changes.tsx) */
+/* コミット前の型検査の結果 (src/components/WorkingChanges.tsx) */
 .commit-type-check {
   margin-top: 0.8rem;
   font-size: 0.85rem;
