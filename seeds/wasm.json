@@ -1,0 +1,2037 @@
+{
+  "$schema": "./schemas/module-seed.schema.json",
+  "module_name": "wasm",
+  "module_description": [
+    {
+      "language": "en",
+      "text": "Encoding of WebAssembly binaries, independent of the definy compiler: instruction opcodes, LEB128, sections"
+    },
+    {
+      "language": "ja",
+      "text": "definy のコンパイラに依らない WebAssembly のバイナリの書き方: 命令のオペコード, LEB128, セクション"
+    }
+  ],
+  "parts": [
+    {
+      "name": "signed-leb128",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "n",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encode an integer as signed LEB128 bytes (for i64.const immediates)"
+        },
+        {
+          "language": "ja",
+          "text": "整数を符号付き LEB128 のバイト列にする (i64.const の即値用)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "n"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 1,
+              "variable_name": "q0",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 128
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#let": {
+                  "variable_id": 2,
+                  "variable_name": "r0",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.remainder"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 128
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "body": {
+                    "#let": {
+                      "variable_id": 3,
+                      "variable_name": "negative",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.less-than"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 0
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 4,
+                          "variable_name": "r",
+                          "value": {
+                            "#match": {
+                              "target": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 128
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "#let": {
+                              "variable_id": 5,
+                              "variable_name": "q",
+                              "value": {
+                                "#match": {
+                                  "target": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.minus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "body": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.or"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.and"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.equal"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 0
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.less-than"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 64
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.and"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.equal"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": -1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.less-than"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#number": 63
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#list": [
+                                          {
+                                            "#variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-concat"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#list": [
+                                                  {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 128
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "wasm.signed-leb128"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "n",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "unsigned-leb128",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "n",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encode a non-negative integer as unsigned LEB128 bytes (for Wasm section and body sizes)"
+        },
+        {
+          "language": "ja",
+          "text": "0 以上の整数を符号なし LEB128 のバイト列にする (Wasm のセクションや関数本体の長さ用)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "n"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 128
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": [
+                      {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-concat"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#list": [
+                              {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.plus"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.remainder"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 128
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#number": 128
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "wasm.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.divide"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 128
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "uleb-range",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "start",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "count",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Unsigned LEB128 encodings of start, start + 1, ... (count numbers)"
+        },
+        {
+          "language": "ja",
+          "text": "start から count 個の連番を符号なし LEB128 で並べたもの"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "count"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than-or-equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 1
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.less-than"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#number": 0
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "wasm.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#list": []
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#let": {
+                      "variable_id": 2,
+                      "variable_name": "half",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.divide"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 2
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-concat"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "wasm.uleb-range"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "start",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "count",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "wasm.uleb-range"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "start",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "count",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.minus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "unreachable",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction unreachable (0x00)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 unreachable のオペコード (0x00)"
+        }
+      ],
+      "expression": {
+        "#number": 0
+      }
+    },
+    {
+      "name": "if",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction if (0x04)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 if のオペコード (0x04)"
+        }
+      ],
+      "expression": {
+        "#number": 4
+      }
+    },
+    {
+      "name": "else",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction else (0x05)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 else のオペコード (0x05)"
+        }
+      ],
+      "expression": {
+        "#number": 5
+      }
+    },
+    {
+      "name": "end",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction end (0x0b)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 end のオペコード (0x0b)"
+        }
+      ],
+      "expression": {
+        "#number": 11
+      }
+    },
+    {
+      "name": "call",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction call (0x10)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 call のオペコード (0x10)"
+        }
+      ],
+      "expression": {
+        "#number": 16
+      }
+    },
+    {
+      "name": "call-indirect",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction call_indirect (0x11)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 call_indirect のオペコード (0x11)"
+        }
+      ],
+      "expression": {
+        "#number": 17
+      }
+    },
+    {
+      "name": "return-call-indirect",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction return_call_indirect (0x13)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 return_call_indirect のオペコード (0x13)"
+        }
+      ],
+      "expression": {
+        "#number": 19
+      }
+    },
+    {
+      "name": "local-get",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction local.get (0x20)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 local.get のオペコード (0x20)"
+        }
+      ],
+      "expression": {
+        "#number": 32
+      }
+    },
+    {
+      "name": "local-set",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction local.set (0x21)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 local.set のオペコード (0x21)"
+        }
+      ],
+      "expression": {
+        "#number": 33
+      }
+    },
+    {
+      "name": "local-tee",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction local.tee (0x22)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 local.tee のオペコード (0x22)"
+        }
+      ],
+      "expression": {
+        "#number": 34
+      }
+    },
+    {
+      "name": "i32-load",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.load (0x28)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.load のオペコード (0x28)"
+        }
+      ],
+      "expression": {
+        "#number": 40
+      }
+    },
+    {
+      "name": "i64-load",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.load (0x29)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.load のオペコード (0x29)"
+        }
+      ],
+      "expression": {
+        "#number": 41
+      }
+    },
+    {
+      "name": "i32-load8-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.load8_u (0x2d)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.load8_u のオペコード (0x2d)"
+        }
+      ],
+      "expression": {
+        "#number": 45
+      }
+    },
+    {
+      "name": "i32-store",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.store (0x36)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.store のオペコード (0x36)"
+        }
+      ],
+      "expression": {
+        "#number": 54
+      }
+    },
+    {
+      "name": "i32-store8",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.store8 (0x3a)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.store8 のオペコード (0x3a)"
+        }
+      ],
+      "expression": {
+        "#number": 58
+      }
+    },
+    {
+      "name": "i32-const",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.const (0x41)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.const のオペコード (0x41)"
+        }
+      ],
+      "expression": {
+        "#number": 65
+      }
+    },
+    {
+      "name": "i64-const",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.const (0x42)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.const のオペコード (0x42)"
+        }
+      ],
+      "expression": {
+        "#number": 66
+      }
+    },
+    {
+      "name": "i32-eqz",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.eqz (0x45)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.eqz のオペコード (0x45)"
+        }
+      ],
+      "expression": {
+        "#number": 69
+      }
+    },
+    {
+      "name": "i64-lt-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.lt_s (0x53)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.lt_s のオペコード (0x53)"
+        }
+      ],
+      "expression": {
+        "#number": 83
+      }
+    },
+    {
+      "name": "i64-gt-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.gt_s (0x55)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.gt_s のオペコード (0x55)"
+        }
+      ],
+      "expression": {
+        "#number": 85
+      }
+    },
+    {
+      "name": "i64-le-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.le_s (0x57)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.le_s のオペコード (0x57)"
+        }
+      ],
+      "expression": {
+        "#number": 87
+      }
+    },
+    {
+      "name": "i64-ge-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.ge_s (0x59)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.ge_s のオペコード (0x59)"
+        }
+      ],
+      "expression": {
+        "#number": 89
+      }
+    },
+    {
+      "name": "i64-add",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.add (0x7c)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.add のオペコード (0x7c)"
+        }
+      ],
+      "expression": {
+        "#number": 124
+      }
+    },
+    {
+      "name": "i64-sub",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.sub (0x7d)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.sub のオペコード (0x7d)"
+        }
+      ],
+      "expression": {
+        "#number": 125
+      }
+    },
+    {
+      "name": "i64-mul",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.mul (0x7e)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.mul のオペコード (0x7e)"
+        }
+      ],
+      "expression": {
+        "#number": 126
+      }
+    },
+    {
+      "name": "i64-div-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.div_s (0x7f)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.div_s のオペコード (0x7f)"
+        }
+      ],
+      "expression": {
+        "#number": 127
+      }
+    },
+    {
+      "name": "i64-rem-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.rem_s (0x81)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.rem_s のオペコード (0x81)"
+        }
+      ],
+      "expression": {
+        "#number": 129
+      }
+    },
+    {
+      "name": "i64-extend-i32-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.extend_i32_u (0xad)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.extend_i32_u のオペコード (0xad)"
+        }
+      ],
+      "expression": {
+        "#number": 173
+      }
+    },
+    {
+      "name": "section-custom",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm custom section (0)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の custom セクションの ID (0)"
+        }
+      ],
+      "expression": {
+        "#number": 0
+      }
+    },
+    {
+      "name": "section-type",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm type section (1)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の type セクションの ID (1)"
+        }
+      ],
+      "expression": {
+        "#number": 1
+      }
+    },
+    {
+      "name": "section-import",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm import section (2)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の import セクションの ID (2)"
+        }
+      ],
+      "expression": {
+        "#number": 2
+      }
+    },
+    {
+      "name": "section-function",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm function section (3)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の function セクションの ID (3)"
+        }
+      ],
+      "expression": {
+        "#number": 3
+      }
+    },
+    {
+      "name": "section-table",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm table section (4)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の table セクションの ID (4)"
+        }
+      ],
+      "expression": {
+        "#number": 4
+      }
+    },
+    {
+      "name": "section-memory",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm memory section (5)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の memory セクションの ID (5)"
+        }
+      ],
+      "expression": {
+        "#number": 5
+      }
+    },
+    {
+      "name": "section-global",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm global section (6)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の global セクションの ID (6)"
+        }
+      ],
+      "expression": {
+        "#number": 6
+      }
+    },
+    {
+      "name": "section-export",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm export section (7)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の export セクションの ID (7)"
+        }
+      ],
+      "expression": {
+        "#number": 7
+      }
+    },
+    {
+      "name": "section-start",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm start section (8)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の start セクションの ID (8)"
+        }
+      ],
+      "expression": {
+        "#number": 8
+      }
+    },
+    {
+      "name": "section-element",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm element section (9)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の element セクションの ID (9)"
+        }
+      ],
+      "expression": {
+        "#number": 9
+      }
+    },
+    {
+      "name": "section-code",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm code section (10)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の code セクションの ID (10)"
+        }
+      ],
+      "expression": {
+        "#number": 10
+      }
+    },
+    {
+      "name": "section-data",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm data section (11)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の data セクションの ID (11)"
+        }
+      ],
+      "expression": {
+        "#number": 11
+      }
+    },
+    {
+      "name": "section-data-count",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "ID of the Wasm data-count section (12)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の data-count セクションの ID (12)"
+        }
+      ],
+      "expression": {
+        "#number": 12
+      }
+    },
+    {
+      "name": "module-header",
+      "part_type": {
+        "#list": {
+          "item_type": {
+            "#number": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The first 8 bytes of a Wasm module: the magic number \\0asm and version 1"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm のモジュールの先頭 8 バイト: マジックナンバー \\0asm とバージョン 1"
+        }
+      ],
+      "expression": {
+        "#list": [
+          {
+            "#number": 0
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 1
+          },
+          {
+            "#number": 0
+          },
+          {
+            "#number": 0
+          },
+          {
+            "#number": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "section",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "id",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "payload",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A Wasm section: the section ID, the byte length of the payload (unsigned LEB128) and the payload"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm のセクション: セクションの ID, 中身のバイト数 (符号なし LEB128), 中身"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "id"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "payload"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.list-concat"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#list": [
+                      {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-concat"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "wasm.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-length"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

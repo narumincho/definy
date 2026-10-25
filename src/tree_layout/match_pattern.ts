@@ -35,6 +35,34 @@ type MatchInner = {
 /** どのタグにも一致するアームのタグ */
 const WILDCARD_TAG = "_";
 
+/**
+ * match の対象が文字列のときのタグの候補 (無い). 文字列の match のアームのタグは文字列リテラルで,
+ * 検索欄に打った文字列をそのままタグにする ({@link stringPatternOption})
+ */
+export const STRING_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> =
+  Object.freeze([]);
+
+/** match の対象が文字列か ({@link patternVariantsFromTypeAst} が {@link STRING_PATTERN_VARIANTS} を返したか) */
+export function isStringPatternVariants(
+  variants: ReadonlyArray<PatternVariant> | null,
+): boolean {
+  return variants === STRING_PATTERN_VARIANTS;
+}
+
+/** 文字列の match のアームのタグを, 検索欄の文字列 `query` にする選択肢. 空や `_` なら無し */
+export function stringPatternOption(query: string): SelectorOption | null {
+  if (query === "" || query === WILDCARD_TAG) {
+    return null;
+  }
+  return {
+    value: `${TAG_PREFIX}${query}`,
+    name: query,
+    detail: "string literal",
+    category: "Pattern",
+    returnType: "any",
+  };
+}
+
 /** 置換メニューの選択肢の value の接頭辞 */
 const TAG_PREFIX = "pattern:tag:";
 export const PATTERN_BIND = "pattern:bind";
@@ -116,13 +144,17 @@ export function probeMatchTargetType(
 
 /**
  * 型チェッカーが返した match の対象の型 (`core.type-ast` の値) の取りうるタグ.
- * 型パーツの参照は `partsByIdHash` (パーツ ID → パーツ) の型宣言 (`type_union`) から求める. 直和型でなければ `null`
+ * 型パーツの参照は `partsByIdHash` (パーツ ID → パーツ) の型宣言 (`type_union`) から求める.
+ * 文字列なら {@link STRING_PATTERN_VARIANTS} (アームのタグは文字列リテラル). 直和型でも文字列でもなければ `null`
  */
 export function patternVariantsFromTypeAst(
   type: DefinyValue | null,
   partsByIdHash: ReadonlyMap<string, Pick<PartSnapshot, "expression">>,
 ): ReadonlyArray<PatternVariant> | null {
   const tagged = variantOf(type);
+  if (tagged?.tag === "string") {
+    return STRING_PATTERN_VARIANTS;
+  }
   if (tagged?.tag === "boolean") {
     return [
       { tag: "true", hasPayload: false },

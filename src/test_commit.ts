@@ -1,10 +1,11 @@
 /**
  * テスト用: モジュール 1 つだけのプロジェクトのコミット (docs/project.md) を作る.
- * プロジェクト名を省くとモジュール名と同じにする
+ * プロジェクト名を省くとモジュール名と同じにする. `otherModules` で同じプロジェクトの他のモジュールも一緒にコミットできる
  */
 import {
   createSignedProjectCommitEvent,
   type AccountCredentials,
+  type CommitModuleParams,
   type SignedProjectCommitResult,
 } from "./auth.ts";
 import type { DecodedPart, LocalizedText } from "./cbor.ts";
@@ -23,6 +24,7 @@ export function createSignedSingleModuleCommitEvent(
     readonly parentCommitHash?: string | null;
     readonly mergedCommitHash?: string | null;
     readonly parts: ReadonlyArray<DecodedPart>;
+    readonly otherModules?: ReadonlyArray<CommitModuleParams>;
   },
   timeSeconds?: number,
 ): Promise<SignedProjectCommitResult> {
@@ -44,6 +46,7 @@ export function createSignedSingleModuleCommitEvent(
             : { visibility: params.moduleVisibility }),
           parts: params.parts,
         },
+        ...(params.otherModules ?? []),
       ],
     },
     timeSeconds,

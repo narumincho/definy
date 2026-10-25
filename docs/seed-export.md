@@ -1,6 +1,6 @@
 # seed の書き戻し (`export:seeds`)
 
-UI でシステムアカウントとしてビルトインのプロジェクト（`definy`: `definy`, `core`, `std`, `wasi` / `sample`: `sample`. [project.md](project.md)）のパーツを編集した後、稼働中の definy サーバーから最新コミットを取得してリポジトリの `seeds/projects/*.json` と `seeds/*.json`（正本）に書き戻すコマンドです。
+UI でシステムアカウントとしてビルトインのプロジェクト（`definy`: `definy`, `core`, `std`, `wasi`, `wasm` / `sample`: `sample`. [project.md](project.md)）のパーツを編集した後、稼働中の definy サーバーから最新コミットを取得してリポジトリの `seeds/projects/*.json` と `seeds/*.json`（正本）に書き戻すコマンドです。
 
 ## 使い方
 
@@ -15,7 +15,7 @@ npm run export:seeds http://localhost:8787 path/to/seeds
 node scripts/export_seeds.ts http://localhost:8787 [outDir=seeds]
 ```
 
-書き出しが完了したモジュール名が表示されます（例: `Successfully exported 5 modules to seeds: definy, core, std, wasi, sample`）。
+書き出しが完了したモジュール名が表示されます（例: `Successfully exported 6 modules to seeds: definy, core, std, wasi, wasm, sample`）。
 
 ## 環境変数（システムアカウント）
 
@@ -44,7 +44,7 @@ DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY="<public_key>" npm run export:seeds https://def
 ## 往復テスト (Roundtrip)
 
 `seeds/*.json` の正規化形式の整合性を保証するため、Vitest (`src/seed_export.test.ts`) にて往復テストが自動実行されます。
-現在の seed で初期化したプロセス内サーバーから書き出した結果が、既存の `seeds/{definy,core,std,wasi,sample}.json` と `seeds/projects/{definy,sample}.json` と**バイト単位で完全一致**することを検証しています。
+現在の seed で初期化したプロセス内サーバーから書き出した結果が、既存の `seeds/{definy,core,std,wasi,wasm,sample}.json` と `seeds/projects/{definy,sample}.json` と**バイト単位で完全一致**することを検証しています。
 
 ## 書き出し後の手順 (`npm run build:seeds`)
 

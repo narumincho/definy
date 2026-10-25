@@ -177,13 +177,14 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   const privateKey = await importPrivateKeyFromSecretKey(creds.secretKeyBase64);
   const loadedModules = await loadSeedModules();
 
-  // 2. CAS コンテンツ一覧の構築 (definy, core, std, sample, wasi の順に走査し重複排除)
+  // 2. CAS コンテンツ一覧の構築 (definy, core, std, sample, wasi, wasm の順に走査し重複排除)
   const contentOrder: ReadonlyArray<string> = [
     "definy",
     "core",
     "std",
     "sample",
     "wasi",
+    "wasm",
   ];
   const seenHashesSet = new Set<string>();
   const contentsList: Array<SeedContentEntry> = [];

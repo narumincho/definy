@@ -9,10 +9,12 @@ import {
   PATTERN_ADD_DEFAULT,
   applyPatternSelection,
   currentPatternOptionValue,
+  isStringPatternVariants,
   patternSelectorOptions,
   patternVariantsFromTypeAst,
   probeMatchTargetType,
   renameMatchArmVariable,
+  stringPatternOption,
   type PatternVariant,
 } from "./match_pattern.ts";
 import { EXPECTED_TYPE_PROBE } from "./type_inference.ts";
@@ -157,6 +159,47 @@ describe("match のパターンの編集", () => {
       patternVariantsFromTypeAst({ "#number": null }, new Map()),
     ).toBeNull();
     expect(patternVariantsFromTypeAst(null, new Map())).toBeNull();
+  });
+
+  it("文字列の match のアームのタグは, 検索欄に打った文字列リテラルにする", () => {
+    const variants = patternVariantsFromTypeAst({ "#string": null }, new Map());
+    expect(isStringPatternVariants(variants)).toBe(true);
+    expect(isStringPatternVariants([])).toBe(false);
+    expect(stringPatternOption("")).toBeNull();
+    expect(stringPatternOption("_")).toBeNull();
+    const option = stringPatternOption("plus");
+    expect(option?.name).toBe("plus");
+    const stringMatch = {
+      "#match": {
+        target: { "#string": "plus" },
+        arms: [
+          {
+            tag: "_",
+            variable_id: -1,
+            variable_name: "",
+            body: { "#number": 0 },
+          },
+        ],
+      },
+    };
+    const path: ReadonlyArray<PathStep> = [
+      { kind: "matchArmPattern", index: 0 },
+    ];
+    expect(
+      applyPatternSelection(stringMatch, path, option?.value ?? "", variants),
+    ).toEqual({
+      "#match": {
+        target: { "#string": "plus" },
+        arms: [
+          {
+            tag: "plus",
+            variable_id: -1,
+            variable_name: "",
+            body: { "#number": 0 },
+          },
+        ],
+      },
+    });
   });
 
   it("タグ・束縛・アームの追加と削除の選択肢を出す", () => {

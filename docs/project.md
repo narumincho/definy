@@ -46,7 +46,7 @@
 - ビルトインのプロジェクトは `seeds/projects/*.json` (`project_name`, `project_description`, `message`, `modules`)。
   各モジュールの正本は今までどおり `seeds/<モジュール名>.json` (コミットのメッセージはプロジェクトのほうに移した)。
 - 今のビルトインのプロジェクト:
-  - `definy`: `definy`, `core`, `std`, `wasi`
+  - `definy`: `definy`, `core`, `std`, `wasi`, `wasm`
   - `sample`: `sample`
 - `npm run build:seeds` はプロジェクトごとに 1 つのコミット (システムアカウントの `main`) を作る (`scripts/generate_seed_bundle.ts`, `src/seed_projects.ts`)。
 - `npm run export:seeds` はビルトインのプロジェクトのシステムアカウントの `main` の最新のコミットを, プロジェクトの seed と

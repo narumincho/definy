@@ -274,6 +274,21 @@ export const BUILTIN_MODULES: ReadonlyArray<BuiltinModuleItem> = [
     },
   },
   {
+    id: "wasm",
+    name: "wasm",
+    icon: "🧱",
+    title: {
+      en: "WebAssembly Binary Encoding",
+      ja: "WebAssembly のバイナリ",
+      eo: "WebAssembly-Binara Kodado",
+    },
+    desc: {
+      en: "Instruction opcodes, LEB128, and sections of WebAssembly binaries, independent of the definy compiler.",
+      ja: "definy のコンパイラに依らない, WebAssembly の命令のオペコード, LEB128, セクションの書き方。",
+      eo: "Operaciaj kodoj, LEB128 kaj sekcioj de WebAssembly.",
+    },
+  },
+  {
     id: "sample",
     name: "sample",
     icon: "🧪",

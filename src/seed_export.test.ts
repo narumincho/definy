@@ -78,7 +78,14 @@ describe("exportSeeds", () => {
         seedsDir: "seeds",
       });
 
-      const expectedModules = ["definy", "core", "std", "wasi", "sample"];
+      const expectedModules = [
+        "definy",
+        "core",
+        "std",
+        "wasi",
+        "wasm",
+        "sample",
+      ];
       expect([...exportedModules].sort()).toEqual([...expectedModules].sort());
 
       for (const name of expectedModules) {
