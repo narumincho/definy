@@ -71,6 +71,12 @@ export type WorkingChangesOperations = {
   ) => Promise<string>;
   /** `moduleName` へコミットする先 (docs/branch.md). ログインしていなければ `null` */
   readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
+  readonly startMerge: (
+    moduleName: string,
+    mergedCommitHash: string,
+    changes: ReadonlyMap<string, PartChange>,
+  ) => void;
+  readonly cancelMerge: (moduleName: string) => void;
 };
 
 export function useWorkingChanges({
@@ -94,7 +100,7 @@ export function useWorkingChanges({
       setWorkingChanges((prev) => {
         const nextParts = new Map<string, PartChange>(prev.parts);
         nextParts.set(partId, change);
-        const next = { parts: nextParts };
+        const next = { ...prev, parts: nextParts };
         saveStoredChanges(next);
         return next;
       });
@@ -106,7 +112,7 @@ export function useWorkingChanges({
     setWorkingChanges((prev) => {
       const nextParts = new Map<string, PartChange>(prev.parts);
       nextParts.delete(partId);
-      const next = { parts: nextParts };
+      const next = { ...prev, parts: nextParts };
       saveStoredChanges(next);
       return next;
     });
@@ -205,6 +211,11 @@ export function useWorkingChanges({
           moduleDescription: existingModule?.description ?? [],
           message,
           parentCommitHash,
+          // 取り込みは自分のブランチへのコミットだけ (新しいブランチ・モジュールには入れない)
+          mergedCommitHash:
+            target.kind === "own_branch"
+              ? (workingChanges.merges?.get(moduleName) ?? null)
+              : null,
           parts: partsList,
         });
 
@@ -218,7 +229,9 @@ export function useWorkingChanges({
         for (const id of committedPartIds) {
           nextParts.delete(id);
         }
-        const next = { parts: nextParts };
+        const nextMerges = new Map(prev.merges);
+        nextMerges.delete(moduleName);
+        const next = { parts: nextParts, merges: nextMerges };
         saveStoredChanges(next);
         return next;
       });
@@ -236,8 +249,49 @@ export function useWorkingChanges({
       branchesByModule,
       selectBranch,
       refreshEvents,
+      workingChanges,
     ],
   );
+
+  /**
+   * 他のブランチのコミット `mergedCommitHash` の取り込みを始める: 取り込んだ後のパーツへの変更 (`changes`) を作業中の変更にし,
+   * 次のコミットで `merged_commit_hash` に入れる
+   */
+  const startMerge = useCallback(
+    (
+      moduleName: string,
+      mergedCommitHash: string,
+      changes: ReadonlyMap<string, PartChange>,
+    ) => {
+      setWorkingChanges((prev) => {
+        const next = {
+          parts: new Map([...prev.parts, ...changes]),
+          merges: new Map(prev.merges).set(moduleName, mergedCommitHash),
+        };
+        saveStoredChanges(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  /** 取り込みをやめる (取り込みで作った作業中の変更も捨てる) */
+  const cancelMerge = useCallback((moduleName: string) => {
+    setWorkingChanges((prev) => {
+      const nextMerges = new Map(prev.merges);
+      nextMerges.delete(moduleName);
+      const next = {
+        parts: new Map(
+          [...prev.parts].filter(
+            ([partId]) => !partId.startsWith(`${moduleName}.`),
+          ),
+        ),
+        merges: nextMerges,
+      };
+      saveStoredChanges(next);
+      return next;
+    });
+  }, []);
 
   return {
     workingChanges,
@@ -247,5 +301,7 @@ export function useWorkingChanges({
     buildCommitParts,
     commitWorkingChanges,
     commitTargetFor,
+    startMerge,
+    cancelMerge,
   };
 }

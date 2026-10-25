@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ConnectionStatus,
   EventRecord,
@@ -91,6 +91,10 @@ export type EventsState = {
   readonly selectBranch: (moduleName: string, branch: string) => void;
   /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
   readonly loadEvent: (eventHash: string) => Promise<boolean>;
+  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  readonly fetchCommit: (
+    eventHash: string,
+  ) => Promise<DecodedCommitEvent | null>;
 };
 
 const STORAGE_KEY_SELECTED_BRANCHES = "definy.selected_branches.v1";
@@ -202,6 +206,16 @@ const decodedCommitCache = new WeakMap<
   DecodedCommitEvent | null
 >();
 
+function decodeCommitEvent(event: EventRecord): DecodedCommitEvent | null {
+  let decoded = decodedCommitCache.get(event);
+  if (decoded === undefined) {
+    const commit = extractModuleCommit(event.signedEventBytes);
+    decoded = commit === null ? null : { event, commit };
+    decodedCommitCache.set(event, decoded);
+  }
+  return decoded;
+}
+
 export function useEvents(): EventsState {
   /** サーバーから読んだイベント (最新のもの, 各ブランチの最新のコミット, 全アカウントの作成, 個別に読んだもの) */
   const [eventMap, setEventMap] = useState<ReadonlyMap<string, EventRecord>>(
@@ -279,6 +293,38 @@ export function useEvents(): EventsState {
     [addEvents],
   );
 
+  // fetchCommit が最新のイベントを見るため
+  const eventMapRef = useRef(eventMap);
+  eventMapRef.current = eventMap;
+
+  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  const fetchCommit = useCallback(
+    async (eventHash: string): Promise<DecodedCommitEvent | null> => {
+      let record = eventMapRef.current.get(eventHash);
+      if (record === undefined) {
+        try {
+          const { event } = await postRpc<{ readonly event?: ServerEvent }>(
+            "GetEvent",
+            { eventHash },
+          );
+          if (event === undefined) return null;
+          record = await verifyCached(event);
+          addEvents([record]);
+        } catch {
+          return null;
+        }
+      }
+      if (
+        record.verification.status !== "valid" ||
+        record.eventType !== "module_commit"
+      ) {
+        return null;
+      }
+      return decodeCommitEvent(record);
+    },
+    [addEvents],
+  );
+
   useEffect(() => {
     void refreshEvents();
   }, [refreshEvents]);
@@ -314,12 +360,7 @@ export function useEvents(): EventsState {
     () =>
       validEvents.flatMap((event) => {
         if (event.eventType !== "module_commit") return [];
-        let decoded = decodedCommitCache.get(event);
-        if (decoded === undefined) {
-          const commit = extractModuleCommit(event.signedEventBytes);
-          decoded = commit === null ? null : { event, commit };
-          decodedCommitCache.set(event, decoded);
-        }
+        const decoded = decodeCommitEvent(event);
         return decoded === null ? [] : [decoded];
       }),
     [validEvents],
@@ -477,5 +518,6 @@ export function useEvents(): EventsState {
     displayedBranches,
     selectBranch,
     loadEvent,
+    fetchCommit,
   };
 }

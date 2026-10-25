@@ -281,6 +281,7 @@ export async function branchStateOf(
   branch: string,
   accountId: string,
   parentCommitHash: string | null,
+  mergedCommitHash: string | null,
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<Omit<EventCheckState, "accountCreated">> {
@@ -301,6 +302,9 @@ export async function branchStateOf(
     branchLatestCommitHash:
       latestOnBranch(moduleCommits, branch)?.eventHash ?? null,
     isBranchCreator: first?.accountId === accountId,
+    mergedInModule:
+      mergedCommitHash !== null &&
+      moduleCommits.some((commit) => commit.eventHash === mergedCommitHash),
     moduleHasCommits: moduleCommits.length > 0,
     parentInModule:
       parentCommitHash !== null &&

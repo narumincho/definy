@@ -73,6 +73,18 @@ export type DefinyContextValue = {
   readonly selectBranch: (moduleName: string, branch: string) => void;
   /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
   readonly loadEvent: (eventHash: string) => Promise<boolean>;
+  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  readonly fetchCommit: (
+    eventHash: string,
+  ) => Promise<DecodedCommitEvent | null>;
+  /** 他のブランチの取り込みを始める (取り込んだ後のパーツへの変更を作業中の変更にする. docs/branch.md「取り込み」) */
+  readonly startMerge: (
+    moduleName: string,
+    mergedCommitHash: string,
+    changes: ReadonlyMap<string, PartChange>,
+  ) => void;
+  /** 取り込みをやめる (そのモジュールの作業中の変更も捨てる) */
+  readonly cancelMerge: (moduleName: string) => void;
   /**
    * `moduleName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
    * definy 製の型チェッカーで検査する. ログインしていなければ空
@@ -192,6 +204,9 @@ export function DefinyProvider({
       commitTargetFor: working.commitTargetFor,
       selectBranch: events.selectBranch,
       loadEvent: events.loadEvent,
+      fetchCommit: events.fetchCommit,
+      startMerge: working.startMerge,
+      cancelMerge: working.cancelMerge,
       checkCommitTypes: typeCheck.checkCommitTypes,
       partTypeCheckResults: typeCheck.partTypeCheckResults,
       checkPartType: typeCheck.checkPartType,
@@ -249,6 +264,9 @@ export function DefinyProvider({
       working.commitTargetFor,
       events.selectBranch,
       events.loadEvent,
+      events.fetchCommit,
+      working.startMerge,
+      working.cancelMerge,
       typeCheck.checkCommitTypes,
       typeCheck.partTypeCheckResults,
       typeCheck.checkPartType,

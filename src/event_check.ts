@@ -21,6 +21,8 @@ export type EventCheckState = {
   readonly branchLatestCommitHash: string | null;
   /** このイベントのアカウントがコミット先のブランチを作ったか (ブランチの最初のコミットのアカウントか) */
   readonly isBranchCreator: boolean;
+  /** `merged_commit_hash` がコミット先のモジュールのコミットか. 取り込みでなければ `false` */
+  readonly mergedInModule: boolean;
   /** コミット先のモジュールに (どのブランチにでも) コミットがあるか */
   readonly moduleHasCommits: boolean;
   /** `parent_commit_hash` がコミット先のモジュールの (どのブランチの) コミットか. 親が無ければ `false` */
@@ -31,6 +33,7 @@ export type EventCheckState = {
 export const NO_MODULE_STATE: Omit<EventCheckState, "accountCreated"> = {
   branchLatestCommitHash: null,
   isBranchCreator: false,
+  mergedInModule: false,
   moduleHasCommits: false,
   parentInModule: false,
 };
@@ -105,6 +108,7 @@ export function checkEvent(
             ? none()
             : some(state.branchLatestCommitHash),
         is_branch_creator: state.isBranchCreator,
+        merged_in_module: state.mergedInModule,
         module_has_commits: state.moduleHasCommits,
         parent_in_module: state.parentInModule,
       }),
@@ -139,6 +143,8 @@ export function eventRejectionMessage(rejection: EventRejection): string {
       return "the first commit of a module must be on the main branch";
     case "not_branch_creator":
       return "only the account that created the branch can commit to it (create a new branch instead)";
+    case "merged_commit_not_in_module":
+      return "merged_commit_hash must be a commit of the same module";
     case "parent_commit_mismatch":
       return "parent_commit_hash must be the latest commit of the branch, or a commit of the module for a new branch (fetch the latest events and commit again)";
     case "empty_part_name":

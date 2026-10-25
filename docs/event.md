@@ -27,6 +27,7 @@ core.module-commit = {
   module_description: list<core.localized-text>,
   message: string,
   parent_commit_hash: option<string>,
+  merged_commit_hash: option<string>,   // 取り込んだ他のブランチのコミット (docs/branch.md「取り込み」)
   parts: list<core.module-commit-part>,
 }
 core.module-commit-part = {
@@ -49,6 +50,7 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
     "module_description": [{ "language": "en", "text": "Math" }],
     "message": "Add answer",
     "parent_commit_hash": { "#none": null },
+    "merged_commit_hash": { "#none": null },
     "parts": [
       {
         "name": "answer",
@@ -87,8 +89,10 @@ core.event-check-state = {
   account_created: boolean,
   branch_latest_commit_hash: option<string>,  // コミット先のブランチの最新のコミット
   is_branch_creator: boolean,                 // このアカウントがコミット先のブランチを作ったか
+  merged_in_module: boolean,                  // merged_commit_hash がそのモジュールのコミットか
   module_has_commits: boolean,
   parent_in_module: boolean,                  // parent_commit_hash がそのモジュールのコミットか
+  merged_in_module: boolean,                  // merged_commit_hash がそのモジュールのコミットか
 }
 ```
 
@@ -102,6 +106,7 @@ core.event-check-state = {
 | `module_commit`  | モジュール名は空にできない                                         | `empty_module_name`                                                         |
 | `module_commit`  | ブランチ名は空にできない                                           | `empty_branch_name`                                                         |
 | `module_commit`  | ブランチの規則 (`core.check-event-branch`. [branch.md](branch.md)) | `first_branch_must_be_main`, `not_branch_creator`, `parent_commit_mismatch` |
+| `module_commit`  | 取り込むのは同じモジュールのコミット (`core.check-event-merge`)    | `merged_commit_not_in_module`                                               |
 | `module_commit`  | パーツ名は空にできず, 重複できない (`core.check-event-part-names`) | `empty_part_name`, `duplicate_part_name(name)`                              |
 
 - モジュールはモジュール名だけで決まり (`deriveModuleIdBytes`), ブランチを持つ。ブラウザは表示しているブランチから

@@ -24,6 +24,7 @@ const commit = (options: {
   readonly moduleName?: string;
   readonly branch?: string;
   readonly parent?: string | null;
+  readonly merged?: string | null;
   readonly parts?: ReadonlyArray<CommitPart>;
 }): EventContent => ({
   type: "module_commit",
@@ -33,6 +34,7 @@ const commit = (options: {
     moduleDescription: [],
     message: "m",
     parentCommitHash: options.parent ?? null,
+    mergedCommitHash: options.merged ?? null,
     parts: options.parts ?? [part("a")],
   },
 });
@@ -112,6 +114,25 @@ describe("core.check-event", () => {
         parentInModule: false,
       }),
     ).toEqual(["parent_commit_mismatch"]);
+  });
+
+  it("他のブランチの取り込みは, 同じモジュールのコミットを取り込む", () => {
+    const onMain: EventCheckState = {
+      ...fresh,
+      branchLatestCommitHash: "h1",
+      isBranchCreator: true,
+      moduleHasCommits: true,
+      parentInModule: true,
+    };
+    expect(
+      tags(commit({ parent: "h1", merged: "b1" }), {
+        ...onMain,
+        mergedInModule: true,
+      }),
+    ).toEqual([]);
+    expect(tags(commit({ parent: "h1", merged: "x" }), onMain)).toEqual([
+      "merged_commit_not_in_module",
+    ]);
   });
 
   it("モジュール名・ブランチ名・パーツ名は空にできず, パーツ名は重複できない", () => {

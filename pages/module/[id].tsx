@@ -9,6 +9,10 @@ import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
 import { MAIN_BRANCH } from "../../src/event_content.ts";
+import {
+  MergeBranchPanel,
+  MergeStartedNotice,
+} from "../../src/components/MergeBranchPanel.tsx";
 import type { DecodedCommitEvent } from "../../src/state/useEvents.ts";
 
 /** コミット履歴に出す最大の数 (古いコミットは 1 件ずつ読むので上限を置く) */
@@ -64,12 +68,16 @@ export default function ModuleDetailPage(): JSX.Element {
     branches: [],
     description: [],
     latestEventHash: "",
+    parentCommitHash: null,
     message: "",
     parts: [],
     updatedAtMs: Date.now(),
   };
 
   usePageTitle(mod.name);
+  const [mergeConflicts, setMergeConflicts] = useState<ReadonlyArray<string>>(
+    [],
+  );
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
   /** 表示しているブランチの最新のコミットから親をたどったコミット (新しい順). 分かれる前の main のコミットも入る */
@@ -141,7 +149,10 @@ export default function ModuleDetailPage(): JSX.Element {
             </span>
           </div>
         )}
+        <MergeBranchPanel module={mod} onStarted={setMergeConflicts} />
       </div>
+
+      <MergeStartedNotice moduleName={mod.name} conflicts={mergeConflicts} />
 
       {moduleCommits.length > 0 && (
         <div className="module-parts-section">
@@ -163,6 +174,15 @@ export default function ModuleDetailPage(): JSX.Element {
                       )}
                 </Link>
                 <span className="module-commit-meta">
+                  {commit.mergedCommitHash !== null && (
+                    <Link
+                      href={`/event/${commit.mergedCommitHash}`}
+                      className="badge badge-success"
+                    >
+                      {label(language, "Merge", "取り込み", "Kunfando")}{" "}
+                      {commit.mergedCommitHash.slice(0, 8)}
+                    </Link>
+                  )}
                   <AccountLink accountId={event.accountId} />
                   <time dateTime={event.createdAtRfc3339}>
                     {new Date(event.timeMs).toLocaleString(

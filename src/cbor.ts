@@ -421,6 +421,8 @@ export type DecodedModuleCommit = {
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
+  /** このコミットで取り込んだ他のブランチのコミット (docs/branch.md「取り込み」) */
+  readonly mergedCommitHash: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
@@ -467,6 +469,7 @@ export function extractModuleCommit(
       moduleDescription: commit.moduleDescription,
       message: commit.message,
       parentCommitHash: commit.parentCommitHash,
+      mergedCommitHash: commit.mergedCommitHash,
       parts: commit.parts.map((part) => ({
         ...part,
         partIdHash: moduleIdBytes

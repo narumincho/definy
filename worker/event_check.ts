@@ -64,6 +64,7 @@ export async function checkSubmittedEvent(
           content.commit.branch,
           accountId,
           content.commit.parentCommitHash,
+          content.commit.mergedCommitHash,
           store,
           env,
         )

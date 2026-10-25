@@ -4483,11 +4483,11 @@
       "description": [
         {
           "language": "en",
-          "text": "A commit of a module on a branch: the whole list of its parts at that point. See docs/branch.md"
+          "text": "A commit of a module on a branch: the whole list of its parts at that point. merged_commit_hash is the commit of another branch merged by this commit. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "モジュールのブランチへのコミット. その時点のモジュールのパーツをすべて持つ. docs/branch.md を参照"
+          "text": "モジュールのブランチへのコミット. その時点のモジュールのパーツをすべて持つ. merged_commit_hash はこのコミットで取り込んだ他のブランチのコミット. docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -4526,6 +4526,27 @@
           },
           {
             "key": "parent_commit_hash",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "merged_commit_hash",
             "value": {
               "#type_union": [
                 {
@@ -115846,6 +115867,12 @@
             }
           },
           {
+            "tag": "merged_commit_not_in_module",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
             "tag": "empty_part_name",
             "payload_type": {
               "#none": null
@@ -115870,11 +115897,11 @@
       "description": [
         {
           "language": "en",
-          "text": "What the server knows before accepting an event. For a module commit: the latest commit of the branch (none if the branch is new), whether the account created the branch, whether the module has any commit, and whether parent_commit_hash is a commit of the module. See docs/branch.md"
+          "text": "What the server knows before accepting an event. For a module commit: the latest commit of the branch (none if the branch is new), whether the account created the branch, whether merged_commit_hash is a commit of the module, whether the module has any commit, and whether parent_commit_hash is a commit of the module. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "イベントを受け付ける前にサーバーが知っていること. モジュールのコミットなら, ブランチの最新のコミット (新しいブランチなら none), そのアカウントがブランチを作ったか, モジュールにコミットがあるか, parent_commit_hash がモジュールのコミットか. docs/branch.md を参照"
+          "text": "イベントを受け付ける前にサーバーが知っていること. モジュールのコミットなら, ブランチの最新のコミット (新しいブランチなら none), そのアカウントがブランチを作ったか, merged_commit_hash がモジュールのコミットか, モジュールにコミットがあるか, parent_commit_hash がモジュールのコミットか. docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -115908,6 +115935,12 @@
           },
           {
             "key": "is_branch_creator",
+            "value": {
+              "#type_boolean": null
+            }
+          },
+          {
+            "key": "merged_in_module",
             "value": {
               "#type_boolean": null
             }
@@ -117022,24 +117055,72 @@
                                                       "function": {
                                                         "#part_reference": {
                                                           "part_definition_event_hash": {
-                                                            "$part": "core.check-event-branch"
+                                                            "$part": "core.list-concat"
                                                           }
                                                         }
                                                       },
                                                       "arguments": [
                                                         {
-                                                          "name": "commit",
+                                                          "name": "left",
                                                           "value": {
-                                                            "#variable": {
-                                                              "variable_id": 3
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.check-event-branch"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "commit",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 3
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "state",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 1
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
                                                             }
                                                           }
                                                         },
                                                         {
-                                                          "name": "state",
+                                                          "name": "right",
                                                           "value": {
-                                                            "#variable": {
-                                                              "variable_id": 1
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.check-event-merge"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "commit",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 3
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "state",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 1
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
                                                             }
                                                           }
                                                         }
@@ -117555,6 +117636,145 @@
                                 }
                               ]
                             }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "check-event-merge",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "commit",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.module-commit"
+                  }
+                }
+              }
+            },
+            {
+              "name": "state",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-check-state"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-rejection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Merge rule of a module commit: a commit that merges another branch (merged_commit_hash) must merge a commit of the same module. See docs/branch.md"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミットの取り込みの規則: 他のブランチを取り込むコミット (merged_commit_hash) は, 同じモジュールのコミットを取り込む. docs/branch.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "commit"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "state"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#record_get": {
+                  "record": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  },
+                  "key": "merged_commit_hash"
+                }
+              },
+              "arms": [
+                {
+                  "tag": "none",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": []
+                  }
+                },
+                {
+                  "tag": "some",
+                  "variable_id": 2,
+                  "variable_name": "merged",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#record_get": {
+                          "record": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "key": "merged_in_module"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#list": []
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#list": [
+                              {
+                                "#variant": {
+                                  "tag": "merged_commit_not_in_module",
+                                  "payload": {
+                                    "#none": null
+                                  },
+                                  "type_part": {
+                                    "#some": {
+                                      "$part": "core.event-rejection"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
                           }
                         }
                       ]

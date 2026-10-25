@@ -1721,6 +1721,7 @@
         "module_description",
         "message",
         "parent_commit_hash",
+        "merged_commit_hash",
         "parts"
       ],
       "properties": {
@@ -1761,6 +1762,41 @@
           ]
         },
         "parent_commit_hash": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "merged_commit_hash": {
           "anyOf": [
             {
               "type": "object",
@@ -2587,6 +2623,18 @@
         {
           "type": "object",
           "required": [
+            "#merged_commit_not_in_module"
+          ],
+          "properties": {
+            "#merged_commit_not_in_module": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#empty_part_name"
           ],
           "properties": {
@@ -2623,6 +2671,7 @@
         "account_created",
         "branch_latest_commit_hash",
         "is_branch_creator",
+        "merged_in_module",
         "module_has_commits",
         "parent_in_module"
       ],
@@ -2666,6 +2715,9 @@
           ]
         },
         "is_branch_creator": {
+          "type": "boolean"
+        },
+        "merged_in_module": {
           "type": "boolean"
         },
         "module_has_commits": {

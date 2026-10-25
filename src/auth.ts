@@ -42,6 +42,8 @@ export type CreateModuleCommitParams = {
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash?: string | null;
+  /** 取り込む他のブランチのコミット (docs/branch.md「取り込み」) */
+  readonly mergedCommitHash?: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
@@ -193,6 +195,7 @@ export async function createSignedModuleCommitEvent(
         moduleDescription: params.moduleDescription,
         message: params.message,
         parentCommitHash: params.parentCommitHash ?? null,
+        mergedCommitHash: params.mergedCommitHash ?? null,
         parts: params.parts.map((p) => ({
           name: p.name,
           description: p.description,

@@ -2496,6 +2496,14 @@ a.account-card {
   margin-bottom: 1rem;
 }
 
+.module-merge {
+  margin-top: 0.8rem;
+}
+
+.module-merge-notice {
+  margin-bottom: 1rem;
+}
+
 .module-branch {
   display: flex;
   align-items: center;

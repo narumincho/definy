@@ -393,6 +393,17 @@ export default function ChangesPage(): JSX.Element {
                   )}
                 </div>
 
+                {workingChanges.merges?.get(selectedModule) !== undefined && (
+                  <p className="text-muted commit-merge-info">
+                    {label(
+                      language,
+                      `This commit merges ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""} (docs/branch.md).`,
+                      `このコミットは ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""} を取り込みます。`,
+                      `Ĉi tiu enmeto kunfandas ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""}.`,
+                    )}
+                  </p>
+                )}
+
                 <div className="form-group">
                   <label htmlFor="commit-message-input">
                     {label(
