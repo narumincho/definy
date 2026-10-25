@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   createSignedAccountEvent,
   generateAccountCredentials,
+  importPrivateKeyFromSecretKey,
   type AccountCredentials,
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
+import { base64ToBytes, bytesToBase64, encodeCborItem } from "../src/cbor.ts";
+import { MALFORMED_CONTENT_MESSAGE } from "./event_check.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
@@ -192,4 +195,40 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
     expect(rejected.message).toContain("belongs to another project");
     expect((await commit("mine", "mine")).status).toBe(200);
   }, 60_000);
+});
+
+describe("SubmitEvent の中身の形 (core.value-conforms)", () => {
+  it("署名が正しくても中身の形が違うイベントは, definy の検査で拒否する", async () => {
+    const store = new WorkerStore();
+    const db = createSqliteD1Database();
+    await store.seedD1(db, await loadTestSeedBundle());
+    const env: Env = { DB: db };
+    const credentials = await generateAccountCredentials("shape");
+    const key = await importPrivateKeyFromSecretKey(
+      credentials.secretKeyBase64,
+    );
+    const innerBytes = encodeCborItem({
+      account_id: base64ToBytes(credentials.accountId),
+      time: { __tag: 1, value: Math.floor(Date.now() / 1000) },
+      content: { "#create_account": { account_name: 1 } },
+    });
+    const signature = new Uint8Array(
+      await crypto.subtle.sign(
+        { name: "Ed25519" },
+        key,
+        innerBytes as unknown as BufferSource,
+      ),
+    );
+    const result = await submit(
+      store,
+      env,
+      bytesToBase64(
+        encodeCborItem({
+          signature,
+          event_binary: { __tag: 24, value: innerBytes },
+        }),
+      ),
+    );
+    expect(result).toEqual({ status: 400, message: MALFORMED_CONTENT_MESSAGE });
+  });
 });

@@ -197,9 +197,11 @@ export function isPartContent(value: unknown): boolean {
 
 /** definy の値 (`core.part-content`) をパーツの中身にする. 形が違えば `undefined` */
 export function decodePartContent(value: unknown): PartContent | undefined {
-  if (!isPartContent(value)) {
-    return undefined;
-  }
+  return isPartContent(value) ? partContentFromValue(value) : undefined;
+}
+
+/** `core.part-content` の形だと確かめた値 (サーバーは definy 製の `core.value-conforms` で確かめる) をパーツの中身にする */
+export function partContentFromValue(value: unknown): PartContent {
   return {
     description: decodeLocalizedText(field(value, "description")),
     visibility: decodeVisibility(field(value, "visibility")),
