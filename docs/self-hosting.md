@@ -307,6 +307,12 @@ definy には例外による大域脱出がなく, スタックトレースも�
 `compile-find-part` などの線形の探索もスタックを使わない。V8 (Node.js 20 以降, Chrome 112 以降, Cloudflare Workers),
 Firefox 121 以降, Safari 18.2 以降が対応している。
 
+### UI でコンパイラを作り直す
+
+`npm run build:stage1` (`scripts/regenerate_stage1.ts`) と実行パネルの「コンパイラを作り直す」は, どちらも
+`src/compiler_rebuild.ts` の `selfCompile` で `core.compile-to-wasm` を自分自身でコンパイルし直し, 不動点を確かめる。
+前者は seed のパーツ, 後者は表示中のパーツ (作業中の変更を含む) を使う ([run-panel.md](run-panel.md))。
+
 ### 本番での stage1 の使い方
 
 - stage1 は外部 import の無い静的な Wasm なので, ブラウザ・Node.js・Cloudflare Workers のどれでもそのまま動く

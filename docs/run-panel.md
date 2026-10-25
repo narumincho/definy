@@ -31,6 +31,23 @@
 
 結果の値はレコードやリストなら整形した JSON で出す (`formatRunValue`)。
 
+## コンパイラを作り直す
+
+実行パネルの上の「コンパイラを作り直す」で, definy の中で definy のコンパイラを直して使える
+(`src/components/CompilerRebuild.tsx`, `src/compiler_rebuild.ts`)。
+
+1. 表示中のパーツ (作業中の変更を含む. 実行と同じ `resolvePart`) の `core.compile-to-wasm` を, 今のコンパイラでコンパイルする
+2. できたコンパイラでもう 1 度コンパイルし, 同じバイト列になる (不動点) まで最大 5 回繰り返す (`selfCompile`.
+   `npm run build:stage1 -- --bootstrap` と同じ処理)。不動点にならなければ使わない
+3. できたコンパイラで `core.type-checker` もコンパイルし, 2 つをこのブラウザの localStorage (`definy.rebuilt-compiler`) に保存する
+   (`src/rebuilt_compiler.ts`)。以後, 実行パネルの実行と UI の型検査は同梱の `wasm/stage1.wasm` / `wasm/type_checker.wasm`
+   の代わりにこちらを使う (`loadStage1Compiler`, `loadTypeChecker`)。型検査の結果は捨てて検査し直す
+4. 「ダウンロード」でできたコンパイラを `stage1.wasm` として保存できる (リポジトリの `wasm/stage1.wasm` にできる)。
+   「同梱のものに戻す」で保存したものを消す
+
+作り直しはメインスレッドで 2〜3 秒かかる。サーバー (Cloudflare Workers) は実行時に Wasm をコンパイルできないので,
+サーバーの型検査は今も同梱の型チェッカー (ビルド時に作る) を使う。
+
 ## 実行履歴
 
 - 実行するたびに新しい記録を先頭に足す。「再実行」も同じ式で新しい記録を足し, 前の記録は書き換えない (シェルの履歴と同じ)
