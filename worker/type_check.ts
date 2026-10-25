@@ -31,6 +31,7 @@ import {
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
+  isExpression,
   MAIN_BRANCH,
   type CommitPart,
   type ModuleCommitContent,
@@ -388,6 +389,19 @@ export async function checkSubmittedModuleCommit(
       withExpression(part, store, env),
     ),
   );
+  // CAS に預けた式は (イベントの形の検査を通らないので) ここで `core.expression` の形か確かめる
+  const malformed = commit.parts.flatMap((part, index) =>
+    part.expression === null &&
+    part.contentHash !== null &&
+    !isExpression(committed[index]?.expression)
+      ? [
+          `${part.name}: the content ${part.contentHash} is not a core.expression`,
+        ]
+      : [],
+  );
+  if (malformed.length > 0) {
+    return malformed;
+  }
   const latestParts = new Map<string, LatestPart>();
   for (const [partId, part] of await loadLatestParts(store, env)) {
     // 型環境で中身を使うのは型パーツの宣言式だけ

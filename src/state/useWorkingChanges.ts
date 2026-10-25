@@ -9,7 +9,11 @@ import {
   deserializeWorkingChanges,
   serializeWorkingChanges,
 } from "../working_changes_storage.ts";
-import { createSignedModuleCommitEvent, submitSignedEvent } from "../auth.ts";
+import {
+  createSignedModuleCommitEvent,
+  submitModuleCommitEvent,
+} from "../auth.ts";
+import { toContentAddressedParts } from "../content_store.ts";
 import type { DecodedPart } from "../cbor.ts";
 import {
   commitTarget,
@@ -198,6 +202,8 @@ export function useWorkingChanges({
       }
       const parentCommitHash =
         target.kind === "new_module" ? null : target.parentCommitHash;
+      // コミットには式の content hash だけを入れ, サーバーに無い式だけを送る
+      const { parts, contents } = await toContentAddressedParts(partsList);
 
       const { signedEventBytes, eventHash } =
         await createSignedModuleCommitEvent({
@@ -216,10 +222,13 @@ export function useWorkingChanges({
             target.kind === "own_branch"
               ? (workingChanges.merges?.get(moduleName) ?? null)
               : null,
-          parts: partsList,
+          parts,
         });
 
-      const submitRes = await submitSignedEvent(signedEventBytes);
+      const submitRes = await submitModuleCommitEvent(
+        signedEventBytes,
+        contents,
+      );
       if (submitRes.status !== "accepted") {
         throw new Error(`Commit rejected with status: ${submitRes.status}`);
       }

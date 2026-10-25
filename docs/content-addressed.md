@@ -233,7 +233,12 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 
 ### ネゴシエーションの通信手順
 
-> 今のブラウザのクライアントは式をコミットに直接入れて送るので, この往復はまだしない (サーバーは対応している。[connect-rpc.md](connect-rpc.md))。
+> ブラウザ ([src/content_store.ts](../src/content_store.ts), `submitModuleCommitEvent`) と seed のコミットは式を CAS に預け,
+> コミットのパーツには `content_hash` だけを入れる (`expression` は `none`. #763)。
+> 以前はブラウザが全パーツの式をコミットに入れていたので, core の 1 パーツを直すたびに約 2.2MB のイベントが増えていた
+> (今の core の seed のコミットは約 0.44MB. 残りはパーツの名前・説明・型)。
+> 変えていないパーツは読んだときの `content_hash` をそのまま使い, 式を符号化し直さない。
+> 読む側は `GetContent` で式を読み, SHA-256 が content hash と合うものだけを使う。
 
 ```mermaid
 sequenceDiagram
