@@ -132,5 +132,5 @@ core.event-check-state = {
 
 - 受け付ける規則は `core.check-event` にした (上)。形の検査 (`conformsToTypeDeclaration`) や, 規則が使う状態を集めること
   (アカウントを作ったか・ブランチの状態) も definy へ移す ([self-hosting.md](self-hosting.md) の「service host 境界」)。
-- モジュールはアカウントから切り離し, ブランチだけで編集するようにした ([branch.md](branch.md))。ブランチの取り込み (マージ) は今後。
+- モジュールはアカウントから切り離し, ブランチだけで編集するようにした ([branch.md](branch.md))。ブランチの取り込み (マージ) は `merged_commit_hash` で表す ([branch.md](branch.md)「取り込み」)。
 - 封筒 (署名・時刻) も definy の値で表すか。

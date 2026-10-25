@@ -133,10 +133,10 @@ message GetContentResponse {
     `status: "missing_content"`
     とともに不足ハッシュ一覧（`missing_content_hashes`）を返却。
 
-- **クライアント側 (`src/auth.ts` の `submitSignedEvent`, `src/state/useEvents.ts`)**:
+- **クライアント側 (`src/auth.ts` の `submitModuleCommitEvent`, `src/content_store.ts`, `src/state/useEvents.ts`)**:
   - ブラウザから `fetch` で Connect-RPC エンドポイントを呼び出す。
-  - 今のクライアントはモジュールコミットに式をそのまま入れて送るので, 下の差分ハッシュ・ネゴシエーションの往復はしない
-    (サーバー側は `content_hash` だけのパーツを受け付け, 足りなければ `missing_content` を返す)。
+  - モジュールコミットには式の `content_hash` だけを入れ, 下の差分ハッシュ・ネゴシエーションで足りない式だけを送る (#763)。
+  - コミットを読むときは `GetContent` (`contentHashes` でまとめて) で式を読み, SHA-256 が content hash と合うものだけを使う。
 
 ## 4. 差分ハッシュ・ネゴシエーション方式（Git Tree/Blob モデル）
 

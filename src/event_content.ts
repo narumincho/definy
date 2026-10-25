@@ -66,6 +66,16 @@ export function isEventContent(value: unknown): boolean {
   );
 }
 
+/** 値が `core.expression` の形か (CAS に預けた式を検査する. イベントの中の式は `isEventContent` が検査する) */
+export function isExpression(value: unknown): boolean {
+  return conformsToTypeDeclaration(
+    value,
+    resolveTypePart("core.expression"),
+    resolveTypePart,
+    false,
+  );
+}
+
 function optionOf(value: unknown): unknown {
   return value === null || value === undefined ? none() : some(value);
 }
