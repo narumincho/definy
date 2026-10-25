@@ -11,7 +11,6 @@
       "text": "definy の標準ユーティリティ関数群 (数学・論理・リスト・UTF-8ストリーム・URL操作)"
     }
   ],
-  "message": "式とパーツの型の保存形式を core.expression / core.type-ast の値 ({\"#tag\": payload}) にする",
   "parts": [
     {
       "name": "abs",

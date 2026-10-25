@@ -1666,7 +1666,7 @@ button.card:hover {
   position: relative;
 }
 
-.timeline-item[data-event-type="module_commit"] {
+.timeline-item[data-event-type="project_commit"] {
   --event-color: var(--blue);
   --event-text: var(--blue-text);
   --event-bg: var(--blue-bg-strong);
@@ -1977,7 +1977,7 @@ button.card:hover {
   box-sizing: border-box;
 }
 
-.event-detail-view[data-event-type="module_commit"] {
+.event-detail-view[data-event-type="project_commit"] {
   --event-color: var(--blue);
   --event-text: var(--blue-text);
   --event-bg: var(--blue-bg-strong);
@@ -2515,6 +2515,37 @@ a.account-card {
 
 .module-branch .text-muted {
   font-size: 0.76rem;
+}
+
+/* モジュールの一覧のプロジェクトごとのまとまり (docs/project.md) */
+.project-section {
+  margin-bottom: 1.6rem;
+}
+
+.project-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.project-section-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.project-section-link:hover {
+  text-decoration: underline;
+}
+
+.project-section-desc {
+  margin: 0 0 0.8rem;
+  font-size: 0.85rem;
+}
+
+.event-detail-module + .event-detail-module {
+  margin-top: 0.8rem;
 }
 
 .module-commit-meta {

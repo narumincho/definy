@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   generateAccountCredentials,
   type AccountCredentials,
 } from "../src/auth.ts";
-import { deriveModuleIdBytes } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import { latestCommitHashOf } from "./type_check.ts";
-import type { Env, GetModuleBranchesResponse } from "./types.ts";
+import type { Env, GetProjectBranchesResponse } from "./types.ts";
+import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 
 async function submit(
   store: WorkerStore,
@@ -31,7 +30,7 @@ async function submit(
 }
 
 describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
-  it("ブランチには作成者だけがコミットでき, 誰でもモジュールのコミットから新しいブランチを作れる", async () => {
+  it("ブランチには作成者だけがコミットでき, 誰でもプロジェクトのコミットから新しいブランチを作れる", async () => {
     const store = new WorkerStore();
     const db = createSqliteD1Database();
     await store.seedD1(db, await loadTestSeedBundle());
@@ -61,7 +60,7 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
         store,
         env,
         (
-          await createSignedModuleCommitEvent(
+          await createSignedSingleModuleCommitEvent(
             {
               credentials,
               moduleName: "app",
@@ -83,9 +82,9 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
         ).signedEventBytes,
       );
     const head = async (branch: string) =>
-      latestCommitHashOf(await deriveModuleIdBytes("app"), store, env, branch);
+      latestCommitHashOf("app", store, env, branch);
 
-    // モジュールの最初のコミットは main (alice が作成者になる)
+    // プロジェクトの最初のコミットは main (alice が作成者になる)
     expect((await commit(alice, "feature", null, 1)).message).toContain(
       "main branch",
     );
@@ -104,10 +103,10 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
     expect((await commit(alice, "bob", await head("bob"), 5)).status).toBe(400);
     expect((await commit(alice, "main", main1, 6)).status).toBe(200);
 
-    // GetModuleBranches は各ブランチの作成者・コミット数・最新のコミットのイベントを返す (seed のモジュールも)
+    // GetProjectBranches は各ブランチの作成者・コミット数・最新のコミットのイベントを返す (seed のプロジェクトも)
     const res = await handleWorkerRequest(
       new Request(
-        "https://definy.local/definy.v1.EventService/GetModuleBranches",
+        "https://definy.local/definy.v1.EventService/GetProjectBranches",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -118,9 +117,9 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
       store,
     );
     expect(res.status).toBe(200);
-    const { branches } = (await res.json()) as GetModuleBranchesResponse;
+    const { branches } = (await res.json()) as GetProjectBranchesResponse;
     const app = branches
-      .filter((b) => b.moduleName === "app")
+      .filter((b) => b.projectName === "app")
       .map((b) => ({
         branch: b.branch,
         creatorAccountId: b.creatorAccountId,
@@ -143,7 +142,51 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
       },
     ]);
     expect(
-      branches.some((b) => b.moduleName === "core" && b.branch === "main"),
+      branches.some((b) => b.projectName === "definy" && b.branch === "main"),
     ).toBe(true);
+  }, 60_000);
+
+  it("他のプロジェクトのモジュールの名前は使えない", async () => {
+    const store = new WorkerStore();
+    const db = createSqliteD1Database();
+    await store.seedD1(db, await loadTestSeedBundle());
+    const env: Env = { DB: db };
+    const alice = await generateAccountCredentials("alice");
+    expect(
+      (
+        await submit(
+          store,
+          env,
+          (await createSignedAccountEvent(alice)).signedEventBytes,
+        )
+      ).status,
+    ).toBe(200);
+    const commit = async (projectName: string, moduleName: string) =>
+      submit(
+        store,
+        env,
+        (
+          await createSignedSingleModuleCommitEvent({
+            credentials: alice,
+            projectName,
+            moduleName,
+            moduleDescription: [],
+            message: "test",
+            parts: [
+              {
+                name: "answer",
+                description: [],
+                partType: { "#number": null },
+                expression: { "#number": 1 },
+              },
+            ],
+          })
+        ).signedEventBytes,
+      );
+    // core は seed の definy プロジェクトのモジュール
+    const rejected = await commit("mine", "core");
+    expect(rejected.status).toBe(400);
+    expect(rejected.message).toContain("belongs to another project");
+    expect((await commit("mine", "mine")).status).toBe(200);
   }, 60_000);
 });

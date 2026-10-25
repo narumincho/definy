@@ -7,7 +7,7 @@ import { useDefiny } from "../src/state.tsx";
 export default function HistoryPage(): JSX.Element {
   const { language, events, decodedCommits } = useDefiny();
 
-  const commits = events.filter((e) => e.eventType === "module_commit");
+  const commits = events.filter((e) => e.eventType === "project_commit");
   const decodedByHash = new Map(
     decodedCommits.map((c) => [c.event.eventHash, c.commit]),
   );
@@ -35,6 +35,11 @@ export default function HistoryPage(): JSX.Element {
         ) : (
           commits.map((commit) => {
             const decoded = decodedByHash.get(commit.eventHash);
+            const partCount =
+              decoded?.modules.reduce(
+                (sum, module) => sum + module.parts.length,
+                0,
+              ) ?? 0;
             return (
               <div
                 key={commit.eventHash}
@@ -68,10 +73,10 @@ export default function HistoryPage(): JSX.Element {
                 {decoded !== undefined && (
                   <div className="commit-body">
                     <Link
-                      href={`/module/${decoded.moduleName}`}
+                      href={`/project/${encodeURIComponent(decoded.projectName)}`}
                       className="commit-module"
                     >
-                      {decoded.moduleName}
+                      {decoded.projectName}
                     </Link>
                     {decoded.message.length > 0 && (
                       <span className="commit-message">{decoded.message}</span>
@@ -84,9 +89,9 @@ export default function HistoryPage(): JSX.Element {
                     <span className="text-muted commit-parts-count">
                       {label(
                         language,
-                        `${decoded.parts.length} parts`,
-                        `${decoded.parts.length} パーツ`,
-                        `${decoded.parts.length} partoj`,
+                        `${partCount} parts`,
+                        `${partCount} パーツ`,
+                        `${partCount} partoj`,
                       )}
                     </span>
                   )}

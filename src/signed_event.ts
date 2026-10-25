@@ -47,13 +47,15 @@ type DecodedSignedEvent = {
 function referencedContentHashesOf(
   content: EventContent,
 ): ReadonlyArray<string> {
-  if (content.type !== "module_commit") {
+  if (content.type !== "project_commit") {
     return [];
   }
   const hashes = new Set<string>();
-  for (const part of content.commit.parts) {
-    if (part.expression === null && part.contentHash !== null) {
-      hashes.add(part.contentHash);
+  for (const module of content.commit.modules) {
+    for (const part of module.parts) {
+      if (part.expression === null && part.contentHash !== null) {
+        hashes.add(part.contentHash);
+      }
     }
   }
   return Array.from(hashes);

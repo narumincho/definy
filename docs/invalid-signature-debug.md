@@ -38,11 +38,11 @@ DEFINY_ALLOW_UNVERIFIED_EVENTS=true
 `src/invalid_signature_samples.ts` の `submitInvalidSignatureSamples` が次の 3 件を作り、
 `/definy.v1.DebugService/SubmitUnverifiedEvent` に送る。
 
-| kind                   | 内容                                                                                                                                    |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `flipped_signature`    | 正しく署名した create_account の署名を 1 バイト書き換えたもの                                                                           |
-| `tampered_content`     | 正しく署名した module_commit の `message` を署名後に書き換えたもの                                                                      |
-| `impersonated_account` | 使い捨ての鍵で署名した module_commit の `account_id` を、ログイン中のアカウント (未ログインなら別の使い捨てアカウント) にすり替えたもの |
+| kind                   | 内容                                                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `flipped_signature`    | 正しく署名した create_account の署名を 1 バイト書き換えたもの                                                                            |
+| `tampered_content`     | 正しく署名した project_commit の `message` を署名後に書き換えたもの                                                                      |
+| `impersonated_account` | 使い捨ての鍵で署名した project_commit の `account_id` を、ログイン中のアカウント (未ログインなら別の使い捨てアカウント) にすり替えたもの |
 
 `SubmitUnverifiedEvent` は `SubmitEvent` と同じリクエスト・レスポンスで、形式 (CBOR の形・`account_id` の長さなど) だけ確認する。
 フラグが無いときは `permission_denied` (403) を返す。
@@ -54,7 +54,7 @@ DEFINY_ALLOW_UNVERIFIED_EVENTS=true
 
 ## 期待する表示
 
-- イベント一覧に 3 件、コミット履歴に 2 件 (module_commit のもの) が「署名が不正」のバッジ付きで出る (バッジの title に理由)。seed のサンプルは 2019-01-31 の日付なので一覧の下のほうにある
+- イベント一覧に 3 件、コミット履歴に 2 件 (project_commit のもの) が「署名が不正」のバッジ付きで出る (バッジの title に理由)。seed のサンプルは 2019-01-31 の日付なので一覧の下のほうにある
 - イベント詳細の Signature 欄に理由 (`Ed25519 signature verification failed`) が出る
 - モジュール一覧・パーツ一覧に `invalid_signature_sample` が出ない
 - アカウント名に `invalid-signature-sample` が出ない

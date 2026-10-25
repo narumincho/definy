@@ -13,6 +13,7 @@ import type {
   ModuleSnapshot,
   PartChange,
   PartSnapshot,
+  ProjectSnapshot,
   WorkingChanges,
 } from "./types.ts";
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
@@ -36,6 +37,8 @@ export type DefinyContextValue = {
   readonly setLanguage: (lang: LanguageCode) => void;
   readonly events: ReadonlyArray<EventRecord>;
   readonly refreshEvents: () => Promise<void>;
+  /** 各プロジェクトの表示しているブランチの最新のコミット (docs/project.md) */
+  readonly projects: ReadonlyArray<ProjectSnapshot>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
@@ -45,12 +48,19 @@ export type DefinyContextValue = {
    */
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
   readonly accountNames: ReadonlyMap<string, string>;
-  /** 署名の正しいモジュールコミットのイベントと, デコードした中身 */
+  /** 署名の正しいプロジェクトのコミットのイベントと, デコードした中身 */
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
   readonly discardAllWorkingChanges: () => void;
+  /** 新しいモジュール `moduleName` を入れるプロジェクトを決める (まだ無いプロジェクトならコミットで作る. docs/project.md) */
+  readonly setNewModuleProject: (
+    moduleName: string,
+    projectName: string,
+  ) => void;
+  /** モジュールが入っている (新しいモジュールなら入れる) プロジェクト. 分からなければ `undefined` */
+  readonly projectOfModule: (moduleName: string) => string | undefined;
   readonly connectionStatus: ConnectionStatus;
   readonly currentAccount: AccountState | null;
   readonly setCurrentAccount: (account: AccountState | null) => void;
@@ -67,30 +77,30 @@ export type DefinyContextValue = {
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
   ) => Promise<string>;
-  /** `moduleName` へコミットする先 (自分のブランチ / 新しいブランチ / 新しいモジュール. docs/branch.md). ログインしていなければ `null` */
-  readonly commitTargetFor: (moduleName: string) => CommitTarget | null;
-  /** モジュール `moduleName` で表示するブランチを選ぶ. モジュール・パーツ・型環境はそのブランチのものになる */
-  readonly selectBranch: (moduleName: string, branch: string) => void;
+  /** `projectName` へコミットする先 (自分のブランチ / 新しいブランチ / 新しいプロジェクト. docs/branch.md). ログインしていなければ `null` */
+  readonly commitTargetFor: (projectName: string) => CommitTarget | null;
+  /** プロジェクト `projectName` で表示するブランチを選ぶ. モジュール・パーツ・型環境はそのブランチのものになる */
+  readonly selectBranch: (projectName: string, branch: string) => void;
   /** 読んでいないイベント (古いコミットなど) を 1 件読んで `events` に足す. 見つからなければ `false` */
   readonly loadEvent: (eventHash: string) => Promise<boolean>;
-  /** モジュールのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
+  /** プロジェクトのコミットを読んで (読んでいなければ `GetEvent` で) デコードする. 無い・不正なら `null` */
   readonly fetchCommit: (
     eventHash: string,
   ) => Promise<DecodedCommitEvent | null>;
   /** 他のブランチの取り込みを始める (取り込んだ後のパーツへの変更を作業中の変更にする. docs/branch.md「取り込み」) */
   readonly startMerge: (
-    moduleName: string,
+    projectName: string,
     mergedCommitHash: string,
     changes: ReadonlyMap<string, PartChange>,
   ) => void;
-  /** 取り込みをやめる (そのモジュールの作業中の変更も捨てる) */
-  readonly cancelMerge: (moduleName: string) => void;
+  /** 取り込みをやめる (そのプロジェクトの作業中の変更も捨てる) */
+  readonly cancelMerge: (projectName: string) => void;
   /**
-   * `moduleName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
+   * `projectName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
    * definy 製の型チェッカーで検査する. ログインしていなければ空
    */
   readonly checkCommitTypes: (
-    moduleName: string,
+    projectName: string,
   ) => Promise<ReadonlyArray<CommitTypeError>>;
   /**
    * コミット済みのパーツを definy 製の型チェッカーで検査した結果 (キーはパーツ ID = `partIdHash`).
@@ -162,8 +172,9 @@ export function DefinyProvider({
   });
   const working = useWorkingChanges({
     currentAccount: account.currentAccount,
+    projects: events.projects,
     modules: events.modules,
-    branchesByModule: events.branchesByModule,
+    branchesByProject: events.branchesByProject,
     displayedBranches: events.displayedBranches,
     selectBranch: events.selectBranch,
     refreshEvents: events.refreshEvents,
@@ -172,11 +183,14 @@ export function DefinyProvider({
     committedParts: events.committedParts,
     partNames: events.partNames,
     currentAccount: account.currentAccount,
-    buildCommitParts: working.buildCommitParts,
-    // seed の core の main はシステムアカウントが作る
+    buildCommitModules: working.buildCommitModules,
+    // seed の definy プロジェクト (core が入っている) の main はシステムアカウントが作る
     systemAccountId:
-      events.branchesByModule
-        .get("core")
+      events.branchesByProject
+        .get(
+          events.modules.find((m) => m.name === "core")?.projectName ??
+            "definy",
+        )
         ?.find((branch) => branch.name === MAIN_BRANCH)?.creatorAccountId ??
       null,
   });
@@ -187,6 +201,7 @@ export function DefinyProvider({
       setLanguage: ui.setLanguage,
       events: events.events,
       refreshEvents: events.refreshEvents,
+      projects: events.projects,
       modules: events.modules,
       parts: events.parts,
       partNames: events.partNames,
@@ -197,6 +212,8 @@ export function DefinyProvider({
       updateWorkingPart: working.updateWorkingPart,
       discardWorkingPart: working.discardWorkingPart,
       discardAllWorkingChanges: working.discardAllWorkingChanges,
+      setNewModuleProject: working.setNewModuleProject,
+      projectOfModule: working.projectOfModule,
       connectionStatus: events.connectionStatus,
       currentAccount: account.currentAccount,
       setCurrentAccount: account.setCurrentAccount,
@@ -249,6 +266,7 @@ export function DefinyProvider({
       ui.setAccountModalOpen,
       events.events,
       events.refreshEvents,
+      events.projects,
       events.modules,
       events.parts,
       events.partNames,
@@ -265,6 +283,8 @@ export function DefinyProvider({
       working.updateWorkingPart,
       working.discardWorkingPart,
       working.discardAllWorkingChanges,
+      working.setNewModuleProject,
+      working.projectOfModule,
       working.commitWorkingChanges,
       working.commitTargetFor,
       events.selectBranch,

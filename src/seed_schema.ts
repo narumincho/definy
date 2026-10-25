@@ -135,7 +135,6 @@ export function buildModuleSeedSchema(
     required: ["module_name", "parts"],
     properties: {
       $schema: { type: ["string", "null"] },
-      message: { default: "", type: "string" },
       module_description: {
         default: "",
         allOf: [{ $ref: "#/definitions/Description" }],

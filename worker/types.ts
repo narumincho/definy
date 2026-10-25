@@ -108,16 +108,16 @@ export type GetEventsResponse = {
   readonly events: ReadonlyArray<EventItem>;
 };
 
-export type ModuleBranchItem = {
-  readonly moduleName: string;
+export type ProjectBranchItem = {
+  readonly projectName: string;
   readonly branch: string;
   readonly creatorAccountId: string;
   readonly commitCount: number;
   readonly latestEvent: EventItem;
 };
 
-export type GetModuleBranchesResponse = {
-  readonly branches: ReadonlyArray<ModuleBranchItem>;
+export type GetProjectBranchesResponse = {
+  readonly branches: ReadonlyArray<ProjectBranchItem>;
 };
 
 export type GetEventRequest = {

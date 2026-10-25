@@ -27,7 +27,7 @@ definy では「型も式である」という思想に基づき、パーツの�
 | `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言)                                                                    |
 | `null`                                                           | `null`                                                                          | 型指定なし                                                                                 |
 
-パーツの型はモジュールコミット (`ModuleCommitEvent`) の各パーツ (`partType`) に入る。
+パーツの型はプロジェクトのコミット (`project_commit`) の各モジュールの各パーツ (`partType`) に入る。
 
 ## 関数型（Function）の非カリー化・名前付きパラメータ仕様
 

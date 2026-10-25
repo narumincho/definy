@@ -11,29 +11,35 @@ import {
 } from "./event_content.ts";
 import { InvalidSignedEventError, verifySignedEvent } from "./signed_event.ts";
 
-const moduleCommit: EventContent = {
-  type: "module_commit",
+const projectCommit: EventContent = {
+  type: "project_commit",
   commit: {
-    moduleName: "math",
+    projectName: "math",
     branch: "main",
-    moduleDescription: [{ language: "en", text: "Math functions" }],
+    projectDescription: [{ language: "en", text: "Math project" }],
     message: "Add answer",
     parentCommitHash: null,
     mergedCommitHash: null,
-    parts: [
+    modules: [
       {
-        name: "answer",
-        description: [{ language: "ja", text: "答え" }],
-        partType: { "#number": null },
-        expression: { "#number": 42 },
-        contentHash: null,
-      },
-      {
-        name: "stored",
-        description: [],
-        partType: null,
-        expression: null,
-        contentHash: "AAAA",
+        name: "math",
+        description: [{ language: "en", text: "Math functions" }],
+        parts: [
+          {
+            name: "answer",
+            description: [{ language: "ja", text: "答え" }],
+            partType: { "#number": null },
+            expression: { "#number": 42 },
+            contentHash: null,
+          },
+          {
+            name: "stored",
+            description: [],
+            partType: null,
+            expression: null,
+            contentHash: "AAAA",
+          },
+        ],
       },
     ],
   },
@@ -62,35 +68,41 @@ async function signRawContent(content: unknown): Promise<Uint8Array> {
 }
 
 describe("core.event-content", () => {
-  it("モジュールのコミットは definy の値として往復する", () => {
-    const encoded = encodeEventContent(moduleCommit);
+  it("プロジェクトのコミットは definy の値として往復する", () => {
+    const encoded = encodeEventContent(projectCommit);
     expect(encoded).toEqual({
-      "#module_commit": {
-        module_name: "math",
+      "#project_commit": {
+        project_name: "math",
         branch: "main",
-        module_description: [{ language: "en", text: "Math functions" }],
+        project_description: [{ language: "en", text: "Math project" }],
         message: "Add answer",
         parent_commit_hash: { "#none": null },
         merged_commit_hash: { "#none": null },
-        parts: [
+        modules: [
           {
-            name: "answer",
-            description: [{ language: "ja", text: "答え" }],
-            part_type: { "#some": { "#number": null } },
-            expression: { "#some": { "#number": 42 } },
-            content_hash: { "#none": null },
-          },
-          {
-            name: "stored",
-            description: [],
-            part_type: { "#none": null },
-            expression: { "#none": null },
-            content_hash: { "#some": "AAAA" },
+            name: "math",
+            description: [{ language: "en", text: "Math functions" }],
+            parts: [
+              {
+                name: "answer",
+                description: [{ language: "ja", text: "答え" }],
+                part_type: { "#some": { "#number": null } },
+                expression: { "#some": { "#number": 42 } },
+                content_hash: { "#none": null },
+              },
+              {
+                name: "stored",
+                description: [],
+                part_type: { "#none": null },
+                expression: { "#none": null },
+                content_hash: { "#some": "AAAA" },
+              },
+            ],
           },
         ],
       },
     });
-    expect(decodeEventContent(encoded)).toEqual(moduleCommit);
+    expect(decodeEventContent(encoded)).toEqual(projectCommit);
   });
 
   it("アカウントの作成は definy の値として往復する", () => {
@@ -110,23 +122,41 @@ describe("core.event-content", () => {
       decodeEventContent({ CreateAccount: { account_name: "alice" } }),
     ).toBeUndefined();
     // 式が core.expression の形でない
-    const encoded = encodeEventContent(moduleCommit) as {
-      readonly "#module_commit": { readonly parts: ReadonlyArray<object> };
+    const encoded = encodeEventContent(projectCommit) as {
+      readonly "#project_commit": {
+        readonly modules: ReadonlyArray<{
+          readonly parts: ReadonlyArray<object>;
+        }>;
+      };
     };
-    const [answer] = encoded["#module_commit"].parts;
+    const [module] = encoded["#project_commit"].modules;
+    const [answer] = module?.parts ?? [];
+    expect(
+      decodeEventContent({
+        "#project_commit": {
+          ...encoded["#project_commit"],
+          modules: [
+            {
+              ...module,
+              parts: [{ ...answer, expression: { "#some": { "#nope": 1 } } }],
+            },
+          ],
+        },
+      }),
+    ).toBeUndefined();
+    // 以前のモジュール単位のコミット
     expect(
       decodeEventContent({
         "#module_commit": {
-          ...encoded["#module_commit"],
-          parts: [{ ...answer, expression: { "#some": { "#nope": 1 } } }],
+          ...encoded["#project_commit"],
         },
       }),
     ).toBeUndefined();
     // seed の JSON だけで書けるパーツ名の参照はイベントには書けない
     expect(
       decodeEventContent({
-        "#module_commit": {
-          ...encoded["#module_commit"],
+        "#project_commit": {
+          ...encoded["#project_commit"],
           parent_commit_hash: { "#some": { $part: "core.expression" } },
         },
       }),
@@ -140,9 +170,11 @@ describe("core.event-content", () => {
       ),
     ).rejects.toThrow(InvalidSignedEventError);
     await expect(
-      verifySignedEvent(await signRawContent(encodeEventContent(moduleCommit))),
+      verifySignedEvent(
+        await signRawContent(encodeEventContent(projectCommit)),
+      ),
     ).resolves.toMatchObject({
-      eventType: "module_commit",
+      eventType: "project_commit",
       referencedContentHashes: ["AAAA"],
     });
   });

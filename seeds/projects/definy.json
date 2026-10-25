@@ -1,0 +1,20 @@
+{
+  "project_name": "definy",
+  "project_description": [
+    {
+      "language": "en",
+      "text": "definy itself: the core language (type checker, compiler), the standard library, WASI I/O and the definy platform features"
+    },
+    {
+      "language": "ja",
+      "text": "definy そのもの. 言語の中核 (型チェッカー, コンパイラ), 標準ライブラリ, WASI の入出力, definy プラットフォームの機能"
+    }
+  ],
+  "message": "モジュールをプロジェクトにまとめ, コミットをプロジェクト単位にする (#624)",
+  "modules": [
+    "definy",
+    "core",
+    "std",
+    "wasi"
+  ]
+}

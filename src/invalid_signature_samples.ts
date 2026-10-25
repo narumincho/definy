@@ -6,7 +6,7 @@
  */
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
+  createSignedProjectCommitEvent,
   generateAccountCredentials,
   importAccountCredentials,
   type AccountCredentials,
@@ -95,16 +95,23 @@ async function signSampleModuleCommit(
   message: string,
   timeSeconds: number,
 ): Promise<string> {
-  const { signedEventBytes } = await createSignedModuleCommitEvent(
+  const description = [
+    { language: "en", text: "Invalid signature sample" },
+    { language: "ja", text: "不正な署名のサンプル" },
+  ];
+  const { signedEventBytes } = await createSignedProjectCommitEvent(
     {
       credentials,
-      moduleName: INVALID_SIGNATURE_SAMPLE_MODULE_NAME,
-      moduleDescription: [
-        { language: "en", text: "Invalid signature sample" },
-        { language: "ja", text: "不正な署名のサンプル" },
-      ],
+      projectName: INVALID_SIGNATURE_SAMPLE_MODULE_NAME,
+      projectDescription: description,
       message,
-      parts: SAMPLE_PARTS,
+      modules: [
+        {
+          name: INVALID_SIGNATURE_SAMPLE_MODULE_NAME,
+          description,
+          parts: SAMPLE_PARTS,
+        },
+      ],
     },
     timeSeconds,
   );
@@ -114,8 +121,8 @@ async function signSampleModuleCommit(
 /**
  * 署名が不正なイベントを 3 種類作る。
  * - `flipped_signature`: 正しく署名した CreateAccount の署名を 1 バイト書き換えたもの
- * - `tampered_content`: 正しく署名した ModuleCommit の中身を、署名後に書き換えたもの
- * - `impersonated_account`: 別の鍵で署名した ModuleCommit の `account_id` を `impersonatedAccountId` にすり替えたもの
+ * - `tampered_content`: 正しく署名した ProjectCommit の中身を、署名後に書き換えたもの
+ * - `impersonated_account`: 別の鍵で署名した ProjectCommit の `account_id` を `impersonatedAccountId` にすり替えたもの
  *
  * `impersonatedAccountId` を省略すると、使い捨ての別アカウントになりすます。
  * `signer` を省略すると使い捨ての鍵で署名する。
@@ -145,11 +152,11 @@ export async function createInvalidSignatureSamples(
       timeSeconds,
     ),
   );
-  const moduleCommit = variantPayload(commit.inner.content, "module_commit");
+  const projectCommit = variantPayload(commit.inner.content, "project_commit");
   const tamperedInner = {
     ...commit.inner,
-    content: variant("module_commit", {
-      ...(moduleCommit as Readonly<Record<string, unknown>>),
+    content: variant("project_commit", {
+      ...(projectCommit as Readonly<Record<string, unknown>>),
       message: "Tampered after signing",
     }),
   };

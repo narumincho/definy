@@ -22,6 +22,10 @@ import { compileEventChecker } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import { createStage1Compiler } from "../src/stage1_compiler.ts";
 import { resolvePartPlaceholders } from "../src/seed_parts.ts";
+import {
+  loadProjectSeeds,
+  type ProjectSeedData,
+} from "../src/seed_projects.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import type {
   SeedBundle,
@@ -48,47 +52,51 @@ function toBufferSource(bytes: Uint8Array): BufferSource {
 
 type ModuleSeedData = {
   readonly module_name: string;
-  readonly module_description: ReadonlyArray<{
-    readonly language: string;
-    readonly text: string;
-  }>;
-  readonly message: string;
+  readonly module_description: LocalizedText;
   readonly parts: ReadonlyArray<Record<string, unknown>>;
 };
 
-type ModuleSpec = {
-  readonly name: string;
+/** seed のイベントの時刻 (BASE_EPOCH_SECONDS からのずれ) と RFC 3339 の表記. プロジェクト名ごと */
+const PROJECT_TIMES: ReadonlyMap<
+  string,
+  { readonly timeOffset: number; readonly createdAtRfc3339: string }
+> = new Map([
+  [
+    "sample",
+    {
+      timeOffset: 0.03,
+      createdAtRfc3339: "2019-01-31T04:36:01.029999971+00:00",
+    },
+  ],
+  [
+    "definy",
+    {
+      timeOffset: 0.005,
+      createdAtRfc3339: "2019-01-31T04:36:01.005000114+00:00",
+    },
+  ],
+]);
+
+/** プロジェクトの seed のイベントの時刻. 表に無いプロジェクトは sample の後に 0.001 秒ずつ置く */
+function projectTime(project: ProjectSeedData): {
   readonly timeOffset: number;
   readonly createdAtRfc3339: string;
-};
-
-const MODULE_SPECS: ReadonlyArray<ModuleSpec> = [
-  {
-    name: "sample",
-    timeOffset: 0.03,
-    createdAtRfc3339: "2019-01-31T04:36:01.029999971+00:00",
-  },
-  {
-    name: "wasi",
-    timeOffset: 0.02,
-    createdAtRfc3339: "2019-01-31T04:36:01.019999981+00:00",
-  },
-  {
-    name: "std",
-    timeOffset: 0.015,
-    createdAtRfc3339: "2019-01-31T04:36:01.015000105+00:00",
-  },
-  {
-    name: "core",
-    timeOffset: 0.005,
-    createdAtRfc3339: "2019-01-31T04:36:01.005000114+00:00",
-  },
-  {
-    name: "definy",
-    timeOffset: 0.001,
-    createdAtRfc3339: "2019-01-31T04:36:01.000999928+00:00",
-  },
-];
+} {
+  const known = PROJECT_TIMES.get(project.project_name);
+  if (known !== undefined) {
+    return known;
+  }
+  const index = loadProjectSeeds().findIndex(
+    (p) => p.project_name === project.project_name,
+  );
+  const timeOffset = 0.04 + index * 0.001;
+  return {
+    timeOffset,
+    createdAtRfc3339: new Date(
+      (BASE_EPOCH_SECONDS + timeOffset) * 1000,
+    ).toISOString(),
+  };
+}
 
 /** seed に署名するシステムアカウント. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` が無ければ開発用の鍵 */
 async function seedAccountCredentials(): Promise<AccountCredentials> {
@@ -100,12 +108,12 @@ async function seedAccountCredentials(): Promise<AccountCredentials> {
   return await importAccountCredentials(secretKeyBase64, "definy");
 }
 
-/** 各モジュールの seed ファイルを読み込み, パーツ ID のプレースホルダーを解決する */
+/** 各プロジェクトのモジュールの seed ファイルを読み込み, パーツ ID のプレースホルダーを解決する */
 async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
   // 1. 各モジュールシードファイルを読み込み、プレースホルダーを解決
   const loadedModulesMap = new Map<string, ModuleSeedData>();
-  for (const spec of MODULE_SPECS) {
-    const path = resolve(`seeds/${spec.name}.json`);
+  for (const name of loadProjectSeeds().flatMap((project) => project.modules)) {
+    const path = resolve(`seeds/${name}.json`);
     const raw = await readFile(path, "utf-8");
     const parsed = JSON.parse(raw) as ModuleSeedData;
     const resolvedParts = await Promise.all(
@@ -125,10 +133,9 @@ async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
         return partCopy;
       }),
     );
-    loadedModulesMap.set(spec.name, {
+    loadedModulesMap.set(name, {
       module_name: parsed.module_name,
       module_description: parsed.module_description,
-      message: parsed.message,
       parts: resolvedParts,
     });
   }
@@ -190,40 +197,52 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
 
   const contents: ReadonlyArray<SeedContentEntry> = contentsList;
 
-  // 3. イベント一覧の構築 (sample, wasi, std, core, definy, create_account, 署名が不正なサンプルの順)
+  // 3. イベント一覧の構築 (プロジェクトの新しい順, create_account, 署名が不正なサンプルの順)
   const eventsList: Array<SeedEventEntry> = [];
 
-  for (const spec of MODULE_SPECS) {
-    const mod = loadedModules.get(spec.name);
-    if (!mod) continue;
-    const timeVal = BASE_EPOCH_SECONDS + spec.timeOffset;
+  const projects = [...loadProjectSeeds()].sort(
+    (a, b) => projectTime(b).timeOffset - projectTime(a).timeOffset,
+  );
+  for (const project of projects) {
+    const { timeOffset, createdAtRfc3339 } = projectTime(project);
+    const timeVal = BASE_EPOCH_SECONDS + timeOffset;
+    const modules = [];
+    for (const name of project.modules) {
+      const mod = loadedModules.get(name);
+      if (!mod) continue;
+      modules.push({
+        name: mod.module_name,
+        description: mod.module_description,
+        // 式は CAS (contents) に入れ, コミットには content hash だけを入れる
+        parts: await Promise.all(
+          mod.parts.map(async (part) => ({
+            name: String(part.name),
+            description: part.description as LocalizedText,
+            partType: part.part_type ?? null,
+            expression: null,
+            contentHash:
+              part.expression == null
+                ? null
+                : bytesToUrlSafeBase64NoPad(
+                    await sha256Bytes(encodeCborItem(part.expression)),
+                  ),
+          })),
+        ),
+      });
+    }
     const inner = {
       account_id: accountBytes,
       time: { __tag: 1, value: timeVal },
       content: encodeEventContent({
-        type: "module_commit",
+        type: "project_commit",
         commit: {
-          moduleName: mod.module_name,
+          projectName: project.project_name,
           branch: MAIN_BRANCH,
-          moduleDescription: mod.module_description,
+          projectDescription: project.project_description,
           parentCommitHash: null,
           mergedCommitHash: null,
-          message: mod.message,
-          // 式は CAS (contents) に入れ, コミットには content hash だけを入れる
-          parts: await Promise.all(
-            mod.parts.map(async (part) => ({
-              name: String(part.name),
-              description: part.description as LocalizedText,
-              partType: part.part_type ?? null,
-              expression: null,
-              contentHash:
-                part.expression == null
-                  ? null
-                  : bytesToUrlSafeBase64NoPad(
-                      await sha256Bytes(encodeCborItem(part.expression)),
-                    ),
-            })),
-          ),
+          message: project.message,
+          modules,
         },
       }),
     };
@@ -244,8 +263,8 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
       eventHash,
       signedEventBytes: bytesToBase64(signedBytes),
       accountId: creds.accountId,
-      eventType: "module_commit",
-      createdAtRfc3339: spec.createdAtRfc3339,
+      eventType: "project_commit",
+      createdAtRfc3339,
       timeMs: Math.round(timeVal * 1000),
     });
   }

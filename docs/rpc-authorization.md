@@ -21,7 +21,7 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 
 ## ブラウザ側での検証
 
-ブラウザはサーバーを信用せず、`GetEvents` / `GetEvent` / `GetModuleBranches` で受け取ったイベントをすべて `src/signed_event.ts` の `verifyEventRecord` で検証してから使う (`src/state/useEvents.ts`)。
+ブラウザはサーバーを信用せず、`GetEvents` / `GetEvent` / `GetProjectBranches` で受け取ったイベントをすべて `src/signed_event.ts` の `verifyEventRecord` で検証してから使う (`src/state/useEvents.ts`)。
 
 - `verifySignedEvent` と同じ署名・形式・時刻のチェック
 - `eventHash` が `signedEventBytes` の SHA-256 と一致する

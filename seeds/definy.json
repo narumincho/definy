@@ -11,7 +11,6 @@
       "text": "Cloudflare Workers へのデプロイなど, definy で書いた definy プラットフォームの機能"
     }
   ],
-  "message": "式とパーツの型の保存形式を core.expression / core.type-ast の値 ({\"#tag\": payload}) にする",
   "parts": [
     {
       "name": "cloudflare-workers-runtime-script",

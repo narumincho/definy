@@ -68,10 +68,10 @@ definy サービス全体のブートストラップが完了したことを意�
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
-- イベントの中身の形は core の型パーツ `core.event-content` (`core.module-commit` など) が決め, 署名の検証のときに
+- イベントの中身の形は core の型パーツ `core.event-content` (`core.project-commit` など) が決め, 署名の検証のときに
   その宣言で形を確かめます ([event.md](event.md))。
-- Connect-RPC の `SubmitEvent` は、`checkSubmittedModuleCommit` (`worker/type_check.ts`)
-  でコミットのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
+- Connect-RPC の `SubmitEvent` は、`checkSubmittedProjectCommit` (`worker/type_check.ts`)
+  でコミットの全モジュールのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
   seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
   コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
   パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),
@@ -384,8 +384,8 @@ definy 製型チェッカーは stage1 でコンパイルして動かす (`src/s
   `npm run build:seeds` が seed の型チェッカーを `wasm/type_checker.wasm` (コミットしない) に書き出し,
   Worker は `?module` で取り込む ([build-artifacts.md](build-artifacts.md))。本番で `core` の型チェッカーを編集しても,
   seed に書き戻してデプロイするまでサーバーの検査には反映されない
-- **`SubmitEvent` の検査** (`worker/type_check.ts`): 署名の正しいモジュールコミットから, モジュールごとに最新のコミットの
-  パーツを集めて型環境にし, 投稿されたコミットのパーツを重ねて `checkModuleCommitParts` で検査する。
+- **`SubmitEvent` の検査** (`worker/type_check.ts`): 署名の正しいプロジェクトのコミットから, プロジェクトごとに `main` の最新のコミットの
+  パーツを集めて型環境にし ([project.md](project.md)「型検査」), 投稿されたコミットのパーツを重ねて `checkModuleCommitParts` で検査する。
   型が 1 つも変わらなければ式が変わったパーツだけ, 変われば全パーツを検査する。式を CAS に預けたパーツは読んでから検査し,
   CAS に足りない内容があるときは検査せず `missing_content` を返す。型エラーは `400` (`invalid_argument`) で,
   メッセージは `part 'name': type error: type_mismatch {...}` の行。システムアカウントは式の無いパーツや

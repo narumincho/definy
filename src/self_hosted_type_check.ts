@@ -142,6 +142,12 @@ type ModuleEntry = {
 const NO_MODULE = "#";
 
 /**
+ * プロジェクトのコミットで置き換えるモジュールをまとめて `core.type-checker` に渡すときのモジュール ID.
+ * {@link NO_MODULE} と同じく `#` を含むので, 実際のモジュール ID とは一致しない
+ */
+const REPLACED_MODULE = "#replaced";
+
+/**
  * `core.type-checker` に渡すパーツの一覧
  * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
  * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする.
@@ -589,7 +595,7 @@ function partTypeKey(partType: unknown): string {
 }
 
 /**
- * モジュールのコミットを型チェッカーで検査し, 検査したパーツの名前と結果を返す.
+ * プロジェクトのコミットのパーツを型チェッカーで検査し, 検査したパーツの名前と結果を返す.
  * サーバーがコミットを受け付けるかの判定と, UI の変更ページのコミット前の検査が同じ関数を使う.
  *
  * - 型環境は `latestParts` (全モジュールの最新のコミットのパーツ) に, このコミットのパーツを重ねたもの
@@ -602,7 +608,11 @@ function partTypeKey(partType: unknown): string {
  */
 export function checkModuleCommitParts(options: {
   readonly typeChecker: WebAssembly.Module;
-  readonly moduleId: string;
+  /**
+   * このコミットで置き換えるモジュールの ID. プロジェクトのコミットはプロジェクトの全モジュールを置き換える
+   * (コミットのモジュールと, 今のプロジェクトのモジュール. docs/project.md)
+   */
+  readonly replacedModuleIds: ReadonlySet<string>;
   readonly committed: ReadonlyArray<LatestPart>;
   readonly latestParts: ReadonlyMap<string, LatestPart>;
   readonly allowBuiltinParts: boolean;
@@ -610,11 +620,21 @@ export function checkModuleCommitParts(options: {
   readonly name: string;
   readonly outcome: SelfHostedTypeCheckOutcome;
 }> {
+  // `core.type-checker` は 1 つのモジュールへのコミットとして検査するので, 置き換えるモジュールのパーツを
+  // 1 つのモジュール (REPLACED_MODULE) のものとして渡す
   const session = createModuleCommitSession({
     typeChecker: options.typeChecker,
-    latest: [...options.latestParts.values()].map(latestPartToModuleEntry),
-    committed: options.committed.map(latestPartToModuleEntry),
-    moduleId: options.moduleId,
+    latest: [...options.latestParts.values()].map((part) =>
+      latestPartToModuleEntry(
+        options.replacedModuleIds.has(part.moduleId)
+          ? { ...part, moduleId: REPLACED_MODULE }
+          : part,
+      ),
+    ),
+    committed: options.committed.map((part) =>
+      latestPartToModuleEntry({ ...part, moduleId: REPLACED_MODULE }),
+    ),
+    moduleId: REPLACED_MODULE,
   });
   const byId = new Map(options.committed.map((part) => [part.partId, part]));
   const partsOf = (ids: ReadonlyArray<string>): ReadonlyArray<LatestPart> =>

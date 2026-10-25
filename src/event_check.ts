@@ -13,29 +13,32 @@ import {
   type Stage1CompilerInstance,
 } from "./stage1_compiler.ts";
 
-/** イベントを受け付ける前にサーバーが知っていること (`core.event-check-state`. docs/branch.md) */
+/** イベントを受け付ける前にサーバーが知っていること (`core.event-check-state`. docs/branch.md, docs/project.md) */
 export type EventCheckState = {
   /** このイベントのアカウントの `create_account` を受け付けたか */
   readonly accountCreated: boolean;
-  /** モジュールのコミットなら, コミット先のブランチの最新のコミットのイベントハッシュ. 新しいブランチなら `null` */
+  /** プロジェクトのコミットなら, コミット先のブランチの最新のコミットのイベントハッシュ. 新しいブランチなら `null` */
   readonly branchLatestCommitHash: string | null;
   /** このイベントのアカウントがコミット先のブランチを作ったか (ブランチの最初のコミットのアカウントか) */
   readonly isBranchCreator: boolean;
-  /** `merged_commit_hash` がコミット先のモジュールのコミットか. 取り込みでなければ `false` */
-  readonly mergedInModule: boolean;
-  /** コミット先のモジュールに (どのブランチにでも) コミットがあるか */
-  readonly moduleHasCommits: boolean;
-  /** `parent_commit_hash` がコミット先のモジュールの (どのブランチの) コミットか. 親が無ければ `false` */
-  readonly parentInModule: boolean;
+  /** `merged_commit_hash` がコミット先のプロジェクトのコミットか. 取り込みでなければ `false` */
+  readonly mergedInProject: boolean;
+  /** コミットのモジュール名のうち, 他のプロジェクトのもの (モジュール名は全体で一意. docs/project.md) */
+  readonly modulesInOtherProjects: ReadonlyArray<string>;
+  /** `parent_commit_hash` がコミット先のプロジェクトの (どのブランチの) コミットか. 親が無ければ `false` */
+  readonly parentInProject: boolean;
+  /** コミット先のプロジェクトに (どのブランチにでも) コミットがあるか */
+  readonly projectHasCommits: boolean;
 };
 
-/** モジュールのコミット以外のイベントの状態 (使わない値) */
-export const NO_MODULE_STATE: Omit<EventCheckState, "accountCreated"> = {
+/** プロジェクトのコミット以外のイベントの状態 (使わない値) */
+export const NO_PROJECT_STATE: Omit<EventCheckState, "accountCreated"> = {
   branchLatestCommitHash: null,
   isBranchCreator: false,
-  mergedInModule: false,
-  moduleHasCommits: false,
-  parentInModule: false,
+  mergedInProject: false,
+  modulesInOtherProjects: [],
+  parentInProject: false,
+  projectHasCommits: false,
 };
 
 /** `core.event-rejection` の値. `tag` はバリアント名 (`parent_commit_mismatch` など) */
@@ -71,21 +74,25 @@ export function compileEventChecker(options: {
  * 規則が見ない式・型・説明を除いたイベントの中身. core のコミット (式で数 MB) をそのまま線形メモリに書くと重いため
  */
 function contentForCheck(content: EventContent): EventContent {
-  if (content.type !== "module_commit") {
+  if (content.type !== "project_commit") {
     return content;
   }
   return {
-    type: "module_commit",
+    type: "project_commit",
     commit: {
       ...content.commit,
-      moduleDescription: [],
+      projectDescription: [],
       message: "",
-      parts: content.commit.parts.map((part) => ({
-        name: part.name,
+      modules: content.commit.modules.map((module) => ({
+        name: module.name,
         description: [],
-        partType: null,
-        expression: null,
-        contentHash: null,
+        parts: module.parts.map((part) => ({
+          name: part.name,
+          description: [],
+          partType: null,
+          expression: null,
+          contentHash: null,
+        })),
       })),
     },
   };
@@ -108,9 +115,10 @@ export function checkEvent(
             ? none()
             : some(state.branchLatestCommitHash),
         is_branch_creator: state.isBranchCreator,
-        merged_in_module: state.mergedInModule,
-        module_has_commits: state.moduleHasCommits,
-        parent_in_module: state.parentInModule,
+        merged_in_project: state.mergedInProject,
+        modules_in_other_projects: state.modulesInOtherProjects,
+        parent_in_project: state.parentInProject,
+        project_has_commits: state.projectHasCommits,
       }),
     ]),
   );
@@ -135,18 +143,24 @@ export function eventRejectionMessage(rejection: EventRejection): string {
       return "the account has not been created (submit create_account first)";
     case "empty_account_name":
       return "the account name is empty";
-    case "empty_module_name":
-      return "the module name is empty";
+    case "empty_project_name":
+      return "the project name is empty";
     case "empty_branch_name":
       return "the branch name is empty";
     case "first_branch_must_be_main":
-      return "the first commit of a module must be on the main branch";
+      return "the first commit of a project must be on the main branch";
     case "not_branch_creator":
       return "only the account that created the branch can commit to it (create a new branch instead)";
-    case "merged_commit_not_in_module":
-      return "merged_commit_hash must be a commit of the same module";
+    case "merged_commit_not_in_project":
+      return "merged_commit_hash must be a commit of the same project";
     case "parent_commit_mismatch":
-      return "parent_commit_hash must be the latest commit of the branch, or a commit of the module for a new branch (fetch the latest events and commit again)";
+      return "parent_commit_hash must be the latest commit of the branch, or a commit of the project for a new branch (fetch the latest events and commit again)";
+    case "empty_module_name":
+      return "a module name is empty";
+    case "duplicate_module_name":
+      return `the module name '${String(rejection.payload)}' is duplicated`;
+    case "module_in_other_project":
+      return `the module '${String(rejection.payload)}' belongs to another project`;
     case "empty_part_name":
       return "a part name is empty";
     case "duplicate_part_name":

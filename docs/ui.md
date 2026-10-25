@@ -79,7 +79,7 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 - 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が
   ハッシュ付きアセットとして読み込んでコンパイルする (1 度だけ). サーバーと同じものなので, UI で通ればサーバーでも通る
 - 変更ページ (`/changes`) はコミットする前に `checkCommitTypes` (`src/state.tsx`) で検査する.
-  コミットと同じパーツ (今のモジュールのパーツに作業中の変更を重ねたもの, `buildCommitParts`) を,
+  コミットと同じパーツ (プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの, `buildCommitModules`) を,
   署名の正しいイベントから集めた全モジュールの最新のパーツを型環境にして `checkModuleCommitParts` に渡す.
   型エラーがあればパーツ名と理由を出し, コミットボタンを押せなくする
   - 変更・対象モジュール・取得済みのイベント・ログイン中のアカウントが変わったら 300ms 待ってから検査し直す
@@ -117,8 +117,8 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 [src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [pages/changes.tsx](../pages/changes.tsx) (変更ページ).
 
 - 記録はパーツの定義全体 (`PartChange`) をパーツ ID ごとに 1 つ持つ
-- コミットはモジュールごとの `ModuleCommitEvent`. 今のモジュールのパーツに作業中の変更を重ねたもの (`buildCommitParts`) を,
-  モジュールの最新コミットを親にして署名して送る. 受け付けられたらそのモジュールの変更を記録から消す
+- コミットはプロジェクトごとの `project_commit` ([project.md](project.md)). プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの
+  (`buildCommitModules`) を, 表示しているブランチの最新コミットを親にして署名して送る. 受け付けられたらそのプロジェクトのモジュールの変更を記録から消す
 - 未コミットの変更があるパーツはエクスプローラーに印を出し, アクティビティバーの「変更」に件数を出す
 - コミット前の型検査は上の「型エラー表示」を参照
 
@@ -335,9 +335,9 @@ I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッ
 
 ### 履歴
 
-履歴ページ (`/history`, [pages/history.tsx](../pages/history.tsx)) はモジュールのコミットを新しい順に並べ, 各コミットのイベント詳細・モジュール・作成者へリンクする.
-モジュールのページ (`/module/{モジュール名}`) にも, そのモジュールのコミットを新しい順に出す.
-`ModuleCommitEvent` の親は `parent_commit_hash` の 1 つだけなので, 枝分かれ (同じ親から複数のコミット) はあってもマージは無い.
+履歴ページ (`/history`, [pages/history.tsx](../pages/history.tsx)) はプロジェクトのコミットを新しい順に並べ, 各コミットのイベント詳細・プロジェクト・作成者へリンクする.
+プロジェクトのページ (`/project/{プロジェクト名}`) にも, 表示しているブランチのコミットを新しい順に出す ([project.md](project.md)).
+コミットの親は `parent_commit_hash` で, 取り込みのコミットは取り込んだコミットを `merged_commit_hash` に持つ ([branch.md](branch.md)).
 
 ### イベントタイムライン
 
@@ -398,7 +398,7 @@ UI だけで definy の新しい関数を書けるようにする (#760). ロジ
 
 [src/state/useEvents.ts](../src/state/useEvents.ts) はモジュールの状態を全イベントからではなく, 次のものから作る (#761)。
 
-- `GetModuleBranches`: 各モジュールの各ブランチの作成者・コミット数・最新のコミットのイベント。モジュール・パーツ・型環境はこれだけで作れる
+- `GetProjectBranches`: 各プロジェクトの各ブランチの作成者・コミット数・最新のコミットのイベント。プロジェクト・モジュール・パーツ・型環境はこれだけで作れる ([project.md](project.md))
 - `GetEvents` の最新の 100 件: タイムライン
 - `GetEvents` (`eventType: "create_account"`) の全件: アカウント名 (小さいのでページングして全部読む)
 - `loadEvent` (`GetEvent`) で読んだもの: イベント詳細のページ, モジュールのページのコミット履歴 (最新から親を 1 件ずつ, 50 件まで)

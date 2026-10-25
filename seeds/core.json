@@ -11,7 +11,6 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "式とパーツの型を core.expression / core.type-ast の値そのまま ({\"#tag\": payload}) で保存する. let は束縛 1 つずつの入れ子, match の default は `_` のアーム, secret は { id, label, allowed_url_prefixes }, variant のペイロードと型パーツは option にする",
   "parts": [
     {
       "name": "let",
@@ -4461,12 +4460,12 @@
             }
           },
           {
-            "tag": "module_commit",
+            "tag": "project_commit",
             "payload_type": {
               "#some": {
                 "#part_reference": {
                   "part_definition_event_hash": {
-                    "$part": "core.module-commit"
+                    "$part": "core.project-commit"
                   }
                 }
               }
@@ -4476,24 +4475,24 @@
       }
     },
     {
-      "name": "module-commit",
+      "name": "project-commit",
       "part_type": {
         "#type": null
       },
       "description": [
         {
           "language": "en",
-          "text": "A commit of a module on a branch: the whole list of its parts at that point. merged_commit_hash is the commit of another branch merged by this commit. See docs/branch.md"
+          "text": "A commit of a project on a branch: the whole list of its modules and their parts at that point. merged_commit_hash is the commit of another branch merged by this commit. See docs/project.md and docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "モジュールのブランチへのコミット. その時点のモジュールのパーツをすべて持つ. merged_commit_hash はこのコミットで取り込んだ他のブランチのコミット. docs/branch.md を参照"
+          "text": "プロジェクトのブランチへのコミット. その時点のプロジェクトのモジュールとパーツをすべて持つ. merged_commit_hash はこのコミットで取り込んだ他のブランチのコミット. docs/project.md, docs/branch.md を参照"
         }
       ],
       "expression": {
         "#type_record": [
           {
-            "key": "module_name",
+            "key": "project_name",
             "value": {
               "#type_string": null
             }
@@ -4505,7 +4504,7 @@
             }
           },
           {
-            "key": "module_description",
+            "key": "project_description",
             "value": {
               "#type_list": {
                 "item_type": {
@@ -4567,6 +4566,60 @@
             }
           },
           {
+            "key": "modules",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.project-commit-module"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "project-commit-module",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A module in a project commit: its name, description and the whole list of its parts"
+        },
+        {
+          "language": "ja",
+          "text": "プロジェクトのコミットのモジュール. 名前と説明と, パーツをすべて持つ"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "description",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.localized-text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
             "key": "parts",
             "value": {
               "#type_list": {
@@ -4591,11 +4644,11 @@
       "description": [
         {
           "language": "en",
-          "text": "A part in a module commit. The expression is either inline or stored in the content-addressed storage (content_hash)"
+          "text": "A part in a module of a project commit. The expression is either inline or stored in the content-addressed storage (content_hash)"
         },
         {
           "language": "ja",
-          "text": "モジュールのコミットのパーツ. 式はそのまま持つか, content-addressed storage に預けて content_hash で指す"
+          "text": "プロジェクトのコミットのモジュールのパーツ. 式はそのまま持つか, content-addressed storage に預けて content_hash で指す"
         }
       ],
       "expression": {
@@ -115837,7 +115890,7 @@
             }
           },
           {
-            "tag": "empty_module_name",
+            "tag": "empty_project_name",
             "payload_type": {
               "#none": null
             }
@@ -115867,9 +115920,31 @@
             }
           },
           {
-            "tag": "merged_commit_not_in_module",
+            "tag": "merged_commit_not_in_project",
             "payload_type": {
               "#none": null
+            }
+          },
+          {
+            "tag": "empty_module_name",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "duplicate_module_name",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          },
+          {
+            "tag": "module_in_other_project",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
             }
           },
           {
@@ -115897,11 +115972,11 @@
       "description": [
         {
           "language": "en",
-          "text": "What the server knows before accepting an event. For a module commit: the latest commit of the branch (none if the branch is new), whether the account created the branch, whether merged_commit_hash is a commit of the module, whether the module has any commit, and whether parent_commit_hash is a commit of the module. See docs/branch.md"
+          "text": "What the server knows before accepting an event. For a project commit: the latest commit of the branch (none if the branch is new), whether the account created the branch, whether merged_commit_hash is a commit of the project, the module names of the commit that belong to other projects, whether parent_commit_hash is a commit of the project, and whether the project has any commit. See docs/project.md and docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "イベントを受け付ける前にサーバーが知っていること. モジュールのコミットなら, ブランチの最新のコミット (新しいブランチなら none), そのアカウントがブランチを作ったか, merged_commit_hash がモジュールのコミットか, モジュールにコミットがあるか, parent_commit_hash がモジュールのコミットか. docs/branch.md を参照"
+          "text": "イベントを受け付ける前にサーバーが知っていること. プロジェクトのコミットなら, ブランチの最新のコミット (新しいブランチなら none), そのアカウントがブランチを作ったか, merged_commit_hash がプロジェクトのコミットか, コミットのモジュール名のうち他のプロジェクトのもの, parent_commit_hash がプロジェクトのコミットか, プロジェクトにコミットがあるか. docs/project.md, docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -115940,19 +116015,29 @@
             }
           },
           {
-            "key": "merged_in_module",
+            "key": "merged_in_project",
             "value": {
               "#type_boolean": null
             }
           },
           {
-            "key": "module_has_commits",
+            "key": "modules_in_other_projects",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_string": null
+                }
+              }
+            }
+          },
+          {
+            "key": "parent_in_project",
             "value": {
               "#type_boolean": null
             }
           },
           {
-            "key": "parent_in_module",
+            "key": "project_has_commits",
             "value": {
               "#type_boolean": null
             }
@@ -116140,6 +116225,625 @@
       }
     },
     {
+      "name": "check-event-module-names",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "modules",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.project-commit-module"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "others",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "seen",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-rejection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Rejects empty or duplicated module names in a project commit and module names that belong to other projects (others), from index, and checks the part names of each module. seen is the names before index. See docs/project.md"
+        },
+        {
+          "language": "ja",
+          "text": "プロジェクトのコミットのモジュール名が空・重複していないか, 他のプロジェクトのもの (others) でないかを index から調べ, 各モジュールのパーツ名も調べる. seen は index より前の名前. docs/project.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "modules"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "others"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "seen"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than-or-equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": []
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#let": {
+                      "variable_id": 4,
+                      "variable_name": "module",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-get"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "list",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 5,
+                          "variable_name": "name",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 4
+                                }
+                              },
+                              "key": "name"
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.equal"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.string-length"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "value",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 0
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": [
+                                              {
+                                                "#variant": {
+                                                  "tag": "empty_module_name",
+                                                  "payload": {
+                                                    "#none": null
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "core.event-rejection"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.list-concat"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.list-contains-string"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "list",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 2
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "target",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 5
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "#number": 0
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "tag": "true",
+                                                          "variable_id": -1,
+                                                          "variable_name": "",
+                                                          "body": {
+                                                            "#list": [
+                                                              {
+                                                                "#variant": {
+                                                                  "tag": "duplicate_module_name",
+                                                                  "payload": {
+                                                                    "#some": {
+                                                                      "#variable": {
+                                                                        "variable_id": 5
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "type_part": {
+                                                                    "#some": {
+                                                                      "$part": "core.event-rejection"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "false",
+                                                          "variable_id": -1,
+                                                          "variable_name": "",
+                                                          "body": {
+                                                            "#list": []
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.list-contains-string"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "list",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 1
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "target",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 5
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "#number": 0
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "tag": "true",
+                                                          "variable_id": -1,
+                                                          "variable_name": "",
+                                                          "body": {
+                                                            "#list": [
+                                                              {
+                                                                "#variant": {
+                                                                  "tag": "module_in_other_project",
+                                                                  "payload": {
+                                                                    "#some": {
+                                                                      "#variable": {
+                                                                        "variable_id": 5
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "type_part": {
+                                                                    "#some": {
+                                                                      "$part": "core.event-rejection"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "false",
+                                                          "variable_id": -1,
+                                                          "variable_name": "",
+                                                          "body": {
+                                                            "#list": []
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-concat"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.check-event-part-names"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "parts",
+                                                  "value": {
+                                                    "#record_get": {
+                                                      "record": {
+                                                        "#variable": {
+                                                          "variable_id": 4
+                                                        }
+                                                      },
+                                                      "key": "parts"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "seen",
+                                                  "value": {
+                                                    "#list": []
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.check-event-module-names"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "modules",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "others",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "seen",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.list-append"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "list",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "item",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "check-event-part-names",
       "part_type": {
         "#function": {
@@ -116191,11 +116895,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Rejects empty or duplicated part names in a module commit, from index. seen is the names before index"
+          "text": "Rejects empty or duplicated part names in a module of a project commit, from index. seen is the names before index"
         },
         {
           "language": "ja",
-          "text": "モジュールのコミットのパーツ名が空・重複していないかを index から調べる. seen は index より前の名前"
+          "text": "プロジェクトのコミットのモジュールのパーツ名が空・重複していないかを index から調べる. seen は index より前の名前"
         }
       ],
       "expression": {
@@ -116776,7 +117480,7 @@
                   }
                 },
                 {
-                  "tag": "module_commit",
+                  "tag": "project_commit",
                   "variable_id": 3,
                   "variable_name": "commit",
                   "body": {
@@ -116885,7 +117589,7 @@
                                                               "variable_id": 3
                                                             }
                                                           },
-                                                          "key": "module_name"
+                                                          "key": "project_name"
                                                         }
                                                       }
                                                     }
@@ -116911,7 +117615,7 @@
                                             "#list": [
                                               {
                                                 "#variant": {
-                                                  "tag": "empty_module_name",
+                                                  "tag": "empty_project_name",
                                                   "payload": {
                                                     "#none": null
                                                   },
@@ -117135,13 +117839,13 @@
                                                       "function": {
                                                         "#part_reference": {
                                                           "part_definition_event_hash": {
-                                                            "$part": "core.check-event-part-names"
+                                                            "$part": "core.check-event-module-names"
                                                           }
                                                         }
                                                       },
                                                       "arguments": [
                                                         {
-                                                          "name": "parts",
+                                                          "name": "modules",
                                                           "value": {
                                                             "#record_get": {
                                                               "record": {
@@ -117149,7 +117853,20 @@
                                                                   "variable_id": 3
                                                                 }
                                                               },
-                                                              "key": "parts"
+                                                              "key": "modules"
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "others",
+                                                          "value": {
+                                                            "#record_get": {
+                                                              "record": {
+                                                                "#variable": {
+                                                                  "variable_id": 1
+                                                                }
+                                                              },
+                                                              "key": "modules_in_other_projects"
                                                             }
                                                           }
                                                         },
@@ -117201,7 +117918,7 @@
               "type": {
                 "#reference": {
                   "part_hash": {
-                    "$part": "core.module-commit"
+                    "$part": "core.project-commit"
                   }
                 }
               }
@@ -117233,11 +117950,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Branch rules of a module commit: only the creator of a branch can commit to it, and the parent is the latest commit of the branch. A new branch starts from a commit of the module, and the first branch of a module is main without a parent. See docs/branch.md"
+          "text": "Branch rules of a project commit: only the creator of a branch can commit to it, and the parent is the latest commit of the branch. A new branch starts from a commit of the project, and the first branch of a project is main without a parent. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "モジュールのコミットのブランチの規則: ブランチにはそれを作ったアカウントだけがコミットでき, 親はブランチの最新のコミット. 新しいブランチはモジュールのコミットから作り, モジュールの最初のブランチは親の無い main. docs/branch.md を参照"
+          "text": "プロジェクトのコミットのブランチの規則: ブランチにはそれを作ったアカウントだけがコミットでき, 親はブランチの最新のコミット. 新しいブランチはプロジェクトのコミットから作り, プロジェクトの最初のブランチは親の無い main. docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -117423,7 +118140,7 @@
                               "variable_id": 1
                             }
                           },
-                          "key": "module_has_commits"
+                          "key": "project_has_commits"
                         }
                       },
                       "arms": [
@@ -117440,7 +118157,7 @@
                                       "variable_id": 1
                                     }
                                   },
-                                  "key": "parent_in_module"
+                                  "key": "parent_in_project"
                                 }
                               },
                               "arms": [
@@ -117658,7 +118375,7 @@
               "type": {
                 "#reference": {
                   "part_hash": {
-                    "$part": "core.module-commit"
+                    "$part": "core.project-commit"
                   }
                 }
               }
@@ -117690,11 +118407,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Merge rule of a module commit: a commit that merges another branch (merged_commit_hash) must merge a commit of the same module. See docs/branch.md"
+          "text": "Merge rule of a project commit: a commit that merges another branch (merged_commit_hash) must merge a commit of the same project. See docs/branch.md"
         },
         {
           "language": "ja",
-          "text": "モジュールのコミットの取り込みの規則: 他のブランチを取り込むコミット (merged_commit_hash) は, 同じモジュールのコミットを取り込む. docs/branch.md を参照"
+          "text": "プロジェクトのコミットの取り込みの規則: 他のブランチを取り込むコミット (merged_commit_hash) は, 同じプロジェクトのコミットを取り込む. docs/branch.md を参照"
         }
       ],
       "expression": {
@@ -117743,7 +118460,7 @@
                               "variable_id": 1
                             }
                           },
-                          "key": "merged_in_module"
+                          "key": "merged_in_project"
                         }
                       },
                       "arms": [
@@ -117763,7 +118480,7 @@
                             "#list": [
                               {
                                 "#variant": {
-                                  "tag": "merged_commit_not_in_module",
+                                  "tag": "merged_commit_not_in_project",
                                   "payload": {
                                     "#none": null
                                   },

@@ -303,12 +303,12 @@ export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [
   },
   {
     service: "EventService",
-    name: "GetModuleBranches",
-    request: "GetModuleBranchesRequest",
+    name: "GetProjectBranches",
+    request: "GetProjectBranchesRequest",
     desc: {
-      en: "List every branch of every module with its creator and latest commit event.",
-      ja: "全モジュールの全ブランチを, 作成者と最新のコミットのイベント付きで返します。",
-      eo: "Listigi ĉiujn branĉojn de ĉiuj moduloj kun ilia lasta enmeto.",
+      en: "List every branch of every project with its creator and latest commit event.",
+      ja: "全プロジェクトの全ブランチを, 作成者と最新のコミットのイベント付きで返します。",
+      eo: "Listigi ĉiujn branĉojn de ĉiuj projektoj kun ilia lasta enmeto.",
     },
   },
   {

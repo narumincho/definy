@@ -35,17 +35,25 @@ export type SubmitEventResult = {
   readonly missingContentHashes?: ReadonlyArray<string>;
 };
 
-export type CreateModuleCommitParams = {
+/** プロジェクトのコミットに入れるモジュール */
+export type CommitModuleParams = {
+  readonly name: string;
+  readonly description: LocalizedText;
+  readonly parts: ReadonlyArray<DecodedPart>;
+};
+
+export type CreateProjectCommitParams = {
   readonly credentials: AccountCredentials;
-  readonly moduleName: string;
+  readonly projectName: string;
   /** コミットするブランチ. 省略すると `main` */
   readonly branch?: string;
-  readonly moduleDescription: LocalizedText;
+  readonly projectDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash?: string | null;
   /** 取り込む他のブランチのコミット (docs/branch.md「取り込み」) */
   readonly mergedCommitHash?: string | null;
-  readonly parts: ReadonlyArray<DecodedPart>;
+  /** プロジェクトのモジュールすべて (docs/project.md) */
+  readonly modules: ReadonlyArray<CommitModuleParams>;
 };
 
 const ED25519_PKCS8_HEADER: ReadonlyArray<number> = [
@@ -180,29 +188,33 @@ export async function createSignedAccountEvent(
 }
 
 /**
- * ModuleCommit イベントを作成・Ed25519 署名する
+ * プロジェクトのコミット (`project_commit`) イベントを作成・Ed25519 署名する (docs/project.md)
  */
-export async function createSignedModuleCommitEvent(
-  params: CreateModuleCommitParams,
+export async function createSignedProjectCommitEvent(
+  params: CreateProjectCommitParams,
   timeSeconds: number = Math.floor(Date.now() / 1000),
 ): Promise<SignedEventResult> {
   return await signEvent(
     params.credentials,
     {
-      type: "module_commit",
+      type: "project_commit",
       commit: {
-        moduleName: params.moduleName,
+        projectName: params.projectName,
         branch: params.branch ?? MAIN_BRANCH,
-        moduleDescription: params.moduleDescription,
+        projectDescription: params.projectDescription,
         message: params.message,
         parentCommitHash: params.parentCommitHash ?? null,
         mergedCommitHash: params.mergedCommitHash ?? null,
-        parts: params.parts.map((p) => ({
-          name: p.name,
-          description: p.description,
-          partType: p.partType ?? null,
-          expression: p.expression ?? null,
-          contentHash: p.contentHash ?? null,
+        modules: params.modules.map((module) => ({
+          name: module.name,
+          description: module.description,
+          parts: module.parts.map((p) => ({
+            name: p.name,
+            description: p.description,
+            partType: p.partType ?? null,
+            expression: p.expression ?? null,
+            contentHash: p.contentHash ?? null,
+          })),
         })),
       },
     },
@@ -233,10 +245,10 @@ export async function submitSignedEvent(
 }
 
 /**
- * モジュールのコミットを提出する. サーバーの CAS に足りない式があれば (`missing_content`),
+ * プロジェクトのコミットを提出する. サーバーの CAS に足りない式があれば (`missing_content`),
  * その式だけを `UploadContent` で送ってから出し直す (docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」)
  */
-export async function submitModuleCommitEvent(
+export async function submitProjectCommitEvent(
   signedEventBytes: string,
   contents: ReadonlyMap<string, ContentItem>,
   fetchFn: typeof fetch = fetch,

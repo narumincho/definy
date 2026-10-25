@@ -1,10 +1,10 @@
 import { expect, test, type Locator } from "@playwright/test";
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   generateAccountCredentials,
   type AccountCredentials,
 } from "../src/auth.ts";
+import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 
 /**
  * 関数 `functionName` を呼び出す式のカプセル.
@@ -38,11 +38,11 @@ test.describe("definy UI E2E", () => {
     const totalEvents = await eventCards.count();
     expect(totalEvents).toBeGreaterThanOrEqual(1);
 
-    // イベントの種類 (data-event-type) が module_commit または create_account であることを検証
+    // イベントの種類 (data-event-type) が project_commit または create_account であることを検証
     // (seed の署名が不正なサンプルには「署名が不正」のバッジも付く)
     await expect(eventCards.first().locator(".event-type")).toBeVisible();
     const firstType = await eventCards.first().getAttribute("data-event-type");
-    expect(["module_commit", "create_account"]).toContain(firstType);
+    expect(["project_commit", "create_account"]).toContain(firstType);
 
     // フィルターチップの動作検証: アカウント作成 (create_account) フィルター
     const accountsChip = page
@@ -69,12 +69,12 @@ test.describe("definy UI E2E", () => {
     }
   });
 
-  test("timeline links to accounts, modules, parts and event details", async ({
+  test("timeline links to accounts, projects, parts and event details", async ({
     page,
   }) => {
     await page.goto("/");
     const commitCard = page
-      .locator('.event-card[data-event-type="module_commit"]')
+      .locator('.event-card[data-event-type="project_commit"]')
       .filter({ has: page.locator(".event-part-chip") })
       .first();
     await expect(commitCard).toBeVisible({ timeout: 15000 });
@@ -85,10 +85,10 @@ test.describe("definy UI E2E", () => {
     await expect(page.locator(".account-detail-name")).toBeVisible();
     await expect(page.locator(".event-card").first()).toBeVisible();
 
-    // モジュール名のリンクでモジュールのページへ
+    // プロジェクト名のリンクでプロジェクトのページへ
     await page.goto("/");
     await commitCard.locator(".event-summary-link").click();
-    await page.waitForURL(/\/module\//);
+    await page.waitForURL(/\/project\//);
     await expect(page.locator(".module-commit").first()).toBeVisible();
 
     // パーツのチップでパーツのページへ
@@ -206,7 +206,7 @@ test.describe("definy UI E2E", () => {
       page.locator(".module-card-title", { hasText: /^sample$/ }),
     ).toBeVisible();
     // 型環境にも残っている (core のパーツを開くと型エラーにならず型が出る)
-    await page.goto("/module/core");
+    await page.goto("/project/definy");
     await expect(page.locator(".module-commit").first()).toBeVisible({
       timeout: 15000,
     });
@@ -306,7 +306,7 @@ test.describe("definy UI E2E", () => {
     });
     await expect(page.locator(".change-card .badge-success")).toHaveCount(2);
     await expect(page.locator("p#commit-branch-input")).toContainText(
-      "Create the module",
+      "Create the project",
     );
     await page.locator("#commit-message-input").fill("Create module");
     const commitButton = page.locator("button[type='submit']", {
@@ -373,7 +373,7 @@ test.describe("definy UI E2E", () => {
     ): Promise<string> =>
       submit(
         (
-          await createSignedModuleCommitEvent(
+          await createSignedSingleModuleCommitEvent(
             {
               credentials,
               moduleName,
@@ -400,8 +400,9 @@ test.describe("definy UI E2E", () => {
     await page.addInitScript((account) => {
       localStorage.setItem("definy.account.v1", JSON.stringify(account));
     }, alice);
-    await page.goto(`/module/${moduleName}`);
-    const branchSelect = page.locator("#module-branch-select");
+    // プロジェクト名は省くとモジュール名と同じ (src/test_commit.ts)
+    await page.goto(`/project/${moduleName}`);
+    const branchSelect = page.locator("#project-branch-select");
     await expect(branchSelect).toBeVisible({ timeout: 15000 });
     await branchSelect.selectOption("bob");
     await page.locator(".module-merge-button").click();
@@ -421,14 +422,17 @@ test.describe("definy UI E2E", () => {
       timeout: 15000,
     });
     // main は a を alice のまま, b と c を bob から取り込んだもの. 履歴に取り込みが出る
-    await page.goto(`/module/${moduleName}`);
+    await page.goto(`/project/${moduleName}`);
     await expect(branchSelect).toHaveValue("main", { timeout: 15000 });
-    await expect(page.locator(".part-grid .part-card")).toHaveCount(3);
     await expect(
       page
         .locator(".module-commit", { hasText: "Merge bob" })
         .locator(".badge"),
     ).toBeVisible();
+    await page.goto(`/module/${moduleName}`);
+    await expect(page.locator(".part-grid .part-card")).toHaveCount(3, {
+      timeout: 15000,
+    });
     await page.goto(`/part/${moduleName}.b`);
     await expect(
       page
@@ -1357,7 +1361,7 @@ test.describe("definy UI E2E", () => {
         },
       };
       localStorage.setItem(
-        "definy.working_changes.v4",
+        "definy.working_changes.v5",
         JSON.stringify(changes),
       );
     });
@@ -1393,28 +1397,38 @@ test.describe("definy UI E2E", () => {
     ).toBeVisible();
 
     // コミットしたブランチを表示する. main に切り替えると e2e-part は無い
-    await page.goto("/module/sample");
-    const branchSelect = page.locator("#module-branch-select");
+    // ブランチはプロジェクトのページで切り替え, パーツはモジュールのページで見る
+    await page.goto("/project/sample");
+    const branchSelect = page.locator("#project-branch-select");
     await expect(branchSelect).toHaveValue(accountName, { timeout: 10000 });
-    const partGrid = page.locator(".part-grid");
-    await expect(
-      partGrid.locator(".part-card", { hasText: "e2e-part" }),
-    ).toBeVisible();
     await expect(
       page.locator(".module-commit-message", {
         hasText: "Add e2e-part via test",
       }),
     ).toBeVisible();
+    const partGrid = page.locator(".part-grid");
+    await page.goto("/module/sample");
+    await expect(
+      partGrid.locator(".part-card", { hasText: "e2e-part" }),
+    ).toBeVisible({ timeout: 10000 });
+    await page.goto("/project/sample");
+    await expect(branchSelect).toHaveValue(accountName, { timeout: 10000 });
     await branchSelect.selectOption("main");
+    await page.goto("/module/sample");
+    await expect(page.locator(".part-grid .part-card").first()).toBeVisible({
+      timeout: 10000,
+    });
     await expect(
       partGrid.locator(".part-card", { hasText: "e2e-part" }),
     ).toHaveCount(0);
+    await page.goto("/project/sample");
+    await expect(branchSelect).toHaveValue("main", { timeout: 10000 });
     await branchSelect.selectOption(accountName);
 
     // 自分のブランチを表示していれば, 次のコミットはそのブランチに
     await page.evaluate(() => {
       localStorage.setItem(
-        "definy.working_changes.v4",
+        "definy.working_changes.v5",
         JSON.stringify({
           parts: {
             "sample.e2e-part": {

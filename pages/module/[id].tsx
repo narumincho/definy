@@ -1,69 +1,19 @@
-import { useEffect, useState, type JSX } from "react";
+import type { JSX } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
-import {
-  AccountLink,
-  dateLocale,
-} from "../../src/components/EventTimeline.tsx";
 import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
 import { MAIN_BRANCH } from "../../src/event_content.ts";
-import {
-  MergeBranchPanel,
-  MergeStartedNotice,
-} from "../../src/components/MergeBranchPanel.tsx";
-import type { DecodedCommitEvent } from "../../src/state/useEvents.ts";
-
-/** コミット履歴に出す最大の数 (古いコミットは 1 件ずつ読むので上限を置く) */
-const HISTORY_LIMIT = 50;
-
-/**
- * `latest` から `parentCommitHash` をたどったコミット (新しい順) と, まだ読んでいない次のコミット.
- * 全イベントは読まないので, 足りないコミットは `loadEvent` で読む
- */
-function branchHistory(
-  commits: ReadonlyArray<DecodedCommitEvent>,
-  latest: string | null,
-): {
-  readonly history: ReadonlyArray<DecodedCommitEvent>;
-  readonly missing: string | null;
-} {
-  const byHash = new Map(commits.map((c) => [c.event.eventHash, c]));
-  const history: DecodedCommitEvent[] = [];
-  const visited = new Set<string>();
-  let hash = latest;
-  while (
-    hash !== null &&
-    !visited.has(hash) &&
-    history.length < HISTORY_LIMIT
-  ) {
-    visited.add(hash);
-    const commit = byHash.get(hash);
-    if (commit === undefined) {
-      return { history, missing: hash };
-    }
-    history.push(commit);
-    hash = commit.commit.parentCommitHash;
-  }
-  return { history, missing: null };
-}
 
 export default function ModuleDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const {
-    language,
-    modules,
-    parts,
-    decodedCommits,
-    accountNames,
-    selectBranch,
-    loadEvent,
-  } = useDefiny();
+  const { language, modules, parts, projectOfModule } = useDefiny();
 
   const mod = modules.find((m) => m.moduleId === id) ?? {
     moduleId: id ?? "unknown",
     name: id ?? "unknown",
+    projectName: projectOfModule(id ?? "") ?? "",
     branch: MAIN_BRANCH,
     branches: [],
     description: [],
@@ -75,32 +25,8 @@ export default function ModuleDetailPage(): JSX.Element {
   };
 
   usePageTitle(mod.name);
-  const [mergeConflicts, setMergeConflicts] = useState<ReadonlyArray<string>>(
-    [],
-  );
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
-  /** 表示しているブランチの最新のコミットから親をたどったコミット (新しい順). 分かれる前の main のコミットも入る */
-  const { history: moduleCommits, missing } = branchHistory(
-    decodedCommits.filter((c) => c.commit.moduleName === id),
-    mod.branches.find((b) => b.name === mod.branch)?.latestEventHash ?? null,
-  );
-  // 読んでいない古いコミットを 1 件ずつ読む. 見つからなければ (消えた・不正) そこで止める
-  const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
-  useEffect(() => {
-    if (missing === null || unavailable.has(missing)) return;
-    let cancelled = false;
-    void loadEvent(missing).then((found) => {
-      if (!found && !cancelled) {
-        setUnavailable((prev) => new Set(prev).add(missing));
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [missing, unavailable, loadEvent]);
 
   return (
     <div className="module-detail-view">
@@ -118,90 +44,30 @@ export default function ModuleDetailPage(): JSX.Element {
             {localizedText(mod.description, language)}
           </p>
         )}
-        {mod.branches.length > 0 && (
-          <div className="module-branch">
-            <label htmlFor="module-branch-select">
-              {label(language, "Branch", "ブランチ", "Branĉo")}
-            </label>
-            <select
-              id="module-branch-select"
-              value={mod.branch}
-              onChange={(e) => {
-                selectBranch(mod.name, e.target.value);
-              }}
-            >
-              {mod.branches.map((branch) => (
-                <option key={branch.name} value={branch.name}>
-                  {branch.name} (
-                  {accountNames.get(branch.creatorAccountId) ??
-                    branch.creatorAccountId.slice(0, 8)}
-                  )
-                </option>
-              ))}
-            </select>
-            <span className="text-muted">
-              {label(
-                language,
-                "Only the creator of a branch can commit to it. Committing from another account's branch creates a new branch.",
-                "ブランチにはそのブランチを作ったアカウントだけがコミットできます。他のアカウントのブランチからコミットすると新しいブランチを作ります。",
-                "Nur la kreinto de branĉo povas enmeti al ĝi. Enmeto de alies branĉo kreas novan branĉon.",
-              )}
+        {mod.projectName !== "" && (
+          <div className="module-branch module-project">
+            <span>
+              {label(language, "Project", "プロジェクト", "Projekto")}
             </span>
+            <Link
+              href={`/project/${encodeURIComponent(mod.projectName)}`}
+              className="meta-link"
+            >
+              {mod.projectName}
+            </Link>
+            {mod.branches.length > 0 && (
+              <span className="text-muted">
+                {label(
+                  language,
+                  `Branch: ${mod.branch} (change it on the project page)`,
+                  `ブランチ: ${mod.branch} (プロジェクトのページで切り替えます)`,
+                  `Branĉo: ${mod.branch}`,
+                )}
+              </span>
+            )}
           </div>
         )}
-        <MergeBranchPanel module={mod} onStarted={setMergeConflicts} />
       </div>
-
-      <MergeStartedNotice moduleName={mod.name} conflicts={mergeConflicts} />
-
-      {moduleCommits.length > 0 && (
-        <div className="module-parts-section">
-          <h3>{label(language, "Commits", "コミット履歴", "Enmetoj")}</h3>
-          <ol className="module-commit-list">
-            {moduleCommits.map(({ event, commit }) => (
-              <li key={event.eventHash} className="module-commit">
-                <Link
-                  href={`/event/${event.eventHash}`}
-                  className="module-commit-message"
-                >
-                  {commit.message.length > 0
-                    ? commit.message
-                    : label(
-                        language,
-                        "(no message)",
-                        "(メッセージなし)",
-                        "(sen mesaĝo)",
-                      )}
-                </Link>
-                <span className="module-commit-meta">
-                  {commit.mergedCommitHash !== null && (
-                    <Link
-                      href={`/event/${commit.mergedCommitHash}`}
-                      className="badge badge-success"
-                    >
-                      {label(language, "Merge", "取り込み", "Kunfando")}{" "}
-                      {commit.mergedCommitHash.slice(0, 8)}
-                    </Link>
-                  )}
-                  <AccountLink accountId={event.accountId} />
-                  <time dateTime={event.createdAtRfc3339}>
-                    {new Date(event.timeMs).toLocaleString(
-                      dateLocale(language),
-                      { dateStyle: "medium", timeStyle: "short" },
-                    )}
-                  </time>
-                  <Link
-                    href={`/event/${event.eventHash}`}
-                    className="event-hash"
-                  >
-                    {event.eventHash.slice(0, 8)}
-                  </Link>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
 
       <div className="module-parts-section">
         <div className="module-parts-heading">

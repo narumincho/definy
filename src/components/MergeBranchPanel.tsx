@@ -10,15 +10,21 @@ import {
   mergeToWorkingChanges,
   type MergeCommit,
 } from "../merge.ts";
-import type { ModuleSnapshot } from "../types.ts";
+import type { ProjectSnapshot } from "../types.ts";
 import type { DecodedCommitEvent } from "../state/useEvents.ts";
 
+/** 取り込みに使うコミット. パーツはプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べる */
 function toMergeCommit({ event, commit }: DecodedCommitEvent): MergeCommit {
   return {
     eventHash: event.eventHash,
     parentCommitHash: commit.parentCommitHash,
     mergedCommitHash: commit.mergedCommitHash,
-    parts: commit.parts,
+    parts: commit.modules.flatMap((module) =>
+      module.parts.map((part) => ({
+        ...part,
+        name: `${module.name}.${part.name}`,
+      })),
+    ),
   };
 }
 
@@ -34,10 +40,10 @@ type MergeState =
  * main を作ったアカウントにだけ出す. 取り込んだ後のパーツへの変更を作業中の変更にし, 変更のページでコミットする
  */
 export function MergeBranchPanel({
-  module,
+  project,
   onStarted,
 }: {
-  readonly module: ModuleSnapshot;
+  readonly project: ProjectSnapshot;
   /** 取り込みを始めた. `conflicts` は両方のブランチで違うように変えたパーツ (取り込む側を使った) */
   readonly onStarted: (conflicts: ReadonlyArray<string>) => void;
 }): JSX.Element | null {
@@ -51,8 +57,8 @@ export function MergeBranchPanel({
   } = useDefiny();
   const [state, setState] = useState<MergeState>({ status: "idle" });
 
-  const main = module.branches.find((b) => b.name === MAIN_BRANCH);
-  const theirs = module.branches.find((b) => b.name === module.branch);
+  const main = project.branches.find((b) => b.name === MAIN_BRANCH);
+  const theirs = project.branches.find((b) => b.name === project.branch);
   if (
     currentAccount === null ||
     main === undefined ||
@@ -64,7 +70,9 @@ export function MergeBranchPanel({
   }
 
   const handleMerge = async (): Promise<void> => {
-    if (hasWorkingChangesIn(module.name, workingChanges)) {
+    if (
+      hasWorkingChangesIn(project.name, project.moduleNames, workingChanges)
+    ) {
       setState({ status: "blocked" });
       return;
     }
@@ -83,18 +91,14 @@ export function MergeBranchPanel({
         throw new Error("could not read the latest commits");
       }
       const result = mergeParts(base?.parts ?? [], ours.parts, their.parts);
-      const changes = mergeToWorkingChanges(
-        module.name,
-        ours.parts,
-        result.parts,
-      );
+      const changes = mergeToWorkingChanges(ours.parts, result.parts);
       if (changes.size === 0) {
         setState({ status: "nothing" });
         return;
       }
-      startMerge(module.name, their.eventHash, changes);
+      startMerge(project.name, their.eventHash, changes);
       // 取り込んだ変更は main に重ねてコミットする
-      selectBranch(module.name, MAIN_BRANCH);
+      selectBranch(project.name, MAIN_BRANCH);
       setState({ status: "idle" });
       onStarted(result.conflicts);
     } catch (e) {
@@ -126,9 +130,9 @@ export function MergeBranchPanel({
         <p className="text-muted">
           {label(
             language,
-            "This module has uncommitted changes. Commit or discard them first.",
-            "このモジュールには作業中の変更があります。先にコミットするか破棄してください。",
-            "Ĉi tiu modulo havas neenmetitajn ŝanĝojn.",
+            "This project has uncommitted changes. Commit or discard them first.",
+            "このプロジェクトには作業中の変更があります。先にコミットするか破棄してください。",
+            "Ĉi tiu projekto havas neenmetitajn ŝanĝojn.",
           )}
         </p>
       )}
@@ -149,16 +153,16 @@ export function MergeBranchPanel({
   );
 }
 
-/** 取り込みを始めた後の知らせ (main に切り替わった後も出すので, モジュールのページが持つ) */
+/** 取り込みを始めた後の知らせ (main に切り替わった後も出すので, プロジェクトのページが持つ) */
 export function MergeStartedNotice({
-  moduleName,
+  projectName,
   conflicts,
 }: {
-  readonly moduleName: string;
+  readonly projectName: string;
   readonly conflicts: ReadonlyArray<string>;
 }): JSX.Element | null {
   const { language, workingChanges, cancelMerge } = useDefiny();
-  const merged = workingChanges.merges?.get(moduleName);
+  const merged = workingChanges.merges?.get(projectName);
   if (merged === undefined) return null;
   return (
     <div className="alert alert-success module-merge-notice" role="status">
@@ -185,7 +189,7 @@ export function MergeStartedNotice({
         type="button"
         className="btn btn-secondary btn-xs"
         onClick={() => {
-          cancelMerge(moduleName);
+          cancelMerge(projectName);
         }}
       >
         {label(language, "Cancel merge", "取り込みをやめる", "Nuligi")}

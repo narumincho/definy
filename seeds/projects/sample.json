@@ -1,0 +1,17 @@
+{
+  "project_name": "sample",
+  "project_description": [
+    {
+      "language": "en",
+      "text": "Sample programs showcasing definy expressions and computations"
+    },
+    {
+      "language": "ja",
+      "text": "definy の計算式や機能を体験できるサンプルプログラム集"
+    }
+  ],
+  "message": "モジュールをプロジェクトにまとめ, コミットをプロジェクト単位にする (#624)",
+  "modules": [
+    "sample"
+  ]
+}

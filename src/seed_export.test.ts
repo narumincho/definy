@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   generateAccountCredentials,
   importAccountCredentials,
 } from "./auth.ts";
@@ -25,6 +24,7 @@ import { createSqliteD1Database } from "../worker/test_helpers.ts";
 import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 import { latestCommitHashOf } from "../worker/type_check.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
+import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 
 async function createTestServer(bundle: SeedBundle): Promise<{
   readonly store: WorkerStore;
@@ -65,7 +65,7 @@ async function createTestServer(bundle: SeedBundle): Promise<{
 }
 
 describe("exportSeeds", () => {
-  it("往復テスト: seed バンドルで初期化したサーバーから書き出した結果が seeds/*.json とバイト単位で完全一致する", async () => {
+  it("往復テスト: seed バンドルで初期化したサーバーから書き出した結果が seeds/*.json, seeds/projects/*.json とバイト単位で完全一致する", async () => {
     const seedBundle = await loadTestSeedBundle();
     const { mockFetch } = await createTestServer(seedBundle);
     const tempDir = await mkdtemp(
@@ -91,6 +91,11 @@ describe("exportSeeds", () => {
         const originalContent = await readFile(`seeds/${name}.json`, "utf-8");
 
         expect(exportedContent).toBe(originalContent);
+      }
+      for (const name of ["definy", "sample"]) {
+        expect(
+          await readFile(join(tempDir, "projects", `${name}.json`), "utf-8"),
+        ).toBe(await readFile(`seeds/projects/${name}.json`, "utf-8"));
       }
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -124,13 +129,9 @@ describe("exportSeeds", () => {
         store,
       );
       expect(attackerAccountRes.status).toBe(200);
-      const sampleHead = await latestCommitHashOf(
-        await deriveModuleIdBytes("sample"),
-        store,
-        env,
-      );
+      const sampleHead = await latestCommitHashOf("sample", store, env);
       const submitAttackerCommit = async (branch: string): Promise<number> => {
-        const attackerCommit = await createSignedModuleCommitEvent({
+        const attackerCommit = await createSignedSingleModuleCommitEvent({
           credentials: attackerCreds,
           moduleName: "sample",
           branch,
@@ -239,17 +240,13 @@ describe("exportSeeds", () => {
       };
 
       // システムアカウントの新規コミットを作成して投稿
-      const systemCommit = await createSignedModuleCommitEvent({
+      const systemCommit = await createSignedSingleModuleCommitEvent({
         credentials: sysCreds,
         moduleName: "sample",
         moduleDescription: currentSampleSeed.module_description,
         message: "Add test-new-sample-part referencing core.eval-ast",
         // 親はシステムアカウントの sample の最新のコミット (seed のコミット)
-        parentCommitHash: await latestCommitHashOf(
-          await deriveModuleIdBytes("sample"),
-          store,
-          env,
-        ),
+        parentCommitHash: await latestCommitHashOf("sample", store, env),
         parts: [...resolvedExistingParts, newPart],
       });
 
@@ -282,7 +279,6 @@ describe("exportSeeds", () => {
         "utf-8",
       );
       const parsedSample = JSON.parse(exportedSampleJson) as {
-        readonly message: string;
         readonly parts: ReadonlyArray<{
           readonly name: string;
           readonly expression?: {
@@ -302,10 +298,17 @@ describe("exportSeeds", () => {
         false,
       );
 
-      // 2. システムアカウントの新規コミットのメッセージが反映されている
-      expect(parsedSample.message).toBe(
+      // 2. システムアカウントの新規コミットのメッセージがプロジェクトの seed に反映されている
+      const parsedProject = JSON.parse(
+        await readFile(join(tempDir, "projects", "sample.json"), "utf-8"),
+      ) as {
+        readonly message: string;
+        readonly modules: ReadonlyArray<string>;
+      };
+      expect(parsedProject.message).toBe(
         "Add test-new-sample-part referencing core.eval-ast",
       );
+      expect(parsedProject.modules).toEqual(["sample"]);
 
       // 3. 新規パーツが存在する
       const foundNewPart = parsedSample.parts.find(
@@ -362,18 +365,14 @@ describe("exportSeeds", () => {
       expect(uploadRes.status).toBe(200);
 
       // expression を持たず content_hash だけを持つコミットを作成
-      const systemCommit = await createSignedModuleCommitEvent({
+      const systemCommit = await createSignedSingleModuleCommitEvent({
         credentials: sysCreds,
         moduleName: "sample",
         moduleDescription: [
           { language: "en", text: "Sample with CAS content" },
         ],
         message: "Commit with CAS hydrated expression",
-        parentCommitHash: await latestCommitHashOf(
-          await deriveModuleIdBytes("sample"),
-          store,
-          env,
-        ),
+        parentCommitHash: await latestCommitHashOf("sample", store, env),
         parts: [
           {
             name: "cas-part",

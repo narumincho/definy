@@ -3,9 +3,11 @@ import { Link } from "../src/components/Link.tsx";
 import { ModuleIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
+import { MAIN_BRANCH } from "../src/event_content.ts";
 
+/** モジュールの一覧. プロジェクトごとにまとめる (docs/project.md) */
 export default function ModulesPage(): JSX.Element {
-  const { language, modules } = useDefiny();
+  const { language, projects, modules } = useDefiny();
 
   return (
     <div className="module-list-view">
@@ -15,41 +17,63 @@ export default function ModulesPage(): JSX.Element {
         </h2>
       </div>
 
-      <div className="module-grid">
-        {modules.length === 0 ? (
-          <div className="empty-state">
-            <p>
-              {label(
-                language,
-                "No modules found",
-                "モジュールがありません",
-                "Neniuj moduloj trovitaj",
+      {modules.length === 0 ? (
+        <div className="empty-state">
+          <p>
+            {label(
+              language,
+              "No modules found",
+              "モジュールがありません",
+              "Neniuj moduloj trovitaj",
+            )}
+          </p>
+        </div>
+      ) : (
+        projects.map((project) => (
+          <section key={project.name} className="project-section">
+            <h3 className="project-section-title">
+              <Link
+                href={`/project/${encodeURIComponent(project.name)}`}
+                className="project-section-link"
+              >
+                {project.name}
+              </Link>
+              {project.branch !== MAIN_BRANCH && (
+                <span className="badge badge-neutral">{project.branch}</span>
               )}
-            </p>
-          </div>
-        ) : (
-          modules.map((mod) => (
-            <Link
-              key={mod.moduleId}
-              href={`/module/${mod.moduleId}`}
-              className="card module-card"
-            >
-              <div className="module-card-header">
-                <ModuleIcon size={18} className="module-card-icon" />
-                <h3 className="module-card-title">{mod.name}</h3>
-                <span className="badge badge-neutral">
-                  {mod.parts.length} parts
-                </span>
-              </div>
-              {mod.description.length > 0 && (
-                <p className="module-card-desc">
-                  {localizedText(mod.description, language)}
-                </p>
-              )}
-            </Link>
-          ))
-        )}
-      </div>
+            </h3>
+            {project.description.length > 0 && (
+              <p className="text-muted project-section-desc">
+                {localizedText(project.description, language)}
+              </p>
+            )}
+            <div className="module-grid">
+              {modules
+                .filter((mod) => mod.projectName === project.name)
+                .map((mod) => (
+                  <Link
+                    key={mod.moduleId}
+                    href={`/module/${mod.moduleId}`}
+                    className="card module-card"
+                  >
+                    <div className="module-card-header">
+                      <ModuleIcon size={18} className="module-card-icon" />
+                      <h3 className="module-card-title">{mod.name}</h3>
+                      <span className="badge badge-neutral">
+                        {mod.parts.length} parts
+                      </span>
+                    </div>
+                    {mod.description.length > 0 && (
+                      <p className="module-card-desc">
+                        {localizedText(mod.description, language)}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+            </div>
+          </section>
+        ))
+      )}
     </div>
   );
 }

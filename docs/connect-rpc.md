@@ -37,7 +37,7 @@ package definy.v1;
 service EventService {
   rpc GetEvents (GetEventsRequest) returns (GetEventsResponse);
   // 各モジュールの各ブランチの作成者・コミット数・最新のコミットのイベント (docs/branch.md)
-  rpc GetModuleBranches (GetModuleBranchesRequest) returns (GetModuleBranchesResponse);
+  rpc GetProjectBranches (GetProjectBranchesRequest) returns (GetProjectBranchesResponse);
   rpc GetEvent (GetEventRequest) returns (GetEventResponse);
   rpc SubmitEvent (SubmitEventRequest) returns (SubmitEventResponse);
 
@@ -117,7 +117,7 @@ message GetContentResponse {
 
 - **サーバー側 (`worker/index.ts`)**:
   - `POST /definy.v1.EventService/GetEvents`
-  - `POST /definy.v1.EventService/GetModuleBranches`
+  - `POST /definy.v1.EventService/GetProjectBranches`
   - `POST /definy.v1.EventService/GetEvent`
   - `POST /definy.v1.EventService/SubmitEvent`
   - `POST /definy.v1.EventService/CheckMissingHashes` (差分ハッシュ照会)
@@ -133,9 +133,9 @@ message GetContentResponse {
     `status: "missing_content"`
     とともに不足ハッシュ一覧（`missing_content_hashes`）を返却。
 
-- **クライアント側 (`src/auth.ts` の `submitModuleCommitEvent`, `src/content_store.ts`, `src/state/useEvents.ts`)**:
+- **クライアント側 (`src/auth.ts` の `submitProjectCommitEvent`, `src/content_store.ts`, `src/state/useEvents.ts`)**:
   - ブラウザから `fetch` で Connect-RPC エンドポイントを呼び出す。
-  - モジュールコミットには式の `content_hash` だけを入れ, 下の差分ハッシュ・ネゴシエーションで足りない式だけを送る (#763)。
+  - プロジェクトのコミットには式の `content_hash` だけを入れ, 下の差分ハッシュ・ネゴシエーションで足りない式だけを送る (#763)。
   - コミットを読むときは `GetContent` (`contentHashes` でまとめて) で式を読み, SHA-256 が content hash と合うものだけを使う。
 
 ## 4. 差分ハッシュ・ネゴシエーション方式（Git Tree/Blob モデル）
@@ -149,7 +149,7 @@ DB を圧迫します。 そこで Git の **Tree（メタデータ・参照）*
 ```
 Client (React 19 UI)                             Server (Cloudflare Worker)
        |                                                    |
-       |  1. SubmitEvent (Tree: ModuleCommitEvent)           |
+       |  1. SubmitEvent (Tree: project_commit)           |
        |--------------------------------------------------->|
        |                                                    | (CAS 照会)
        |  2. SubmitEventResponse ("missing_content", hashes) |

@@ -8,6 +8,7 @@ import {
 import { Link } from "../src/components/Link.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny, type CommitTypeError } from "../src/state.tsx";
+import { moduleOfPartId } from "../src/new_part.ts";
 
 export default function ChangesPage(): JSX.Element {
   const {
@@ -20,6 +21,7 @@ export default function ChangesPage(): JSX.Element {
     commitWorkingChanges,
     commitTargetFor,
     checkCommitTypes,
+    projectOfModule,
     parts,
     connectionStatus,
   } = useDefiny();
@@ -31,22 +33,27 @@ export default function ChangesPage(): JSX.Element {
 
   const changeEntries = Array.from(workingChanges.parts.entries());
 
-  // Determine affected modules from part IDs
-  const affectedModules: ReadonlyArray<string> = Array.from(
+  // 変更のあるモジュールの入っているプロジェクト (コミットはプロジェクト単位. docs/project.md).
+  // 入れるプロジェクトの分からない新しいモジュールは, モジュール名と同じ名前のプロジェクトに入れる
+  const affectedProjects: ReadonlyArray<string> = Array.from(
     new Set(
-      changeEntries.map(([partId]) =>
-        partId.includes(".") ? partId.slice(0, partId.indexOf(".")) : "core",
-      ),
+      changeEntries.map(([partId]) => {
+        const moduleName = moduleOfPartId(partId);
+        return projectOfModule(moduleName) ?? moduleName;
+      }),
     ),
   );
 
-  // 作業中の変更は localStorage からマウント後に読むので, 初期値を useState で決めると変更の無い状態 ("core") になる.
-  // 選んでいなければ, 変更のあるモジュールの先頭を使う
-  const [chosenModule, setSelectedModule] = useState<string | null>(null);
-  const selectedModule = chosenModule ?? affectedModules[0] ?? "core";
+  // 作業中の変更は localStorage からマウント後に読むので, 初期値を useState で決めると変更の無い状態になる.
+  // 選んでいなければ, 変更のあるプロジェクトの先頭を使う
+  const [chosenProject, setSelectedProject] = useState<string | null>(null);
+  const selectedProject =
+    chosenProject !== null && affectedProjects.includes(chosenProject)
+      ? chosenProject
+      : (affectedProjects[0] ?? "");
 
   // コミット先のブランチ (docs/branch.md). 他のアカウントのブランチからは新しいブランチを作るので名前を決める
-  const target = commitTargetFor(selectedModule);
+  const target = commitTargetFor(selectedProject);
   const [newBranchName, setNewBranchName] = useState<string | null>(null);
   const branchName =
     target?.kind === "new_branch"
@@ -71,7 +78,7 @@ export default function ChangesPage(): JSX.Element {
     let cancelled = false;
     setTypeCheck({ status: "checking" });
     const timer = setTimeout(() => {
-      checkCommitTypes(selectedModule).then(
+      checkCommitTypes(selectedProject).then(
         (errors) => {
           if (!cancelled) setTypeCheck({ status: "done", errors });
         },
@@ -89,7 +96,7 @@ export default function ChangesPage(): JSX.Element {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [checkCommitTypes, selectedModule, currentAccount, workingChanges]);
+  }, [checkCommitTypes, selectedProject, currentAccount, workingChanges]);
   const hasTypeErrors =
     typeCheck.status === "done" && typeCheck.errors.length > 0;
 
@@ -104,7 +111,7 @@ export default function ChangesPage(): JSX.Element {
 
       try {
         const hash = await commitWorkingChanges({
-          moduleName: selectedModule || "core",
+          projectName: selectedProject,
           message: commitMessage.trim(),
           ...(branchName === null ? {} : { newBranchName: branchName }),
         });
@@ -117,7 +124,7 @@ export default function ChangesPage(): JSX.Element {
         setCommitting(false);
       }
     },
-    [commitMessage, selectedModule, branchName, commitWorkingChanges],
+    [commitMessage, selectedProject, branchName, commitWorkingChanges],
   );
 
   return (
@@ -312,42 +319,42 @@ export default function ChangesPage(): JSX.Element {
             ) : (
               <form onSubmit={handleCommit}>
                 <div className="form-group">
-                  <label htmlFor="commit-module-select">
+                  <label htmlFor="commit-project-select">
                     {label(
                       language,
-                      "Target Module",
-                      "対象モジュール",
-                      "Cela modulo",
+                      "Target Project",
+                      "対象プロジェクト",
+                      "Cela projekto",
                     )}
                   </label>
-                  {affectedModules.length > 1 ? (
+                  {affectedProjects.length > 1 ? (
                     <select
-                      id="commit-module-select"
-                      value={selectedModule}
+                      id="commit-project-select"
+                      value={selectedProject}
                       onChange={(e) => {
-                        setSelectedModule(e.target.value);
+                        setSelectedProject(e.target.value);
                       }}
                       disabled={committing}
                     >
-                      {affectedModules.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
+                      {affectedProjects.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
                         </option>
                       ))}
                     </select>
                   ) : (
-                    <input
-                      id="commit-module-select"
-                      type="text"
-                      value={selectedModule}
-                      onChange={(e) => {
-                        setSelectedModule(e.target.value);
-                      }}
-                      placeholder="e.g. core, sample, my_module"
-                      disabled={committing}
-                      required
-                    />
+                    <p id="commit-project-select" className="commit-project">
+                      {selectedProject}
+                    </p>
                   )}
+                  <p className="text-muted">
+                    {label(
+                      language,
+                      "A commit contains every module of the project. Changes in other projects are committed separately.",
+                      "コミットにはプロジェクトの全モジュールが入ります。他のプロジェクトの変更は別にコミットします。",
+                      "Enmeto enhavas ĉiujn modulojn de la projekto.",
+                    )}
+                  </p>
                 </div>
 
                 <div className="form-group commit-branch">
@@ -386,21 +393,21 @@ export default function ChangesPage(): JSX.Element {
                           )
                         : label(
                             language,
-                            "Create the module with the branch 'main'",
-                            "モジュールを作り, ブランチ「main」にコミットします",
-                            "Krei la modulon kun la branĉo 'main'",
+                            "Create the project with the branch 'main'",
+                            "プロジェクトを作り, ブランチ「main」にコミットします",
+                            "Krei la projekton kun la branĉo 'main'",
                           )}
                     </p>
                   )}
                 </div>
 
-                {workingChanges.merges?.get(selectedModule) !== undefined && (
+                {workingChanges.merges?.get(selectedProject) !== undefined && (
                   <p className="text-muted commit-merge-info">
                     {label(
                       language,
-                      `This commit merges ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""} (docs/branch.md).`,
-                      `このコミットは ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""} を取り込みます。`,
-                      `Ĉi tiu enmeto kunfandas ${workingChanges.merges.get(selectedModule)?.slice(0, 8) ?? ""}.`,
+                      `This commit merges ${workingChanges.merges.get(selectedProject)?.slice(0, 8) ?? ""} (docs/branch.md).`,
+                      `このコミットは ${workingChanges.merges.get(selectedProject)?.slice(0, 8) ?? ""} を取り込みます。`,
+                      `Ĉi tiu enmeto kunfandas ${workingChanges.merges.get(selectedProject)?.slice(0, 8) ?? ""}.`,
                     )}
                   </p>
                 )}

@@ -11,7 +11,6 @@
       "text": "WASI 0.3 能力インターフェース (時計・乱数・I/O) と能力注入基盤"
     }
   ],
-  "message": "式とパーツの型の保存形式を core.expression / core.type-ast の値 ({\"#tag\": payload}) にする",
   "parts": [
     {
       "name": "wasi.datetime",

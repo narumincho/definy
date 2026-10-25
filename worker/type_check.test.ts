@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   createSignedAccountEvent,
-  createSignedModuleCommitEvent,
   generateAccountCredentials,
   importAccountCredentials,
   type AccountCredentials,
@@ -16,6 +15,7 @@ import { createSqliteD1Database } from "./test_helpers.ts";
 import { latestCommitHashOf } from "./type_check.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
+import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 
 async function createSeededStore(): Promise<{
   readonly store: WorkerStore;
@@ -46,7 +46,8 @@ async function submitEvent(
 }
 
 /**
- * アカウントを作っていなければ作ってから, モジュールの最新のコミットを親にしてコミットする
+ * アカウントを作っていなければ作ってから, プロジェクト (省くとモジュール名と同じ) にモジュール 1 つだけを,
+ * プロジェクトの最新のコミットを親にしてコミットする
  * (イベントを受け付ける規則 core.check-event. docs/event.md)
  */
 async function submitCommit(
@@ -55,6 +56,7 @@ async function submitCommit(
   credentials: AccountCredentials,
   moduleName: string,
   parts: ReadonlyArray<DecodedPart>,
+  projectName: string = moduleName,
 ): Promise<{ readonly status: number; readonly message: string }> {
   const accounts = await store.getEvents(
     { eventType: "create_account", limit: 500 },
@@ -69,16 +71,13 @@ async function submitCommit(
       ),
     ).toEqual({ status: 200, message: "" });
   }
-  const commit = await createSignedModuleCommitEvent({
+  const commit = await createSignedSingleModuleCommitEvent({
     credentials,
+    projectName,
     moduleName,
     moduleDescription: [],
     message: "test",
-    parentCommitHash: await latestCommitHashOf(
-      await deriveModuleIdBytes(moduleName),
-      store,
-      env,
-    ),
+    parentCommitHash: await latestCommitHashOf(projectName, store, env),
     parts,
   });
   return submitEvent(store, env, commit.signedEventBytes);
@@ -150,8 +149,10 @@ describe("SubmitEvent の型検査", () => {
       part("bad", { "#number": null }, { "#string": "not a number" }),
     ]);
     expect(result.status).toBe(400);
-    expect(result.message).toContain("part 'bad': type error: type_mismatch");
-    expect(result.message).not.toContain("part 'ok'");
+    expect(result.message).toContain(
+      "part 'app.bad': type error: type_mismatch",
+    );
+    expect(result.message).not.toContain("part 'app.ok'");
   });
 
   it("型の無いパーツは一般のアカウントでは拒否する", async () => {
@@ -161,7 +162,7 @@ describe("SubmitEvent の型検査", () => {
       part("untyped", null, { "#number": 1 }),
     ]);
     expect(result.status).toBe(400);
-    expect(result.message).toContain("part 'untyped': not supported");
+    expect(result.message).toContain("part 'app.untyped': not supported");
   });
 
   it("パーツの型を変えると, それを参照する (式を変えていない) パーツも検査する", async () => {
@@ -196,7 +197,7 @@ describe("SubmitEvent の型検査", () => {
       double,
     ]);
     expect(result.status).toBe(400);
-    expect(result.message).toContain("part 'double': type error");
+    expect(result.message).toContain("part 'app.double': type error");
   });
 
   it("コンパイラ組み込みのパーツは名前を変えてもシステムアカウントなら受け付ける", async () => {
@@ -226,7 +227,10 @@ describe("SubmitEvent の型検査", () => {
     expect(parts.find((p) => p.name === "bitwise-and")?.expression).toEqual({
       "#builtin": "bit_and",
     });
-    expect(await submitCommit(store, env, system, "core", parts)).toEqual({
+    // core は seed の definy プロジェクトのモジュール
+    expect(
+      await submitCommit(store, env, system, "core", parts, "definy"),
+    ).toEqual({
       status: 200,
       message: "",
     });
@@ -237,6 +241,6 @@ describe("SubmitEvent の型検査", () => {
       part("string-concat", null, { "#builtin": "string_concat" }),
     ]);
     expect(result.status).toBe(400);
-    expect(result.message).toContain("part 'string-concat': not supported");
+    expect(result.message).toContain("part 'app.string-concat': not supported");
   }, 60_000);
 });
