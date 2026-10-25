@@ -1854,35 +1854,13 @@
                                                                   "body": {
                                                                     "#match": {
                                                                       "target": {
-                                                                        "#call": {
-                                                                          "function": {
-                                                                            "#part_reference": {
-                                                                              "part_definition_event_hash": {
-                                                                                "$part": "core.equal"
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          "arguments": [
-                                                                            {
-                                                                              "name": "left",
-                                                                              "value": {
-                                                                                "#variable": {
-                                                                                  "variable_id": 2
-                                                                                }
-                                                                              }
-                                                                            },
-                                                                            {
-                                                                              "name": "right",
-                                                                              "value": {
-                                                                                "#string": "/healthz"
-                                                                              }
-                                                                            }
-                                                                          ]
+                                                                        "#variable": {
+                                                                          "variable_id": 2
                                                                         }
                                                                       },
                                                                       "arms": [
                                                                         {
-                                                                          "tag": "true",
+                                                                          "tag": "/healthz",
                                                                           "variable_id": -1,
                                                                           "variable_name": "",
                                                                           "body": {
@@ -2050,104 +2028,82 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "false",
+                                                                          "tag": "/api/self-host",
                                                                           "variable_id": -1,
                                                                           "variable_name": "",
                                                                           "body": {
-                                                                            "#match": {
-                                                                              "target": {
-                                                                                "#call": {
-                                                                                  "function": {
-                                                                                    "#part_reference": {
-                                                                                      "part_definition_event_hash": {
-                                                                                        "$part": "core.equal"
-                                                                                      }
-                                                                                    }
-                                                                                  },
-                                                                                  "arguments": [
+                                                                            "#record": [
+                                                                              {
+                                                                                "key": "status",
+                                                                                "value": {
+                                                                                  "#number": 200
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "key": "headers",
+                                                                                "value": {
+                                                                                  "#list": [
                                                                                     {
-                                                                                      "name": "left",
-                                                                                      "value": {
-                                                                                        "#variable": {
-                                                                                          "variable_id": 2
+                                                                                      "#record": [
+                                                                                        {
+                                                                                          "key": "name",
+                                                                                          "value": {
+                                                                                            "#string": "content-type"
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "key": "value",
+                                                                                          "value": {
+                                                                                            "#string": "application/json; charset=utf-8"
+                                                                                          }
                                                                                         }
-                                                                                      }
+                                                                                      ]
                                                                                     },
                                                                                     {
-                                                                                      "name": "right",
-                                                                                      "value": {
-                                                                                        "#string": "/api/self-host"
-                                                                                      }
+                                                                                      "#record": [
+                                                                                        {
+                                                                                          "key": "name",
+                                                                                          "value": {
+                                                                                            "#string": "x-powered-by"
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "key": "value",
+                                                                                          "value": {
+                                                                                            "#string": "definy-self-hosted"
+                                                                                          }
+                                                                                        }
+                                                                                      ]
                                                                                     }
                                                                                   ]
                                                                                 }
                                                                               },
-                                                                              "arms": [
-                                                                                {
-                                                                                  "tag": "true",
-                                                                                  "variable_id": -1,
-                                                                                  "variable_name": "",
-                                                                                  "body": {
-                                                                                    "#record": [
-                                                                                      {
-                                                                                        "key": "status",
-                                                                                        "value": {
-                                                                                          "#number": 200
+                                                                              {
+                                                                                "key": "body",
+                                                                                "value": {
+                                                                                  "#call": {
+                                                                                    "function": {
+                                                                                      "#part_reference": {
+                                                                                        "part_definition_event_hash": {
+                                                                                          "$part": "std.string-to-utf8-stream"
                                                                                         }
-                                                                                      },
+                                                                                      }
+                                                                                    },
+                                                                                    "arguments": [
                                                                                       {
-                                                                                        "key": "headers",
-                                                                                        "value": {
-                                                                                          "#list": [
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "name",
-                                                                                                  "value": {
-                                                                                                    "#string": "content-type"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#string": "application/json; charset=utf-8"
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            },
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "name",
-                                                                                                  "value": {
-                                                                                                    "#string": "x-powered-by"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#string": "definy-self-hosted"
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          ]
-                                                                                        }
-                                                                                      },
-                                                                                      {
-                                                                                        "key": "body",
+                                                                                        "name": "text",
                                                                                         "value": {
                                                                                           "#call": {
                                                                                             "function": {
                                                                                               "#part_reference": {
                                                                                                 "part_definition_event_hash": {
-                                                                                                  "$part": "std.string-to-utf8-stream"
+                                                                                                  "$part": "core.string-concat"
                                                                                                 }
                                                                                               }
                                                                                             },
                                                                                             "arguments": [
                                                                                               {
-                                                                                                "name": "text",
+                                                                                                "name": "left",
                                                                                                 "value": {
                                                                                                   "#call": {
                                                                                                     "function": {
@@ -2305,37 +2261,15 @@
                                                                                                                                                                                                       {
                                                                                                                                                                                                         "name": "left",
                                                                                                                                                                                                         "value": {
-                                                                                                                                                                                                          "#call": {
-                                                                                                                                                                                                            "function": {
-                                                                                                                                                                                                              "#part_reference": {
-                                                                                                                                                                                                                "part_definition_event_hash": {
-                                                                                                                                                                                                                  "$part": "core.string-concat"
-                                                                                                                                                                                                                }
-                                                                                                                                                                                                              }
-                                                                                                                                                                                                            },
-                                                                                                                                                                                                            "arguments": [
-                                                                                                                                                                                                              {
-                                                                                                                                                                                                                "name": "left",
-                                                                                                                                                                                                                "value": {
-                                                                                                                                                                                                                  "#string": "{\"engine\":\"definy-self-hosted\",\"method\":\""
-                                                                                                                                                                                                                }
-                                                                                                                                                                                                              },
-                                                                                                                                                                                                              {
-                                                                                                                                                                                                                "name": "right",
-                                                                                                                                                                                                                "value": {
-                                                                                                                                                                                                                  "#variable": {
-                                                                                                                                                                                                                    "variable_id": 3
-                                                                                                                                                                                                                  }
-                                                                                                                                                                                                                }
-                                                                                                                                                                                                              }
-                                                                                                                                                                                                            ]
-                                                                                                                                                                                                          }
+                                                                                                                                                                                                          "#string": "{\"engine\":\"definy-self-hosted\",\"method\":\""
                                                                                                                                                                                                         }
                                                                                                                                                                                                       },
                                                                                                                                                                                                       {
                                                                                                                                                                                                         "name": "right",
                                                                                                                                                                                                         "value": {
-                                                                                                                                                                                                          "#string": "\",\"path\":\""
+                                                                                                                                                                                                          "#variable": {
+                                                                                                                                                                                                            "variable_id": 3
+                                                                                                                                                                                                          }
                                                                                                                                                                                                         }
                                                                                                                                                                                                       }
                                                                                                                                                                                                     ]
@@ -2345,9 +2279,7 @@
                                                                                                                                                                                               {
                                                                                                                                                                                                 "name": "right",
                                                                                                                                                                                                 "value": {
-                                                                                                                                                                                                  "#variable": {
-                                                                                                                                                                                                    "variable_id": 2
-                                                                                                                                                                                                  }
+                                                                                                                                                                                                  "#string": "\",\"path\":\""
                                                                                                                                                                                                 }
                                                                                                                                                                                               }
                                                                                                                                                                                             ]
@@ -2357,7 +2289,9 @@
                                                                                                                                                                                       {
                                                                                                                                                                                         "name": "right",
                                                                                                                                                                                         "value": {
-                                                                                                                                                                                          "#string": "\",\"query\":\""
+                                                                                                                                                                                          "#variable": {
+                                                                                                                                                                                            "variable_id": 2
+                                                                                                                                                                                          }
                                                                                                                                                                                         }
                                                                                                                                                                                       }
                                                                                                                                                                                     ]
@@ -2367,9 +2301,7 @@
                                                                                                                                                                               {
                                                                                                                                                                                 "name": "right",
                                                                                                                                                                                 "value": {
-                                                                                                                                                                                  "#variable": {
-                                                                                                                                                                                    "variable_id": 5
-                                                                                                                                                                                  }
+                                                                                                                                                                                  "#string": "\",\"query\":\""
                                                                                                                                                                                 }
                                                                                                                                                                               }
                                                                                                                                                                             ]
@@ -2379,7 +2311,9 @@
                                                                                                                                                                       {
                                                                                                                                                                         "name": "right",
                                                                                                                                                                         "value": {
-                                                                                                                                                                          "#string": "\",\"sourceBefore\":\""
+                                                                                                                                                                          "#variable": {
+                                                                                                                                                                            "variable_id": 5
+                                                                                                                                                                          }
                                                                                                                                                                         }
                                                                                                                                                                       }
                                                                                                                                                                     ]
@@ -2389,9 +2323,7 @@
                                                                                                                                                               {
                                                                                                                                                                 "name": "right",
                                                                                                                                                                 "value": {
-                                                                                                                                                                  "#variable": {
-                                                                                                                                                                    "variable_id": 11
-                                                                                                                                                                  }
+                                                                                                                                                                  "#string": "\",\"sourceBefore\":\""
                                                                                                                                                                 }
                                                                                                                                                               }
                                                                                                                                                             ]
@@ -2401,7 +2333,9 @@
                                                                                                                                                       {
                                                                                                                                                         "name": "right",
                                                                                                                                                         "value": {
-                                                                                                                                                          "#string": "\",\"sourceAfter\":\""
+                                                                                                                                                          "#variable": {
+                                                                                                                                                            "variable_id": 11
+                                                                                                                                                          }
                                                                                                                                                         }
                                                                                                                                                       }
                                                                                                                                                     ]
@@ -2411,9 +2345,7 @@
                                                                                                                                               {
                                                                                                                                                 "name": "right",
                                                                                                                                                 "value": {
-                                                                                                                                                  "#variable": {
-                                                                                                                                                    "variable_id": 13
-                                                                                                                                                  }
+                                                                                                                                                  "#string": "\",\"sourceAfter\":\""
                                                                                                                                                 }
                                                                                                                                               }
                                                                                                                                             ]
@@ -2423,7 +2355,9 @@
                                                                                                                                       {
                                                                                                                                         "name": "right",
                                                                                                                                         "value": {
-                                                                                                                                          "#string": "\",\"typeCheck\":\""
+                                                                                                                                          "#variable": {
+                                                                                                                                            "variable_id": 13
+                                                                                                                                          }
                                                                                                                                         }
                                                                                                                                       }
                                                                                                                                     ]
@@ -2433,9 +2367,7 @@
                                                                                                                               {
                                                                                                                                 "name": "right",
                                                                                                                                 "value": {
-                                                                                                                                  "#variable": {
-                                                                                                                                    "variable_id": 17
-                                                                                                                                  }
+                                                                                                                                  "#string": "\",\"typeCheck\":\""
                                                                                                                                 }
                                                                                                                               }
                                                                                                                             ]
@@ -2445,7 +2377,9 @@
                                                                                                                       {
                                                                                                                         "name": "right",
                                                                                                                         "value": {
-                                                                                                                          "#string": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
+                                                                                                                          "#variable": {
+                                                                                                                            "variable_id": 17
+                                                                                                                          }
                                                                                                                         }
                                                                                                                       }
                                                                                                                     ]
@@ -2455,9 +2389,7 @@
                                                                                                               {
                                                                                                                 "name": "right",
                                                                                                                 "value": {
-                                                                                                                  "#variable": {
-                                                                                                                    "variable_id": 19
-                                                                                                                  }
+                                                                                                                  "#string": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
                                                                                                                 }
                                                                                                               }
                                                                                                             ]
@@ -2467,150 +2399,19 @@
                                                                                                       {
                                                                                                         "name": "right",
                                                                                                         "value": {
-                                                                                                          "#string": "}"
+                                                                                                          "#variable": {
+                                                                                                            "variable_id": 19
+                                                                                                          }
                                                                                                         }
                                                                                                       }
                                                                                                     ]
                                                                                                   }
                                                                                                 }
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        }
-                                                                                      }
-                                                                                    ]
-                                                                                  }
-                                                                                },
-                                                                                {
-                                                                                  "tag": "false",
-                                                                                  "variable_id": -1,
-                                                                                  "variable_name": "",
-                                                                                  "body": {
-                                                                                    "#record": [
-                                                                                      {
-                                                                                        "key": "status",
-                                                                                        "value": {
-                                                                                          "#number": 200
-                                                                                        }
-                                                                                      },
-                                                                                      {
-                                                                                        "key": "headers",
-                                                                                        "value": {
-                                                                                          "#list": [
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "name",
-                                                                                                  "value": {
-                                                                                                    "#string": "content-type"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#string": "text/html; charset=utf-8"
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            },
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "name",
-                                                                                                  "value": {
-                                                                                                    "#string": "x-powered-by"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#string": "definy-self-hosted"
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          ]
-                                                                                        }
-                                                                                      },
-                                                                                      {
-                                                                                        "key": "body",
-                                                                                        "value": {
-                                                                                          "#call": {
-                                                                                            "function": {
-                                                                                              "#part_reference": {
-                                                                                                "part_definition_event_hash": {
-                                                                                                  "$part": "std.string-list-to-utf8-stream"
-                                                                                                }
-                                                                                              }
-                                                                                            },
-                                                                                            "arguments": [
+                                                                                              },
                                                                                               {
-                                                                                                "name": "chunks",
+                                                                                                "name": "right",
                                                                                                 "value": {
-                                                                                                  "#list": [
-                                                                                                    {
-                                                                                                      "#string": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<title>Self-Hosted definy Studio (definy in definy)</title>\n<style>\n:root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #38bdf8; --ok: #22c55e; --text: #f8fafc; --muted: #94a3b8; }\n* { box-sizing: border-box; }\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1.25rem; }\n.container { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }\n.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }\n.badge { display: inline-block; background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }\nh1 { margin: 0.5rem 0; font-size: 1.6rem; color: var(--accent); }\nh2 { margin: 0 0 1rem 0; font-size: 1.15rem; color: var(--text); }\np { margin: 0.35rem 0; color: var(--muted); line-height: 1.55; font-size: 0.92rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 0.85rem; margin-top: 1rem; }\n.metric { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }\n.label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }\ncode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; color: #e2e8f0; word-break: break-all; }\ncode.ok { color: var(--ok); font-weight: 700; }\ninput, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }\nbutton { background: #0284c7; color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }\nbutton:hover { background: #0369a1; }\n.app-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }\n.app-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 8px; flex-wrap: wrap; gap: 0.5rem; }\na { color: var(--accent); text-decoration: none; }\na:hover { text-decoration: underline; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"card\">\n<span class=\"badge\">🧬 Executed by Self-Hosted definy Part (sample.self-hosted-definy-server)</span>\n<h1>🚀 Self-Hosted definy Studio</h1>\n<p>このページ自体が definy の関数パーツ (<code>fn(req) =&gt; { status, contentType, body }</code>) として WebAssembly / AST 評価器上で動的に生成されています。</p>\n<div class=\"grid\">\n<div class=\"metric\"><span class=\"label\">0. Incoming HTTP Request</span><code>"
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 3
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": " "
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 2
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>"
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 11
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>"
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 13
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">"
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 17
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: "
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 19
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified ("
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#variable": {
-                                                                                                        "variable_id": 19
-                                                                                                      }
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": ")</code></div></div>"
-                                                                                                    },
-                                                                                                    {
-                                                                                                      "#string": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から Cloudflare Workers にデプロイする</h2>\n<p>この画面のハンドラは, definy のパーツ <code>sample.deploy-self-hosted-definy-server</code> を評価するとデプロイされます. <code>definy.deploy-to-cloudflare-workers</code> が quote したコードを definy 製のコンパイラ (<code>core.compile-to-wasm</code>) でコンパイルし, HTTP リクエスト (<code>wasi.io</code>) で Cloudflare の API を呼びます.</p>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n</div>\n</div>\n</div>\n</body>\n</html>"
-                                                                                                    }
-                                                                                                  ]
+                                                                                                  "#string": "}"
                                                                                                 }
                                                                                               }
                                                                                             ]
@@ -2620,8 +2421,147 @@
                                                                                     ]
                                                                                   }
                                                                                 }
-                                                                              ]
-                                                                            }
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "tag": "_",
+                                                                          "variable_id": -1,
+                                                                          "variable_name": "",
+                                                                          "body": {
+                                                                            "#record": [
+                                                                              {
+                                                                                "key": "status",
+                                                                                "value": {
+                                                                                  "#number": 200
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "key": "headers",
+                                                                                "value": {
+                                                                                  "#list": [
+                                                                                    {
+                                                                                      "#record": [
+                                                                                        {
+                                                                                          "key": "name",
+                                                                                          "value": {
+                                                                                            "#string": "content-type"
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "key": "value",
+                                                                                          "value": {
+                                                                                            "#string": "text/html; charset=utf-8"
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    },
+                                                                                    {
+                                                                                      "#record": [
+                                                                                        {
+                                                                                          "key": "name",
+                                                                                          "value": {
+                                                                                            "#string": "x-powered-by"
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "key": "value",
+                                                                                          "value": {
+                                                                                            "#string": "definy-self-hosted"
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "key": "body",
+                                                                                "value": {
+                                                                                  "#call": {
+                                                                                    "function": {
+                                                                                      "#part_reference": {
+                                                                                        "part_definition_event_hash": {
+                                                                                          "$part": "std.string-list-to-utf8-stream"
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    "arguments": [
+                                                                                      {
+                                                                                        "name": "chunks",
+                                                                                        "value": {
+                                                                                          "#list": [
+                                                                                            {
+                                                                                              "#string": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<title>Self-Hosted definy Studio (definy in definy)</title>\n<style>\n:root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #38bdf8; --ok: #22c55e; --text: #f8fafc; --muted: #94a3b8; }\n* { box-sizing: border-box; }\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1.25rem; }\n.container { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }\n.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }\n.badge { display: inline-block; background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }\nh1 { margin: 0.5rem 0; font-size: 1.6rem; color: var(--accent); }\nh2 { margin: 0 0 1rem 0; font-size: 1.15rem; color: var(--text); }\np { margin: 0.35rem 0; color: var(--muted); line-height: 1.55; font-size: 0.92rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 0.85rem; margin-top: 1rem; }\n.metric { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }\n.label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }\ncode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; color: #e2e8f0; word-break: break-all; }\ncode.ok { color: var(--ok); font-weight: 700; }\ninput, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }\nbutton { background: #0284c7; color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }\nbutton:hover { background: #0369a1; }\n.app-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }\n.app-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 8px; flex-wrap: wrap; gap: 0.5rem; }\na { color: var(--accent); text-decoration: none; }\na:hover { text-decoration: underline; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"card\">\n<span class=\"badge\">🧬 Executed by Self-Hosted definy Part (sample.self-hosted-definy-server)</span>\n<h1>🚀 Self-Hosted definy Studio</h1>\n<p>このページ自体が definy の関数パーツ (<code>fn(req) =&gt; { status, contentType, body }</code>) として WebAssembly / AST 評価器上で動的に生成されています。</p>\n<div class=\"grid\">\n<div class=\"metric\"><span class=\"label\">0. Incoming HTTP Request</span><code>"
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 3
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": " "
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 2
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>"
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 11
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>"
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 13
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">"
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 17
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: "
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 19
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified ("
+                                                                                            },
+                                                                                            {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 19
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": ")</code></div></div>"
+                                                                                            },
+                                                                                            {
+                                                                                              "#string": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から Cloudflare Workers にデプロイする</h2>\n<p>この画面のハンドラは, definy のパーツ <code>sample.deploy-self-hosted-definy-server</code> を評価するとデプロイされます. <code>definy.deploy-to-cloudflare-workers</code> が quote したコードを definy 製のコンパイラ (<code>core.compile-to-wasm</code>) でコンパイルし, HTTP リクエスト (<code>wasi.io</code>) で Cloudflare の API を呼びます.</p>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n</div>\n</div>\n</div>\n</body>\n</html>"
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            ]
                                                                           }
                                                                         }
                                                                       ]

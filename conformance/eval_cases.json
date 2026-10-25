@@ -1955,6 +1955,139 @@
         }
       },
       "expected": "でふぃにー"
+    },
+    {
+      "name": "string match picks the arm of the literal",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "minus"
+          },
+          "arms": [
+            {
+              "tag": "plus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "tag": "minus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "tag": "_",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "string match of a computed string",
+      "expression": {
+        "#match": {
+          "target": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.string-concat"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#string": "pl"
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#string": "us"
+                  }
+                }
+              ]
+            }
+          },
+          "arms": [
+            {
+              "tag": "plus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "tag": "minus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "tag": "_",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "string match falls back to _",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "times"
+          },
+          "arms": [
+            {
+              "tag": "plus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "tag": "minus",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "tag": "_",
+              "variable_id": -1,
+              "variable_name": "",
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
     }
   ]
 }

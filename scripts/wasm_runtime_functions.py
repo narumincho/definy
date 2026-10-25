@@ -185,9 +185,10 @@ a.get(2).i64(0).op(I64_LT_S).get(2).get(0).load(4).op(EXTEND_U).op(I64_GE_S).op(
 a.if_().op(UNREACHABLE).end()
 a.get(0).get(2).op(WRAP).i32(2).op(I32_SHL).op(I32_ADD).load(8)
 helper(3, [(1, I64)], a)
-# 13 match_tag(value) -> tag string ptr. Bool は "true" / "false"
+# 13 match_tag(value) -> tag string ptr. Bool は "true" / "false", 文字列はその文字列 (文字列リテラルの腕で分岐する)
 a = A().get(0).load8(0).i32(1).op(I32_EQ).if_(I32)
-a.i32(TRUE_STRING).i32(FALSE_STRING).get(0).load8(8).op(SELECT).else_().get(0).load(4).end()
+a.i32(TRUE_STRING).i32(FALSE_STRING).get(0).load8(8).op(SELECT).else_()
+a.get(0).load8(0).i32(2).op(I32_EQ).if_(I32).get(0).else_().get(0).load(4).end().end()
 helper(1, [], a)
 # 14 match_payload(value) -> payload ptr. Bool は 0
 a = A().get(0).load8(0).i32(1).op(I32_EQ).if_(I32).i32(0).else_().get(0).load(8).end()
@@ -208,6 +209,6 @@ if __name__ == "__main__":
     path = sys.argv[1]
     seed = json.load(open(path))
     part = next(p for p in seed["parts"] if p["name"] == "wasm-runtime-functions")
-    part["expression"] = {"ListLiteral": {"items": [{"Number": {"value": n}} for n in helper_bodies]}}
-    json.dump(seed, open(path, "w"), ensure_ascii=False, indent=2)
+    part["expression"] = {"#list": [{"#number": n} for n in helper_bodies]}
+    open(path, "w").write(json.dumps(seed, ensure_ascii=False, indent=2))
     print(f"{len(helpers)} functions, {len(helper_bodies)} bytes")

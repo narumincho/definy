@@ -329,6 +329,47 @@ describe("self-hosted type check (stage1)", () => {
     expect(outcomes[2]).toMatchObject({ tag: "function_not_called" });
   }, 600_000);
 
+  it("文字列の値の match は腕のタグを文字列リテラルとして選び, `_` の腕が要る", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const stringMatch = (
+      arms: ReadonlyArray<readonly [string, unknown]>,
+    ): PartToCheck => ({
+      partType: { "#number": null },
+      expression: {
+        "#match": {
+          target: { "#string": "plus" },
+          arms: arms.map(([tag, body]) => ({
+            tag,
+            variable_id: -1,
+            variable_name: "",
+            body,
+          })),
+        },
+      },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        stringMatch([
+          ["plus", { "#number": 1 }],
+          ["_", { "#number": 0 }],
+        ]),
+        stringMatch([["plus", { "#number": 1 }]]),
+        stringMatch([
+          ["plus", { "#number": 1 }],
+          ["_", { "#string": "zero" }],
+        ]),
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+    ]);
+    expect(outcomes[1]).toMatchObject({ tag: "non_exhaustive_match" });
+  }, 600_000);
+
   it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

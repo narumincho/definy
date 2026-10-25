@@ -6,7 +6,9 @@ import { findExpressionNode } from "./selection.ts";
 import {
   currentPatternOptionValue,
   isMatchPatternPath,
+  isStringPatternVariants,
   patternSelectorOptions,
+  stringPatternOption,
   type PatternVariant,
 } from "./match_pattern.ts";
 import {
@@ -225,15 +227,28 @@ export function useSelectorMenu({
     [currentNameAt, selectedPath],
   );
 
-  const filteredOptions = useMemo(
-    () =>
-      filterAndRankOptions(
-        selectorOptions,
-        queryEdited ? searchQuery : "",
-        expectedType,
-      ),
-    [expectedType, queryEdited, searchQuery, selectorOptions],
-  );
+  const filteredOptions = useMemo(() => {
+    const query = queryEdited ? searchQuery : "";
+    const filtered = filterAndRankOptions(selectorOptions, query, expectedType);
+    // 文字列の match のアームのタグは, 打った文字列そのもの (文字列リテラル) にできる
+    const literal =
+      selectedPath !== null &&
+      isMatchPatternPath(selectedPath) &&
+      isStringPatternVariants(patternVariants)
+        ? stringPatternOption(query)
+        : null;
+    return literal === null ||
+      filtered.some((option) => option.value === literal.value)
+      ? filtered
+      : [literal, ...filtered];
+  }, [
+    expectedType,
+    patternVariants,
+    queryEdited,
+    searchQuery,
+    selectedPath,
+    selectorOptions,
+  ]);
 
   const highlight = useMemo(
     () => resolveHighlight(chosenIndex, filteredOptions, currentOptionValue),

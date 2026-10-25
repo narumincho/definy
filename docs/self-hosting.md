@@ -735,6 +735,12 @@ compile-expr-instructions: expression -> list<number>
 式 AST を WebAssembly
 のバイトコード命令列（`list<number>`）へ再帰的に変換します。
 
+命令列のリテラルのオペコードは数字ではなく `core.wasm-call` (`0x10`) や `core.wasm-local-get` (`0x20`) のような
+名前のパーツ (型は `number`) で書きます (#762)。`[16, 1]` ではなく `[core.wasm-call, 1]` と読めます。
+数値のパーツの参照はコンパイル時にその数値に畳み込まれるので, 出力する Wasm は数字で書いたときとバイト単位で同じです。
+即値 (関数の番号・memarg・ブロック型) と, モジュールの組み立て (`core.compile-to-wasm`)・関数の本体の前置き
+(`core.compile-function-body`)・`core.wasm-runtime-functions` のバイト列は数字のままです。
+
 - `number`: `i64.const` (`0x42`) + LEB128 エンコードバイト列
 - 組み込みのパーツの呼び出し (`core.compile-builtin-call`):
   - `core.plus`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
