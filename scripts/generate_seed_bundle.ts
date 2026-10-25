@@ -14,7 +14,12 @@ import {
   sha256EventHashId,
   type LocalizedText,
 } from "../src/cbor.ts";
-import { encodeEventContent, MAIN_BRANCH } from "../src/event_content.ts";
+import {
+  DEFAULT_VISIBILITY,
+  encodeEventContent,
+  MAIN_BRANCH,
+  type Visibility,
+} from "../src/event_content.ts";
 import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
@@ -53,6 +58,7 @@ function toBufferSource(bytes: Uint8Array): BufferSource {
 type ModuleSeedData = {
   readonly module_name: string;
   readonly module_description: LocalizedText;
+  readonly module_visibility?: Visibility;
   readonly parts: ReadonlyArray<Record<string, unknown>>;
 };
 
@@ -136,6 +142,9 @@ async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
     loadedModulesMap.set(name, {
       module_name: parsed.module_name,
       module_description: parsed.module_description,
+      ...(parsed.module_visibility === "private"
+        ? { module_visibility: "private" as const }
+        : {}),
       parts: resolvedParts,
     });
   }
@@ -213,11 +222,16 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
       modules.push({
         name: mod.module_name,
         description: mod.module_description,
+        visibility: mod.module_visibility ?? DEFAULT_VISIBILITY,
         // 式は CAS (contents) に入れ, コミットには content hash だけを入れる
         parts: await Promise.all(
           mod.parts.map(async (part) => ({
             name: String(part.name),
             description: part.description as LocalizedText,
+            visibility:
+              part.visibility === "private"
+                ? ("private" as const)
+                : DEFAULT_VISIBILITY,
             partType: part.part_type ?? null,
             expression: null,
             contentHash:

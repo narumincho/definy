@@ -20,6 +20,7 @@ function committedPart(
     moduleName,
     name,
     description: [],
+    visibility: "public",
     partType: { "#number": null },
     contentHash: null,
     partIdHash: `id-${moduleName}.${name}`,
@@ -159,6 +160,28 @@ describe("overlayWorkingChanges", () => {
     );
     expect(partsList.map((p) => p.name)).toEqual(["keep", "renamed", "fresh"]);
     expect([...committedPartIds]).toEqual(["app.one", "app.gone", "app.fresh"]);
+  });
+
+  it("公開/非公開は変更が決めていなければコミット済みのまま, 新しいパーツは公開 (docs/visibility.md)", () => {
+    const { partsList } = overlayWorkingChanges(
+      "app",
+      [
+        { ...committedPart("app", "secret"), visibility: "private" },
+        committedPart("app", "open"),
+      ],
+      {
+        parts: new Map([
+          ["app.secret", change("secret")],
+          ["app.open", change("open", { visibility: "private" })],
+          ["app.fresh", change("fresh")],
+        ]),
+      },
+    );
+    expect(partsList.map((p) => [p.name, p.visibility])).toEqual([
+      ["secret", "private"],
+      ["open", "private"],
+      ["fresh", "public"],
+    ]);
   });
 });
 

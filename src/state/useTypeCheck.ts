@@ -19,6 +19,12 @@ import {
 } from "../self_hosted_type_check.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
 import { loadTypeChecker } from "../type_checker_browser.ts";
+import { DEFAULT_VISIBILITY } from "../event_content.ts";
+import {
+  checkReferenceVisibility,
+  visibilityViolationMessage,
+  type VisibilityTarget,
+} from "../visibility.ts";
 
 /** コミット前の型検査で見つかった問題 (1 パーツ 1 件) */
 export type CommitTypeError = {
@@ -45,6 +51,8 @@ function yieldToBrowser(): Promise<void> {
 
 export type TypeCheckParams = {
   readonly committedParts: ReadonlyMap<string, LatestPart>;
+  /** パーツ ID → 参照されるパーツとしての公開/非公開 (docs/visibility.md) */
+  readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
   readonly partNames: ReadonlyMap<string, string>;
   readonly currentAccount: AccountState | null;
   readonly buildCommitModules: (projectName: string) => CommitModulesResult;
@@ -80,6 +88,7 @@ export type TypeCheckOperations = {
 
 export function useTypeCheck({
   committedParts,
+  visibilityTargets,
   partNames,
   currentAccount,
   buildCommitModules,
@@ -240,7 +249,7 @@ export function useTypeCheck({
       const typeChecker = await loadTypeChecker();
       const moduleIdOf = (name: string): string =>
         bytesToUrlSafeBase64NoPad(deriveModuleIdBytesSync(name));
-      const committed: ReadonlyArray<LatestPart> = modules.flatMap((module) => {
+      const committed = modules.flatMap((module) => {
         const moduleIdBytes = deriveModuleIdBytesSync(module.name);
         const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
         const changed = changedModuleNames.has(module.name);
@@ -250,6 +259,9 @@ export function useTypeCheck({
             partId,
             moduleId,
             name: `${module.name}.${part.name}`,
+            moduleName: module.name,
+            visibility: part.visibility ?? DEFAULT_VISIBILITY,
+            moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
             partType: part.partType ?? null,
             expression: part.expression ?? null,
             // 変更の無いモジュールのパーツは型環境のパーツと同じキーにする (型が変わらなければ検査しない).
@@ -260,6 +272,18 @@ export function useTypeCheck({
           };
         });
       });
+      // 参照できない (非公開の) パーツへの参照はサーバーと同じく型より先に出す (docs/visibility.md)
+      const violations = checkReferenceVisibility({
+        projectName,
+        committed,
+        environment: visibilityTargets,
+      });
+      if (violations.length > 0) {
+        return violations.map((violation) => ({
+          partName: violation.partName,
+          message: visibilityViolationMessage(violation),
+        }));
+      }
       return checkModuleCommitParts({
         typeChecker,
         replacedModuleIds: new Set([
@@ -282,6 +306,7 @@ export function useTypeCheck({
       currentAccount,
       buildCommitModules,
       committedParts,
+      visibilityTargets,
       typeCheckMessage,
       systemAccountId,
     ],

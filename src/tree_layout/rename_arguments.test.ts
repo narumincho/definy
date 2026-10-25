@@ -92,6 +92,7 @@ describe("renameCallersOf", () => {
     moduleName: "sample",
     name: partId,
     description: [],
+    visibility: "public",
     partType: { "#number": null },
     contentHash: null,
     partIdHash: partId,

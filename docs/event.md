@@ -33,15 +33,18 @@ core.project-commit = {               // docs/project.md
 core.project-commit-module = {
   name: string,
   description: list<core.localized-text>,
+  visibility: core.visibility,    // docs/visibility.md
   parts: list<core.module-commit-part>,
 }
 core.module-commit-part = {
   name: string,
   description: list<core.localized-text>,
+  visibility: core.visibility,
   part_type: option<core.type-ast>,
   expression: option<core.expression>,
   content_hash: option<string>,   // 式を CAS に預けたとき (URL-safe Base64)
 }
+core.visibility = union { public, private }
 core.localized-text = { language: string, text: string }
 ```
 
@@ -60,10 +63,12 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
       {
         "name": "math",
         "description": [{ "language": "en", "text": "Math" }],
+        "visibility": { "#public": null },
         "parts": [
           {
             "name": "answer",
             "description": [],
+            "visibility": { "#public": null },
             "part_type": { "#some": { "#number": null } },
             "expression": { "#some": { "#number": 42 } },
             "content_hash": { "#none": null }

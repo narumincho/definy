@@ -4,6 +4,7 @@
  * ブランチはプロジェクトにあるので, パーツはプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べて扱う
  */
 import type { LocalizedText } from "./cbor.ts";
+import { DEFAULT_VISIBILITY, type Visibility } from "./event_content.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
 
 /** 取り込みに使うコミット (親と, 取り込んだコミットと, プロジェクトの全パーツ) */
@@ -18,6 +19,8 @@ export type MergePart = {
   /** `モジュール名.パーツ名` */
   readonly name: string;
   readonly description: LocalizedText;
+  /** 省くと公開 (docs/visibility.md) */
+  readonly visibility?: Visibility;
   readonly partType: unknown;
   readonly expression?: unknown;
   readonly contentHash?: string | null;
@@ -78,12 +81,14 @@ function samePart(a: MergePart | undefined, b: MergePart | undefined): boolean {
   return (
     stableJson([
       a.description,
+      a.visibility ?? DEFAULT_VISIBILITY,
       a.partType,
       a.expression ?? null,
       a.contentHash ?? null,
     ]) ===
     stableJson([
       b.description,
+      b.visibility ?? DEFAULT_VISIBILITY,
       b.partType,
       b.expression ?? null,
       b.contentHash ?? null,
@@ -165,6 +170,7 @@ export function mergeToWorkingChanges(
       partDefinitionEventHash: part.name,
       name: part.name.slice(dot + 1),
       description: part.description,
+      visibility: part.visibility ?? DEFAULT_VISIBILITY,
       partType: part.partType,
       expression: part.expression ?? null,
       ...(deleted ? { deleted: true } : {}),
@@ -202,6 +208,9 @@ export function hasWorkingChangesIn(
     [...(workingChanges.newModuleProjects ?? new Map()).values()].includes(
       projectName,
     ) ||
-    (workingChanges.merges?.has(projectName) ?? false)
+    (workingChanges.merges?.has(projectName) ?? false) ||
+    moduleNames.some(
+      (name) => workingChanges.moduleVisibilities?.has(name) ?? false,
+    )
   );
 }

@@ -11,6 +11,7 @@ import {
   MAIN_BRANCH,
   type CommitPart,
   type ProjectCommitContent,
+  type Visibility,
 } from "./event_content.ts";
 import {
   loadProjectSeeds,
@@ -28,12 +29,16 @@ export type PartSeedData = {
   readonly name: string;
   readonly part_type?: unknown;
   readonly description?: unknown;
+  /** 非公開のときだけ `"private"` (docs/visibility.md) */
+  readonly visibility?: Visibility;
   readonly expression?: unknown;
 };
 
 export type ModuleSeedData = {
   readonly module_name: string;
   readonly module_description: unknown;
+  /** 非公開のときだけ `"private"` (docs/visibility.md) */
+  readonly module_visibility?: Visibility;
   readonly parts: ReadonlyArray<PartSeedData>;
 };
 
@@ -270,6 +275,9 @@ async function hydrateCommitParts(
       partData.part_type = part.partType;
     }
     partData.description = part.description;
+    if (part.visibility === "private") {
+      partData.visibility = "private";
+    }
     if (expression !== undefined) {
       partData.expression = expression;
     }
@@ -299,6 +307,9 @@ async function tryReadSeedFile(
       if (p.description !== undefined) {
         partObj.description = p.description;
       }
+      if (p.visibility === "private") {
+        partObj.visibility = "private";
+      }
       if (p.expression !== undefined) {
         partObj.expression = p.expression;
       }
@@ -308,6 +319,9 @@ async function tryReadSeedFile(
     return {
       module_name: String(parsed.module_name ?? ""),
       module_description: parsed.module_description,
+      ...(parsed.module_visibility === "private"
+        ? { module_visibility: "private" as const }
+        : {}),
       parts,
     };
   } catch {
@@ -317,8 +331,8 @@ async function tryReadSeedFile(
 
 /**
  * ModuleSeed を JSON 文字列にシリアライズする。
- * - トップレベルのキー順: `$schema`, `module_name`, `module_description`, `parts`
- * - パーツのキー順: `name`, `part_type` (ある場合), `description`, `expression` (ある場合)
+ * - トップレベルのキー順: `$schema`, `module_name`, `module_description`, `module_visibility` (非公開の場合), `parts`
+ * - パーツのキー順: `name`, `part_type` (ある場合), `description`, `visibility` (非公開の場合), `expression` (ある場合)
  * - インデント 2、末尾改行なし
  */
 export function moduleSeedToJson(
@@ -335,6 +349,9 @@ export function moduleSeedToJson(
     if (p.description !== undefined) {
       partObj.description = symbolizePartReferences(p.description, table);
     }
+    if (p.visibility === "private") {
+      partObj.visibility = "private";
+    }
     if (p.expression !== undefined) {
       partObj.expression = symbolizePartReferences(p.expression, table);
     }
@@ -345,6 +362,9 @@ export function moduleSeedToJson(
     $schema: "./schemas/module-seed.schema.json",
     module_name: seed.module_name,
     module_description: seed.module_description,
+    ...(seed.module_visibility === "private"
+      ? { module_visibility: "private" }
+      : {}),
     parts,
   };
 
@@ -403,6 +423,9 @@ export async function exportSeeds(
       updatedSeedsMap.set(module.name, {
         module_name: module.name,
         module_description: module.description,
+        ...(module.visibility === "private"
+          ? { module_visibility: "private" as const }
+          : {}),
         parts: await hydrateCommitParts(fetchFn, options.baseUrl, module.parts),
       });
       exportedList.push(module.name);

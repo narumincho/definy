@@ -24,6 +24,7 @@ import {
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { pathToString, type LayoutNode, type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
+import { referenceViolation } from "../visibility.ts";
 import { label, localizedText, withLanguage } from "../language.ts";
 import { useRouter } from "@void/react";
 import {
@@ -111,6 +112,8 @@ export type ExpressionTreeEditorProps = {
   readonly mode?: "expression" | "type";
   /** 型エラー. エラーのある式の横に警告を出す */
   readonly typeError?: ExpressionTypeError | null;
+  /** 編集しているパーツのモジュール. 参照できない (非公開の) パーツを選択肢から外す (docs/visibility.md) */
+  readonly moduleName?: string;
 };
 
 export function ExpressionTreeEditor({
@@ -123,9 +126,34 @@ export function ExpressionTreeEditor({
   onExit,
   mode = "expression",
   typeError = null,
+  moduleName,
 }: ExpressionTreeEditorProps): JSX.Element {
-  const { language, parts, partNames, partsByIdHash, findExpectedType } =
-    useDefiny();
+  const {
+    language,
+    parts: allParts,
+    partNames,
+    partsByIdHash,
+    findExpectedType,
+    visibilityTargets,
+    projectOfModule,
+  } = useDefiny();
+  // 参照できるパーツだけを選択肢にする
+  const parts = useMemo(() => {
+    if (moduleName === undefined) {
+      return allParts;
+    }
+    const from = {
+      projectName: projectOfModule(moduleName) ?? moduleName,
+      moduleName,
+    };
+    return allParts.filter((part) => {
+      const target =
+        part.partIdHash === null
+          ? undefined
+          : visibilityTargets.get(part.partIdHash);
+      return target === undefined || referenceViolation(from, target) === null;
+    });
+  }, [allParts, moduleName, projectOfModule, visibilityTargets]);
   const [selectedPath, setSelectedPath] =
     useState<ReadonlyArray<PathStep> | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);

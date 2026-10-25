@@ -294,6 +294,7 @@ export function PartDefinitionTree({
             <ExpressionTreeEditor
               mode="type"
               expression={typeExpression}
+              moduleName={moduleName}
               {...(onPartTypeChange
                 ? {
                     onChange: (next) => {
@@ -346,6 +347,7 @@ export function PartDefinitionTree({
           <div className="def-value">
             <ExpressionTreeEditor
               expression={expression}
+              moduleName={moduleName}
               {...(partType !== undefined ? { partType } : {})}
               {...(onExpressionChange !== undefined
                 ? {

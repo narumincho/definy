@@ -161,6 +161,16 @@
         }
       },
       {
+        "key": "visibility",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.visibility"
+            }
+          }
+        }
+      },
+      {
         "key": "parts",
         "value": {
           "#type_list": {
@@ -172,6 +182,22 @@
               }
             }
           }
+        }
+      }
+    ]
+  },
+  "core.visibility": {
+    "#type_union": [
+      {
+        "tag": "public",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "private",
+        "payload_type": {
+          "#none": null
         }
       }
     ]
@@ -194,6 +220,16 @@
                   "$part": "core.localized-text"
                 }
               }
+            }
+          }
+        }
+      },
+      {
+        "key": "visibility",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.visibility"
             }
           }
         }

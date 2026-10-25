@@ -19,7 +19,8 @@ import type {
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
 import type { CommitTarget } from "./branches.ts";
-import { MAIN_BRANCH } from "./event_content.ts";
+import { MAIN_BRANCH, type Visibility } from "./event_content.ts";
+import type { VisibilityTarget } from "./visibility.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
 import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
@@ -47,6 +48,8 @@ export type DefinyContextValue = {
    * `PartReference` の解決に使う
    */
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
+  /** パーツ ID → 参照されるパーツとしての公開/非公開 (docs/visibility.md) */
+  readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
   readonly accountNames: ReadonlyMap<string, string>;
   /** 署名の正しいプロジェクトのコミットのイベントと, デコードした中身 */
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
@@ -58,6 +61,11 @@ export type DefinyContextValue = {
   readonly setNewModuleProject: (
     moduleName: string,
     projectName: string,
+  ) => void;
+  /** モジュールの公開/非公開を作業中の変更として変える (docs/visibility.md) */
+  readonly setModuleVisibility: (
+    moduleName: string,
+    visibility: Visibility,
   ) => void;
   /** モジュールが入っている (新しいモジュールなら入れる) プロジェクト. 分からなければ `undefined` */
   readonly projectOfModule: (moduleName: string) => string | undefined;
@@ -181,6 +189,7 @@ export function DefinyProvider({
   });
   const typeCheck = useTypeCheck({
     committedParts: events.committedParts,
+    visibilityTargets: events.visibilityTargets,
     partNames: events.partNames,
     currentAccount: account.currentAccount,
     buildCommitModules: working.buildCommitModules,
@@ -206,6 +215,7 @@ export function DefinyProvider({
       parts: events.parts,
       partNames: events.partNames,
       partsByIdHash: events.partsByIdHash,
+      visibilityTargets: events.visibilityTargets,
       accountNames: events.accountNames,
       decodedCommits: events.decodedCommits,
       workingChanges: working.workingChanges,
@@ -213,6 +223,7 @@ export function DefinyProvider({
       discardWorkingPart: working.discardWorkingPart,
       discardAllWorkingChanges: working.discardAllWorkingChanges,
       setNewModuleProject: working.setNewModuleProject,
+      setModuleVisibility: working.setModuleVisibility,
       projectOfModule: working.projectOfModule,
       connectionStatus: events.connectionStatus,
       currentAccount: account.currentAccount,
@@ -271,6 +282,7 @@ export function DefinyProvider({
       events.parts,
       events.partNames,
       events.partsByIdHash,
+      events.visibilityTargets,
       events.accountNames,
       events.decodedCommits,
       events.connectionStatus,
@@ -284,6 +296,7 @@ export function DefinyProvider({
       working.discardWorkingPart,
       working.discardAllWorkingChanges,
       working.setNewModuleProject,
+      working.setModuleVisibility,
       working.projectOfModule,
       working.commitWorkingChanges,
       working.commitTargetFor,

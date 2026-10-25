@@ -3,6 +3,7 @@
  */
 import type { BranchSummary } from "./branches.ts";
 import type { LocalizedText } from "./cbor.ts";
+import type { Visibility } from "./event_content.ts";
 import type { EventVerification } from "./signed_event.ts";
 
 export type LanguageCode = "en" | "ja" | "eo";
@@ -14,6 +15,8 @@ export type PartChange = {
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly expression: unknown;
+  /** 公開/非公開を変える (docs/visibility.md). 省くとコミット済みのまま (新しいパーツは公開) */
+  readonly visibility?: Visibility;
   /** パーツを削除する (コミットでモジュールから外す). docs/ui.md「パーツの作成と削除」 */
   readonly deleted?: boolean;
 };
@@ -30,12 +33,15 @@ export type WorkingChanges = {
    * まだ無いプロジェクトなら, コミットするとプロジェクトができる
    */
   readonly newModuleProjects?: ReadonlyMap<string, string>;
+  /** モジュール名 → 変えた公開/非公開 (docs/visibility.md) */
+  readonly moduleVisibilities?: ReadonlyMap<string, Visibility>;
 };
 
 export type ModulePartSnapshot = {
   readonly partId: string;
   readonly name: string;
   readonly description: LocalizedText;
+  readonly visibility: Visibility;
   readonly partType: unknown;
   readonly contentHash: string | null;
   readonly partIdHash: string | null;
@@ -52,6 +58,8 @@ export type ModuleSnapshot = {
   /** プロジェクトの全ブランチ (main が先頭) */
   readonly branches: ReadonlyArray<BranchSummary>;
   readonly description: LocalizedText;
+  /** 公開/非公開 (docs/visibility.md) */
+  readonly visibility: Visibility;
   readonly latestEventHash: string;
   readonly parentCommitHash: string | null;
   readonly message: string;
@@ -81,6 +89,8 @@ export type PartSnapshot = {
   readonly moduleName: string;
   readonly name: string;
   readonly description: LocalizedText;
+  /** 公開/非公開 (docs/visibility.md) */
+  readonly visibility: Visibility;
   readonly partType: unknown;
   readonly contentHash: string | null;
   readonly partIdHash: string | null;

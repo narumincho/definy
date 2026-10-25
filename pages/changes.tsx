@@ -9,6 +9,8 @@ import { Link } from "../src/components/Link.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny, type CommitTypeError } from "../src/state.tsx";
 import { moduleOfPartId } from "../src/new_part.ts";
+import { DEFAULT_VISIBILITY } from "../src/event_content.ts";
+import { visibilityLabel } from "../src/components/Visibility.tsx";
 
 export default function ChangesPage(): JSX.Element {
   const {
@@ -22,6 +24,8 @@ export default function ChangesPage(): JSX.Element {
     commitTargetFor,
     checkCommitTypes,
     projectOfModule,
+    setModuleVisibility,
+    modules,
     parts,
     connectionStatus,
   } = useDefiny();
@@ -32,15 +36,21 @@ export default function ChangesPage(): JSX.Element {
   const [committedHash, setCommittedHash] = useState<string | null>(null);
 
   const changeEntries = Array.from(workingChanges.parts.entries());
+  // モジュールの公開/非公開の変更 (docs/visibility.md)
+  const moduleVisibilityEntries = Array.from(
+    workingChanges.moduleVisibilities ?? [],
+  );
+  const hasChanges =
+    changeEntries.length > 0 || moduleVisibilityEntries.length > 0;
 
   // 変更のあるモジュールの入っているプロジェクト (コミットはプロジェクト単位. docs/project.md).
   // 入れるプロジェクトの分からない新しいモジュールは, モジュール名と同じ名前のプロジェクトに入れる
   const affectedProjects: ReadonlyArray<string> = Array.from(
     new Set(
-      changeEntries.map(([partId]) => {
-        const moduleName = moduleOfPartId(partId);
-        return projectOfModule(moduleName) ?? moduleName;
-      }),
+      [
+        ...changeEntries.map(([partId]) => moduleOfPartId(partId)),
+        ...moduleVisibilityEntries.map(([moduleName]) => moduleName),
+      ].map((moduleName) => projectOfModule(moduleName) ?? moduleName),
     ),
   );
 
@@ -71,7 +81,7 @@ export default function ChangesPage(): JSX.Element {
     | { readonly status: "failed"; readonly message: string }
   >({ status: "idle" });
   useEffect(() => {
-    if (!currentAccount || workingChanges.parts.size === 0) {
+    if (!currentAccount || !hasChanges) {
       setTypeCheck({ status: "idle" });
       return;
     }
@@ -96,7 +106,13 @@ export default function ChangesPage(): JSX.Element {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [checkCommitTypes, selectedProject, currentAccount, workingChanges]);
+  }, [
+    checkCommitTypes,
+    selectedProject,
+    currentAccount,
+    workingChanges,
+    hasChanges,
+  ]);
   const hasTypeErrors =
     typeCheck.status === "done" && typeCheck.errors.length > 0;
 
@@ -138,7 +154,7 @@ export default function ChangesPage(): JSX.Element {
             "Laborkontrolaj ŝanĝoj",
           )}
         </h2>
-        {changeEntries.length > 0 && (
+        {hasChanges && (
           <div className="view-actions">
             <button
               type="button"
@@ -222,7 +238,7 @@ export default function ChangesPage(): JSX.Element {
         </div>
       )}
 
-      {changeEntries.length === 0 ? (
+      {!hasChanges ? (
         <div className="empty-state">
           <p>
             {label(
@@ -236,6 +252,46 @@ export default function ChangesPage(): JSX.Element {
       ) : (
         <div className="changes-layout">
           <div className="changes-list">
+            {moduleVisibilityEntries.map(([moduleName, visibility]) => (
+              <div
+                key={`module:${moduleName}`}
+                className="card change-card module-visibility-change"
+              >
+                <div className="change-card-header">
+                  <strong>{moduleName}</strong>
+                  <span className="badge badge-secondary">
+                    {label(
+                      language,
+                      `Module → ${visibilityLabel(visibility, language)}`,
+                      `モジュール → ${visibilityLabel(visibility, language)}`,
+                      `Modulo → ${visibilityLabel(visibility, language)}`,
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs text-danger"
+                    onClick={() => {
+                      setModuleVisibility(
+                        moduleName,
+                        modules.find((m) => m.name === moduleName)
+                          ?.visibility ?? DEFAULT_VISIBILITY,
+                      );
+                    }}
+                    disabled={committing}
+                  >
+                    {label(language, "Discard", "破棄", "Forĵeti")}
+                  </button>
+                </div>
+                <div className="change-card-footer">
+                  <Link
+                    href={`/module/${moduleName}`}
+                    className="btn btn-primary btn-xs"
+                  >
+                    {label(language, "Edit →", "編集 →", "Redakti →")}
+                  </Link>
+                </div>
+              </div>
+            ))}
             {changeEntries.map(([partId, change]) => (
               <div
                 key={partId}
@@ -255,6 +311,14 @@ export default function ChangesPage(): JSX.Element {
                       </span>
                     )
                   )}
+                  {change.visibility !== undefined &&
+                    change.visibility !==
+                      (parts.find((p) => p.partId === partId)?.visibility ??
+                        DEFAULT_VISIBILITY) && (
+                      <span className="badge badge-secondary change-visibility">
+                        → {visibilityLabel(change.visibility, language)}
+                      </span>
+                    )}
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs text-danger"

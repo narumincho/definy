@@ -25,6 +25,9 @@
     "module_name": {
       "type": "string"
     },
+    "module_visibility": {
+      "$ref": "#/definitions/Visibility"
+    },
     "parts": {
       "type": "array",
       "items": {
@@ -44,6 +47,9 @@
         },
         "description": {
           "$ref": "#/definitions/Description"
+        },
+        "visibility": {
+          "$ref": "#/definitions/Visibility"
         },
         "part_type": {
           "anyOf": [
@@ -76,6 +82,13 @@
           ]
         }
       }
+    },
+    "Visibility": {
+      "description": "公開/非公開 (core.visibility. docs/visibility.md). 省くと public",
+      "enum": [
+        "public",
+        "private"
+      ]
     },
     "Description": {
       "anyOf": [
@@ -1836,11 +1849,40 @@
       },
       "additionalProperties": false
     },
+    "core.visibility": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#public"
+          ],
+          "properties": {
+            "#public": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#private"
+          ],
+          "properties": {
+            "#private": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "core.project-commit-module": {
       "type": "object",
       "required": [
         "name",
         "description",
+        "visibility",
         "parts"
       ],
       "properties": {
@@ -1860,6 +1902,9 @@
             "$ref": "#/definitions/core.localized-text"
           }
         },
+        "visibility": {
+          "$ref": "#/definitions/core.visibility"
+        },
         "parts": {
           "type": "array",
           "items": {
@@ -1874,6 +1919,7 @@
       "required": [
         "name",
         "description",
+        "visibility",
         "part_type",
         "expression",
         "content_hash"
@@ -1894,6 +1940,9 @@
           "items": {
             "$ref": "#/definitions/core.localized-text"
           }
+        },
+        "visibility": {
+          "$ref": "#/definitions/core.visibility"
         },
         "part_type": {
           "anyOf": [

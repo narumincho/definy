@@ -10,7 +10,7 @@ import {
   deriveModulePartIdSync,
   type DecodedPart,
 } from "./cbor.ts";
-import { MAIN_BRANCH } from "./event_content.ts";
+import { DEFAULT_VISIBILITY, MAIN_BRANCH } from "./event_content.ts";
 import type {
   ModulePartSnapshot,
   ModuleSnapshot,
@@ -256,6 +256,7 @@ export function overlayWorkingChanges(
     partMap.set(p.name, {
       name: p.name,
       description: p.description,
+      visibility: p.visibility,
       partType: p.partType,
       expression: p.expression,
       contentHash: p.contentHash,
@@ -266,7 +267,12 @@ export function overlayWorkingChanges(
   for (const [partId, change] of workingChanges.parts) {
     if (moduleOfPartId(partId) !== moduleName) continue;
     committedPartIds.add(partId);
-    partMap.delete(partId.slice(moduleName.length + 1));
+    const originalName = partId.slice(moduleName.length + 1);
+    const visibility =
+      change.visibility ??
+      partMap.get(originalName)?.visibility ??
+      DEFAULT_VISIBILITY;
+    partMap.delete(originalName);
     if (change.deleted === true) {
       partMap.delete(change.name);
       continue;
@@ -274,6 +280,7 @@ export function overlayWorkingChanges(
     partMap.set(change.name, {
       name: change.name,
       description: change.description,
+      visibility,
       partType: change.partType,
       expression: change.expression,
       contentHash: null,
@@ -295,6 +302,7 @@ export function newPartSnapshot(
     moduleName,
     name: change.name,
     description: change.description,
+    visibility: change.visibility ?? DEFAULT_VISIBILITY,
     partType: change.partType,
     contentHash: null,
     partIdHash: deriveModulePartIdSync(
@@ -339,6 +347,8 @@ export function withNewParts(
         branch: MAIN_BRANCH,
         branches: [],
         description: [],
+        visibility:
+          workingChanges.moduleVisibilities?.get(name) ?? DEFAULT_VISIBILITY,
         latestEventHash: "",
         parentCommitHash: null,
         message: "",

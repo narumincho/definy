@@ -17,10 +17,21 @@ import {
 } from "./definy_value.ts";
 import { conformsToTypeDeclaration } from "./seed_schema.ts";
 
+/**
+ * モジュールやパーツを外から参照できるか (`core.visibility`. docs/visibility.md).
+ * 非公開のモジュールは同じプロジェクトから, 非公開のパーツは同じモジュールからだけ参照できる
+ */
+export type Visibility = "public" | "private";
+
+/** 公開/非公開を省いたときの既定 */
+export const DEFAULT_VISIBILITY: Visibility = "public";
+
 /** プロジェクトのコミットのモジュールのパーツ (`core.module-commit-part`) */
 export type CommitPart = {
   readonly name: string;
   readonly description: LocalizedText;
+  /** 省くと公開 */
+  readonly visibility?: Visibility;
   /** パーツの型 (`core.type-ast` の値). 型指定が無ければ `null` */
   readonly partType: unknown;
   /** 式 (`core.expression` の値). CAS に預けているか, 式の無いパーツなら `null` */
@@ -36,6 +47,8 @@ export const MAIN_BRANCH = "main";
 export type CommitModule = {
   readonly name: string;
   readonly description: LocalizedText;
+  /** 省くと公開 */
+  readonly visibility?: Visibility;
   readonly parts: ReadonlyArray<CommitPart>;
 };
 
@@ -88,6 +101,14 @@ function optionOf(value: unknown): unknown {
   return value === null || value === undefined ? none() : some(value);
 }
 
+function encodeVisibility(visibility: Visibility | undefined): unknown {
+  return variant(visibility ?? DEFAULT_VISIBILITY);
+}
+
+function decodeVisibility(value: unknown): Visibility {
+  return variantOf(value)?.tag === "private" ? "private" : "public";
+}
+
 function encodeLocalizedText(text: LocalizedText): unknown {
   return text.map(({ language, text }) => ({ language, text }));
 }
@@ -109,9 +130,11 @@ export function encodeEventContent(content: EventContent): unknown {
         modules: commit.modules.map((module) => ({
           name: module.name,
           description: encodeLocalizedText(module.description),
+          visibility: encodeVisibility(module.visibility),
           parts: module.parts.map((part) => ({
             name: part.name,
             description: encodeLocalizedText(part.description),
+            visibility: encodeVisibility(part.visibility),
             part_type: optionOf(part.partType),
             expression: optionOf(part.expression),
             content_hash: optionOf(part.contentHash),
@@ -139,6 +162,7 @@ function decodeParts(value: unknown): ReadonlyArray<CommitPart> {
     return {
       name: String(field(part, "name")),
       description: decodeLocalizedText(field(part, "description")),
+      visibility: decodeVisibility(field(part, "visibility")),
       partType: optionOrNull(field(part, "part_type")),
       expression: optionOrNull(field(part, "expression")),
       contentHash: typeof contentHash === "string" ? contentHash : null,
@@ -183,6 +207,7 @@ export function decodeEventContent(value: unknown): EventContent | undefined {
           modules: (Array.isArray(modules) ? modules : []).map((module) => ({
             name: String(field(module, "name")),
             description: decodeLocalizedText(field(module, "description")),
+            visibility: decodeVisibility(field(module, "visibility")),
             parts: decodeParts(field(module, "parts")),
           })),
         },
