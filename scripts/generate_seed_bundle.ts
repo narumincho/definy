@@ -409,6 +409,18 @@ export const EVENT_CHECKER_WASM_PATH = "wasm/event_checker.wasm";
  */
 export const SHAPE_CHECKER_WASM_PATH = "wasm/shape_checker.wasm";
 
+/**
+ * seed の `core.project-branches` (受け付けたコミットをブランチにまとめる) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
+ * サーバーが `GetProjectBranches` と main の最新のコミットに使う (src/branches.ts)
+ */
+export const BRANCH_SUMMARIZER_WASM_PATH = "wasm/branch_summarizer.wasm";
+
+/**
+ * seed の `core.check-reference-visibility` (非公開のパーツへの参照の検査) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
+ * サーバーの `SubmitEvent` とエディタのコミット前の検査が使う (src/visibility.ts)
+ */
+export const VISIBILITY_CHECKER_WASM_PATH = "wasm/visibility_checker.wasm";
+
 /** seed の core の関数のパーツ `partName` を stage1 でコンパイルする */
 async function compileCorePart(partName: string): Promise<Uint8Array> {
   const partExpressions = await seedPartExpressions(await loadSeedModules());
@@ -429,7 +441,10 @@ export async function generateEventCheckerWasm(): Promise<Uint8Array> {
   return compileCorePart("check-event");
 }
 
-/** {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に書き出す */
+/**
+ * {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に,
+ * `core.project-branches` を {@link BRANCH_SUMMARIZER_WASM_PATH} に, `core.check-reference-visibility` を {@link VISIBILITY_CHECKER_WASM_PATH} に書き出す
+ */
 export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
     resolve(EVENT_CHECKER_WASM_PATH),
@@ -438,6 +453,14 @@ export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
     resolve(SHAPE_CHECKER_WASM_PATH),
     await compileCorePart("value-conforms"),
+  );
+  await writeFile(
+    resolve(BRANCH_SUMMARIZER_WASM_PATH),
+    await compileCorePart("project-branches"),
+  );
+  await writeFile(
+    resolve(VISIBILITY_CHECKER_WASM_PATH),
+    await compileCorePart("check-reference-visibility"),
   );
 }
 
@@ -466,6 +489,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}`,
   );
 }

@@ -3,6 +3,7 @@
  * ブラウザが表示するブランチとコミット先を決める純粋関数
  */
 import { MAIN_BRANCH } from "./event_content.ts";
+import { instantiateCompiledFunction } from "./stage1_compiler.ts";
 
 /** ブランチを調べるのに使うコミット */
 export type BranchCommit = {
@@ -30,44 +31,50 @@ export type ProjectBranchSummary = BranchSummary & {
 };
 
 /**
- * コミットを全プロジェクトのブランチにまとめる. サーバーの `GetProjectBranches` が使う
- * (ブラウザは全コミットを読まず, その結果を受け取る)
+ * コミット (ストアの順) を全プロジェクトのブランチに, 最初に現れた順でまとめる. サーバーの `GetProjectBranches` が使う
+ * (ブラウザは全コミットを読まず, その結果を受け取る).
+ * まとめ方は definy 製の `core.project-branches` で, `npm run build:seeds` がコンパイルした `wasm/branch_summarizer.wasm` を `summarizer` に渡す
  */
 export function summarizeBranches(
-  commits: Iterable<BranchCommit>,
+  summarizer: WebAssembly.Module,
+  commits: ReadonlyArray<BranchCommit>,
 ): ReadonlyArray<ProjectBranchSummary> {
-  const branches = new Map<
-    string,
-    {
-      first: BranchCommit;
-      latest: BranchCommit;
-      count: number;
-    }
-  >();
-  for (const commit of commits) {
-    const key = JSON.stringify([commit.projectName, commit.branch]);
-    const existing = branches.get(key);
-    branches.set(
-      key,
-      existing === undefined
-        ? { first: commit, latest: commit, count: 1 }
-        : {
-            first:
-              commit.timeMs < existing.first.timeMs ? commit : existing.first,
-            latest:
-              existing.latest.timeMs < commit.timeMs ? commit : existing.latest,
-            count: existing.count + 1,
-          },
-    );
+  const instance = instantiateCompiledFunction(summarizer);
+  const result = instance.read(
+    instance.call([
+      instance.writeArgument(
+        commits.map((commit) => ({
+          event_hash: commit.eventHash,
+          account_id: commit.accountId,
+          project_name: commit.projectName,
+          branch: commit.branch,
+          time: commit.timeMs,
+          module_names: [],
+        })),
+      ),
+    ]),
+  );
+  if (!Array.isArray(result)) {
+    throw new Error("core.project-branches returned a non-list value");
   }
-  return Array.from(branches.values(), ({ first, latest, count }) => ({
-    projectName: latest.projectName,
-    name: latest.branch,
-    creatorAccountId: first.accountId,
-    latestEventHash: latest.eventHash,
-    latestTimeMs: latest.timeMs,
-    commitCount: count,
-  }));
+  return result.map((item) => {
+    const branch = item as {
+      readonly project_name: string;
+      readonly name: string;
+      readonly creator_account_id: string;
+      readonly latest_event_hash: string;
+      readonly latest_time: number;
+      readonly commit_count: number;
+    };
+    return {
+      projectName: branch.project_name,
+      name: branch.name,
+      creatorAccountId: branch.creator_account_id,
+      latestEventHash: branch.latest_event_hash,
+      latestTimeMs: branch.latest_time,
+      commitCount: branch.commit_count,
+    };
+  });
 }
 
 /** main を先頭に, 残りを名前順に並べる */

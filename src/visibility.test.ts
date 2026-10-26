@@ -1,11 +1,15 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   checkReferenceVisibility,
-  referencedPartIds,
   visibilityViolationMessage,
   type VisibilityCheckedPart,
   type VisibilityTarget,
 } from "./visibility.ts";
+
+const checker = new WebAssembly.Module(
+  await readFile("wasm/visibility_checker.wasm"),
+);
 
 const reference = (id: string): unknown => ({
   "#part_reference": { part_definition_event_hash: id },
@@ -48,19 +52,6 @@ function target(
   ];
 }
 
-describe("referencedPartIds", () => {
-  it("式と型の中のパーツ参照を集める", () => {
-    expect([
-      ...referencedPartIds({
-        "#call": {
-          function: reference("a"),
-          arguments: [{ name: "x", value: reference("b") }],
-        },
-      }),
-    ]).toEqual(["a", "b"]);
-  });
-});
-
 describe("checkReferenceVisibility", () => {
   const environment = new Map([
     target("lib", "lib", "open"),
@@ -70,7 +61,7 @@ describe("checkReferenceVisibility", () => {
 
   it("他のプロジェクトの公開のパーツは参照できる", () => {
     expect(
-      checkReferenceVisibility({
+      checkReferenceVisibility(checker, {
         projectName: "app",
         committed: [committed("app", "main", reference("lib.open"))],
         environment,
@@ -79,7 +70,7 @@ describe("checkReferenceVisibility", () => {
   });
 
   it("非公開のパーツと, 他のプロジェクトの非公開のモジュールのパーツは参照できない", () => {
-    const violations = checkReferenceVisibility({
+    const violations = checkReferenceVisibility(checker, {
       projectName: "app",
       committed: [
         committed("app", "a", reference("lib.secret")),
@@ -103,7 +94,7 @@ describe("checkReferenceVisibility", () => {
 
   it("同じモジュールの非公開のパーツと, 同じプロジェクトの非公開のモジュールは参照できる", () => {
     expect(
-      checkReferenceVisibility({
+      checkReferenceVisibility(checker, {
         projectName: "lib",
         committed: [
           committed(
@@ -130,7 +121,7 @@ describe("checkReferenceVisibility", () => {
 
   it("同じプロジェクトでも, 他のモジュールの非公開のパーツは参照できない. コミットのパーツを優先する", () => {
     expect(
-      checkReferenceVisibility({
+      checkReferenceVisibility(checker, {
         projectName: "lib",
         committed: [
           committed("lib", "open", { "#number": 1 }, { visibility: "private" }),
@@ -143,6 +134,79 @@ describe("checkReferenceVisibility", () => {
         partName: "other.uses",
         targetName: "lib.open",
         reason: "private_part",
+      },
+    ]);
+  });
+  it("型・型パーツの宣言・quote の中の参照も見る. 同じパーツへの参照は 1 度だけ", () => {
+    expect(
+      checkReferenceVisibility(checker, {
+        projectName: "app",
+        committed: [
+          committed(
+            "app",
+            "typed",
+            {
+              "#call": {
+                function: reference("lib.secret"),
+                arguments: [{ name: "x", value: reference("lib.secret") }],
+              },
+            },
+            {
+              partType: {
+                "#function": {
+                  parameters: [
+                    {
+                      name: "x",
+                      type: { "#reference": { part_hash: "internal.helper" } },
+                    },
+                  ],
+                  return_type: { "#number": null },
+                },
+              },
+            },
+          ),
+          committed(
+            "app",
+            "declared",
+            {
+              "#type_record": [
+                {
+                  key: "a",
+                  value: {
+                    "#type_list": { item_type: reference("lib.secret") },
+                  },
+                },
+              ],
+            },
+            { partType: { "#type": null } },
+          ),
+          committed("app", "quoted", {
+            "#quote": reference("internal.helper"),
+          }),
+          committed("app", "untyped", null, { partType: null }),
+        ],
+        environment,
+      }),
+    ).toEqual([
+      {
+        partName: "app.typed",
+        targetName: "internal.helper",
+        reason: "private_module",
+      },
+      {
+        partName: "app.typed",
+        targetName: "lib.secret",
+        reason: "private_part",
+      },
+      {
+        partName: "app.declared",
+        targetName: "lib.secret",
+        reason: "private_part",
+      },
+      {
+        partName: "app.quoted",
+        targetName: "internal.helper",
+        reason: "private_module",
       },
     ]);
   });

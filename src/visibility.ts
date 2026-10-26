@@ -3,10 +3,12 @@
  *
  * 非公開のモジュールのパーツは同じプロジェクトのパーツからだけ, 非公開のパーツは同じモジュールのパーツからだけ参照できる.
  * イベントは誰でも読めるので, 読み取りを隠すものではなく参照できるかの決まり.
- * サーバー (`checkSubmittedProjectCommit`) と UI のコミット前の検査 (`checkCommitTypes`) が同じ関数で確かめる
+ * サーバー (`checkSubmittedProjectCommit`) と UI のコミット前の検査 (`checkCommitTypes`) が, 同じ definy 製の
+ * `core.check-reference-visibility` (`npm run build:seeds` がコンパイルした `wasm/visibility_checker.wasm`) で確かめる
  */
-import { variantPayload } from "./definy_value.ts";
+import { none, some, variant, variantOf } from "./definy_value.ts";
 import type { Visibility } from "./event_content.ts";
+import { instantiateCompiledFunction } from "./stage1_compiler.ts";
 
 /** 参照されるパーツ */
 export type VisibilityTarget = {
@@ -30,7 +32,10 @@ export type VisibilityViolation = {
   readonly reason: VisibilityViolationReason;
 };
 
-/** プロジェクト `projectName` のモジュール `moduleName` のパーツから `target` を参照できなければその理由, できれば `null` */
+/**
+ * プロジェクト `projectName` のモジュール `moduleName` のパーツから `target` を参照できなければその理由, できれば `null`.
+ * 定義は definy の `core.reference-violation` で, これはエディタがパーツの候補を絞るのに使う同じ決まり
+ */
 export function referenceViolation(
   from: { readonly projectName: string; readonly moduleName: string },
   target: VisibilityTarget,
@@ -50,32 +55,6 @@ export function referenceViolation(
   return null;
 }
 
-/** 式・型の中のパーツ参照 (`#part_reference` の `part_definition_event_hash`) のパーツ ID */
-export function referencedPartIds(value: unknown): ReadonlySet<string> {
-  const ids = new Set<string>();
-  const visit = (v: unknown): void => {
-    if (Array.isArray(v)) {
-      v.forEach(visit);
-      return;
-    }
-    if (v === null || typeof v !== "object" || v instanceof Uint8Array) {
-      return;
-    }
-    const reference = variantPayload(v, "part_reference");
-    if (reference !== undefined) {
-      const id = (
-        reference as { readonly part_definition_event_hash?: unknown }
-      )?.part_definition_event_hash;
-      if (typeof id === "string") {
-        ids.add(id);
-      }
-    }
-    Object.values(v).forEach(visit);
-  };
-  visit(value);
-  return ids;
-}
-
 /** コミットするパーツ */
 export type VisibilityCheckedPart = Omit<VisibilityTarget, "projectName"> & {
   readonly partId: string;
@@ -87,46 +66,76 @@ export type VisibilityCheckedPart = Omit<VisibilityTarget, "projectName"> & {
 /**
  * プロジェクト `projectName` へのコミットのパーツ `committed` が, 参照できないパーツを参照していないか.
  * `environment` は他のプロジェクトのパーツ (キーはパーツ ID). コミットのパーツは `environment` より優先する.
- * 見つからないパーツへの参照は型チェッカーが拒否するのでここでは見ない
+ * パーツの型と式 (型パーツの宣言, quote の中を含む) の両方の参照を見る.
+ * 見つからないパーツへの参照は型チェッカーが拒否するのでここでは見ない.
+ * 決まりは definy の `core.check-reference-visibility` で, コンパイルした `checker` (`wasm/visibility_checker.wasm`) で確かめる
  */
-export function checkReferenceVisibility({
-  projectName,
-  committed,
-  environment,
-}: {
-  readonly projectName: string;
-  readonly committed: ReadonlyArray<VisibilityCheckedPart>;
-  readonly environment: ReadonlyMap<string, VisibilityTarget>;
-}): ReadonlyArray<VisibilityViolation> {
-  const targets = new Map(environment);
-  for (const part of committed) {
-    targets.set(part.partId, { ...part, projectName });
+export function checkReferenceVisibility(
+  checker: WebAssembly.Module,
+  {
+    projectName,
+    committed,
+    environment,
+  }: {
+    readonly projectName: string;
+    readonly committed: ReadonlyArray<VisibilityCheckedPart>;
+    readonly environment: ReadonlyMap<string, VisibilityTarget>;
+  },
+): ReadonlyArray<VisibilityViolation> {
+  const instance = instantiateCompiledFunction(checker);
+  const result = instance.read(
+    instance.call([
+      instance.writeArgument(projectName),
+      instance.writeArgument(
+        committed.map((part) => ({
+          id: part.partId,
+          name: part.name,
+          module_name: part.moduleName,
+          visibility: variant(part.visibility),
+          module_visibility: variant(part.moduleVisibility),
+          part_type: optionValue(part.partType),
+          expression: optionValue(part.expression),
+        })),
+      ),
+      instance.writeArgument(
+        Array.from(environment, ([id, target]) => ({
+          id,
+          name: target.name,
+          module_name: target.moduleName,
+          project_name: target.projectName,
+          visibility: variant(target.visibility),
+          module_visibility: variant(target.moduleVisibility),
+        })),
+      ),
+    ]),
+  );
+  if (!Array.isArray(result)) {
+    throw new Error(
+      "core.check-reference-visibility returned a non-list value",
+    );
   }
-  const violations: VisibilityViolation[] = [];
-  for (const part of committed) {
-    const ids = new Set([
-      ...referencedPartIds(part.partType),
-      ...referencedPartIds(part.expression),
-    ]);
-    for (const id of ids) {
-      const target = targets.get(id);
-      const reason =
-        target === undefined
-          ? null
-          : referenceViolation(
-              { projectName, moduleName: part.moduleName },
-              target,
-            );
-      if (target !== undefined && reason !== null) {
-        violations.push({
-          partName: part.name,
-          targetName: target.name,
-          reason,
-        });
-      }
+  return result.map((item) => {
+    const violation = item as {
+      readonly part_name: string;
+      readonly target_name: string;
+      readonly reason: unknown;
+    };
+    const reason = variantOf(violation.reason)?.tag;
+    if (reason !== "private_part" && reason !== "private_module") {
+      throw new Error(
+        `core.check-reference-visibility returned an unknown reason: ${String(reason)}`,
+      );
     }
-  }
-  return violations;
+    return {
+      partName: violation.part_name,
+      targetName: violation.target_name,
+      reason,
+    };
+  });
+}
+
+function optionValue(value: unknown): unknown {
+  return value === null || value === undefined ? none() : some(value);
 }
 
 /** 拒否の理由の 1 行 (サーバーの `SubmitEvent` のメッセージ. UI もそのまま出す) */

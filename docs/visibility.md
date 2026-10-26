@@ -11,9 +11,13 @@ issue #624 の後半。モジュールとパーツは公開 (`public`) か非公
 | 非公開のモジュールの公開のパーツ      | 同じプロジェクト ([project.md](project.md)) のパーツ |
 | 非公開のパーツ (モジュールによらない) | 同じモジュールのパーツ                               |
 
-- 「参照」は式と型の中のパーツ参照 (`#part_reference`) のこと。
+- 「参照」は式と型の中のパーツ参照のこと。式の `#part_reference` (型パーツの宣言 `#type_record` などと `#quote` の中を含む) と,
+  パーツの型 (`core.type-ast`) の `#reference`。
 - イベントは誰でも読めるので, 中身を隠すものではない。どのパーツから使ってよいかの決まり。
-- 決まりは `src/visibility.ts` の `referenceViolation` / `checkReferenceVisibility`。
+- 決まりは definy 製の `core.check-reference-visibility` (1 つの参照は `core.reference-violation`)。
+  `npm run build:seeds` が stage1 で `wasm/visibility_checker.wasm` (コミットしない) にコンパイルし,
+  `src/visibility.ts` の `checkReferenceVisibility` がそれを呼ぶ。
+- エディタがパーツの候補を絞る (`ExpressionTreeEditor`) のは同じ決まりの TypeScript 版 `referenceViolation`。
 
 ## イベントの形
 
@@ -32,10 +36,11 @@ issue #624 の後半。モジュールとパーツは公開 (`public`) か非公
 - 変更を含めて全パーツを毎回確かめる。同じプロジェクトの別のモジュールが参照しているパーツを非公開にするコミットも拒否する。
 - 他のプロジェクトが参照しているパーツを非公開にしても, そのコミットは拒否しない (パーツの削除と同じ)。参照している側は,
   次のコミットで直すまで拒否される。
-- UI: 変更ページのコミット前の検査 (`checkCommitTypes`, `src/state/useTypeCheck.ts`) も同じ関数で確かめ, 型エラーと同じ所に出す。
-  参照される側は表示しているブランチのパーツ (`visibilityTargets`, `src/state/useEvents.ts`)。
-- この検査は今は TypeScript にある。`core.check-event` (definy 製) はイベントから式を除いたものを見るので, 式の中の参照は
-  見ていない。definy 製にするなら, 式を渡す検査 (型チェッカーと同じ入口) に移す。
+- UI: 変更ページのコミット前の検査 (`checkCommitTypes`, `src/state/useTypeCheck.ts`) も同じ Wasm で確かめ, 型エラーと同じ所に出す
+  (`src/visibility_checker_browser.ts` が読み込む)。参照される側は表示しているブランチのパーツ (`visibilityTargets`, `src/state/useEvents.ts`)。
+- `core.check-event` はイベントから式を除いたものを見るので, 式の中の参照はこの検査 (式と型を渡す) で見る。
+- (2026-10-26) TypeScript から definy に移した。そのとき, パーツの型 (`core.type-ast`) の参照 (`#reference`) も見るようにした
+  (以前は式の `#part_reference` だけを見ていた)。379 パーツのコミットで 200ms ほど。
 
 ## UI
 

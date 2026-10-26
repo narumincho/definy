@@ -2976,6 +2976,295 @@
         }
       },
       "additionalProperties": false
+    },
+    "core.branch-summary": {
+      "type": "object",
+      "required": [
+        "project_name",
+        "name",
+        "creator_account_id",
+        "latest_event_hash",
+        "latest_time",
+        "commit_count"
+      ],
+      "properties": {
+        "project_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "creator_account_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "latest_event_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "latest_time": {
+          "type": "integer"
+        },
+        "commit_count": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.visibility-target": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "module_name",
+        "project_name",
+        "visibility",
+        "module_visibility"
+      ],
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "module_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "project_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "visibility": {
+          "$ref": "#/definitions/core.visibility"
+        },
+        "module_visibility": {
+          "$ref": "#/definitions/core.visibility"
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.visibility-checked-part": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "module_name",
+        "visibility",
+        "module_visibility",
+        "part_type",
+        "expression"
+      ],
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "module_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "visibility": {
+          "$ref": "#/definitions/core.visibility"
+        },
+        "module_visibility": {
+          "$ref": "#/definitions/core.visibility"
+        },
+        "part_type": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.visibility-violation-reason": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#private_part"
+          ],
+          "properties": {
+            "#private_part": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#private_module"
+          ],
+          "properties": {
+            "#private_module": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.visibility-violation": {
+      "type": "object",
+      "required": [
+        "part_name",
+        "target_name",
+        "reason"
+      ],
+      "properties": {
+        "part_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "target_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/core.visibility-violation-reason"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }
