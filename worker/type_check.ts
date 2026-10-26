@@ -7,6 +7,8 @@
  */
 import typeCheckerModule from "../wasm/type_checker.wasm?module";
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
+import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
+import visibilityCheckerModule from "../wasm/visibility_checker.wasm?module";
 import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
@@ -18,7 +20,6 @@ import {
   outcomeErrorMessage,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
-import { pickLatestCommitPerProject } from "../src/latest_commits.ts";
 import {
   summarizeBranches,
   type ProjectBranchSummary,
@@ -283,19 +284,27 @@ export async function loadProjectBranchHeads(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<ReadonlyArray<ProjectBranchSummary>> {
-  return summarizeBranches(await loadCommits(store, env));
+  return summarizeBranches(
+    branchSummarizerModule,
+    await loadCommits(store, env),
+  );
 }
 
-/** プロジェクトごとの main ブランチの最新のコミット (キーはプロジェクト名) */
+/** プロジェクトごとの main ブランチの最新のコミット (キーはプロジェクト名). どれが最新かは definy の `core.project-branches` が決める */
 async function loadLatestMainCommits(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<ReadonlyMap<string, CachedCommit>> {
-  return pickLatestCommitPerProject(
-    (await loadCommits(store, env)).filter(
-      (commit) => commit.branch === MAIN_BRANCH,
-    ),
-  );
+  const commits = await loadCommits(store, env);
+  const byHash = new Map(commits.map((commit) => [commit.eventHash, commit]));
+  const latest = new Map<string, CachedCommit>();
+  for (const branch of summarizeBranches(branchSummarizerModule, commits)) {
+    const commit = byHash.get(branch.latestEventHash);
+    if (branch.name === MAIN_BRANCH && commit !== undefined) {
+      latest.set(branch.projectName, commit);
+    }
+  }
+  return latest;
 }
 
 /** プロジェクト `projectName` のブランチ (既定は main) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
@@ -306,29 +315,13 @@ export async function latestCommitHashOf(
   branch: string = MAIN_BRANCH,
 ): Promise<string | null> {
   return (
-    latestOnBranch(
+    summarizeBranches(
+      branchSummarizerModule,
       (await loadCommits(store, env)).filter(
         (commit) => commit.projectName === projectName,
       ),
-      branch,
-    )?.eventHash ?? null
+    ).find((summary) => summary.name === branch)?.latestEventHash ?? null
   );
-}
-
-function latestOnBranch(
-  projectCommits: ReadonlyArray<CachedCommit>,
-  branch: string,
-): CachedCommit | undefined {
-  let latest: CachedCommit | undefined;
-  for (const commit of projectCommits) {
-    if (
-      commit.branch === branch &&
-      (latest === undefined || latest.timeMs < commit.timeMs)
-    ) {
-      latest = commit;
-    }
-  }
-  return latest;
 }
 
 /** ストアの署名の正しいプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
@@ -448,7 +441,7 @@ export async function checkSubmittedProjectCommit(
     bytesToUrlSafeBase64NoPad(decoded.accountIdBytes) ===
     bytesToUrlSafeBase64NoPad(await systemAccountBytes(env));
   // 参照できない (非公開の) パーツへの参照は, 型を検査する前に拒否する (docs/visibility.md)
-  const violations = checkReferenceVisibility({
+  const violations = checkReferenceVisibility(visibilityCheckerModule, {
     projectName: commit.projectName,
     committed,
     environment: latest.visibilityTargets,

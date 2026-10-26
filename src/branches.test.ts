@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   commitTarget,
@@ -8,6 +9,10 @@ import {
   type BranchSummary,
   unusedBranchName,
 } from "./branches.ts";
+
+const summarizer = new WebAssembly.Module(
+  await readFile("wasm/branch_summarizer.wasm"),
+);
 
 const commits = [
   {
@@ -61,7 +66,7 @@ function projectBranches(
   projectName: string,
 ): ReadonlyArray<BranchSummary> {
   return sortBranches(
-    summarizeBranches(commits)
+    summarizeBranches(summarizer, commits)
       .filter((branch) => branch.projectName === projectName)
       .map((branch) => ({
         name: branch.name,
@@ -92,6 +97,27 @@ describe("summarizeBranches", () => {
       },
     ]);
     expect(projectBranches(commits, "none")).toEqual([]);
+  });
+
+  it("ブランチは最初に現れた順. 同じ時刻なら先のコミットを最新・作成者にする", () => {
+    const tied = [
+      { ...commits[5]!, eventHash: "o2", accountId: "dave" },
+      ...commits,
+    ];
+    expect(
+      summarizeBranches(summarizer, tied).map((branch) => [
+        branch.projectName,
+        branch.name,
+        branch.creatorAccountId,
+        branch.latestEventHash,
+        branch.commitCount,
+      ]),
+    ).toEqual([
+      ["other", "main", "dave", "o2", 2],
+      ["app", "main", "alice", "m2", 2],
+      ["app", "bob", "carol", "b2", 3],
+    ]);
+    expect(summarizeBranches(summarizer, [])).toEqual([]);
   });
 });
 
