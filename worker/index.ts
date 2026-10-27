@@ -1,9 +1,11 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { checkSubmittedEvent } from "./event_check.ts";
+import serviceModule from "../wasm/service.wasm?module";
 import {
   checkSubmittedProjectCommit,
-  loadProjectBranchHeads,
+  loadCommitSummaries,
 } from "./type_check.ts";
+import { handleRpcInDefiny } from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
@@ -13,11 +15,9 @@ import type {
   GetContentRequest,
   GetEventRequest,
   GetEventsRequest,
-  GetProjectBranchesResponse,
   HttpProxyFetchRequest,
   HttpProxyFetchResponse,
   HttpProxyHeader,
-  ProjectBranchItem,
   SubmitEventRequest,
   UploadContentRequest,
 } from "./types.ts";
@@ -303,6 +303,8 @@ async function serveVirtualWasm(
   });
 }
 
+const EVENT_SERVICE_PREFIX = "/definy.v1.EventService/";
+
 async function handleRpc(
   request: Request,
   pathname: string,
@@ -311,30 +313,26 @@ async function handleRpc(
   store: WorkerStore,
   fetchFn: typeof fetch,
 ): Promise<Response> {
+  // definy 製の処理 (`definy.handle-rpc`) があるメソッドはそれで処理する (docs/service.md)
+  if (pathname.startsWith(EVENT_SERVICE_PREFIX)) {
+    const response = await handleRpcInDefiny(
+      serviceModule,
+      pathname.slice(EVENT_SERVICE_PREFIX.length),
+      () => parseJsonBody<unknown>(body),
+      {
+        readCommits: () => loadCommitSummaries(store, env),
+        readEvents: (hashes) =>
+          Promise.all(hashes.map((hash) => store.getEvent(hash, env))),
+      },
+    );
+    if (response !== null) {
+      return jsonResponse(response.body, response.status);
+    }
+  }
   switch (pathname) {
     case "/definy.v1.EventService/GetEvents": {
       const req = parseJsonBody<GetEventsRequest>(body);
       return jsonResponse({ events: await store.getEvents(req, env) });
-    }
-
-    case "/definy.v1.EventService/GetProjectBranches": {
-      const heads = await loadProjectBranchHeads(store, env);
-      const branches: Array<ProjectBranchItem> = [];
-      for (const head of heads) {
-        const latestEvent = await store.getEvent(head.latestEventHash, env);
-        if (latestEvent !== undefined) {
-          branches.push({
-            projectName: head.projectName,
-            branch: head.name,
-            creatorAccountId: head.creatorAccountId,
-            commitCount: head.commitCount,
-            latestEvent,
-          });
-        }
-      }
-      return jsonResponse({
-        branches,
-      } satisfies GetProjectBranchesResponse);
     }
 
     case "/definy.v1.EventService/GetEvent": {

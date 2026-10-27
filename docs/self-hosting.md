@@ -146,7 +146,9 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    (`core.check-reference-visibility`) も definy にした ([branch.md](branch.md), [visibility.md](visibility.md))。
    足りない content hash を求めるのは D1 の問い合わせなので TypeScript のまま, 型検査するパーツの選び方は既に definy
    (`core.module-commit-classify`)。Worker が使う definy の関数は `npm run build:seeds` が `wasm/*.wasm` にコンパイルする
-   (`type_checker`, `event_checker`, `shape_checker`, `branch_summarizer`, `visibility_checker`)。
+   (`type_checker`, `event_checker`, `shape_checker`, `branch_summarizer`, `visibility_checker`, `service`)。
+   (2026-10-27) RPC の処理そのものも definy で書けるようにした (`definy.handle-rpc`, [service.md](service.md))。
+   処理はストアを読む要求を値で返し, ホストが読んで渡す。最初は `GetProjectBranches`。
    サービス自身のデプロイ・運用ブートストラップ構想（現在は Cloudflare Workers が対象）は
    [deployment-bootstrapping.md](deployment-bootstrapping.md)
    を参照。IO を持つサービス全体の移行は言語 runtime の拡張後です。

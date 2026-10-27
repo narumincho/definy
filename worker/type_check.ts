@@ -20,10 +20,7 @@ import {
   outcomeErrorMessage,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
-import {
-  summarizeBranches,
-  type ProjectBranchSummary,
-} from "../src/branches.ts";
+import { summarizeBranches } from "../src/branches.ts";
 import { compilerBuiltinName } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
@@ -277,17 +274,6 @@ async function loadCommits(
     }
   }
   return commits;
-}
-
-/** ストアの全プロジェクトの全ブランチ (`GetProjectBranches`). ブラウザはこれでプロジェクトの今の状態を知る (全イベントを読まなくてよい) */
-export async function loadProjectBranchHeads(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<ProjectBranchSummary>> {
-  return summarizeBranches(
-    branchSummarizerModule,
-    await loadCommits(store, env),
-  );
 }
 
 /** プロジェクトごとの main ブランチの最新のコミット (キーはプロジェクト名). どれが最新かは definy の `core.project-branches` が決める */

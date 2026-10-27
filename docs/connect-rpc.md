@@ -117,7 +117,7 @@ message GetContentResponse {
 
 - **サーバー側 (`worker/index.ts`)**:
   - `POST /definy.v1.EventService/GetEvents`
-  - `POST /definy.v1.EventService/GetProjectBranches`
+  - `POST /definy.v1.EventService/GetProjectBranches` (definy 製の `definy.get-project-branches` が処理する. [service.md](service.md))
   - `POST /definy.v1.EventService/GetEvent`
   - `POST /definy.v1.EventService/SubmitEvent`
   - `POST /definy.v1.EventService/CheckMissingHashes` (差分ハッシュ照会)

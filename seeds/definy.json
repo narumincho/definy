@@ -2435,6 +2435,1818 @@
           }
         }
       }
+    },
+    {
+      "name": "json",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A JSON value. The server reads the request body of an RPC into this and writes the response from it (definy.service-io)"
+        },
+        {
+          "language": "ja",
+          "text": "JSON の値. サーバーは RPC のリクエストの本文をこれにして渡し, レスポンスをこれから書く (definy.service-io)"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "null",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "boolean",
+            "payload_type": {
+              "#some": {
+                "#type_boolean": null
+              }
+            }
+          },
+          {
+            "tag": "number",
+            "payload_type": {
+              "#some": {
+                "#type_number": null
+              }
+            }
+          },
+          {
+            "tag": "string",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          },
+          {
+            "tag": "array",
+            "payload_type": {
+              "#some": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.json"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "tag": "object",
+            "payload_type": {
+              "#some": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_record": [
+                      {
+                        "key": "key",
+                        "value": {
+                          "#type_string": null
+                        }
+                      },
+                      {
+                        "key": "value",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.json"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stored-event",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A signed event the server has stored: the event hash, the signed event (Base64), the account, the event type, the time it was received and the time of the event (milliseconds, if known)"
+        },
+        {
+          "language": "ja",
+          "text": "サーバーが保存している署名済みイベント: イベントハッシュ, 署名済みイベント (Base64), アカウント, イベントの種類, 受け取った時刻, イベントの時刻 (ミリ秒. 分かれば)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "event_hash",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "signed_event_bytes",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "account_id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "event_type",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "created_at_rfc3339",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "time",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_number": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "service-response",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The response of an RPC: the HTTP status and the JSON body"
+        },
+        {
+          "language": "ja",
+          "text": "RPC のレスポンス: HTTP のステータスと JSON の本文"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "status",
+            "value": {
+              "#type_number": null
+            }
+          },
+          {
+            "key": "body",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "definy.json"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "service-io",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "How the server handles an RPC, step by step (like wasi.io): respond ends it with the response, read_commits reads the project commits the server has accepted (in the order of the store) and read_events reads the stored events with the hashes (none if not found), and both continue with then. The host (worker/service_io.ts) does the reading; the handler only decides. See docs/service.md"
+        },
+        {
+          "language": "ja",
+          "text": "サーバーが RPC を 1 歩ずつ処理するもの (wasi.io と同じ考え方): respond でレスポンスを返して終わり, read_commits はサーバーが受け付けたプロジェクトのコミット (ストアの順) を, read_events はそのハッシュの保存しているイベント (無ければ none) を読んで then に渡して続ける. 読むのはホスト (worker/service_io.ts) で, 処理は決めるだけ. docs/service.md を参照"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "respond",
+            "payload_type": {
+              "#some": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.service-response"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "tag": "read_commits",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "commits",
+                            "type": {
+                              "#type_list": {
+                                "item_type": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "core.commit-summary"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "read_events",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "event_hashes",
+                    "value": {
+                      "#type_list": {
+                        "item_type": {
+                          "#type_string": null
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "events",
+                            "type": {
+                              "#type_list": {
+                                "item_type": {
+                                  "#type_union": [
+                                    {
+                                      "tag": "none",
+                                      "payload_type": {
+                                        "#none": null
+                                      }
+                                    },
+                                    {
+                                      "tag": "some",
+                                      "payload_type": {
+                                        "#some": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "definy.stored-event"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stored-event-json",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "event",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "definy.stored-event"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "definy.json"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The stored event as the JSON of the API (EventItem)"
+        },
+        {
+          "language": "ja",
+          "text": "保存しているイベントを API の JSON (EventItem) にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "event"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "object",
+              "payload": {
+                "#some": {
+                  "#call": {
+                    "function": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.list-concat"
+                        }
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "name": "left",
+                        "value": {
+                          "#list": [
+                            {
+                              "#record": [
+                                {
+                                  "key": "key",
+                                  "value": {
+                                    "#string": "eventHash"
+                                  }
+                                },
+                                {
+                                  "key": "value",
+                                  "value": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            },
+                                            "key": "event_hash"
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.json"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "#record": [
+                                {
+                                  "key": "key",
+                                  "value": {
+                                    "#string": "signedEventBytes"
+                                  }
+                                },
+                                {
+                                  "key": "value",
+                                  "value": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            },
+                                            "key": "signed_event_bytes"
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.json"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "#record": [
+                                {
+                                  "key": "key",
+                                  "value": {
+                                    "#string": "accountId"
+                                  }
+                                },
+                                {
+                                  "key": "value",
+                                  "value": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            },
+                                            "key": "account_id"
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.json"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "#record": [
+                                {
+                                  "key": "key",
+                                  "value": {
+                                    "#string": "eventType"
+                                  }
+                                },
+                                {
+                                  "key": "value",
+                                  "value": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            },
+                                            "key": "event_type"
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.json"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "#record": [
+                                {
+                                  "key": "key",
+                                  "value": {
+                                    "#string": "createdAtRfc3339"
+                                  }
+                                },
+                                {
+                                  "key": "value",
+                                  "value": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            },
+                                            "key": "created_at_rfc3339"
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.json"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "name": "right",
+                        "value": {
+                          "#match": {
+                            "target": {
+                              "#record_get": {
+                                "record": {
+                                  "#variable": {
+                                    "variable_id": 0
+                                  }
+                                },
+                                "key": "time"
+                              }
+                            },
+                            "arms": [
+                              {
+                                "tag": "none",
+                                "variable_id": -1,
+                                "variable_name": "",
+                                "body": {
+                                  "#list": []
+                                }
+                              },
+                              {
+                                "tag": "some",
+                                "variable_id": 1,
+                                "variable_name": "time",
+                                "body": {
+                                  "#list": [
+                                    {
+                                      "#record": [
+                                        {
+                                          "key": "key",
+                                          "value": {
+                                            "#string": "timeMs"
+                                          }
+                                        },
+                                        {
+                                          "key": "value",
+                                          "value": {
+                                            "#variant": {
+                                              "tag": "number",
+                                              "payload": {
+                                                "#some": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              },
+                                              "type_part": {
+                                                "#some": {
+                                                  "$part": "definy.json"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "definy.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "branch-latest-event-hashes",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "branches",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.branch-summary"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#string": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The latest event hashes of the branches from index"
+        },
+        {
+          "language": "ja",
+          "text": "index からのブランチの最新のコミットのイベントハッシュ"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "branches"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than-or-equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": []
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-concat"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#list": [
+                              {
+                                "#record_get": {
+                                  "record": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-get"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "list",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "key": "latest_event_hash"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.branch-latest-event-hashes"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "branches",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "branch-items-json",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "branches",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.branch-summary"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "events",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#union": [
+                      {
+                        "tag": "none",
+                        "payload_type": {
+                          "#none": null
+                        }
+                      },
+                      {
+                        "tag": "some",
+                        "payload_type": {
+                          "#some": {
+                            "#reference": {
+                              "part_hash": {
+                                "$part": "definy.stored-event"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "definy.json"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The branches from index as the JSON of GetProjectBranches (ProjectBranchItem), with their latest events (events, in the same order). Branches whose latest event is not found are left out"
+        },
+        {
+          "language": "ja",
+          "text": "index からのブランチを, 最新のコミットのイベント (events. 同じ順) と合わせて GetProjectBranches の JSON (ProjectBranchItem) にする. 最新のイベントが見つからないブランチは除く"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "branches"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "events"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than-or-equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": []
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#let": {
+                      "variable_id": 3,
+                      "variable_name": "branch",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-get"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "list",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-concat"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-get"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "list",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "none",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#list": []
+                                      }
+                                    },
+                                    {
+                                      "tag": "some",
+                                      "variable_id": 4,
+                                      "variable_name": "event",
+                                      "body": {
+                                        "#list": [
+                                          {
+                                            "#variant": {
+                                              "tag": "object",
+                                              "payload": {
+                                                "#some": {
+                                                  "#list": [
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "key",
+                                                          "value": {
+                                                            "#string": "projectName"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#variant": {
+                                                              "tag": "string",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#record_get": {
+                                                                    "record": {
+                                                                      "#variable": {
+                                                                        "variable_id": 3
+                                                                      }
+                                                                    },
+                                                                    "key": "project_name"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.json"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "key",
+                                                          "value": {
+                                                            "#string": "branch"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#variant": {
+                                                              "tag": "string",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#record_get": {
+                                                                    "record": {
+                                                                      "#variable": {
+                                                                        "variable_id": 3
+                                                                      }
+                                                                    },
+                                                                    "key": "name"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.json"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "key",
+                                                          "value": {
+                                                            "#string": "creatorAccountId"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#variant": {
+                                                              "tag": "string",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#record_get": {
+                                                                    "record": {
+                                                                      "#variable": {
+                                                                        "variable_id": 3
+                                                                      }
+                                                                    },
+                                                                    "key": "creator_account_id"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.json"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "key",
+                                                          "value": {
+                                                            "#string": "commitCount"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#variant": {
+                                                              "tag": "number",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#record_get": {
+                                                                    "record": {
+                                                                      "#variable": {
+                                                                        "variable_id": 3
+                                                                      }
+                                                                    },
+                                                                    "key": "commit_count"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.json"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "key",
+                                                          "value": {
+                                                            "#string": "latestEvent"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.stored-event-json"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "event",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "type_part": {
+                                                "#some": {
+                                                  "$part": "definy.json"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.branch-items-json"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "branches",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "events",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "get-project-branches",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "request",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "definy.json"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The RPC GetProjectBranches: the branches of every project (core.project-branches) with the creator, the number of commits and the latest event. The browser knows the current state of the projects from this without reading every event. See docs/branch.md"
+        },
+        {
+          "language": "ja",
+          "text": "RPC GetProjectBranches: 全プロジェクトのブランチ (core.project-branches) を, 作成者・コミットの数・最新のイベントと返す. ブラウザは全イベントを読まずにこれでプロジェクトの今の状態を知る. docs/branch.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "request"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "read_commits",
+              "payload": {
+                "#some": {
+                  "#record": [
+                    {
+                      "key": "then",
+                      "value": {
+                        "#function": {
+                          "parameters": [
+                            {
+                              "parameter_id": 1,
+                              "parameter_name": "commits"
+                            }
+                          ],
+                          "body": {
+                            "#let": {
+                              "variable_id": 2,
+                              "variable_name": "branches",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.project-branches"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "commits",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "body": {
+                                "#variant": {
+                                  "tag": "read_events",
+                                  "payload": {
+                                    "#some": {
+                                      "#record": [
+                                        {
+                                          "key": "event_hashes",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "definy.branch-latest-event-hashes"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "branches",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "then",
+                                          "value": {
+                                            "#function": {
+                                              "parameters": [
+                                                {
+                                                  "parameter_id": 3,
+                                                  "parameter_name": "events"
+                                                }
+                                              ],
+                                              "body": {
+                                                "#variant": {
+                                                  "tag": "respond",
+                                                  "payload": {
+                                                    "#some": {
+                                                      "#record": [
+                                                        {
+                                                          "key": "status",
+                                                          "value": {
+                                                            "#number": 200
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "body",
+                                                          "value": {
+                                                            "#variant": {
+                                                              "tag": "object",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#list": [
+                                                                    {
+                                                                      "#record": [
+                                                                        {
+                                                                          "key": "key",
+                                                                          "value": {
+                                                                            "#string": "branches"
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "key": "value",
+                                                                          "value": {
+                                                                            "#variant": {
+                                                                              "tag": "array",
+                                                                              "payload": {
+                                                                                "#some": {
+                                                                                  "#call": {
+                                                                                    "function": {
+                                                                                      "#part_reference": {
+                                                                                        "part_definition_event_hash": {
+                                                                                          "$part": "definy.branch-items-json"
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    "arguments": [
+                                                                                      {
+                                                                                        "name": "branches",
+                                                                                        "value": {
+                                                                                          "#variable": {
+                                                                                            "variable_id": 2
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "events",
+                                                                                        "value": {
+                                                                                          "#variable": {
+                                                                                            "variable_id": 3
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "index",
+                                                                                        "value": {
+                                                                                          "#number": 0
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "type_part": {
+                                                                                "#some": {
+                                                                                  "$part": "definy.json"
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.json"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "definy.service-io"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part": {
+                                    "#some": {
+                                      "$part": "definy.service-io"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "definy.service-io"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "handle-rpc",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "method",
+              "type": {
+                "#string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "name": "request",
+                          "type": {
+                            "#reference": {
+                              "part_hash": {
+                                "$part": "definy.json"
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "return_type": {
+                        "#reference": {
+                          "part_hash": {
+                            "$part": "definy.service-io"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "How the server handles the RPC method (the name after /definy.v1.EventService/): a function from the request body. none for the methods still handled in TypeScript. The server compiles this at build time (wasm/service.wasm) and runs it with worker/service_io.ts. See docs/service.md"
+        },
+        {
+          "language": "ja",
+          "text": "RPC のメソッド (/definy.v1.EventService/ の後の名前) をどう処理するか: リクエストの本文から処理を返す関数. まだ TypeScript で処理するメソッドは none. サーバーはビルド時にこれをコンパイルし (wasm/service.wasm), worker/service_io.ts で動かす. docs/service.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "method"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "GetProjectBranches",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#function": {
+                            "parameters": [
+                              {
+                                "parameter_id": 1,
+                                "parameter_name": "request"
+                              }
+                            ],
+                            "body": {
+                              "#call": {
+                                "function": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "definy.get-project-branches"
+                                    }
+                                  }
+                                },
+                                "arguments": [
+                                  {
+                                    "name": "request",
+                                    "value": {
+                                      "#variable": {
+                                        "variable_id": 1
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "_",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#none": null
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   ]
 }

@@ -1,0 +1,183 @@
+/**
+ * サーバーの RPC の処理を definy 製の `definy.handle-rpc` で動かす (docs/service.md).
+ *
+ * `definy.handle-rpc` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
+ * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
+ * ストアを読む要求 (`read_commits` / `read_events`) をホスト (ここ) が読んで `then` に渡す. 処理は決めるだけで,
+ * 読める範囲はホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
+ */
+import { variant, variantOf } from "../src/definy_value.ts";
+import {
+  commitSummaryLiteral,
+  type CommitSummary,
+} from "../src/event_check.ts";
+import {
+  instantiateCompiledFunction,
+  type DefinyValue,
+} from "../src/stage1_compiler.ts";
+import type { EventItem } from "./types.ts";
+
+/** 処理がストアを読むときに使うもの */
+export type ServiceIoHost = {
+  /** 受け付けたプロジェクトのコミット (ストアの順) */
+  readonly readCommits: () => Promise<ReadonlyArray<CommitSummary>>;
+  /** そのハッシュの保存しているイベント (同じ順. 無ければ `undefined`) */
+  readonly readEvents: (
+    eventHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<EventItem | undefined>>;
+};
+
+/** `definy.service-response` */
+export type ServiceResponse = {
+  readonly status: number;
+  /** JSON の値 */
+  readonly body: unknown;
+};
+
+/** これだけストアを読んでも終わらなければ止める */
+const MAX_STEPS = 100;
+
+/**
+ * RPC のメソッド `method` を, リクエストの本文 (`request` が返す JSON の値) で, コンパイルした `definy.handle-rpc` (`service`) で処理する.
+ * まだ TypeScript で処理するメソッドなら `null`
+ */
+export async function handleRpcInDefiny(
+  service: WebAssembly.Module,
+  method: string,
+  request: () => unknown,
+  host: ServiceIoHost,
+): Promise<ServiceResponse | null> {
+  const instance = instantiateCompiledFunction(service);
+  const handler = instance.variant(
+    instance.call([instance.writeArgument(method)]),
+  );
+  if (handler.tag === "none") {
+    return null;
+  }
+  if (handler.tag !== "some" || handler.payload === null) {
+    throw new Error(`definy.handle-rpc returned ${handler.tag}`);
+  }
+  // 本文は definy が処理するメソッドのときだけ読む
+  let pointer = instance.callClosure(handler.payload, [
+    instance.writeArgument(jsonToDefiny(request())),
+  ]);
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const { tag, payload } = instance.variant(pointer);
+    if (payload === null) {
+      throw new Error(`definy.service-io の ${tag} にペイロードがありません`);
+    }
+    switch (tag) {
+      case "respond": {
+        const response = instance.read(payload) as {
+          readonly status: number;
+          readonly body: DefinyValue;
+        };
+        return { status: response.status, body: definyToJson(response.body) };
+      }
+      case "read_commits": {
+        const commits = await host.readCommits();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(commits.map(commitSummaryLiteral)),
+        ]);
+        break;
+      }
+      case "read_events": {
+        const hashes = instance.read(
+          instance.recordField(payload, "event_hashes"),
+        );
+        const events = await host.readEvents(
+          Array.isArray(hashes) ? hashes.map(String) : [],
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            events.map((event) =>
+              event === undefined
+                ? variant("none")
+                : variant("some", storedEventLiteral(event)),
+            ),
+          ),
+        ]);
+        break;
+      }
+      default:
+        throw new Error(`definy.service-io ではない値です (タグ: ${tag})`);
+    }
+  }
+  throw new Error(`${MAX_STEPS} 回ストアを読んでも終わりませんでした`);
+}
+
+/** 保存しているイベントを definy の値 (`definy.stored-event`) にする */
+function storedEventLiteral(event: EventItem): unknown {
+  return {
+    event_hash: event.eventHash,
+    signed_event_bytes: event.signedEventBytes,
+    account_id: event.accountId,
+    event_type: event.eventType,
+    created_at_rfc3339: event.createdAtRfc3339,
+    time:
+      event.timeMs === undefined
+        ? variant("none")
+        : variant("some", event.timeMs),
+  };
+}
+
+/**
+ * JSON の値を definy の値 (`definy.json`) にする.
+ * definy の数は整数 (64 ビット) なので, 整数でない数は扱えない
+ */
+export function jsonToDefiny(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return variant("null");
+  }
+  if (typeof value === "boolean") {
+    return variant("boolean", value);
+  }
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(`definy.json cannot hold the number ${value}`);
+    }
+    return variant("number", value);
+  }
+  if (typeof value === "string") {
+    return variant("string", value);
+  }
+  if (Array.isArray(value)) {
+    return variant("array", value.map(jsonToDefiny));
+  }
+  if (typeof value === "object") {
+    return variant(
+      "object",
+      Object.entries(value).map(([key, item]) => ({
+        key,
+        value: jsonToDefiny(item),
+      })),
+    );
+  }
+  throw new Error(`not a JSON value: ${String(value)}`);
+}
+
+/** definy の値 (`definy.json`) を JSON の値にする */
+export function definyToJson(value: DefinyValue): unknown {
+  const tagged = variantOf(value);
+  switch (tagged?.tag) {
+    case "null":
+      return null;
+    case "boolean":
+    case "number":
+    case "string":
+      return tagged.payload;
+    case "array":
+      return (tagged.payload as ReadonlyArray<DefinyValue>).map(definyToJson);
+    case "object":
+      return Object.fromEntries(
+        (
+          tagged.payload as ReadonlyArray<{
+            readonly key: string;
+            readonly value: DefinyValue;
+          }>
+        ).map(({ key, value }) => [key, definyToJson(value)]),
+      );
+    default:
+      throw new Error(`not a definy.json value: ${JSON.stringify(value)}`);
+  }
+}
