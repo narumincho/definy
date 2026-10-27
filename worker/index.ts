@@ -10,11 +10,8 @@ import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
 import type {
-  CheckMissingHashesRequest,
+  ContentItem,
   Env,
-  GetContentRequest,
-  GetEventRequest,
-  GetEventsRequest,
   HttpProxyFetchRequest,
   HttpProxyFetchResponse,
   HttpProxyHeader,
@@ -305,6 +302,15 @@ async function serveVirtualWasm(
 
 const EVENT_SERVICE_PREFIX = "/definy.v1.EventService/";
 
+/** `hashes` の順に, 見つかった中身 (無ければ `undefined`) */
+function contentsInOrder(
+  hashes: ReadonlyArray<string>,
+  items: ReadonlyArray<ContentItem>,
+): ReadonlyArray<ContentItem | undefined> {
+  const byHash = new Map(items.map((item) => [item.contentHash, item]));
+  return hashes.map((hash) => byHash.get(hash));
+}
+
 async function handleRpc(
   request: Request,
   pathname: string,
@@ -323,6 +329,11 @@ async function handleRpc(
         readCommits: () => loadCommitSummaries(store, env),
         readEvents: (hashes) =>
           Promise.all(hashes.map((hash) => store.getEvent(hash, env))),
+        readEventsPage: (page) => store.getEvents(page, env),
+        readContents: async (hashes) =>
+          contentsInOrder(hashes, await store.getContentItems(hashes, env)),
+        readMissingContentHashes: (hashes) =>
+          store.checkMissingHashes(hashes, env),
       },
     );
     if (response !== null) {
@@ -330,24 +341,6 @@ async function handleRpc(
     }
   }
   switch (pathname) {
-    case "/definy.v1.EventService/GetEvents": {
-      const req = parseJsonBody<GetEventsRequest>(body);
-      return jsonResponse({ events: await store.getEvents(req, env) });
-    }
-
-    case "/definy.v1.EventService/GetEvent": {
-      const req = parseJsonBody<GetEventRequest>(body);
-      const hash = req.eventHash?.trim() ?? "";
-      if (!hash) {
-        throw new ConnectError("invalid_argument", "eventHash is required");
-      }
-      const event = await store.getEvent(hash, env);
-      if (!event) {
-        throw new ConnectError("not_found", `Event '${hash}' not found`);
-      }
-      return jsonResponse({ event });
-    }
-
     case "/definy.v1.EventService/SubmitEvent": {
       const req = parseJsonBody<SubmitEventRequest>(body);
       const rawEvent = req.signedEventBytes?.trim() ?? "";
@@ -396,42 +389,10 @@ async function handleRpc(
       );
     }
 
-    case "/definy.v1.EventService/CheckMissingHashes": {
-      const req = parseJsonBody<CheckMissingHashesRequest>(body);
-      const missing = await store.checkMissingHashes(
-        req.contentHashes ?? [],
-        env,
-      );
-      return jsonResponse({ missingContentHashes: missing });
-    }
-
     case "/definy.v1.EventService/UploadContent": {
       const req = parseJsonBody<UploadContentRequest>(body);
       const stored = await store.uploadContent(req.items ?? [], env);
       return jsonResponse({ storedContentHashes: stored });
-    }
-
-    case "/definy.v1.EventService/GetContent": {
-      const req = parseJsonBody<GetContentRequest>(body);
-      const singleHash = req.contentHash?.trim();
-      if (singleHash) {
-        const item = await store.getContentItem(singleHash, env);
-        if (!item) {
-          throw new ConnectError(
-            "not_found",
-            `Content '${singleHash}' not found`,
-          );
-        }
-        return jsonResponse({ item });
-      }
-      if (req.contentHashes) {
-        const items = await store.getContentItems(req.contentHashes, env);
-        return jsonResponse({ items });
-      }
-      throw new ConnectError(
-        "invalid_argument",
-        "contentHash or contentHashes is required",
-      );
     }
 
     case "/definy.v1.HttpProxyService/Fetch": {

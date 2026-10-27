@@ -15,7 +15,7 @@ import {
   instantiateCompiledFunction,
   type DefinyValue,
 } from "../src/stage1_compiler.ts";
-import type { EventItem } from "./types.ts";
+import type { ContentItem, EventItem } from "./types.ts";
 
 /** 処理がストアを読むときに使うもの */
 export type ServiceIoHost = {
@@ -25,6 +25,20 @@ export type ServiceIoHost = {
   readonly readEvents: (
     eventHashes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<EventItem | undefined>>;
+  /** 保存しているイベントの 1 ページ (新しい順. `eventType` があればその種類だけ) */
+  readonly readEventsPage: (page: {
+    readonly eventType: string | null;
+    readonly limit: number;
+    readonly offset: number;
+  }) => Promise<ReadonlyArray<EventItem>>;
+  /** そのハッシュの CAS の中身 (同じ順. 無ければ `undefined`) */
+  readonly readContents: (
+    contentHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<ContentItem | undefined>>;
+  /** CAS に無いハッシュ */
+  readonly readMissingContentHashes: (
+    contentHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<string>>;
 };
 
 /** `definy.service-response` */
@@ -82,11 +96,10 @@ export async function handleRpcInDefiny(
         break;
       }
       case "read_events": {
-        const hashes = instance.read(
-          instance.recordField(payload, "event_hashes"),
-        );
         const events = await host.readEvents(
-          Array.isArray(hashes) ? hashes.map(String) : [],
+          readStrings(
+            instance.read(instance.recordField(payload, "event_hashes")),
+          ),
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(
@@ -99,11 +112,64 @@ export async function handleRpcInDefiny(
         ]);
         break;
       }
+      case "read_events_page": {
+        const page = instance.read(payload) as {
+          readonly event_type: DefinyValue;
+          readonly limit: number;
+          readonly offset: number;
+        };
+        const eventType = variantOf(page.event_type);
+        const events = await host.readEventsPage({
+          eventType:
+            eventType?.tag === "some" ? String(eventType.payload) : null,
+          limit: page.limit,
+          offset: page.offset,
+        });
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(events.map(storedEventLiteral)),
+        ]);
+        break;
+      }
+      case "read_contents": {
+        const items = await host.readContents(
+          readStrings(
+            instance.read(instance.recordField(payload, "content_hashes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            items.map((item) =>
+              item === undefined
+                ? variant("none")
+                : variant("some", {
+                    content_hash: item.contentHash,
+                    content_bytes: item.contentBytes,
+                  }),
+            ),
+          ),
+        ]);
+        break;
+      }
+      case "read_missing_content_hashes": {
+        const missing = await host.readMissingContentHashes(
+          readStrings(
+            instance.read(instance.recordField(payload, "content_hashes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(missing),
+        ]);
+        break;
+      }
       default:
         throw new Error(`definy.service-io ではない値です (タグ: ${tag})`);
     }
   }
   throw new Error(`${MAX_STEPS} 回ストアを読んでも終わりませんでした`);
+}
+
+function readStrings(value: DefinyValue): ReadonlyArray<string> {
+  return Array.isArray(value) ? value.map(String) : [];
 }
 
 /** 保存しているイベントを definy の値 (`definy.stored-event`) にする */
