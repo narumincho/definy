@@ -98,6 +98,18 @@ function contentForCheck(content: EventContent): EventContent {
   };
 }
 
+/** 受け付けたコミットを definy の値 (`core.commit-summary`) にする */
+export function commitSummaryLiteral(commit: CommitSummary): unknown {
+  return {
+    event_hash: commit.eventHash,
+    account_id: commit.accountId,
+    project_name: commit.projectName,
+    branch: commit.branch,
+    time: commit.timeMs,
+    module_names: commit.moduleNames,
+  };
+}
+
 /** `core.check-event` (コンパイルした `checker`) でイベントを検査し, 受け付けない理由を返す. 空なら受け付ける */
 export function checkEvent(
   checker: WebAssembly.Module,
@@ -111,14 +123,7 @@ export function checkEvent(
       instance.writeArgument({
         account_id: facts.accountId,
         account_created: facts.accountCreated,
-        commits: facts.commits.map((commit) => ({
-          event_hash: commit.eventHash,
-          account_id: commit.accountId,
-          project_name: commit.projectName,
-          branch: commit.branch,
-          time: commit.timeMs,
-          module_names: commit.moduleNames,
-        })),
+        commits: facts.commits.map(commitSummaryLiteral),
       }),
     ]),
   );

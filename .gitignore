@@ -13,3 +13,4 @@ playwright-report/
 /wasm/shape_checker.wasm
 /wasm/branch_summarizer.wasm
 /wasm/visibility_checker.wasm
+/wasm/service.wasm
