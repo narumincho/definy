@@ -117,7 +117,8 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 
 1. **[済] 型宣言の意味検査**: record field 名と union tag の重複、空 variant
    集合を `invalid_type_declaration` として拒否し、型パーツ同士の相互参照も解決します（Phase 9〜10）。
-   型定義パーツ自体の再帰参照（循環）の規則は未決定です。
+   型パーツの参照だけで循環する宣言 (`A = B`, `B = A`) は `invalid_type_declaration` にします ([part-type.md](part-type.md))。
+   型の構築子を通る再帰 (`core.expression`) は書けます。それ以外の再帰の規則は [language-open-questions.md](language-open-questions.md)。
 2. **[済] module type environment**: `core.build-type-env` が
    全パーツの hash と宣言型 (型パーツは宣言した型も) から環境を作り、
    `PartReference`・構築子・相互参照を解決します。
@@ -773,7 +774,8 @@ core と wasm は同じプロジェクト `definy` のモジュールなので, 
   - `core.plus`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
   - `core.minus`: 左辺命令列 + 右辺命令列 + `i64.sub` (`0x7d`)
   - `core.multiply`: 左辺命令列 + 右辺命令列 + `i64.mul` (`0x7e`)
-  - `core.divide`: 左辺命令列 + 右辺命令列 + `i64.div_s` (`0x7f`)
+  - `core.divide`: 左辺と右辺をローカル変数 (`depth`, `depth + 1`) に置き, 右辺が 0 なら 0, -1 なら `0 - 左辺`, それ以外は `i64.div_s` (`0x7f`).
+    `core.remainder` は右辺が 0 なら左辺, それ以外は `i64.rem_s` (実行時エラーにしない. [builtin-parts.md](builtin-parts.md))
   - `core.less-than`: 左辺命令列 + 右辺命令列 + `i64.lt_s` (`0x53`)
   - (数値は箱に入っているので, 各辺のあとに `i64.load offset=8` で取り出し, 結果を箱に入れる)
 

@@ -370,6 +370,62 @@ describe("self-hosted type check (stage1)", () => {
     expect(outcomes[1]).toMatchObject({ tag: "non_exhaustive_match" });
   }, 600_000);
 
+  it("型パーツの参照だけで循環する型パーツの宣言は型エラーで, その型の値の検査も止まる", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+    const cycleEnv: ReadonlyArray<PartTypeEntry> = [
+      ...env,
+      {
+        partId: "cycleA",
+        partType: { "#type": null },
+        typeDeclaration: reference("cycleB"),
+        builtin: undefined,
+      },
+      {
+        partId: "cycleB",
+        partType: { "#type": null },
+        typeDeclaration: reference("cycleA"),
+        builtin: undefined,
+      },
+      {
+        partId: "aliasOfNumber",
+        partType: { "#type": null },
+        typeDeclaration: reference("numberType"),
+        builtin: undefined,
+      },
+      {
+        partId: "numberType",
+        partType: { "#type": null },
+        typeDeclaration: { "#type_number": null },
+        builtin: undefined,
+      },
+    ];
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#type": null }, expression: reference("cycleB") },
+        {
+          partType: { "#reference": { part_hash: "cycleA" } },
+          expression: { "#number": 1 },
+        },
+        { partType: { "#type": null }, expression: reference("numberType") },
+        {
+          partType: { "#reference": { part_hash: "aliasOfNumber" } },
+          expression: { "#number": 1 },
+        },
+      ],
+      env: cycleEnv,
+    });
+    expect(outcomes).toMatchObject([
+      { kind: "type_error", tag: "invalid_type_declaration" },
+      { kind: "type_error", tag: "type_mismatch" },
+      { kind: "ok" },
+      { kind: "ok" },
+    ]);
+  }, 600_000);
+
   it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

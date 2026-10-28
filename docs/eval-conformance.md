@@ -1,16 +1,16 @@
 # 評価器の適合テスト
 
-definy の式評価について、共有テストケース `conformance/eval_cases.json`（67 件）を用いて実装間の適合性を検証しています。
+definy の式評価について、共有テストケース `conformance/eval_cases.json`（83 件）を用いて実装間の適合性を検証しています。
 
 次の 2 つのバックエンドに対して Vitest で検証を行っています。どちらも definy で書かれた実装です
 (以前あった TypeScript 製評価器 `worker/cbor_eval.ts` は, 言語の意味を TypeScript で二重に定義していたので削除しました)。
 
 1. **自己記述コンパイラ (`wasm/stage1.wasm` + `src/stage1_compiler.ts`)**:
-   式を stage1 で Wasm にコンパイルして実行します。`src/stage1_conformance.test.ts` で 67 件すべてがパスします。
+   式を stage1 で Wasm にコンパイルして実行します。`src/stage1_conformance.test.ts` で 83 件すべてがパスします。
 2. **自己記述評価器 (`core.eval-value`)**:
    式を `core.expression` の値にして, 式が参照するパーツ (`list<{ id, expression }>`, `core.compile-to-wasm` の
    `parts` と同じ形) と一緒に `core.eval-value(expr, [], parts)` に渡し, その呼び出しを stage1 でコンパイルして実行します。
-   返った `core.value` を正規化表現に直して比べます。`src/eval_value_conformance.test.ts` で 67 件すべてがパスします。
+   返った `core.value` を正規化表現に直して比べます。`src/eval_value_conformance.test.ts` で 83 件すべてがパスします。
 
 ## テストケース
 

@@ -1404,6 +1404,44 @@
       }
     },
     {
+      "name": "i64-eqz",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.eqz (0x50)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.eqz のオペコード (0x50)"
+        }
+      ],
+      "expression": {
+        "#number": 80
+      }
+    },
+    {
+      "name": "i64-eq",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.eq (0x51)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.eq のオペコード (0x51)"
+        }
+      ],
+      "expression": {
+        "#number": 81
+      }
+    },
+    {
       "name": "i64-lt-s",
       "part_type": {
         "#number": null

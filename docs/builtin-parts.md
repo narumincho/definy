@@ -43,6 +43,23 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 `bit_and` などのビット演算はまだ definy 製のコンパイラ・型チェッカー・評価器が扱わない
 (型検査では引数名が合わないエラー, コンパイルすると unreachable, 評価すると `unit`).
 
+## 実行時エラーにしない
+
+definy には実行時エラーが無い (Elm と同じ)。組み込みのパーツはどの引数でも値を返す。
+
+| 呼び出し                              | 結果                                                                                                           |
+| :------------------------------------ | :------------------------------------------------------------------------------------------------------------- |
+| `core.divide(left: x, right: 0)`      | `0`                                                                                                            |
+| `core.divide(left: -2^63, right: -1)` | `-2^63` (折り返す. Wasm の `i64.div_s` のように trap しない)                                                   |
+| `core.remainder(left: x, right: 0)`   | `x` (`x = y * (x / y) + x % y` が `y = 0` でも成り立つように. Lean と同じ)                                     |
+| `core.equal` / `core.not-equal`       | リスト・レコード・バリアントも中身で比べる. レコードはフィールドの順番によらない. 関数は同じ値のときだけ等しい |
+
+除算は 0 に向かって丸める (`-7 / 2 = -3`, `-7 % 2 = -1`)。数値の加減乗算は 64 ビットで折り返す。
+`core.list-get` の範囲外はまだ trap する (option を返すようにする予定. [language-open-questions.md](language-open-questions.md))。
+以前は stage1 の `core.equal` がリスト・レコード・バリアントの箱の `+8` の 8 バイトを比べるだけで,
+`equal([1], [1])` が `false`, ペイロードの無いバリアント `a` と `b` が `true` になっていた (2026-10-28 に直した)。
+`conformance/eval_cases.json` の「divide by zero is zero」などで stage1 と `core.eval-value` の両方で確かめる。
+
 ## definy 製のコンパイラ・型チェッカー・評価器での扱い
 
 `core.expression` (stage1 などが受け取る式) にも演算子のバリアントは無い.

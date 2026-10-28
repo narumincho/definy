@@ -2088,6 +2088,526 @@
         }
       },
       "expected": 0
+    },
+    {
+      "name": "divide by zero is zero",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "remainder by zero is the left side",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "divide min by minus one wraps",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -9223372036854775808
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": -9223372036854775808
+    },
+    {
+      "name": "divide negative truncates",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": -3
+    },
+    {
+      "name": "remainder min by minus one",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -9223372036854775808
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "equal compares lists by content",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal lists differ",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal lists differ in length",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 1
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal compares records by key",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  },
+                  {
+                    "key": "b",
+                    "value": {
+                      "#string": "x"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#record": [
+                  {
+                    "key": "b",
+                    "value": {
+                      "#string": "x"
+                    }
+                  },
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal records differ",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 2
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal variants differ by tag",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "a",
+                  "payload": {
+                    "#none": null
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "b",
+                  "payload": {
+                    "#none": null
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal variants with payload",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#list": [
+                        {
+                          "#number": 1
+                        }
+                      ]
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#list": [
+                        {
+                          "#number": 1
+                        }
+                      ]
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal variant payload differs",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#number": 1
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#number": 2
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
     }
   ]
 }

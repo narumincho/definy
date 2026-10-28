@@ -85,6 +85,14 @@ definy
 組み込みの seed のパーツがこの型検査でエラーにならないことは `src/self_hosted_type_check.test.ts` で確かめている。
 seed を編集したらこのテストを通すこと.
 
+### 型パーツの参照の展開と循環
+
+`core.type-resolve` は参照を型パーツの定義に展開し, 定義がまた型パーツの参照ならそれも展開する (`core.type-resolve-from`)。
+型の構築子 (レコード・union・リストなど) を通らずに辿った参照に戻ったら, そこで展開をやめてその参照を返す。
+型パーツの宣言がそのような循環 (`A = B`, `B = A`) なら, 型チェッカーは `invalid_type_declaration` にする (`core.type-reference-cycle`)。
+以前は循環した型の値を検査すると型チェッカーが展開を繰り返し, 約 9 秒走ってから `unreachable` で落ちていた。
+`core.expression` のように型の構築子を通る再帰はそのまま書ける。
+
 ### 型検査で見つかった seed の誤り (修正済み)
 
 - `core.eval-value`: `less_than` の結果を `number` バリアントに入れていた (`number(true)` になる). `boolean` に修正
