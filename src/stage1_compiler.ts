@@ -428,8 +428,8 @@ export type CompiledValueInstance = {
    */
   readonly writeArgument: (literal: unknown) => number;
   /**
-   * 関数の値のポインタを, 引数の順に並べたポインタで呼び, 結果のポインタを返す.
-   * 関数でなければ例外を投げる
+   * 関数の値のポインタを, 引数を名前の順に並べたポインタで呼び, 結果のポインタを返す.
+   * 引数が 2 つ以上なら {@link argumentsByName} で並べる. 関数でなければ例外を投げる
    */
   readonly callClosure: (
     closurePointer: number,
@@ -521,10 +521,34 @@ export function instantiateCompiledValue(
   };
 }
 
+/**
+ * 引数名 → 値のポインタを, 実行時に関数へ渡す順 (引数名の UTF-8 のバイト列の辞書順) に並べる.
+ * definy の呼び出しは引数を名前で対応させ, 宣言の順とは関係なく名前の順で渡す (`core.call-argument-rank`)
+ */
+export function argumentsByName(
+  args: Readonly<Record<string, number>>,
+): ReadonlyArray<number> {
+  const encoder = new TextEncoder();
+  return Object.entries(args)
+    .map(([name, pointer]) => ({ bytes: encoder.encode(name), pointer }))
+    .sort((a, b) => compareBytes(a.bytes, b.bytes))
+    .map(({ pointer }) => pointer);
+}
+
+function compareBytes(a: Uint8Array, b: Uint8Array): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const diff = (a[i] ?? 0) - (b[i] ?? 0);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+  return a.length - b.length;
+}
+
 /** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
 export type CompiledFunctionInstance = CompiledValueInstance & {
-  /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
-  readonly call: (argumentPointers: ReadonlyArray<number>) => number;
+  /** 関数を引数名 → 値のポインタで呼び, 結果のポインタを返す */
+  readonly call: (args: Readonly<Record<string, number>>) => number;
 };
 
 /**
@@ -546,8 +570,7 @@ export function instantiateCompiledFunction(
   }
   return {
     ...instance,
-    call: (argumentPointers) =>
-      instance.callClosure(instance.root, argumentPointers),
+    call: (args) => instance.callClosure(instance.root, argumentsByName(args)),
   };
 }
 
@@ -564,10 +587,10 @@ export function createStage1Compiler(
 
       const instance = instantiateCompiledFunction(stage1Module);
       const { exports } = instance;
-      const resultPtr = instance.call([
-        instance.writeArgument(effectiveExpr),
-        instance.writeArgument(partsNode),
-      ]);
+      const resultPtr = instance.call({
+        expr: instance.writeArgument(effectiveExpr),
+        parts: instance.writeArgument(partsNode),
+      });
 
       const resultView = new DataView(exports.memory.buffer);
       const resultTag = resultView.getUint8(resultPtr);

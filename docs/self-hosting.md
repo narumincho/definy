@@ -742,7 +742,7 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   アームのパターンは `core.type-check-pattern` が検査し, 束縛する変数の型を環境に足します (`core.match-arm-env`)。
   網羅性は `core.check-union-exhaustiveness` がネストしたパターンも含めて調べます ([match-pattern.md](match-pattern.md))。
 - **組み込みのパーツ**: 型環境では組み込みのパーツの型を `builtin(name)` にし, その呼び出しを `core.type-check-builtin-call` が
-  名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と順番どおり一致させる)。
+  名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と一致させる. 順番は自由)。
 
 ---
 

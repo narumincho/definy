@@ -29,6 +29,7 @@ import {
   variantOf,
   variantPayload,
 } from "../definy_value.ts";
+import type { PartSnapshot } from "../types.ts";
 
 const SIMPLE_TYPES: ReadonlyArray<readonly [string, string]> = [
   ["number", "type_number"],
@@ -215,4 +216,27 @@ export function syncPartTypeParameterNames(
         : parameter,
     ),
   });
+}
+
+/**
+ * パーツ ID → 関数のパーツの型の引数名 (宣言の順). 式のツリーで呼び出しの引数をこの順に表示するのに使う
+ * (データ上の引数の順番は自由)
+ */
+export function callParameterNamesOf(
+  partsByIdHash: ReadonlyMap<string, Pick<PartSnapshot, "partType">>,
+): ReadonlyMap<string, ReadonlyArray<string>> {
+  const result = new Map<string, ReadonlyArray<string>>();
+  for (const [id, part] of partsByIdHash) {
+    const parameters = field(
+      variantPayload(part.partType, "function"),
+      "parameters",
+    );
+    if (Array.isArray(parameters)) {
+      result.set(
+        id,
+        parameters.map((parameter) => String(field(parameter, "name"))),
+      );
+    }
+  }
+  return result;
 }

@@ -208,7 +208,7 @@ describe("self-hosted type check (stage1)", () => {
     const outcomes = checkParts({
       typeChecker,
       parts: [
-        // 引数の順番が組み込みの引数名の順と違う
+        // 引数は名前で対応させるので, 順番は組み込みの引数名の順と違ってよい
         numberPart(
           await coreCall("minus", {
             right: { "#number": 1 },
@@ -245,13 +245,79 @@ describe("self-hosted type check (stage1)", () => {
       env,
     });
     expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
+  }, 600_000);
+
+  it("呼び出しの引数とラムダ式の引数は名前で対応させ, 順番は自由", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const functionType = {
+      "#function": {
+        parameters: [
+          { name: "a", type: { "#number": null } },
+          { name: "b", type: { "#string": null } },
+        ],
+        return_type: { "#number": null },
+      },
+    };
+    const lambda = (names: ReadonlyArray<string>, body: unknown) => ({
+      "#function": {
+        parameters: names.map((name, i) => ({
+          parameter_id: i,
+          parameter_name: name,
+        })),
+        body,
+      },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // 宣言の型と違う順番の引数のラムダ式. a は number
+        {
+          partType: functionType,
+          expression: lambda(["b", "a"], { "#variable": { variable_id: 1 } }),
+        },
+        // b は string なので number を返せない
+        {
+          partType: functionType,
+          expression: lambda(["b", "a"], { "#variable": { variable_id: 0 } }),
+        },
+        // 同じ名前の引数は書けない
+        {
+          partType: functionType,
+          expression: lambda(["a", "a"], { "#number": 0 }),
+        },
+        // 宣言と違う順番で引数を渡す
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("list-contains-string", {
+            index: { "#number": 0 },
+            target: { "#string": "a" },
+            list: { "#list": [{ "#string": "a" }] },
+          }),
+        },
+        // 足りない引数
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("list-contains-string", {
+            index: { "#number": 0 },
+            list: { "#list": [{ "#string": "a" }] },
+          }),
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
       "type_error",
       "type_error",
       "ok",
       "type_error",
     ]);
-    expect(outcomes[0]).toMatchObject({ tag: "invalid_type_declaration" });
-    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
   }, 600_000);
 
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {

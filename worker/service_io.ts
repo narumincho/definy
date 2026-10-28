@@ -63,7 +63,7 @@ export async function handleRpcInDefiny(
 ): Promise<ServiceResponse | null> {
   const instance = instantiateCompiledFunction(service);
   const handler = instance.variant(
-    instance.call([instance.writeArgument(method)]),
+    instance.call({ method: instance.writeArgument(method) }),
   );
   if (handler.tag === "none") {
     return null;

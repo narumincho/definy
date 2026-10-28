@@ -74,6 +74,7 @@ import {
 
 const NO_EXPECTED_VARIANTS = expectedVariantsFromTypeAst(null);
 import { type DefinyValue } from "../stage1_compiler.ts";
+import { callParameterNamesOf } from "./part_type.ts";
 
 /** 式にマウスを置いてからホバーの表示を出すまでの時間 */
 const HOVER_DELAY_MS = 350;
@@ -171,17 +172,26 @@ export function ExpressionTreeEditor({
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  // 呼び出しの引数はデータ上の順番によらず, 呼び出すパーツの引数の宣言の順に表示する
+  const callParameterNames = useMemo(
+    () => callParameterNamesOf(partsByIdHash),
+    [partsByIdHash],
+  );
+
   // 変わっていない部分木は前のノードを使い, 描画を飛ばせるようにする (#762)
   const previousLayoutRoot = useRef<LayoutNode | null>(null);
   const layoutRoot = useMemo(() => {
-    const rawTree = expressionToLayoutNode(expression, "root", { partNames });
+    const rawTree = expressionToLayoutNode(expression, "root", {
+      partNames,
+      callParameterNames,
+    });
     const root = reuseUnchangedNodes(
       previousLayoutRoot.current,
       computeLayout(rawTree, { maxWidth }),
     );
     previousLayoutRoot.current = root;
     return root;
-  }, [expression, partNames, maxWidth]);
+  }, [expression, partNames, callParameterNames, maxWidth]);
 
   // 関数の引数の型. 関数型の変数を置換メニューで選んだときに, その引数名で呼び出しにする
   const parameterTypes = useMemo(

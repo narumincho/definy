@@ -28,7 +28,7 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 ## 組み込みのパーツ
 
 - 式が `{"#builtin": "plus"}` のパーツがコンパイラ組み込み. 組み込みかどうかはパーツ名ではなく式で決まる (`compilerBuiltinName`)
-- 引数名は下の表のとおり (順番どおりに書く). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
+- 引数名は下の表のとおり (順番は自由. [call-syntax.md](call-syntax.md) の「引数は名前で対応させる」). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
   `part_type` を持つ. `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
   どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない (型チェッカーは名前で検査する)
 
@@ -82,7 +82,7 @@ seed の 218 か所の呼び出しは, 範囲を確かめる `match` (`less-than
   書いた順の引数の関数を数える (`core.call-argument-fn-base`) ので, 引数の順番が違ってもずれない.
   末尾位置の組み込みの呼び出しは末尾呼び出し (`return_call_indirect`) にしない (`core.compile-tail-instructions`)
 - 型検査: 型環境では組み込みのパーツの型を `core.type-ast` の `builtin(name)` にする (TypeScript 側の `moduleEntriesExpression`).
-  `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と順番どおり一致するか
+  `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と (順番によらず) 一致するか
   (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
   期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.
   組み込みのパーツ自身の式 (`builtin`) は宣言した関数の型と比べられないので検査しない (`unsupported`).

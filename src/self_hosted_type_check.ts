@@ -8,6 +8,7 @@
  * (docs/self-hosting.md の「definy 製型チェッカーの実行」).
  */
 import {
+  argumentsByName,
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
   collectReferencedParts,
@@ -325,11 +326,11 @@ function createModuleCommitSession(options: {
   const ensureInstance = (): NonNullable<typeof current> => {
     if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
       const instance = instantiateCompiledFunction(options.typeChecker);
-      const planPtr = instance.call([
-        instance.writeArgument(latest),
-        instance.writeArgument(committed),
-        instance.writeArgument(moduleId),
-      ]);
+      const planPtr = instance.call({
+        latest: instance.writeArgument(latest),
+        committed: instance.writeArgument(committed),
+        module_id: instance.writeArgument(moduleId),
+      });
       current = {
         instance,
         planPtr,
@@ -367,10 +368,13 @@ function createModuleCommitSession(options: {
       }
       return typeResultToOutcome(
         instance.read(
-          instance.callClosure(checkerPtr, [
-            instance.writeArgument(args.expression),
-            instance.writeArgument(args.expectedType),
-          ]),
+          instance.callClosure(
+            checkerPtr,
+            argumentsByName({
+              expr: instance.writeArgument(args.expression),
+              expected_type: instance.writeArgument(args.expectedType),
+            }),
+          ),
         ),
       );
     } catch (e) {

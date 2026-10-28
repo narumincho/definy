@@ -3133,6 +3133,297 @@
         }
       },
       "expected": 8
+    },
+    {
+      "name": "builtin call arguments in any order",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.minus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "right",
+              "value": {
+                "#number": 1
+              }
+            },
+            {
+              "name": "left",
+              "value": {
+                "#number": 10
+              }
+            }
+          ]
+        }
+      },
+      "expected": 9
+    },
+    {
+      "name": "function call arguments are matched by name, not by position",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "sub",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "x"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "x",
+                  "value": {
+                    "#number": 10
+                  }
+                },
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "function call arguments in a different order than the parameters",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "sub",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "x"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 3
+                  }
+                },
+                {
+                  "name": "x",
+                  "value": {
+                    "#number": 10
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "function with three parameters called in reverse order",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "f",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "c"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "b"
+                },
+                {
+                  "parameter_id": 2,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.minus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 100
+                  }
+                },
+                {
+                  "name": "b",
+                  "value": {
+                    "#number": 10
+                  }
+                },
+                {
+                  "name": "c",
+                  "value": {
+                    "#number": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 89
     }
   ]
 }
