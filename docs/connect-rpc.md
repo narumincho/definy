@@ -116,14 +116,14 @@ message GetContentResponse {
 ## 3. 実装モジュール
 
 - **サーバー側 (`worker/index.ts`)**:
-  - `POST /definy.v1.EventService/GetEvents`
+  - `POST /definy.v1.EventService/GetEvents` (definy 製の `definy.get-events`. [service.md](service.md))
   - `POST /definy.v1.EventService/GetProjectBranches` (definy 製の `definy.get-project-branches` が処理する. [service.md](service.md))
-  - `POST /definy.v1.EventService/GetEvent`
+  - `POST /definy.v1.EventService/GetEvent` (definy 製の `definy.get-event`. [service.md](service.md))
   - `POST /definy.v1.EventService/SubmitEvent`
-  - `POST /definy.v1.EventService/CheckMissingHashes` (差分ハッシュ照会)
+  - `POST /definy.v1.EventService/CheckMissingHashes` (definy 製の `definy.check-missing-hashes`. [service.md](service.md)) (差分ハッシュ照会)
   - `POST /definy.v1.EventService/UploadContent`
     (不足コンテンツの一括アップロード & ハッシュ検証)
-  - `POST /definy.v1.EventService/GetContent`
+  - `POST /definy.v1.EventService/GetContent` (definy 製の `definy.get-content`. [service.md](service.md))
     (コンテンツアドレスからの式バイナリ取得)
   - 受信した `signed_event_bytes` の署名・CBOR 構造を
     即座に検証し、不正データは
