@@ -127,16 +127,131 @@ export function letChain(
   );
 }
 
+/**
+ * アームのパターン (`core.pattern`) の種類.
+ * `any` は何にでも一致し束縛しない (`_`), `bind` は何にでも一致して値を変数に束縛する,
+ * `variant` は直和型のタグに一致し値を束縛するかしない, `string` / `number` / `boolean` はリテラルに一致する.
+ * `nested` はタグの値にさらにタグやリテラルのパターンがある直和型のパターンで, エディタではそのまま表示するだけ
+ */
+export type MatchArmKind =
+  "any" | "bind" | "variant" | "string" | "number" | "boolean" | "nested";
+
+/**
+ * エディタで扱う match のアーム.
+ * データ上のアームは `{pattern, body}` (pattern は `core.pattern` の木) で, それを 1 段のタグと束縛する変数に開いたもの
+ * ({@link matchOf} / {@link matchExpression} で変換する)
+ */
 export type MatchArm = {
+  readonly kind: MatchArmKind;
+  /** variant / nested はタグ, string / number / boolean はリテラルを文字列にしたもの, any / bind は "" */
   readonly tag: string;
-  /** 束縛する変数の ID. 束縛しないアームは -1 */
+  /** 束縛する変数の ID (bind と, 値を変数に束縛する variant). 束縛しないアームは -1 */
   readonly variable_id: number;
   readonly variable_name: string;
+  /** nested のときの元のパターン */
+  readonly pattern?: unknown;
   readonly body: unknown;
 };
 
 /** 束縛しないアームの変数 ID */
 export const NO_VARIABLE = -1;
+
+/** `core.pattern` の `any` (`_`) */
+export function anyPattern(): unknown {
+  return variant("any");
+}
+
+export function bindPattern(variableId: number, variableName: string): unknown {
+  return variant("bind", {
+    variable_id: variableId,
+    variable_name: variableName,
+  });
+}
+
+/** 何にでも一致し束縛しないアーム (`_ => body`) */
+export function wildcardArm(body: unknown): MatchArm {
+  return {
+    kind: "any",
+    tag: "",
+    variable_id: NO_VARIABLE,
+    variable_name: "",
+    body,
+  };
+}
+
+/** 束縛しないリテラルやタグのアーム */
+export function literalArm(
+  kind: "variant" | "string" | "number" | "boolean",
+  tag: string,
+  body: unknown,
+): MatchArm {
+  return { kind, tag, variable_id: NO_VARIABLE, variable_name: "", body };
+}
+
+/** データ上のアーム `{pattern, body}` をエディタのアームにする */
+export function armFromData(arm: unknown): MatchArm {
+  const body = field(arm, "body");
+  const pattern = variantOf(field(arm, "pattern"));
+  const bound = (payload: unknown) => ({
+    variable_id: Number(field(payload, "variable_id")),
+    variable_name: String(field(payload, "variable_name") ?? ""),
+  });
+  switch (pattern?.tag) {
+    case "bind":
+      return { kind: "bind", tag: "", ...bound(pattern.payload), body };
+    case "variant": {
+      const tag = String(field(pattern.payload, "tag") ?? "");
+      const payload = variantOf(field(pattern.payload, "payload"));
+      if (payload?.tag === "bind") {
+        return { kind: "variant", tag, ...bound(payload.payload), body };
+      }
+      if (payload?.tag === "any") {
+        return literalArm("variant", tag, body);
+      }
+      return {
+        kind: "nested",
+        tag,
+        variable_id: NO_VARIABLE,
+        variable_name: "",
+        pattern: field(arm, "pattern"),
+        body,
+      };
+    }
+    case "string":
+    case "number":
+    case "boolean":
+      return literalArm(pattern.tag, String(pattern.payload), body);
+    default:
+      return wildcardArm(body);
+  }
+}
+
+/** エディタのアームのパターン (`core.pattern` の値) */
+export function patternOfArm(arm: MatchArm): unknown {
+  const binding = armBindsVariable(arm)
+    ? bindPattern(arm.variable_id, arm.variable_name)
+    : anyPattern();
+  switch (arm.kind) {
+    case "any":
+    case "bind":
+      return binding;
+    case "variant":
+      return variant("variant", { tag: arm.tag, payload: binding });
+    case "nested":
+      return arm.pattern;
+    case "string":
+      return variant("string", arm.tag);
+    case "number":
+      return variant("number", Number(arm.tag));
+    case "boolean":
+      return variant("boolean", arm.tag === "true");
+  }
+}
+
+/** エディタのアームをデータ上のアーム `{pattern, body}` にする */
+export function armToData(arm: MatchArm): unknown {
+  return { pattern: patternOfArm(arm), body: arm.body };
+}
 
 /** match なら対象とアーム */
 export function matchOf(expression: unknown):
@@ -152,7 +267,7 @@ export function matchOf(expression: unknown):
   const arms = field(payload, "arms");
   return {
     target: field(payload, "target"),
-    arms: Array.isArray(arms) ? (arms as ReadonlyArray<MatchArm>) : [],
+    arms: Array.isArray(arms) ? arms.map(armFromData) : [],
   };
 }
 
@@ -160,10 +275,64 @@ export function matchExpression(
   target: unknown,
   arms: ReadonlyArray<MatchArm>,
 ): unknown {
-  return variant("match", { target, arms });
+  return variant("match", { target, arms: arms.map(armToData) });
 }
 
-/** アームが変数に束縛するか */
+/** どの値にも一致するアーム (`_` か変数への束縛) か. これより後のアームには一致しない */
+export function isWildcardArm(arm: MatchArm): boolean {
+  return arm.kind === "any" || arm.kind === "bind";
+}
+
+/** アームが (1 段目で) 変数に束縛するか */
 export function armBindsVariable(arm: MatchArm): boolean {
   return arm.variable_id !== NO_VARIABLE;
+}
+
+/** パターンが束縛する変数 (ネストしたものも含む, 出てくる順) */
+export function patternBoundVariables(
+  pattern: unknown,
+): ReadonlyArray<{ readonly id: number; readonly name: string }> {
+  const tagged = variantOf(pattern);
+  if (tagged?.tag === "bind") {
+    return [
+      {
+        id: Number(field(tagged.payload, "variable_id")),
+        name: String(field(tagged.payload, "variable_name") ?? ""),
+      },
+    ];
+  }
+  if (tagged?.tag === "variant") {
+    return patternBoundVariables(field(tagged.payload, "payload"));
+  }
+  return [];
+}
+
+/**
+ * パターンの表示. `_`, 変数名, `tag`, `tag(x)`, `"文字列"`, 数値, `true` / `false`.
+ * 文字列リテラルは引用符で囲むので, `_` (どれにでも一致) と `"_"` (文字列 `_`) は見分けられる
+ */
+export function patternLabel(pattern: unknown): string {
+  const tagged = variantOf(pattern);
+  switch (tagged?.tag) {
+    case "bind": {
+      const name = String(field(tagged.payload, "variable_name") ?? "");
+      return name.length > 0
+        ? name
+        : `v${String(field(tagged.payload, "variable_id"))}`;
+    }
+    case "variant": {
+      const tag = String(field(tagged.payload, "tag") ?? "");
+      const payload = field(tagged.payload, "payload");
+      return variantOf(payload)?.tag === "any"
+        ? tag
+        : `${tag}(${patternLabel(payload)})`;
+    }
+    case "string":
+      return JSON.stringify(String(tagged.payload));
+    case "number":
+    case "boolean":
+      return String(tagged.payload);
+    default:
+      return "_";
+  }
 }

@@ -9,18 +9,21 @@ import {
   PATTERN_ADD_DEFAULT,
   applyPatternSelection,
   currentPatternOptionValue,
-  isStringPatternVariants,
+  isLiteralPatternVariants,
+  literalPatternOption,
+  NUMBER_PATTERN_VARIANTS,
+  PATTERN_ANY,
   patternSelectorOptions,
   patternVariantsFromTypeAst,
   probeMatchTargetType,
   renameMatchArmVariable,
-  stringPatternOption,
   type PatternVariant,
 } from "./match_pattern.ts";
 import { EXPECTED_TYPE_PROBE } from "./type_inference.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
 import { applySelection, findSelectedNode } from "./selection.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
+import { type MatchArm, matchOf } from "./expression.ts";
 
 const optionVariants: ReadonlyArray<PatternVariant> = [
   { tag: "none", hasPayload: false },
@@ -44,9 +47,12 @@ const matchExpression = {
         target: { "#variable": { variable_id: 1 } },
         arms: [
           {
-            tag: "some",
-            variable_id: 2,
-            variable_name: "val",
+            pattern: {
+              "#variant": {
+                tag: "some",
+                payload: { "#bind": { variable_id: 2, variable_name: "val" } },
+              },
+            },
             body: {
               "#call": {
                 function: {
@@ -86,8 +92,12 @@ const pattern = (index: number): ReadonlyArray<PathStep> => [
   { kind: "matchArmPattern", index },
 ];
 
-const armsOf = (expr: unknown): ReadonlyArray<Record<string, unknown>> =>
-  matchOfLet(expr).arms;
+/** エディタのアームの見方 ({@link matchOf}) で読んだアーム */
+const armsOf = (expr: unknown): ReadonlyArray<MatchArm> =>
+  matchOf((expr as MatchShape)["#let"].body)?.arms ?? [];
+
+const hole = { "#hole": { probe: false } };
+const anyPattern = { "#any": null };
 
 function findNode(node: LayoutNode, id: string): LayoutNode | undefined {
   if (node.id === id) return node;
@@ -155,31 +165,26 @@ describe("match のパターンの編集", () => {
         new Map([["option-id", typePart]]),
       ),
     ).toEqual(optionVariants);
+    expect(patternVariantsFromTypeAst({ "#number": null }, new Map())).toBe(
+      NUMBER_PATTERN_VARIANTS,
+    );
     expect(
-      patternVariantsFromTypeAst({ "#number": null }, new Map()),
+      patternVariantsFromTypeAst({ "#list": { "#number": null } }, new Map()),
     ).toBeNull();
     expect(patternVariantsFromTypeAst(null, new Map())).toBeNull();
   });
 
-  it("文字列の match のアームのタグは, 検索欄に打った文字列リテラルにする", () => {
+  it('文字列の match のアームのパターンは, 検索欄に打った文字列リテラルにする. `_` と `"_"` は別', () => {
     const variants = patternVariantsFromTypeAst({ "#string": null }, new Map());
-    expect(isStringPatternVariants(variants)).toBe(true);
-    expect(isStringPatternVariants([])).toBe(false);
-    expect(stringPatternOption("")).toBeNull();
-    expect(stringPatternOption("_")).toBeNull();
-    const option = stringPatternOption("plus");
+    expect(isLiteralPatternVariants(variants)).toBe(true);
+    expect(isLiteralPatternVariants([])).toBe(false);
+    expect(literalPatternOption("", variants)).toBeNull();
+    const option = literalPatternOption("plus", variants);
     expect(option?.name).toBe("plus");
     const stringMatch = {
       "#match": {
         target: { "#string": "plus" },
-        arms: [
-          {
-            tag: "_",
-            variable_id: -1,
-            variable_name: "",
-            body: { "#number": 0 },
-          },
-        ],
+        arms: [{ pattern: anyPattern, body: { "#number": 0 } }],
       },
     };
     const path: ReadonlyArray<PathStep> = [
@@ -190,16 +195,94 @@ describe("match のパターンの編集", () => {
     ).toEqual({
       "#match": {
         target: { "#string": "plus" },
-        arms: [
-          {
-            tag: "plus",
-            variable_id: -1,
-            variable_name: "",
-            body: { "#number": 0 },
-          },
-        ],
+        arms: [{ pattern: { "#string": "plus" }, body: { "#number": 0 } }],
       },
     });
+    // 文字列 `_` のパターンは `_` (どれにでも一致) と違う
+    const underscore = applyPatternSelection(
+      stringMatch,
+      path,
+      literalPatternOption("_", variants)?.value ?? "",
+      variants,
+    );
+    expect(underscore).toEqual({
+      "#match": {
+        target: { "#string": "plus" },
+        arms: [{ pattern: { "#string": "_" }, body: { "#number": 0 } }],
+      },
+    });
+    expect(expressionToLayoutNode(underscore).children[1]?.label).toBe(
+      '"_" =>',
+    );
+    expect(currentPatternOptionValue(underscore, path)).toBe("pattern:tag:_");
+    expect(currentPatternOptionValue(stringMatch, path)).toBe(PATTERN_ANY);
+  });
+
+  it("数値の match のアームのパターンは整数のリテラル", () => {
+    const variants = patternVariantsFromTypeAst({ "#number": null }, new Map());
+    expect(isLiteralPatternVariants(variants)).toBe(true);
+    expect(literalPatternOption("x", variants)).toBeNull();
+    const option = literalPatternOption("-3", variants);
+    const numberMatch = {
+      "#match": {
+        target: { "#number": 1 },
+        arms: [{ pattern: anyPattern, body: { "#number": 0 } }],
+      },
+    };
+    expect(
+      applyPatternSelection(
+        numberMatch,
+        [{ kind: "matchArmPattern", index: 0 }],
+        option?.value ?? "",
+        variants,
+      ),
+    ).toEqual({
+      "#match": {
+        target: { "#number": 1 },
+        arms: [{ pattern: { "#number": -3 }, body: { "#number": 0 } }],
+      },
+    });
+  });
+
+  it("ネストしたパターンはそのまま表示し, 束縛した変数は本体で見える", () => {
+    const nested = {
+      "#match": {
+        target: { "#hole": { probe: false } },
+        arms: [
+          {
+            pattern: {
+              "#variant": {
+                tag: "some",
+                payload: {
+                  "#variant": {
+                    tag: "some",
+                    payload: {
+                      "#bind": { variable_id: 4, variable_name: "x" },
+                    },
+                  },
+                },
+              },
+            },
+            body: { "#variable": { variable_id: 4 } },
+          },
+          { pattern: anyPattern, body: { "#number": 0 } },
+        ],
+      },
+    };
+    const arm = expressionToLayoutNode(nested).children[1];
+    expect(arm?.label).toBe("some(some(x)) =>");
+    expect(arm?.children[0]?.scopeVariables?.get(4)).toBe("x");
+    // 変更しないアームはデータのまま残る
+    expect(matchOf(nested)?.arms[0]?.kind).toBe("nested");
+    const options = patternSelectorOptions({
+      expression: nested,
+      patternPath: [{ kind: "matchArmPattern", index: 0 }],
+      variants: optionVariants,
+    });
+    // `some(some(x))` は some の全ての値を扱わないので, some はまだ足りない
+    expect(
+      options.find((o) => o.value === PATTERN_ADD_MISSING_ARMS)?.detail,
+    ).toBe("none, some");
   });
 
   it("タグ・束縛・アームの追加と削除の選択肢を出す", () => {
@@ -211,7 +294,7 @@ describe("match のパターンの編集", () => {
     expect(options.map((o) => o.value)).toEqual([
       "pattern:tag:none",
       "pattern:tag:some",
-      "pattern:tag:_",
+      PATTERN_ANY,
       PATTERN_UNBIND,
       PATTERN_ADD_ARM,
       PATTERN_ADD_MISSING_ARMS,
@@ -229,7 +312,7 @@ describe("match のパターンの編集", () => {
       }).map((o) => o.value),
     ).toEqual([
       "pattern:tag:some",
-      "pattern:tag:_",
+      PATTERN_ANY,
       PATTERN_UNBIND,
       PATTERN_ADD_ARM,
       PATTERN_ADD_DEFAULT,
@@ -282,13 +365,11 @@ describe("match のパターンの編集", () => {
       PATTERN_ADD_MISSING_ARMS,
       optionVariants,
     );
-    expect(armsOf(added)).toEqual([
+    expect(matchOfLet(added).arms).toEqual([
       matchOfLet(matchExpression).arms[0],
       {
-        tag: "none",
-        variable_id: -1,
-        variable_name: "",
-        body: { "#hole": { probe: false } },
+        pattern: { "#variant": { tag: "none", payload: anyPattern } },
+        body: hole,
       },
     ]);
     expect(
@@ -311,8 +392,7 @@ describe("match のパターンの編集", () => {
     ).toEqual([
       "pattern:tag:none",
       "pattern:tag:some",
-      "pattern:tag:_",
-      PATTERN_BIND,
+      PATTERN_ANY,
       PATTERN_ADD_DEFAULT,
       PATTERN_DELETE_ARM,
     ]);
@@ -351,11 +431,9 @@ describe("match のパターンの編集", () => {
       PATTERN_ADD_DEFAULT,
       optionVariants,
     );
-    expect(armsOf(withDefault)[1]).toEqual({
-      tag: "_",
-      variable_id: -1,
-      variable_name: "",
-      body: { "#hole": { probe: false } },
+    expect(matchOfLet(withDefault).arms[1]).toEqual({
+      pattern: anyPattern,
+      body: hole,
     });
     const root = expressionToLayoutNode(withDefault);
     expect(findNode(root, "root.body.arm_1")).toMatchObject({
@@ -363,9 +441,9 @@ describe("match のパターンの編集", () => {
       path: pattern(1),
     });
     expect(currentPatternOptionValue(withDefault, pattern(1))).toBe(
-      "pattern:tag:_",
+      PATTERN_ANY,
     );
-    // `_` は束縛しないので bind / unbind は出さない
+    // `_` は値全体を変数に束縛できる
     expect(
       patternSelectorOptions({
         expression: withDefault,
@@ -375,7 +453,8 @@ describe("match のパターンの編集", () => {
     ).toEqual([
       "pattern:tag:none",
       "pattern:tag:some",
-      "pattern:tag:_",
+      PATTERN_ANY,
+      PATTERN_BIND,
       PATTERN_ADD_ARM,
       PATTERN_ADD_MISSING_ARMS,
       PATTERN_DELETE_ARM,
@@ -386,7 +465,28 @@ describe("match のパターンの編集", () => {
       PATTERN_ADD_MISSING_ARMS,
       optionVariants,
     );
-    expect(armsOf(filled).map((arm) => arm.tag)).toEqual(["some", "none", "_"]);
+    expect(armsOf(filled).map((arm) => arm.kind)).toEqual([
+      "variant",
+      "variant",
+      "any",
+    ]);
+    // `_` を変数に束縛すると, 何にでも一致する変数のパターン
+    const bound = applyPatternSelection(
+      withDefault,
+      pattern(1),
+      PATTERN_BIND,
+      optionVariants,
+    );
+    expect(matchOfLet(bound).arms[1]).toEqual({
+      pattern: { "#bind": { variable_id: 3, variable_name: "value" } },
+      body: hole,
+    });
+    expect(
+      findNode(expressionToLayoutNode(bound), "root.body.arm_1"),
+    ).toMatchObject({
+      label: "_ =>",
+      children: [{ label: "value", kind: "parameterName" }, {}],
+    });
     const withoutDefault = applyPatternSelection(
       filled,
       pattern(2),
@@ -408,14 +508,7 @@ describe("match のパターンの編集", () => {
     expect(created).toEqual({
       "#match": {
         target: { "#hole": { probe: false } },
-        arms: [
-          {
-            tag: "_",
-            variable_id: -1,
-            variable_name: "",
-            body: { "#hole": { probe: false } },
-          },
-        ],
+        arms: [{ pattern: anyPattern, body: hole }],
       },
     });
     expect(getOptionValueForExpression(created)).toBe("expr:match");
@@ -431,7 +524,8 @@ describe("match のパターンの編集", () => {
     ).toEqual([
       "pattern:tag:none",
       "pattern:tag:some",
-      "pattern:tag:_",
+      PATTERN_ANY,
+      PATTERN_BIND,
       PATTERN_ADD_ARM,
       PATTERN_ADD_MISSING_ARMS,
     ]);

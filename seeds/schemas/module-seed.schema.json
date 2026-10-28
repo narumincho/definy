@@ -697,42 +697,7 @@
                 "arms": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "required": [
-                      "tag",
-                      "variable_id",
-                      "variable_name",
-                      "body"
-                    ],
-                    "properties": {
-                      "tag": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "$ref": "#/definitions/PartPlaceholder"
-                          }
-                        ]
-                      },
-                      "variable_id": {
-                        "type": "integer"
-                      },
-                      "variable_name": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "$ref": "#/definitions/PartPlaceholder"
-                          }
-                        ]
-                      },
-                      "body": {
-                        "$ref": "#/definitions/core.expression"
-                      }
-                    },
-                    "additionalProperties": false
+                    "$ref": "#/definitions/core.match-arm"
                   }
                 }
               },
@@ -1031,6 +996,145 @@
           "additionalProperties": false
         }
       ]
+    },
+    "core.pattern": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#any"
+          ],
+          "properties": {
+            "#any": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#bind"
+          ],
+          "properties": {
+            "#bind": {
+              "type": "object",
+              "required": [
+                "variable_id",
+                "variable_name"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                },
+                "variable_name": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variant"
+          ],
+          "properties": {
+            "#variant": {
+              "type": "object",
+              "required": [
+                "tag",
+                "payload"
+              ],
+              "properties": {
+                "tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "payload": {
+                  "$ref": "#/definitions/core.pattern"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#string"
+          ],
+          "properties": {
+            "#string": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#number"
+          ],
+          "properties": {
+            "#number": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#boolean"
+          ],
+          "properties": {
+            "#boolean": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.match-arm": {
+      "type": "object",
+      "required": [
+        "pattern",
+        "body"
+      ],
+      "properties": {
+        "pattern": {
+          "$ref": "#/definitions/core.pattern"
+        },
+        "body": {
+          "$ref": "#/definitions/core.expression"
+        }
+      },
+      "additionalProperties": false
     },
     "core.value": {
       "anyOf": [

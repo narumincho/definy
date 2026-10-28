@@ -6,9 +6,9 @@ import { findExpressionNode } from "./selection.ts";
 import {
   currentPatternOptionValue,
   isMatchPatternPath,
-  isStringPatternVariants,
+  isLiteralPatternVariants,
+  literalPatternOption,
   patternSelectorOptions,
-  stringPatternOption,
   type PatternVariant,
 } from "./match_pattern.ts";
 import {
@@ -230,12 +230,12 @@ export function useSelectorMenu({
   const filteredOptions = useMemo(() => {
     const query = queryEdited ? searchQuery : "";
     const filtered = filterAndRankOptions(selectorOptions, query, expectedType);
-    // 文字列の match のアームのタグは, 打った文字列そのもの (文字列リテラル) にできる
+    // 文字列や数値の match のアームのパターンは, 打った文字列そのもの (リテラル) にできる
     const literal =
       selectedPath !== null &&
       isMatchPatternPath(selectedPath) &&
-      isStringPatternVariants(patternVariants)
-        ? stringPatternOption(query)
+      isLiteralPatternVariants(patternVariants)
+        ? literalPatternOption(query, patternVariants)
         : null;
     return literal === null ||
       filtered.some((option) => option.value === literal.value)

@@ -50,8 +50,10 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 - `let` は束縛 1 つずつの入れ子: `{"#let": {variable_id, variable_name, value, body}}`。
   式のツリーエディタは、続けて書いた let を 1 つのブロック (束縛の並びと本体) として見せる
   (`src/tree_layout/expression.ts` の `letChainOf` / `letChain`)。
-- `match` のアーム: `{tag, variable_id, variable_name, body}`。束縛しないアームは `variable_id: -1`, `variable_name: ""`。
-  どのタグにも一致するアームはタグ `_` のアームで、ほかの default の欄は無い。
+- `match` のアーム: `{pattern, body}`。`pattern` は `core.pattern` の値の木
+  (`{"#any": null}`, `{"#bind": {variable_id, variable_name}}`, `{"#variant": {tag, payload}}`, `{"#string": ...}`,
+  `{"#number": ...}`, `{"#boolean": ...}`)。どの値にも一致するアームは `#any` か `#bind` のアームで、ほかの default の欄は無い
+  ([match-pattern.md](match-pattern.md))。
 - `variant`: `{tag, payload: option<式>, type_part: option<パーツ ID>}`。
 - `secret`: `{id, label, allowed_url_prefixes}` ([secret.md](secret.md))。
 - 未入力: `{"#hole": {"probe": false}}`。型チェッカーに期待する型を聞く位置は `probe: true`。

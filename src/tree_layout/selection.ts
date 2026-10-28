@@ -11,7 +11,8 @@ import {
   isHole,
   letChain,
   matchExpression,
-  NO_VARIABLE,
+  literalArm,
+  wildcardArm,
   numberExpression,
   partReferenceExpression,
   partReferenceIdOf,
@@ -315,16 +316,10 @@ export function applySelection(
   } else if (selectionValue === "expr:match") {
     // 対象の型はまだ分からないので `_ =>` だけにしておき,
     // 対象を決めてから `_ =>` のパターンのメニューで足りないアームを足す
-    newSubExpr = matchExpression(hole(), [
-      { tag: "_", variable_id: NO_VARIABLE, variable_name: "", body: hole() },
-    ]);
+    newSubExpr = matchExpression(hole(), [wildcardArm(hole())]);
   } else if (selectionValue === "expr:match_boolean") {
-    const arm = (tag: string) => ({
-      tag,
-      variable_id: NO_VARIABLE,
-      variable_name: "",
-      body: numberExpression(0),
-    });
+    const arm = (tag: string) =>
+      literalArm("boolean", tag, numberExpression(0));
     newSubExpr = matchExpression(booleanExpression(false), [
       arm("true"),
       arm("false"),

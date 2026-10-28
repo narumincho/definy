@@ -620,17 +620,17 @@
           },
           "arms": [
             {
-              "tag": "true",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": true
+              },
               "body": {
                 "#string": "yes"
               }
             },
             {
-              "tag": "false",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": false
+              },
               "body": {
                 "#string": "no"
               }
@@ -649,17 +649,17 @@
           },
           "arms": [
             {
-              "tag": "true",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": true
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "false",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": false
+              },
               "body": {
                 "#number": 2
               }
@@ -1429,17 +1429,30 @@
           },
           "arms": [
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
             },
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "v",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "v"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#call": {
                   "function": {
@@ -1490,17 +1503,30 @@
           },
           "arms": [
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
             },
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "v",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "v"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#variable": {
                   "variable_id": 1
@@ -2049,25 +2075,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2108,25 +2134,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2145,25 +2171,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2692,6 +2718,421 @@
         }
       },
       "expected": false
+    },
+    {
+      "name": "nested pattern binds the inner value",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "some",
+              "payload": {
+                "#some": {
+                  "#variant": {
+                    "tag": "some",
+                    "payload": {
+                      "#some": {
+                        "#number": 5
+                      }
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "x"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#variable": {
+                  "variable_id": 1
+                }
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 5
+    },
+    {
+      "name": "nested pattern falls to the next arm when the inner tag differs",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "some",
+              "payload": {
+                "#some": {
+                  "#variant": {
+                    "tag": "none",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "x"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#variable": {
+                  "variable_id": 1
+                }
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "string pattern \"_\" is a literal, not the wildcard",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "_"
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#string": "a"
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#string": "_"
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "string pattern \"_\" does not match other strings",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "z"
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#string": "_"
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "number pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": 3
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#number": 1
+              },
+              "body": {
+                "#number": 10
+              }
+            },
+            {
+              "pattern": {
+                "#number": 3
+              },
+              "body": {
+                "#number": 30
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 30
+    },
+    {
+      "name": "negative number pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": -2
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#number": 2
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#number": -2
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "variant tag \"_\" is matched by a variant pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "_",
+              "payload": {
+                "#none": null
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "x",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 0
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "_",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "bind pattern binds the whole value",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": 7
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#bind": {
+                  "variable_id": 1,
+                  "variable_name": "n"
+                }
+              },
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 8
     }
   ]
 }

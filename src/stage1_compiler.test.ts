@@ -288,15 +288,11 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
             }),
             arms: [
               {
-                tag: "true",
-                variable_id: -1,
-                variable_name: "",
+                pattern: { "#boolean": true },
                 body: variable(1),
               },
               {
-                tag: "false",
-                variable_id: -1,
-                variable_name: "",
+                pattern: { "#boolean": false },
                 body: callLoop(
                   builtinCall("minus", {
                     left: variable(0),

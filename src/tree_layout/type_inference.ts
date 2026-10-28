@@ -7,6 +7,7 @@ import { variantOptionValueForExpression } from "./variant.ts";
 import {
   callOf,
   letChain,
+  isWildcardArm,
   matchOf,
   partReferenceIdOf,
   variableIdOf,
@@ -164,13 +165,11 @@ export function getOptionValueForExpression(node: unknown): string | null {
   return null;
 }
 
-const BOOLEAN_MATCH_TAGS: ReadonlySet<string> = new Set(["true", "false", "_"]);
-
 /** アームが `true` / `false` (と `_`) だけの, Bool に対する match か. `_` だけの match は違う */
 export function isBooleanMatch(expression: unknown): boolean {
   const arms = matchOf(expression)?.arms ?? [];
   return (
-    arms.some((arm) => arm.tag !== "_") &&
-    arms.every((arm) => BOOLEAN_MATCH_TAGS.has(String(arm.tag)))
+    arms.some((arm) => arm.kind === "boolean") &&
+    arms.every((arm) => arm.kind === "boolean" || isWildcardArm(arm))
   );
 }

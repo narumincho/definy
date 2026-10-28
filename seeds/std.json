@@ -78,9 +78,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#call": {
                       "function": {
@@ -110,9 +110,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -203,9 +203,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -213,9 +213,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 2
@@ -306,9 +306,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -316,9 +316,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 2
@@ -397,17 +397,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#number": 1
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#match": {
                       "target": {
@@ -439,17 +439,17 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#number": -1
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#number": 0
                           }
@@ -508,17 +508,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#string": "true"
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#string": "false"
                   }
@@ -968,9 +968,9 @@
                         },
                         "arms": [
                           {
-                            "tag": "true",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": true
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -1001,9 +1001,9 @@
                             }
                           },
                           {
-                            "tag": "false",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": false
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "done",
@@ -1230,9 +1230,9 @@
                         },
                         "arms": [
                           {
-                            "tag": "true",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": true
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -1279,9 +1279,9 @@
                             }
                           },
                           {
-                            "tag": "false",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": false
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "done",
@@ -1452,9 +1452,14 @@
                         },
                         "arms": [
                           {
-                            "tag": "none",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#variant": {
+                                "tag": "none",
+                                "payload": {
+                                  "#any": null
+                                }
+                              }
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "done",
@@ -1468,9 +1473,17 @@
                             }
                           },
                           {
-                            "tag": "some",
-                            "variable_id": 1003,
-                            "variable_name": "item",
+                            "pattern": {
+                              "#variant": {
+                                "tag": "some",
+                                "payload": {
+                                  "#bind": {
+                                    "variable_id": 1003,
+                                    "variable_name": "item"
+                                  }
+                                }
+                              }
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -1713,17 +1726,17 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#number": -1
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#match": {
                               "target": {
@@ -1813,9 +1826,9 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#variable": {
                                       "variable_id": 3
@@ -1823,9 +1836,9 @@
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#call": {
                                       "function": {
@@ -2007,9 +2020,9 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#call": {
                               "function": {
@@ -2039,9 +2052,9 @@
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#number": 0
                           }
@@ -2158,17 +2171,17 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#string": "/"
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#let": {
                                       "variable_id": 6,
@@ -2204,9 +2217,9 @@
                                           },
                                           "arms": [
                                             {
-                                              "tag": "true",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
                                               "body": {
                                                 "#variable": {
                                                   "variable_id": 5
@@ -2214,9 +2227,9 @@
                                               }
                                             },
                                             {
-                                              "tag": "false",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
                                               "body": {
                                                 "#call": {
                                                   "function": {
@@ -2275,17 +2288,17 @@
                                           },
                                           "arms": [
                                             {
-                                              "tag": "true",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
                                               "body": {
                                                 "#string": "/"
                                               }
                                             },
                                             {
-                                              "tag": "false",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
                                               "body": {
                                                 "#call": {
                                                   "function": {
@@ -2447,17 +2460,17 @@
                   },
                   "arms": [
                     {
-                      "tag": "true",
-                      "variable_id": -1,
-                      "variable_name": "",
+                      "pattern": {
+                        "#boolean": true
+                      },
                       "body": {
                         "#string": ""
                       }
                     },
                     {
-                      "tag": "false",
-                      "variable_id": -1,
-                      "variable_name": "",
+                      "pattern": {
+                        "#boolean": false
+                      },
                       "body": {
                         "#call": {
                           "function": {

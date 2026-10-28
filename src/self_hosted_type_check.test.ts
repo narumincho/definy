@@ -345,9 +345,7 @@ describe("self-hosted type check (stage1)", () => {
         "#match": {
           target: { "#string": "plus" },
           arms: arms.map(([tag, body]) => ({
-            tag,
-            variable_id: -1,
-            variable_name: "",
+            pattern: tag === "_" ? { "#any": null } : { "#string": tag },
             body,
           })),
         },
@@ -374,6 +372,88 @@ describe("self-hosted type check (stage1)", () => {
       "type_error",
     ]);
     expect(outcomes[1]).toMatchObject({ tag: "non_exhaustive_match" });
+  }, 600_000);
+
+  it("パターンは木で, ネストしたパターンで束縛した変数の型は中の値の型になる", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const any = { "#any": null };
+    const variantPattern = (tag: string, payload: unknown = any) => ({
+      "#variant": { tag, payload },
+    });
+    // option<option<number>>
+    const nestedOption = await coreCall("list-get", {
+      list: {
+        "#list": [
+          await coreCall("list-get", {
+            list: { "#list": [{ "#number": 5 }] },
+            index: { "#number": 0 },
+          }),
+        ],
+      },
+      index: { "#number": 0 },
+    });
+    const match = (
+      target: unknown,
+      arms: ReadonlyArray<readonly [unknown, unknown]>,
+    ): PartToCheck => ({
+      partType: { "#number": null },
+      expression: {
+        "#match": {
+          target,
+          arms: arms.map(([pattern, body]) => ({ pattern, body })),
+        },
+      },
+    });
+    const x = { "#bind": { variable_id: 1, variable_name: "x" } };
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        match(nestedOption, [
+          [
+            variantPattern("some", variantPattern("some", x)),
+            { "#variable": { variable_id: 1 } },
+          ],
+          [variantPattern("some", variantPattern("none")), { "#number": 1 }],
+          [variantPattern("none"), { "#number": 2 }],
+        ]),
+        // 中のタグが型に無い
+        match(nestedOption, [
+          [variantPattern("some", variantPattern("other")), { "#number": 1 }],
+          [any, { "#number": 2 }],
+        ]),
+        // some(none) が無いので網羅していない
+        match(nestedOption, [
+          [
+            variantPattern("some", variantPattern("some", x)),
+            { "#variable": { variable_id: 1 } },
+          ],
+          [variantPattern("none"), { "#number": 2 }],
+        ]),
+        // 数値のリテラルのパターン
+        match({ "#number": 3 }, [
+          [{ "#number": 3 }, { "#number": 1 }],
+          [x, { "#variable": { variable_id: 1 } }],
+        ]),
+        // 数値に文字列のパターン
+        match({ "#number": 3 }, [
+          [{ "#string": "3" }, { "#number": 1 }],
+          [any, { "#number": 2 }],
+        ]),
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[2]).toMatchObject({
+      tag: "non_exhaustive_match",
+      detail: { missing_tag: "some" },
+    });
+    expect(outcomes[4]).toMatchObject({ tag: "type_mismatch" });
   }, 600_000);
 
   it("型パーツの参照だけで循環する型パーツの宣言は型エラーで, その型の値の検査も止まる", async () => {
@@ -822,17 +902,17 @@ describe("self-hosted type check (stage1)", () => {
                 target: { "#variable": { variable_id: 0 } },
                 arms: [
                   {
-                    tag: "number",
-                    variable_id: 1,
-                    variable_name: "n",
+                    pattern: {
+                      "#variant": {
+                        tag: "number",
+                        payload: {
+                          "#bind": { variable_id: 1, variable_name: "n" },
+                        },
+                      },
+                    },
                     body: { "#variable": { variable_id: 1 } },
                   },
-                  {
-                    tag: "_",
-                    variable_id: -1,
-                    variable_name: "",
-                    body: { "#number": 0 },
-                  },
+                  { pattern: { "#any": null }, body: { "#number": 0 } },
                 ],
               },
             },

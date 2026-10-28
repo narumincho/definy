@@ -157,9 +157,9 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#call": {
                                       "function": {
@@ -189,9 +189,9 @@
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#variable": {
                                       "variable_id": 2
@@ -214,9 +214,9 @@
                                   },
                                   "arms": [
                                     {
-                                      "tag": "true",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": true
+                                      },
                                       "body": {
                                         "#call": {
                                           "function": {
@@ -246,9 +246,9 @@
                                       }
                                     },
                                     {
-                                      "tag": "false",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": false
+                                      },
                                       "body": {
                                         "#variable": {
                                           "variable_id": 1
@@ -427,9 +427,9 @@
                                   },
                                   "arms": [
                                     {
-                                      "tag": "true",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": true
+                                      },
                                       "body": {
                                         "#list": [
                                           {
@@ -441,9 +441,9 @@
                                       }
                                     },
                                     {
-                                      "tag": "false",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": false
+                                      },
                                       "body": {
                                         "#call": {
                                           "function": {
@@ -602,9 +602,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#list": [
                       {
@@ -616,9 +616,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#call": {
                       "function": {
@@ -821,9 +821,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#match": {
                       "target": {
@@ -855,9 +855,9 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#call": {
                               "function": {
@@ -881,9 +881,9 @@
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#list": []
                           }
@@ -893,9 +893,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#let": {
                       "variable_id": 2,
@@ -1401,6 +1401,25 @@
       ],
       "expression": {
         "#number": 69
+      }
+    },
+    {
+      "name": "i32-eq",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.eq (0x46)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.eq のオペコード (0x46)"
+        }
+      ],
+      "expression": {
+        "#number": 70
       }
     },
     {

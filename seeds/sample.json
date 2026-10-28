@@ -213,17 +213,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#string": "even"
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#string": "odd"
                   }
@@ -341,9 +341,17 @@
           },
           "arms": [
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "val",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "val"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#call": {
                   "function": {
@@ -373,9 +381,14 @@
               }
             },
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
@@ -1497,25 +1510,44 @@
                                                               },
                                                               "arms": [
                                                                 {
-                                                                  "tag": "ok",
-                                                                  "variable_id": 30,
-                                                                  "variable_name": "t",
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "ok",
+                                                                      "payload": {
+                                                                        "#bind": {
+                                                                          "variable_id": 30,
+                                                                          "variable_name": "t"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "ok(number)"
                                                                   }
                                                                 },
                                                                 {
-                                                                  "tag": "error",
-                                                                  "variable_id": 31,
-                                                                  "variable_name": "err",
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "error",
+                                                                      "payload": {
+                                                                        "#bind": {
+                                                                          "variable_id": 31,
+                                                                          "variable_name": "err"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "error"
                                                                   }
                                                                 },
                                                                 {
-                                                                  "tag": "_",
-                                                                  "variable_id": 32,
-                                                                  "variable_name": "_",
+                                                                  "pattern": {
+                                                                    "#bind": {
+                                                                      "variable_id": 32,
+                                                                      "variable_name": "_"
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "unknown"
                                                                   }
@@ -1753,17 +1785,30 @@
                                                                                           },
                                                                                           "arms": [
                                                                                             {
-                                                                                              "tag": "none",
-                                                                                              "variable_id": -1,
-                                                                                              "variable_name": "",
+                                                                                              "pattern": {
+                                                                                                "#variant": {
+                                                                                                  "tag": "none",
+                                                                                                  "payload": {
+                                                                                                    "#any": null
+                                                                                                  }
+                                                                                                }
+                                                                                              },
                                                                                               "body": {
                                                                                                 "#boolean": false
                                                                                               }
                                                                                             },
                                                                                             {
-                                                                                              "tag": "some",
-                                                                                              "variable_id": 96001,
-                                                                                              "variable_name": "byte",
+                                                                                              "pattern": {
+                                                                                                "#variant": {
+                                                                                                  "tag": "some",
+                                                                                                  "payload": {
+                                                                                                    "#bind": {
+                                                                                                      "variable_id": 96001,
+                                                                                                      "variable_name": "byte"
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              },
                                                                                               "body": {
                                                                                                 "#call": {
                                                                                                   "function": {
@@ -1833,17 +1878,30 @@
                                                                                   },
                                                                                   "arms": [
                                                                                     {
-                                                                                      "tag": "none",
-                                                                                      "variable_id": -1,
-                                                                                      "variable_name": "",
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "none",
+                                                                                          "payload": {
+                                                                                            "#any": null
+                                                                                          }
+                                                                                        }
+                                                                                      },
                                                                                       "body": {
                                                                                         "#boolean": false
                                                                                       }
                                                                                     },
                                                                                     {
-                                                                                      "tag": "some",
-                                                                                      "variable_id": 96002,
-                                                                                      "variable_name": "byte",
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "some",
+                                                                                          "payload": {
+                                                                                            "#bind": {
+                                                                                              "variable_id": 96002,
+                                                                                              "variable_name": "byte"
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      },
                                                                                       "body": {
                                                                                         "#call": {
                                                                                           "function": {
@@ -1881,17 +1939,17 @@
                                                                       },
                                                                       "arms": [
                                                                         {
-                                                                          "tag": "true",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#boolean": true
+                                                                          },
                                                                           "body": {
                                                                             "#string": "true"
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "false",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#boolean": false
+                                                                          },
                                                                           "body": {
                                                                             "#string": "false"
                                                                           }
@@ -1908,9 +1966,9 @@
                                                                       },
                                                                       "arms": [
                                                                         {
-                                                                          "tag": "/healthz",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#string": "/healthz"
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {
@@ -2076,9 +2134,9 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "/api/self-host",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#string": "/api/self-host"
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {
@@ -2474,9 +2532,9 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "_",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#any": null
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {

@@ -351,7 +351,7 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
   `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
   に固定のバイト列として入っています。組み立てるスクリプトは `scripts/wasm_runtime_functions.py`
   (`python3 scripts/wasm_runtime_functions.py seeds/core.json` で seed のこのパーツだけを書き換える)
-- **文字列リテラル**: 文字列リテラル・レコードのキー・`record_get` のキー・バリアントのタグ・`match` のアームのタグは,
+- **文字列リテラル**: 文字列リテラル・レコードのキー・`record_get` のキー・バリアントのタグ・`match` のパターンのタグと文字列リテラルは,
   データセグメントの文字列の箱を `i32.const アドレス` で指すだけにします。`core.compile-to-wasm` が最初に式と参照するパーツの式から
   重複の無い文字列の一覧を集め (`core.compile-collect-strings`, 先頭は `"true"` `"false"` なので 1024・1040 番地),
   箱を 1024 番地から並べた表 (`core.compile-string-table`) を `ctx.strings` で `core.compile-string-literal` に渡します。
@@ -567,7 +567,8 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型 (`core.typ
     - `core.union-variant-type-lookup`:
       直和型から指定タグのペイロード型を線形探索（引数なし variant は `{}`
       レコード型として統一）
-    - `core.find-tag-in-arms`: マッチアーム一覧に対象タグが含まれるかを線形探索
+    - `core.find-tag-in-arms` (今は無い. パターンの木の網羅性は [match-pattern.md](match-pattern.md)):
+      マッチアーム一覧に対象タグが含まれるかを線形探索
     - `core.check-union-exhaustiveness`:
       直和型の全タグがマッチアームに網羅されているかを検証し、欠落時に
       `non_exhaustive_match` を返却
@@ -738,9 +739,8 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
 - **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
   (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
   `core.type-check-match-arms-skipped` がその型で検査します。
-  `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
-  対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
-  (`core.match-arm-env`)。
+  アームのパターンは `core.type-check-pattern` が検査し, 束縛する変数の型を環境に足します (`core.match-arm-env`)。
+  網羅性は `core.check-union-exhaustiveness` がネストしたパターンも含めて調べます ([match-pattern.md](match-pattern.md))。
 - **組み込みのパーツ**: 型環境では組み込みのパーツの型を `builtin(name)` にし, その呼び出しを `core.type-check-builtin-call` が
   名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と順番どおり一致させる)。
 
@@ -951,12 +951,10 @@ validate-module: module-definition -> list<entry> -> boolean
   直和型のバリアント一覧から指定タグのペイロード型を線形探索。引数なしバリアント（`none`）は空レコード
   `{}` として統一的に扱い、タグが存在しない場合は `variant_not_found`
   エラーを返却。
-- `core.find-tag-in-arms`:
-  `list<{ tag: string, variable: optional<string>, body: expression }> -> string -> number -> boolean`
-  パターンマッチのアーム一覧に対象のタグ名が含まれるかを線形探索。
 - `core.check-union-exhaustiveness`:
-  `list<{ tag: string, payload: optional<type-ast> }> -> list<{ tag: string, variable: optional<string>, body: expression }> -> number -> optional<type-error>`
-  直和型の全バリアントがマッチアームに網羅されているかを再帰検証。欠落しているタグがあれば
+  `(variants, patterns: list<core.pattern>, env, index, return_type) -> type-result`
+  直和型の全バリアントがアームのパターンに網羅されているかを `core.patterns-cover-variant` で再帰検証
+  (ネストしたパターンも. [match-pattern.md](match-pattern.md))。欠落しているタグがあれば
   `non_exhaustive_match` エラーを検出。
 - `core.type-assignable-union-variants`:
   `list<{ tag: string, payload: optional<type-ast> }> -> list<{ tag: string, payload: optional<type-ast> }> -> number -> boolean`
