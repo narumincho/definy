@@ -55,7 +55,15 @@ definy には実行時エラーが無い (Elm と同じ)。組み込みのパー
 | `core.equal` / `core.not-equal`       | リスト・レコード・バリアントも中身で比べる. レコードはフィールドの順番によらない. 関数は同じ値のときだけ等しい |
 
 除算は 0 に向かって丸める (`-7 / 2 = -3`, `-7 % 2 = -1`)。数値の加減乗算は 64 ビットで折り返す。
-`core.list-get` の範囲外はまだ trap する (option を返すようにする予定. [language-open-questions.md](language-open-questions.md))。
+`core.list-get` は Elm の `Array.get` と同じく option を返す: 範囲内なら `some(要素)`, 範囲外 (負の添字を含む) なら `none`。
+型チェッカーは要素の型 `T` から `union { none, some(T) }` を返す (`core.type-check-builtin-call`)。
+stage1 ではランタイム関数 `list_get` がバリアントの箱を作る。タグの文字列 `"none"` `"some"` は `core.compile-to-wasm` が
+文字列の表の先頭 (`"true"` `"false"` の後ろ, 1056・1072 番地) に置く。
+
+seed の 218 か所の呼び出しは, 範囲を確かめる `match` (`less-than-or-equal(list-length(xs), i)` など) を
+`match core.list-get(list: xs, index: i) { none => 範囲外のとき, some(item) => ... }` に機械的に書き換えた (2026-10-28)。
+ほかの条件で範囲を確かめていた所は, 範囲外のときに反対の腕の値を返す。ブートストラップは, 出力 (ランタイム関数と文字列の表) だけを
+変えた seed を古い stage1 でコンパイルし, それを stage1 にして書き換えた seed を `npm run build:stage1 -- --bootstrap` した。
 以前は stage1 の `core.equal` がリスト・レコード・バリアントの箱の `+8` の 8 バイトを比べるだけで,
 `equal([1], [1])` が `false`, ペイロードの無いバリアント `a` と `b` が `true` になっていた (2026-10-28 に直した)。
 `conformance/eval_cases.json` の「divide by zero is zero」などで stage1 と `core.eval-value` の両方で確かめる。

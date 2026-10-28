@@ -990,7 +990,91 @@
           ]
         }
       },
-      "expected": 20
+      "expected": {
+        "#some": 20
+      }
+    },
+    {
+      "name": "list get out of range is none",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-get"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 10
+                  },
+                  {
+                    "#number": 20
+                  },
+                  {
+                    "#number": 30
+                  }
+                ]
+              }
+            },
+            {
+              "name": "index",
+              "value": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#none": null
+      }
+    },
+    {
+      "name": "list get negative index is none",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-get"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 10
+                  },
+                  {
+                    "#number": 20
+                  },
+                  {
+                    "#number": 30
+                  }
+                ]
+              }
+            },
+            {
+              "name": "index",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#none": null
+      }
     },
     {
       "name": "list concat",

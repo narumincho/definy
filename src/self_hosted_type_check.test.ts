@@ -222,13 +222,19 @@ describe("self-hosted type check (stage1)", () => {
             b: { "#number": 2 },
           }),
         ),
-        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める
-        numberPart(
-          await coreCall("list-get", {
+        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める. 範囲外があるので option を返す
+        {
+          partType: {
+            "#union": [
+              { tag: "none", payload_type: { "#none": null } },
+              { tag: "some", payload_type: { "#some": { "#number": null } } },
+            ],
+          },
+          expression: await coreCall("list-get", {
             list: { "#list": [{ "#number": 1 }] },
             index: { "#number": 0 },
           }),
-        ),
+        },
         numberPart(
           await coreCall("list-get", {
             list: { "#list": [{ "#string": "a" }] },

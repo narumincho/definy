@@ -732,8 +732,8 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
   `core.type-assignable` 系は `env` 引数を取り, 片方だけが `reference` のときは展開して比べます。
   両方 `reference` ならハッシュが同じときだけ代入できます (名前的型付け)。
-- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`record` と, `core.list-append`・`core.list-concat`・
-  `core.list-get` の呼び出し (`core.type-check-against-builtin-call`) も期待型で検査します (`type-check-record-fields-against` など)。
+- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`record` と, `core.list-append`・`core.list-concat`
+  の呼び出し (`core.type-check-against-builtin-call`) も期待型で検査します (`type-check-record-fields-against` など)。
   空リストや `none` を期待型から決められるのはこのためです。
 - **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
   (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
