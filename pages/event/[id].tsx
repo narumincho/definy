@@ -1,6 +1,7 @@
 import { useEffect, useState, type JSX, type ReactNode } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
+import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
 import {
   AccountLink,
   EventSummary,
@@ -92,7 +93,18 @@ export default function EventDetailPage(): JSX.Element {
       className={`event-detail-view ${isInvalid ? "event-detail-invalid" : ""}`}
       data-event-type={event.eventType}
     >
-      {breadcrumb(typeLabel)}
+      {commit !== undefined ? (
+        // コミットはプロジェクト / ブランチ / コミット の階層で出す (docs/ui.md「階層のパンくず」)
+        <HierarchyBreadcrumb
+          projectName={commit.commit.projectName}
+          commit={{
+            eventHash: commit.event.eventHash,
+            branch: commit.commit.branch,
+          }}
+        />
+      ) : (
+        breadcrumb(typeLabel)
+      )}
 
       <header className="card event-detail-header">
         <span className="event-detail-icon" aria-hidden="true">

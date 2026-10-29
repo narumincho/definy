@@ -1,6 +1,8 @@
 import { useEffect, useState, type JSX } from "react";
-import { useParams } from "@void/react";
+import { useParams, useRouter } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
+import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
+import { NewBranchForm } from "../../src/components/NewBranchForm.tsx";
 import {
   AccountLink,
   dateLocale,
@@ -55,14 +57,18 @@ function branchHistory(
  */
 export default function ProjectDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  // エクスプローラーの「ブランチの追加」は `?add=branch` で開き, 新しいブランチの欄に入力する
+  const router = useRouter();
+  const addBranch = router.query.get("add") === "branch";
+  // エクスプローラーのブランチの行は `?branch=` で開く. そのブランチを表示する
+  const branchQuery = router.query.get("branch");
   const {
     language,
     projects,
     modules,
     decodedCommits,
-    accountNames,
-    selectBranch,
     loadEvent,
+    selectBranch,
   } = useDefiny();
 
   const project: ProjectSnapshot = projects.find((p) => p.name === id) ?? {
@@ -78,6 +84,21 @@ export default function ProjectDetailPage(): JSX.Element {
   };
 
   usePageTitle(project.name);
+  useEffect(() => {
+    if (
+      branchQuery !== null &&
+      branchQuery !== project.branch &&
+      project.branches.some((b) => b.name === branchQuery)
+    ) {
+      selectBranch(project.name, branchQuery);
+    }
+  }, [
+    branchQuery,
+    project.branch,
+    project.branches,
+    project.name,
+    selectBranch,
+  ]);
   const [mergeConflicts, setMergeConflicts] = useState<ReadonlyArray<string>>(
     [],
   );
@@ -111,13 +132,7 @@ export default function ProjectDetailPage(): JSX.Element {
 
   return (
     <div className="module-detail-view project-detail-view">
-      <div className="breadcrumb">
-        <Link href="/modules" className="breadcrumb-link">
-          {label(language, "Modules", "モジュール", "Moduloj")}
-        </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">{project.name}</span>
-      </div>
+      <HierarchyBreadcrumb projectName={project.name} />
       <div className="card module-header">
         <span className="badge badge-secondary">
           {label(language, "Project", "プロジェクト", "Projekto")}
@@ -129,35 +144,14 @@ export default function ProjectDetailPage(): JSX.Element {
           </p>
         )}
         {project.branches.length > 0 && (
-          <div className="module-branch">
-            <label htmlFor="project-branch-select">
-              {label(language, "Branch", "ブランチ", "Branĉo")}
-            </label>
-            <select
-              id="project-branch-select"
-              value={project.branch}
-              onChange={(e) => {
-                selectBranch(project.name, e.target.value);
-              }}
-            >
-              {project.branches.map((branch) => (
-                <option key={branch.name} value={branch.name}>
-                  {branch.name} (
-                  {accountNames.get(branch.creatorAccountId) ??
-                    branch.creatorAccountId.slice(0, 8)}
-                  )
-                </option>
-              ))}
-            </select>
-            <span className="text-muted">
-              {label(
-                language,
-                "Only the creator of a branch can commit to it. Committing from another account's branch creates a new branch.",
-                "ブランチにはそのブランチを作ったアカウントだけがコミットできます。他のアカウントのブランチからコミットすると新しいブランチを作ります。",
-                "Nur la kreinto de branĉo povas enmeti al ĝi. Enmeto de alies branĉo kreas novan branĉon.",
-              )}
-            </span>
-          </div>
+          <p className="module-branch text-muted">
+            {label(
+              language,
+              "Switch the branch from the breadcrumb above. Only the creator of a branch can commit to it. Committing from another account's branch creates a new branch.",
+              "ブランチは上のパンくずで切り替えます。ブランチにはそのブランチを作ったアカウントだけがコミットできます。他のアカウントのブランチからコミットすると新しいブランチを作ります。",
+              "Ŝanĝu la branĉon per la supra navigado. Nur la kreinto de branĉo povas enmeti al ĝi. Enmeto de alies branĉo kreas novan branĉon.",
+            )}
+          </p>
         )}
         <MergeBranchPanel project={project} onStarted={setMergeConflicts} />
       </div>
@@ -166,6 +160,8 @@ export default function ProjectDetailPage(): JSX.Element {
         projectName={project.name}
         conflicts={mergeConflicts}
       />
+
+      <NewBranchForm project={project} autoFocus={addBranch} />
 
       <div className="module-parts-section">
         <h3>

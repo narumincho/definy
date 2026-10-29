@@ -50,6 +50,11 @@ export type CommitWorkingChangesParams = {
   readonly message: string;
   /** 表示しているブランチが他のアカウントのものなら, 作る新しいブランチの名前 (docs/branch.md) */
   readonly newBranchName?: string;
+  /**
+   * 自分のブランチを表示していても `newBranchName` の新しいブランチを作ってコミットする
+   * (エクスプローラーの「ブランチの追加」. docs/branch.md「ブランチの作成」)
+   */
+  readonly createBranch?: boolean;
 };
 
 export type WorkingChangesParams = {
@@ -286,6 +291,7 @@ export function useWorkingChanges({
       projectName,
       message,
       newBranchName,
+      createBranch = false,
     }: CommitWorkingChangesParams): Promise<string> => {
       if (!currentAccount || !currentAccount.secretKeyBase64) {
         throw new Error("You must be logged in to commit changes");
@@ -304,10 +310,20 @@ export function useWorkingChanges({
       }
       // 表示しているブランチが自分のものならそこへ, 他のアカウントのものならそこから新しいブランチを作る
       // (他のアカウントのブランチにはコミットできない. docs/branch.md)
-      const target = commitTargetFor(projectName);
-      if (target === null) {
+      const shownTarget = commitTargetFor(projectName);
+      if (shownTarget === null) {
         throw new Error("You must be logged in to commit changes");
       }
+      // 新しいブランチを作るときは, 表示しているブランチの最新のコミットから分ける
+      const target: CommitTarget =
+        createBranch && shownTarget.kind === "own_branch"
+          ? {
+              kind: "new_branch",
+              fromBranch: shownTarget.branch,
+              parentCommitHash: shownTarget.parentCommitHash,
+              suggestedName: newBranchName ?? "",
+            }
+          : shownTarget;
       const branch =
         target.kind === "new_project"
           ? MAIN_BRANCH
@@ -323,9 +339,7 @@ export function useWorkingChanges({
           (b) => b.name === branch,
         )
       ) {
-        throw new Error(
-          `The branch '${branch}' already exists and was created by another account`,
-        );
+        throw new Error(`The branch '${branch}' already exists`);
       }
       const parentCommitHash =
         target.kind === "new_project" ? null : target.parentCommitHash;

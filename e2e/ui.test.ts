@@ -122,9 +122,9 @@ test.describe("definy UI E2E", () => {
     const partName = await chip.textContent();
     await chip.click();
     await page.waitForURL(/\/part\//);
-    await expect(page.locator(".breadcrumb-current")).toHaveText(
-      partName ?? "",
-    );
+    await expect(
+      page.locator('.hierarchy-segment[aria-current="page"] .hierarchy-name'),
+    ).toHaveText(partName ?? "");
 
     // カードのリンク以外の場所 (時刻) を押すとイベント詳細へ. 時刻の上にはカード全体のリンクが重なっている
     await page.goto("/");
@@ -140,22 +140,19 @@ test.describe("definy UI E2E", () => {
     await expect(page).toHaveTitle("definy");
 
     // クライアント側の遷移でもタイトルが変わる
-    await page.locator('.activity-item[href^="/parts"]').click();
-    await expect(page).toHaveURL(/\/parts\?lang=en$/);
-    await expect(page).toHaveTitle("Parts | definy");
+    await page.locator('.activity-item[href^="/modules"]').click();
+    await expect(page).toHaveURL(/\/modules\?lang=en$/);
+    await expect(page).toHaveTitle("Modules | definy");
 
     // パーツ名はクライアントのデータから決まる (Void が head() のタイトルで上書きしたあとに設定し直す)
     await page
-      .locator(".part-card", { hasText: "triangle-area" })
+      .locator(".sidebar-tree-node.part-node", { hasText: /^triangle-area$/ })
       .first()
       .click();
     await expect(page).toHaveTitle("sample.triangle-area | definy");
 
-    await page.locator('.activity-item[href^="/modules"]').click();
-    await expect(page).toHaveTitle("Modules | definy");
-
     await page.goBack();
-    await expect(page).toHaveTitle("sample.triangle-area | definy");
+    await expect(page).toHaveTitle("Modules | definy");
 
     // サーバーが返す HTML のタイトルも表示言語に合わせる
     const response = await page.request.get("/history?lang=ja");
@@ -320,10 +317,13 @@ test.describe("definy UI E2E", () => {
       "already has a part",
     );
     // エクスプローラーにもコミット前の新しいパーツが出る
+    // (同じ dev サーバーで前に流したテストの square もあるので, このモジュールのプロジェクトの中で数える)
     await expect(
-      page.locator(".sidebar-tree-node.part-node", {
-        has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
-      }),
+      page
+        .locator(`.sidebar-project-group[data-project="${moduleName}"]`)
+        .locator(".sidebar-tree-node.part-node", {
+          has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
+        }),
     ).toHaveCount(1);
 
     // コミットするとモジュールができる
@@ -536,6 +536,118 @@ test.describe("definy UI E2E", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
+  test("explorer shows project / branch / commit / module / part and adds a branch", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now().toString().slice(-6);
+    const alice = await generateAccountCredentials(`alice_b${suffix}`);
+    const submit = async (
+      signed: SignedEventResult | SignedProjectCommitResult,
+    ): Promise<void> => {
+      const res = await submitEvent(request, signed);
+      expect(res.ok(), await res.text()).toBe(true);
+    };
+    await submit(await createSignedAccountEvent(alice));
+    const moduleName = `tree_${suffix}`;
+    await submit(
+      await createSignedSingleModuleCommitEvent({
+        credentials: alice,
+        moduleName,
+        branch: "main",
+        moduleDescription: [],
+        message: "first",
+        parentCommitHash: null,
+        parts: [
+          {
+            name: "one",
+            description: [],
+            partType: { "#number": null },
+            expression: { "#number": 1 },
+          },
+        ],
+      }),
+    );
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, alice);
+    // プロジェクトの木は左端のメニューの「プロジェクト」の欄 (イベントのページではイベントの一覧になる)
+    await page.goto("/modules");
+
+    // プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ. 表示しているブランチは開いている
+    // (プロジェクト名は省くとモジュール名と同じ. src/test_commit.ts)
+    const projectGroup = page.locator(
+      `.sidebar-project-group[data-project="${moduleName}"]`,
+    );
+    await expect(projectGroup).toBeVisible({ timeout: 15000 });
+    await expect(projectGroup.locator(".branch-node")).toContainText("main");
+    await expect(projectGroup.locator(".commit-node")).toContainText("first");
+    const partNode = projectGroup.locator(".sidebar-tree-node.part-node", {
+      hasText: /^one$/,
+    });
+    await expect(partNode).toBeVisible();
+
+    // スクロールしても上の段の行は上端に残る (VSCode の sticky scroll)
+    await expect(
+      projectGroup.locator(".sidebar-tree-row", {
+        has: page.locator(".module-node"),
+      }),
+    ).toHaveCSS("position", "sticky");
+
+    // 左の › で開閉し, 名前はその段のページへのリンク
+    const moduleRow = projectGroup.locator(".sidebar-tree-row", {
+      has: page.locator(".module-node"),
+    });
+    await moduleRow.locator(".sidebar-tree-toggle").click();
+    await expect(partNode).toHaveCount(0);
+    await moduleRow.locator(".sidebar-tree-toggle").click();
+    await expect(partNode).toBeVisible();
+    await moduleRow.locator(".module-node").click();
+    await page.waitForURL(new RegExp(`/module/${moduleName}`));
+    // 開いているページの行はパーツと同じく強調する
+    await expect(moduleRow.locator(".module-node")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await projectGroup.locator(".commit-node").click();
+    await page.waitForURL(/\/event\//);
+    await expect(projectGroup.locator(".commit-node")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    // 「ブランチの追加」でプロジェクトのページの新しいブランチの欄を開いて作る
+    await projectGroup.locator('[data-add="branch"]').click();
+    await page.waitForURL(/add=branch/);
+    await page.locator("#new-branch-name").fill("feature");
+    await page.locator(".new-branch-form button[type='submit']").click();
+    await expect(page.locator("#project-branch-select")).toHaveValue(
+      "feature",
+      { timeout: 15000 },
+    );
+    await expect(
+      projectGroup.locator(".branch-node", { hasText: "feature" }),
+    ).toBeVisible();
+
+    // 左端のメニューでサイドバーの欄が変わる: イベント → イベント一覧, アカウント一覧 → アカウント一覧, 設定 → 空
+    await page.locator('.activity-item[href^="/accounts"]').click();
+    await page.waitForURL(/\/accounts/);
+    await expect(page.locator(".sidebar-project-group")).toHaveCount(0);
+    await expect(
+      page.locator(".sidebar-account-node", { hasText: alice.accountName }),
+    ).toBeVisible();
+    await page.locator(".activity-item").first().click();
+    await expect(page.locator(".sidebar-event-node").first()).toBeVisible();
+    await page.locator(".sidebar-event-node").first().click();
+    await page.waitForURL(/\/event\//);
+    await expect(
+      page.locator(".sidebar-event-node[aria-current='page']"),
+    ).toHaveCount(1);
+    await page.locator('.activity-item[href^="/settings"]').click();
+    await page.waitForURL(/\/settings/);
+    await expect(page.locator(".sidebar-scroll")).toBeEmpty();
+  });
+
   test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({
     page,
   }) => {
@@ -571,7 +683,9 @@ test.describe("definy UI E2E", () => {
     await page.waitForURL(/\/part\/.+/, { timeout: 10000 });
 
     // パンくずにモジュール名とパーツ名が表示されていることを確認
-    const breadcrumb = page.locator(".breadcrumb-current");
+    const breadcrumb = page.locator(
+      '.hierarchy-segment[aria-current="page"] .hierarchy-name',
+    );
     await expect(breadcrumb).toBeVisible();
     await expect(breadcrumb).toHaveText("triangle-area");
 
@@ -689,10 +803,10 @@ test.describe("definy UI E2E", () => {
         .locator(".run-history-output"),
     ).toHaveText("25", { timeout: 15000 });
     await page
-      .locator(".activity-item", { hasText: /Parts|パーツ/ })
+      .locator(".activity-item", { hasText: /Accounts|アカウント/ })
       .first()
       .click();
-    await page.waitForURL(/\/parts/);
+    await page.waitForURL(/\/accounts/);
     await expect(runPanel).toBeVisible();
   });
 

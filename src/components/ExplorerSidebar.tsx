@@ -9,10 +9,23 @@ import {
 } from "react";
 import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
-import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
+import { CHANGES_ONLY_HREF } from "./WorkingChanges.tsx";
+import {
+  BranchIcon,
+  ChevronRightIcon,
+  CommitIcon,
+  ModuleIcon,
+  PartsIcon,
+  ProjectIcon,
+  type IconComponent,
+} from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { withNewParts } from "../new_part.ts";
+import { MAIN_BRANCH } from "../event_content.ts";
+import { buildExplorerTree } from "../explorer_tree.ts";
+import type { LanguageCode } from "../types.ts";
+import { AccountList, EventList } from "./SidebarLists.tsx";
 
 const SIDEBAR_WIDTH_STORAGE_KEY = "definy.sidebar.width";
 const MIN_SIDEBAR_WIDTH = 160;
@@ -47,12 +60,31 @@ function saveSidebarWidth(width: number | null): void {
   }
 }
 
+/** 木の段. 字下げとアイコンの色に使う */
+type TreeLevel = "project" | "branch" | "commit" | "module" | "part";
+
+/** 段ごとの開閉のキー (同じ名前のモジュールでもブランチが違えば別のノード) */
+const projectKey = (project: string): string => `p:${project}`;
+const branchKey = (project: string, branch: string): string =>
+  `b:${project}/${branch}`;
+const commitKey = (project: string, branch: string): string =>
+  `c:${project}/${branch}`;
+const moduleKey = (project: string, branch: string, module: string): string =>
+  `m:${project}/${branch}/${module}`;
+
 export function ExplorerSidebar(): JSX.Element {
   const {
     language,
+    projects,
     modules: committedModules,
     parts: committedParts,
     workingChanges,
+    decodedCommits,
+    accountNames,
+    currentAccount,
+    selectBranch,
+    loadEvent,
+    sidebarView,
     setSidebarOpen,
     partTypeCheckResults,
     typeCheckMessage,
@@ -62,23 +94,36 @@ export function ExplorerSidebar(): JSX.Element {
     () => withNewParts(committedModules, committedParts, workingChanges),
     [committedModules, committedParts, workingChanges],
   );
+  // プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ の木 (src/explorer_tree.ts)
+  const tree = useMemo(() => {
+    const byHash = new Map(
+      decodedCommits.map((c) => [c.event.eventHash, c.commit]),
+    );
+    return buildExplorerTree({
+      projects,
+      modules,
+      parts,
+      commitByHash: (hash) => byHash.get(hash) ?? null,
+    });
+  }, [projects, modules, parts, decodedCommits]);
   // 型エラー (と型チェッカーの失敗) の理由. 式の無いパーツ・コンパイラ組み込み (unsupported) は出さない
   const typeErrorOf = (part: {
-    readonly name: string;
-    readonly partIdHash?: string | null;
+    readonly partId: string;
+    readonly partIdHash: string | null;
   }): string | null => {
     const outcome =
-      part.partIdHash == null
+      part.partIdHash === null
         ? undefined
         : partTypeCheckResults.get(part.partIdHash);
     return outcome === undefined || outcome.kind === "unsupported"
       ? null
-      : typeCheckMessage(part.name, outcome);
+      : typeCheckMessage(part.partId, outcome);
   };
   const [filterQuery, setFilterQuery] = useState("");
-  const [collapsedModules, setCollapsedModules] = useState<ReadonlySet<string>>(
-    new Set(),
-  );
+  // 既定の開閉 (表示しているブランチとその中身は開く, 他のブランチは閉じる) から切り替えたノード
+  const [toggled, setToggled] = useState<ReadonlySet<string>>(new Set());
+  const isOpen = (key: string, defaultOpen: boolean): boolean =>
+    defaultOpen !== toggled.has(key);
   // エクスプローラーの幅. ワークベンチのグリッドの列 (`--sidebar-width`) をワークベンチの要素に直接書き換える.
   // ドラッグ中に React の state を変えると大きなツリーを毎回描画し直すので, 確定したときだけ state にする.
   // `null` は CSS の既定の幅 (画面の幅で変わる). 初回レンダーは SSR と揃え, 保存値はマウント後に反映する
@@ -109,10 +154,18 @@ export function ExplorerSidebar(): JSX.Element {
     asideRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
 
   const query = filterQuery.trim().toLowerCase();
+  const matchesQuery = (moduleName: string, partName: string): boolean =>
+    partName.toLowerCase().includes(query) ||
+    `${moduleName}.${partName}`.toLowerCase().includes(query);
 
   // 開いているパーツ (VSCode のアクティブなファイルのように強調表示する).
   // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
-  const currentPath = useRouter().path;
+  const router = useRouter();
+  const currentPath = router.path;
+  // ブランチの行は `/project/{名前}?branch={ブランチ}` へのリンク. そのときはプロジェクトではなくブランチを強調する
+  const currentBranchQuery = router.query.get("branch");
+  // アクティビティバーで選んだ欄 (今のページのパスで決まる)
+  const view = sidebarView;
   const selectedPart = useMemo(() => {
     const id = partIdFromPath(currentPath);
     if (id === null) return undefined;
@@ -123,26 +176,44 @@ export function ExplorerSidebar(): JSX.Element {
     );
   }, [currentPath, parts]);
   const selectedPartId = selectedPart?.partId;
-  const selectedModuleId = selectedPart?.moduleId;
+  const selectedModuleName = selectedPart?.moduleName;
+  const selectedProjectName = modules.find(
+    (m) => m.name === selectedModuleName,
+  )?.projectName;
+  const selectedBranch =
+    projects.find((p) => p.name === selectedProjectName)?.branch ?? MAIN_BRANCH;
 
-  // 選択が変わったら, 折りたたまれたモジュールを開いて選択中のパーツが見えるようにする
+  // 選択が変わったら, 閉じている上の段 (表示しているブランチの) を開いて選択中のパーツが見えるようにする.
+  // 表示しているブランチの段は既定で開いているので, 切り替えた印を消せば開く
   const scrollRef = useRef<HTMLDivElement>(null);
   const revealPendingRef = useRef(false);
   useEffect(() => {
-    if (selectedPartId === undefined || selectedModuleId === undefined) return;
+    if (
+      selectedPartId === undefined ||
+      selectedModuleName === undefined ||
+      selectedProjectName === undefined
+    ) {
+      return;
+    }
     revealPendingRef.current = true;
-    setCollapsedModules((prev) => {
-      if (!prev.has(selectedModuleId)) return prev;
+    const keys = [
+      projectKey(selectedProjectName),
+      branchKey(selectedProjectName, selectedBranch),
+      commitKey(selectedProjectName, selectedBranch),
+      moduleKey(selectedProjectName, selectedBranch, selectedModuleName),
+    ];
+    setToggled((prev) => {
+      if (!keys.some((key) => prev.has(key))) return prev;
       const next = new Set(prev);
-      next.delete(selectedModuleId);
+      for (const key of keys) next.delete(key);
       return next;
     });
-  }, [selectedPartId, selectedModuleId]);
-  // モジュールを開いた後のレンダーで要素が現れてからスクロールする
+  }, [selectedPartId, selectedModuleName, selectedProjectName, selectedBranch]);
+  // 上の段を開いた後のレンダーで要素が現れてからスクロールする
   useEffect(() => {
     if (!revealPendingRef.current) return;
     const selectedElement = scrollRef.current?.querySelector(
-      '.part-node[aria-current="page"]',
+      '.sidebar-tree-node[aria-current="page"]',
     );
     if (selectedElement == null) return;
     revealPendingRef.current = false;
@@ -154,17 +225,45 @@ export function ExplorerSidebar(): JSX.Element {
     setSidebarOpen(false);
   }, [setSidebarOpen]);
 
-  const toggleModuleCollapse = useCallback((moduleId: string) => {
-    setCollapsedModules((prev) => {
+  const toggle = useCallback((key: string) => {
+    setToggled((prev) => {
       const next = new Set(prev);
-      if (next.has(moduleId)) {
-        next.delete(moduleId);
+      if (next.has(key)) {
+        next.delete(key);
       } else {
-        next.add(moduleId);
+        next.add(key);
       }
       return next;
     });
   }, []);
+
+  /** 表示していないブランチの中のリンクは, そのブランチを表示してから開く */
+  const navigateIn = (projectName: string, branch: string): (() => void) => {
+    return () => {
+      selectBranch(projectName, branch);
+      closeSidebar();
+    };
+  };
+
+  // 開いたブランチの最新のコミットをまだ読んでいなければ読む (中のモジュール・パーツを出すため)
+  const unloadedOpenCommits = tree.flatMap((project) =>
+    isOpen(projectKey(project.name), true)
+      ? project.branches.filter(
+          (branch) =>
+            branch.commit === null &&
+            branch.latestEventHash !== "" &&
+            isOpen(branchKey(project.name, branch.name), branch.displayed),
+        )
+      : [],
+  );
+  const unloadedKey = unloadedOpenCommits
+    .map((branch) => branch.latestEventHash)
+    .join(",");
+  useEffect(() => {
+    for (const hash of unloadedKey === "" ? [] : unloadedKey.split(",")) {
+      void loadEvent(hash);
+    }
+  }, [unloadedKey, loadEvent]);
 
   /** 境界をドラッグして幅を変える. ポインターをキャプチャして, 境界から外れても追いかける */
   function handleResizePointerDown(
@@ -214,141 +313,381 @@ export function ExplorerSidebar(): JSX.Element {
     }
   }
 
+  const addLabel = (en: string, ja: string, eo: string): string =>
+    label(language, en, ja, eo);
+
   return (
     <aside className="workbench-sidebar" ref={asideRef}>
-      <div className="sidebar-header">
-        <span className="sidebar-title">
-          {label(language, "Explorer", "エクスプローラー", "Esplorilo")}
-        </span>
-        <div className="sidebar-actions">
-          <Link
-            href="/new-part"
-            className="sidebar-action-btn"
-            title={label(
+      <div className="sidebar-filter-container" data-view={view}>
+        {/* 絞り込みはプロジェクトの木だけ */}
+        {view === "projects" && (
+          <input
+            type="search"
+            className="sidebar-filter-input"
+            placeholder={label(
               language,
-              "New part (or module)",
-              "新しいパーツ (モジュール)",
-              "Nova parto (aŭ modulo)",
+              "Filter...",
+              "絞り込み...",
+              "Filtri...",
             )}
-          >
-            +
-          </Link>
-          <button
-            type="button"
-            className="sidebar-action-btn sidebar-close-btn"
-            title={label(language, "Close", "閉じる", "Fermi")}
-            aria-label={label(language, "Close", "閉じる", "Fermi")}
-            onClick={() => {
-              setSidebarOpen(false);
+            value={filterQuery}
+            onChange={(e) => {
+              setFilterQuery(e.target.value);
             }}
-          >
-            ×
-          </button>
-        </div>
-      </div>
-
-      <div className="sidebar-filter-container">
-        <input
-          type="search"
-          className="sidebar-filter-input"
-          placeholder={label(language, "Filter...", "絞り込み...", "Filtri...")}
-          value={filterQuery}
-          onChange={(e) => {
-            setFilterQuery(e.target.value);
-          }}
-        />
+          />
+        )}
+        {/* 狭い画面のドロワーを閉じる (CSS で狭い画面だけ表示) */}
+        <button
+          type="button"
+          className="sidebar-action-btn sidebar-close-btn"
+          title={label(language, "Close", "閉じる", "Fermi")}
+          aria-label={label(language, "Close", "閉じる", "Fermi")}
+          onClick={closeSidebar}
+        >
+          ×
+        </button>
       </div>
 
       <div className="sidebar-scroll" ref={scrollRef}>
-        {modules.length === 0 ? (
-          <div className="sidebar-empty">
-            {label(
-              language,
-              "No modules yet",
-              "モジュールがまだありません",
-              "Ankoraŭ neniuj moduloj",
-            )}
-          </div>
-        ) : (
-          modules.map((mod) => {
-            const isCollapsed = collapsedModules.has(mod.moduleId);
-            const moduleParts = parts.filter(
-              (p) => p.moduleId === mod.moduleId,
-            );
-            const filteredParts = query
-              ? moduleParts.filter(
-                  (p) =>
-                    p.name.toLowerCase().includes(query) ||
-                    `${mod.name}.${p.name}`.toLowerCase().includes(query),
-                )
-              : moduleParts;
-
-            if (query && filteredParts.length === 0) {
-              return null;
-            }
-            const moduleTypeErrorCount = moduleParts.filter(
-              (p) => typeErrorOf(p) !== null,
-            ).length;
-
-            return (
-              <div key={mod.moduleId} className="sidebar-module-group">
-                <button
-                  type="button"
-                  className="sidebar-tree-node module-node"
-                  onClick={() => {
-                    toggleModuleCollapse(mod.moduleId);
-                  }}
-                >
-                  <ChevronRightIcon
-                    size={14}
-                    className={`sidebar-chevron ${isCollapsed ? "" : "expanded"}`}
-                  />
-                  <ModuleIcon
-                    size={15}
-                    className="sidebar-node-icon tree-icon-module"
-                  />
-                  <span className="sidebar-node-label">{mod.name}</span>
-                  {moduleTypeErrorCount > 0 && (
-                    <span
-                      className="sidebar-type-error-count"
-                      title={label(
-                        language,
-                        `${moduleTypeErrorCount} parts with type errors`,
-                        `型エラーのあるパーツ ${moduleTypeErrorCount} 件`,
-                        `${moduleTypeErrorCount} partoj kun tiperaroj`,
-                      )}
-                    >
-                      {moduleTypeErrorCount}
-                    </span>
-                  )}
-                  <span className="sidebar-count">{moduleParts.length}</span>
-                </button>
-
-                {!isCollapsed && (
-                  <div className="sidebar-module-parts">
-                    {filteredParts.map((part) => {
-                      const change = workingChanges.parts.get(part.partId);
-                      const isChanged = change !== undefined;
-                      const typeError = typeErrorOf(part);
-                      const isSelected = part.partId === selectedPartId;
-                      return (
-                        <PartNode
-                          key={part.partId}
-                          partId={part.partId}
-                          name={change?.name ?? part.name}
-                          deleted={change?.deleted === true}
-                          isChanged={isChanged}
-                          typeError={typeError}
-                          isSelected={isSelected}
-                          onNavigate={closeSidebar}
-                        />
-                      );
-                    })}
-                  </div>
+        {view === "events" && <EventList onNavigate={closeSidebar} />}
+        {view === "accounts" && <AccountList onNavigate={closeSidebar} />}
+        {view === "projects" && (
+          <>
+            {query === "" && (
+              <AddRow
+                level="project"
+                href="/new-part"
+                text={addLabel(
+                  "Add project",
+                  "プロジェクトの追加",
+                  "Aldoni projekton",
                 )}
-              </div>
-            );
-          })
+                onNavigate={closeSidebar}
+              />
+            )}
+            {tree.map((project) => {
+              const pKey = projectKey(project.name);
+              const projectOpen = query !== "" || isOpen(pKey, true);
+              const projectHasMatch =
+                query === "" ||
+                project.branches.some((branch) =>
+                  branch.commit?.modules.some((mod) =>
+                    mod.parts.some((part) => matchesQuery(mod.name, part.name)),
+                  ),
+                );
+              if (!projectHasMatch) return null;
+              return (
+                <div
+                  key={project.name}
+                  className="sidebar-project-group"
+                  data-project={project.name}
+                >
+                  <TreeRow
+                    level="project"
+                    open={projectOpen}
+                    onToggle={() => {
+                      toggle(pKey);
+                    }}
+                    href={`/project/${encodeURIComponent(project.name)}`}
+                    icon={ProjectIcon}
+                    text={project.name}
+                    current={
+                      currentBranchQuery === null &&
+                      currentPath ===
+                        `/project/${encodeURIComponent(project.name)}`
+                    }
+                    onNavigate={closeSidebar}
+                    language={language}
+                  />
+                  {projectOpen && (
+                    <>
+                      {query === "" &&
+                        project.branches.some(
+                          (b) => b.latestEventHash !== "",
+                        ) && (
+                          <AddRow
+                            level="branch"
+                            href={`/project/${encodeURIComponent(project.name)}?add=branch`}
+                            text={addLabel(
+                              "Add branch",
+                              "ブランチの追加",
+                              "Aldoni branĉon",
+                            )}
+                            onNavigate={closeSidebar}
+                          />
+                        )}
+                      {project.branches.map((branch) => {
+                        const bKey = branchKey(project.name, branch.name);
+                        const cKey = commitKey(project.name, branch.name);
+                        const branchOpen =
+                          query !== "" || isOpen(bKey, branch.displayed);
+                        const commitOpen =
+                          query !== "" || isOpen(cKey, branch.displayed);
+                        const commit = branch.commit;
+                        const onNavigate = navigateIn(
+                          project.name,
+                          branch.name,
+                        );
+                        // ブランチにコミットできるのは作成者だけなので, 中の「追加」は自分のブランチ
+                        // (とまだコミットの無い新しいプロジェクト) にだけ出す. ブランチの追加は誰でもできる
+                        const canEdit =
+                          query === "" &&
+                          (branch.creatorAccountId === null ||
+                            branch.creatorAccountId ===
+                              currentAccount?.accountId);
+                        const branchModules =
+                          commit?.modules
+                            .map((mod) => ({
+                              ...mod,
+                              shownParts:
+                                query === ""
+                                  ? mod.parts
+                                  : mod.parts.filter((part) =>
+                                      matchesQuery(mod.name, part.name),
+                                    ),
+                            }))
+                            .filter(
+                              (mod) =>
+                                query === "" || mod.shownParts.length > 0,
+                            ) ?? [];
+                        if (query !== "" && branchModules.length === 0) {
+                          return null;
+                        }
+                        return (
+                          <div
+                            key={branch.name}
+                            className="sidebar-branch-group"
+                          >
+                            <TreeRow
+                              level="branch"
+                              open={branchOpen}
+                              onToggle={() => {
+                                toggle(bKey);
+                              }}
+                              href={`/project/${encodeURIComponent(project.name)}?branch=${encodeURIComponent(branch.name)}`}
+                              icon={BranchIcon}
+                              text={branch.name}
+                              current={
+                                currentBranchQuery === branch.name &&
+                                currentPath ===
+                                  `/project/${encodeURIComponent(project.name)}`
+                              }
+                              detail={
+                                branch.creatorAccountId === null ||
+                                branch.creatorAccountId === ""
+                                  ? undefined
+                                  : (accountNames.get(
+                                      branch.creatorAccountId,
+                                    ) ?? branch.creatorAccountId.slice(0, 8))
+                              }
+                              badge={
+                                branch.displayed
+                                  ? label(
+                                      language,
+                                      "shown",
+                                      "表示中",
+                                      "montrata",
+                                    )
+                                  : undefined
+                              }
+                              onNavigate={onNavigate}
+                              language={language}
+                            />
+                            {branchOpen && (
+                              <>
+                                {canEdit && (
+                                  <AddRow
+                                    level="commit"
+                                    href={CHANGES_ONLY_HREF}
+                                    text={addLabel(
+                                      "Add commit",
+                                      "コミットの追加",
+                                      "Aldoni enmeton",
+                                    )}
+                                    onNavigate={onNavigate}
+                                  />
+                                )}
+                                {commit === null ? (
+                                  <div
+                                    className="sidebar-tree-loading"
+                                    data-level="commit"
+                                  >
+                                    {label(
+                                      language,
+                                      "Loading...",
+                                      "読み込み中...",
+                                      "Ŝargante...",
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="sidebar-commit-group">
+                                    <TreeRow
+                                      level="commit"
+                                      open={commitOpen}
+                                      onToggle={() => {
+                                        toggle(cKey);
+                                      }}
+                                      href={
+                                        commit.eventHash === ""
+                                          ? CHANGES_ONLY_HREF
+                                          : `/event/${commit.eventHash}`
+                                      }
+                                      icon={CommitIcon}
+                                      current={
+                                        commit.eventHash !== "" &&
+                                        currentPath ===
+                                          `/event/${commit.eventHash}`
+                                      }
+                                      text={
+                                        commit.eventHash === ""
+                                          ? label(
+                                              language,
+                                              "Not committed",
+                                              "未コミット",
+                                              "Neenmetita",
+                                            )
+                                          : commit.eventHash.slice(0, 8)
+                                      }
+                                      mono={commit.eventHash !== ""}
+                                      detail={commit.message}
+                                      onNavigate={closeSidebar}
+                                      language={language}
+                                    />
+                                    {commitOpen && (
+                                      <>
+                                        {canEdit && (
+                                          <AddRow
+                                            level="module"
+                                            href={`/new-part?project=${encodeURIComponent(project.name)}`}
+                                            text={addLabel(
+                                              "Add module",
+                                              "モジュールの追加",
+                                              "Aldoni modulon",
+                                            )}
+                                            onNavigate={onNavigate}
+                                          />
+                                        )}
+                                        {branchModules.map((mod) => {
+                                          const mKey = moduleKey(
+                                            project.name,
+                                            branch.name,
+                                            mod.name,
+                                          );
+                                          const moduleOpen =
+                                            query !== "" ||
+                                            isOpen(mKey, branch.displayed);
+                                          const moduleTypeErrorCount =
+                                            branch.displayed
+                                              ? mod.parts.filter(
+                                                  (p) =>
+                                                    typeErrorOf(p) !== null,
+                                                ).length
+                                              : 0;
+                                          return (
+                                            <div
+                                              key={mod.name}
+                                              className="sidebar-module-group"
+                                            >
+                                              <TreeRow
+                                                level="module"
+                                                open={moduleOpen}
+                                                onToggle={() => {
+                                                  toggle(mKey);
+                                                }}
+                                                href={`/module/${encodeURIComponent(mod.name)}`}
+                                                icon={ModuleIcon}
+                                                text={mod.name}
+                                                current={
+                                                  branch.displayed &&
+                                                  currentPath ===
+                                                    `/module/${encodeURIComponent(mod.name)}`
+                                                }
+                                                typeErrorCount={
+                                                  moduleTypeErrorCount
+                                                }
+                                                count={mod.parts.length}
+                                                onNavigate={onNavigate}
+                                                language={language}
+                                              />
+                                              {moduleOpen && (
+                                                <div className="sidebar-module-parts">
+                                                  {canEdit && (
+                                                    <AddRow
+                                                      level="part"
+                                                      href={`/new-part?module=${encodeURIComponent(mod.name)}`}
+                                                      text={addLabel(
+                                                        "Add part",
+                                                        "パーツの追加",
+                                                        "Aldoni parton",
+                                                      )}
+                                                      onNavigate={onNavigate}
+                                                    />
+                                                  )}
+                                                  {mod.shownParts.map(
+                                                    (part) => {
+                                                      // 作業中の変更は表示しているブランチに重ねている
+                                                      const change =
+                                                        branch.displayed
+                                                          ? workingChanges.parts.get(
+                                                              part.partId,
+                                                            )
+                                                          : undefined;
+                                                      return (
+                                                        <PartNode
+                                                          key={part.partId}
+                                                          partId={part.partId}
+                                                          name={
+                                                            change?.name ??
+                                                            part.name
+                                                          }
+                                                          deleted={
+                                                            change?.deleted ===
+                                                            true
+                                                          }
+                                                          isChanged={
+                                                            change !== undefined
+                                                          }
+                                                          typeError={
+                                                            branch.displayed
+                                                              ? typeErrorOf(
+                                                                  part,
+                                                                )
+                                                              : null
+                                                          }
+                                                          isSelected={
+                                                            branch.displayed &&
+                                                            part.partId ===
+                                                              selectedPartId
+                                                          }
+                                                          onNavigate={
+                                                            branch.displayed
+                                                              ? closeSidebar
+                                                              : onNavigate
+                                                          }
+                                                        />
+                                                      );
+                                                    },
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 
@@ -373,6 +712,125 @@ export function ExplorerSidebar(): JSX.Element {
         }}
       />
     </aside>
+  );
+}
+
+/**
+ * 木の 1 行. 左の ›/⌄ で開閉し, 名前はその段の詳細のページへのリンク
+ */
+function TreeRow({
+  level,
+  open,
+  onToggle,
+  href,
+  icon: Icon,
+  text,
+  mono = false,
+  detail,
+  badge,
+  current = false,
+  typeErrorCount = 0,
+  count,
+  onNavigate,
+  language,
+}: {
+  readonly level: TreeLevel;
+  readonly open: boolean;
+  readonly onToggle: () => void;
+  readonly href: string;
+  readonly icon: IconComponent;
+  readonly text: string;
+  readonly mono?: boolean;
+  /** 名前の後ろに薄く出す補足 (ブランチの作成者, コミットのメッセージ) */
+  readonly detail?: string | undefined;
+  readonly badge?: string | undefined;
+  readonly current?: boolean;
+  readonly typeErrorCount?: number;
+  readonly count?: number;
+  readonly onNavigate: () => void;
+  readonly language: LanguageCode;
+}): JSX.Element {
+  const toggleLabel = open
+    ? label(language, "Collapse", "閉じる", "Faldi")
+    : label(language, "Expand", "開く", "Malfaldi");
+  return (
+    <div className="sidebar-tree-row" data-level={level}>
+      <button
+        type="button"
+        className="sidebar-tree-toggle"
+        aria-expanded={open}
+        aria-label={`${toggleLabel}: ${text}`}
+        title={toggleLabel}
+        onClick={onToggle}
+      >
+        <ChevronRightIcon
+          size={14}
+          className={`sidebar-chevron ${open ? "expanded" : ""}`}
+        />
+      </button>
+      <Link
+        href={href}
+        className={`sidebar-tree-node ${level}-node`}
+        aria-current={current ? "page" : undefined}
+        onClick={onNavigate}
+        title={
+          detail === undefined || detail === "" ? text : `${text} — ${detail}`
+        }
+      >
+        <Icon size={15} className={`sidebar-node-icon tree-icon-${level}`} />
+        <span className={`sidebar-node-label ${mono ? "font-mono" : ""}`}>
+          {text}
+        </span>
+        {detail !== undefined && detail !== "" && (
+          <span className="sidebar-node-detail">{detail}</span>
+        )}
+        {badge !== undefined && <span className="sidebar-branch">{badge}</span>}
+        {typeErrorCount > 0 && (
+          <span
+            className="sidebar-type-error-count"
+            title={label(
+              language,
+              `${typeErrorCount} parts with type errors`,
+              `型エラーのあるパーツ ${typeErrorCount} 件`,
+              `${typeErrorCount} partoj kun tiperaroj`,
+            )}
+          >
+            {typeErrorCount}
+          </span>
+        )}
+        {count !== undefined && <span className="sidebar-count">{count}</span>}
+      </Link>
+    </div>
+  );
+}
+
+/** 各段の先頭の「+ ○○の追加」. `level` はその段 (追加するものの段) */
+function AddRow({
+  level,
+  href,
+  text,
+  onNavigate,
+}: {
+  readonly level: TreeLevel;
+  readonly href: string;
+  readonly text: string;
+  readonly onNavigate: () => void;
+}): JSX.Element {
+  return (
+    <div className="sidebar-tree-row sidebar-add-row" data-level={level}>
+      <span className="sidebar-tree-toggle-spacer" />
+      <Link
+        href={href}
+        className="sidebar-tree-node sidebar-add-node"
+        data-add={level}
+        onClick={onNavigate}
+      >
+        <span className="sidebar-add-icon" aria-hidden="true">
+          +
+        </span>
+        <span className="sidebar-node-label">{text}</span>
+      </Link>
+    </div>
   );
 }
 
@@ -410,29 +868,32 @@ const PartNode = memo(function PartNode({
   readonly onNavigate: () => void;
 }): JSX.Element {
   return (
-    <Link
-      href={`/part/${partId}`}
-      className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
-      data-deleted={deleted ? "" : undefined}
-      aria-current={isSelected ? "page" : undefined}
-      onClick={onNavigate}
-    >
-      <ModuleIcon size={15} className="sidebar-node-icon tree-icon-part" />
-      <span className="sidebar-node-label">{name}</span>
-      {typeError !== null && (
-        <span
-          className="sidebar-type-error-dot"
-          title={typeError}
-          aria-label={typeError}
-        >
-          ●
-        </span>
-      )}
-      {isChanged && (
-        <span className="sidebar-dirty-dot" title="Modified">
-          ●
-        </span>
-      )}
-    </Link>
+    <div className="sidebar-tree-row" data-level="part">
+      <span className="sidebar-tree-toggle-spacer" />
+      <Link
+        href={`/part/${partId}`}
+        className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
+        data-deleted={deleted ? "" : undefined}
+        aria-current={isSelected ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        <PartsIcon size={15} className="sidebar-node-icon tree-icon-part" />
+        <span className="sidebar-node-label">{name}</span>
+        {typeError !== null && (
+          <span
+            className="sidebar-type-error-dot"
+            title={typeError}
+            aria-label={typeError}
+          >
+            ●
+          </span>
+        )}
+        {isChanged && (
+          <span className="sidebar-dirty-dot" title="Modified">
+            ●
+          </span>
+        )}
+      </Link>
+    </div>
   );
 });

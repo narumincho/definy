@@ -1,6 +1,7 @@
 import type { JSX } from "react";
 import { useParams } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
+import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
 import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
@@ -43,13 +44,10 @@ export default function ModuleDetailPage(): JSX.Element {
 
   return (
     <div className="module-detail-view">
-      <div className="breadcrumb">
-        <Link href="/modules" className="breadcrumb-link">
-          {label(language, "Modules", "モジュール", "Moduloj")}
-        </Link>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">{mod.name}</span>
-      </div>
+      <HierarchyBreadcrumb
+        projectName={mod.projectName}
+        moduleName={mod.name}
+      />
       <div className="card module-header">
         <h2 className="module-title">{mod.name}</h2>
         {mod.description.length > 0 && (
@@ -82,16 +80,6 @@ export default function ModuleDetailPage(): JSX.Element {
             {changedVisibility !== undefined && (
               <span className="badge badge-warning">
                 {label(language, "Modified", "編集中の変更あり", "Modifita")}
-              </span>
-            )}
-            {mod.branches.length > 0 && (
-              <span className="text-muted">
-                {label(
-                  language,
-                  `Branch: ${mod.branch} (change it on the project page)`,
-                  `ブランチ: ${mod.branch} (プロジェクトのページで切り替えます)`,
-                  `Branĉo: ${mod.branch}`,
-                )}
               </span>
             )}
           </div>

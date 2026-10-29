@@ -1,19 +1,19 @@
 import type { JSX } from "react";
-import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
 import {
   AccountsIcon,
   EventsIcon,
-  HistoryIcon,
-  ModuleIcon,
-  PartsIcon,
+  ProjectIcon,
   SettingsIcon,
   type IconComponent,
 } from "../icons.tsx";
+import type { SidebarView } from "../sidebar_view.ts";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
 type ActivityTarget = {
+  /** 選んだときにサイドバーに出す欄 (src/sidebar_view.ts) */
+  readonly view: SidebarView;
   readonly path: string;
   readonly icon: IconComponent;
   readonly en: string;
@@ -23,6 +23,7 @@ type ActivityTarget = {
 
 const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
   {
+    view: "events",
     path: "/",
     icon: EventsIcon,
     en: "Events",
@@ -30,39 +31,25 @@ const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
     eo: "Eventoj",
   },
   {
-    path: "/parts",
-    icon: PartsIcon,
-    en: "Parts",
-    ja: "パーツ",
-    eo: "Partoj",
-  },
-  {
+    view: "projects",
     path: "/modules",
-    icon: ModuleIcon,
-    en: "Modules",
-    ja: "モジュール",
-    eo: "Moduloj",
+    icon: ProjectIcon,
+    en: "Projects",
+    ja: "プロジェクト",
+    eo: "Projektoj",
   },
   {
-    path: "/history",
-    icon: HistoryIcon,
-    en: "History",
-    ja: "履歴",
-    eo: "Historio",
-  },
-  {
+    view: "accounts",
     path: "/accounts",
     icon: AccountsIcon,
     en: "Accounts",
-    ja: "アカウント",
+    ja: "アカウント一覧",
     eo: "Kontoj",
   },
 ];
 
 export function ActivityBar(): JSX.Element {
-  const { language, workingChanges } = useDefiny();
-  // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
-  const currentPath = useRouter().path;
+  const { language, workingChanges, sidebarView: currentView } = useDefiny();
   const changesCount =
     workingChanges.parts.size + (workingChanges.moduleVisibilities?.size ?? 0);
 
@@ -77,13 +64,10 @@ export function ActivityBar(): JSX.Element {
       )}
     >
       {PRIMARY_TARGETS.map((target) => {
-        const isActive =
-          target.path === "/"
-            ? currentPath === "/" || currentPath.startsWith("/event/")
-            : currentPath.startsWith(target.path);
-        // 作業中の変更はパーツ一覧の「変更のみ表示」で見るので, 件数はパーツに出す
+        const isActive = currentView === target.view;
+        // 作業中の変更はプロジェクトのパーツに重ねているので, 件数はプロジェクトに出す
         const itemLabel = label(language, target.en, target.ja, target.eo);
-        const badge = target.path === "/parts" ? changesCount : 0;
+        const badge = target.view === "projects" ? changesCount : 0;
 
         return (
           <Link
@@ -105,7 +89,7 @@ export function ActivityBar(): JSX.Element {
       <Link
         href="/settings"
         // About は設定の中から開く
-        className={`activity-item ${currentPath.startsWith("/settings") || currentPath.startsWith("/about") ? "active" : ""}`}
+        className={`activity-item ${currentView === "settings" ? "active" : ""}`}
         title={label(language, "Settings", "設定", "Agordoj")}
       >
         <SettingsIcon size={22} className="activity-icon" />

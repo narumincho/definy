@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "@void/react";
 import { parseLanguageCode, withLanguage } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
+import { sidebarViewOf, type SidebarView } from "../sidebar_view.ts";
 
 /** ページ (パーツ詳細など) が持つ元に戻す (Undo) / やり直す (Redo). ヘッダーのボタンから使う */
 export type PageUndoControls = {
@@ -19,6 +20,8 @@ export type UiState = {
    * SSR と揃えるため閉じた状態から始める (開いた状態で描画してから閉じると, 読み込みのたびにドロワーが一瞬見える)
    */
   readonly sidebarOpen: boolean;
+  /** 左端のアクティビティバーで選んでいる, サイドバーの欄 (src/sidebar_view.ts) */
+  readonly sidebarView: SidebarView;
   readonly toggleSidebar: () => void;
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
@@ -44,6 +47,13 @@ export function useUiState(): UiState {
   const router = useRouter();
   const language = parseLanguageCode(router.query.get("lang")) ?? "en";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // イベント詳細は前の欄のまま (プロジェクトの木のコミットから開いたら木を出したまま) にするので, 最後の欄を覚えておく
+  const pathView = sidebarViewOf(router.path);
+  const [lastView, setLastView] = useState<SidebarView>(pathView ?? "events");
+  if (pathView !== null && pathView !== lastView) {
+    setLastView(pathView);
+  }
+  const sidebarView = pathView ?? lastView;
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutListOpen, setShortcutListOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
@@ -73,6 +83,7 @@ export function useUiState(): UiState {
     language,
     setLanguage,
     sidebarOpen,
+    sidebarView,
     toggleSidebar,
     setSidebarOpen,
     commandPaletteOpen,

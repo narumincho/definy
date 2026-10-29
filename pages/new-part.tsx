@@ -14,7 +14,7 @@ import {
 import type { LanguageCode } from "../src/types.ts";
 
 /**
- * 新しいパーツを作るページ (`/new-part?module=モジュール名`. docs/ui.md「パーツの作成と削除」).
+ * 新しいパーツを作るページ (`/new-part?module=モジュール名` または `?project=プロジェクト名`. docs/ui.md「パーツの作成と削除」).
  * パーツは作業中の変更として作り, そのままパーツのページで編集する. コミットするとモジュールに入る
  */
 export default function NewPartPage(): JSX.Element {
@@ -37,7 +37,10 @@ export default function NewPartPage(): JSX.Element {
   const [parameters, setParameters] = useState("x");
   const [submitted, setSubmitted] = useState(false);
   /** 新しいモジュールを入れるプロジェクト. 決めていなければモジュール名と同じ名前のプロジェクト */
-  const [chosenProject, setChosenProject] = useState<string | null>(null);
+  // `?project=` はエクスプローラーの「モジュールの追加」から. そのプロジェクトに新しいモジュールを作る
+  const [chosenProject, setChosenProject] = useState<string | null>(() =>
+    router.query.get("project"),
+  );
 
   const input = {
     moduleName,
