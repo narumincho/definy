@@ -3,7 +3,7 @@ syntax = "proto3";
 package definy.v1;
 
 // HttpProxyService sends HTTP requests that the browser cannot send because of CORS,
-// on behalf of an allowed account (DEFINY_ADMIN_ACCOUNT_IDS or DEFINY_HTTP_PROXY_ACCOUNT_IDS).
+// on behalf of an administrator account (DEFINY_ADMIN_ACCOUNT_IDS).
 // The request must be signed with the Authorization header (docs/rpc-authorization.md).
 // wasi.io programs (e.g. definy.deploy-to-cloudflare-workers) use it when the CORS proxy option is on.
 service HttpProxyService {

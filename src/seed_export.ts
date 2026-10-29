@@ -60,19 +60,14 @@ export type ExportSeedsOptions = {
 /**
  * システムアカウントの公開鍵（32 バイト）を優先順位に従って導出する:
  * 1. 引数の overrideBytes
- * 2. 環境変数 `DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY`
- * 3. 環境変数 `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` から導出
- * 4. どちらも無ければ開発用鍵 (`devSystemAccountBytes`)
+ * 2. 環境変数 `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` から導出
+ * 3. 無ければ開発用鍵 (`devSystemAccountBytes`)
  */
 export async function resolveSystemAccountBytes(
   overrideBytes?: Uint8Array,
 ): Promise<Uint8Array> {
   if (overrideBytes) {
     return overrideBytes;
-  }
-  const publicKeyEnv = process.env.DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY;
-  if (publicKeyEnv && publicKeyEnv.trim().length > 0) {
-    return base64ToBytes(publicKeyEnv.trim());
   }
   const secretKeyEnv = process.env.DEFINY_SYSTEM_ACCOUNT_SECRET_KEY;
   if (secretKeyEnv && secretKeyEnv.trim().length > 0) {

@@ -21,14 +21,13 @@ node scripts/export_seeds.ts http://localhost:8787 [outDir=seeds]
 
 書き戻すのはシステムアカウントが各プロジェクトの `main` ブランチに出したコミットだけです（他のアカウントのブランチは書き出さない。[branch.md](branch.md)）。どのアカウントがシステムアカウントかを知るため、書き出し元サーバーと同じシステムアカウント鍵が必要です（パーツ ID はモジュール名とパーツ名だけで決まり、鍵には依存しません）。鍵は次の優先順位で解決されます（詳細は [システムアカウントと seed の編集フロー](./system-account.md) を参照）。
 
-1. `DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY`: サーバーのシステムアカウント公開鍵（32 バイト URL-safe Base64）
-2. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY`: システムアカウント秘密鍵（公開鍵を自動導出）
-3. 未設定時: リポジトリ組み込みの開発用鍵（`src/seed_parts.ts` の `devSystemAccountBytes`）
+1. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY`: システムアカウント秘密鍵（公開鍵を自動導出）
+2. 未設定時: リポジトリ組み込みの開発用鍵（`src/seed_parts.ts` の `devSystemAccountBytes`）
 
-本番やステージング環境など、開発用鍵以外で稼働しているサーバーから書き戻す際は `DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY` または `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` を設定して実行してください:
+本番やステージング環境など、開発用鍵以外で稼働しているサーバーから書き戻す際は `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` を設定して実行してください:
 
 ```bash
-DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY="<public_key>" npm run export:seeds https://definy.example.com
+DEFINY_SYSTEM_ACCOUNT_SECRET_KEY="<secret_key>" npm run export:seeds https://definy.example.com
 ```
 
 ## 動作の流れ

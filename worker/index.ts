@@ -70,20 +70,6 @@ export function isAdminAccount(
   return isListedAccount(accountId, env.DEFINY_ADMIN_ACCOUNT_IDS);
 }
 
-/**
- * `HttpProxyService/Fetch` (CORS の仲介) を使えるアカウントか. 管理者か,
- * 環境変数 `DEFINY_HTTP_PROXY_ACCOUNT_IDS`（カンマ・空白区切り）にあるアカウント. 未設定なら管理者だけ
- */
-export function isHttpProxyAccount(
-  accountId: string | undefined | null,
-  env: Env,
-): boolean {
-  return (
-    isAdminAccount(accountId, env) ||
-    isListedAccount(accountId, env.DEFINY_HTTP_PROXY_ACCOUNT_IDS)
-  );
-}
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -367,28 +353,6 @@ async function handleRpc(
       return jsonResponse(await store.submitEvent(rawEvent, env));
     }
 
-    case "/definy.v1.DebugService/SubmitUnverifiedEvent": {
-      if (env.DEFINY_ALLOW_UNVERIFIED_EVENTS !== "true") {
-        throw new ConnectError(
-          "permission_denied",
-          "SubmitUnverifiedEvent is disabled. Set DEFINY_ALLOW_UNVERIFIED_EVENTS=true (local development only)",
-        );
-      }
-      const req = parseJsonBody<SubmitEventRequest>(body);
-      const rawEvent = req.signedEventBytes?.trim() ?? "";
-      if (!rawEvent) {
-        throw new ConnectError(
-          "invalid_argument",
-          "signedEventBytes is required",
-        );
-      }
-      return jsonResponse(
-        await store.submitEvent(rawEvent, env, {
-          skipSignatureVerification: true,
-        }),
-      );
-    }
-
     case "/definy.v1.EventService/UploadContent": {
       const req = parseJsonBody<UploadContentRequest>(body);
       const stored = await store.uploadContent(req.items ?? [], env);
@@ -401,7 +365,7 @@ async function handleRpc(
         pathname,
         body,
         "HttpProxyService/Fetch",
-        (accountId) => isHttpProxyAccount(accountId, env),
+        (accountId) => isAdminAccount(accountId, env),
       );
       return jsonResponse(
         await proxyFetch(parseJsonBody<HttpProxyFetchRequest>(body), fetchFn),

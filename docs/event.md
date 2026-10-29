@@ -156,7 +156,6 @@ core.event-check-state = {
 - 規則は説明やパーツの中身の content hash を見ないので, それらを除いてから線形メモリに書く
 - 型検査 (`checkSubmittedProjectCommit`) はこの規則に通ってから行う
 - 型チェッカーと同じく, 本番で `core.check-event` を編集しても seed に書き戻してデプロイするまでサーバーには反映されない
-- デバッグ用の `DebugService/SubmitUnverifiedEvent` は規則も確かめない
 
 ## 変えたこと (2026-10-24)
 

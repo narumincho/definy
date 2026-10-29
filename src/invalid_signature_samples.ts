@@ -2,7 +2,6 @@
  * ブラウザ側の署名チェックを確認するための「署名が不正なイベント」のサンプルを作る。
  * サーバーの通常の `SubmitEvent` はこれらを拒否する。決まった鍵で作ったものを seed バンドルに入れて
  * どの環境でも表示を確かめられるようにしている (`createSeedInvalidSignatureSamples`)。
- * ローカル開発では `DebugService/SubmitUnverifiedEvent` で追加することもできる (docs/invalid-signature-debug.md)。
  */
 import { toContentAddressedParts, type ContentItem } from "./content_store.ts";
 import {
@@ -11,7 +10,6 @@ import {
   generateAccountCredentials,
   importAccountCredentials,
   type AccountCredentials,
-  type SubmitEventResult,
 } from "./auth.ts";
 import {
   base64ToBytes,
@@ -204,32 +202,6 @@ export async function createInvalidSignatureSamples(
       }),
     },
   ];
-}
-
-/**
- * サンプルを作り、`DebugService/SubmitUnverifiedEvent` で保存する。
- * サーバーで `DEFINY_ALLOW_UNVERIFIED_EVENTS=true` になっていなければ失敗する。
- */
-export async function submitInvalidSignatureSamples(
-  options: { readonly impersonatedAccountId?: string | undefined } = {},
-): Promise<ReadonlyArray<SubmitEventResult>> {
-  const samples = await createInvalidSignatureSamples(options);
-  const results: SubmitEventResult[] = [];
-  for (const sample of samples) {
-    const res = await fetch("/definy.v1.DebugService/SubmitUnverifiedEvent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ signedEventBytes: sample.signedEventBytes }),
-    });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as {
-        readonly message?: string;
-      } | null;
-      throw new Error(err?.message ?? `HTTP ${res.status}`);
-    }
-    results.push((await res.json()) as SubmitEventResult);
-  }
-  return results;
 }
 
 /**
