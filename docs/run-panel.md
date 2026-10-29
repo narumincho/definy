@@ -29,7 +29,20 @@
 3. 結果が `wasi.io` の値なら `runWasiIo` で `done` まで動かす ([wasi-io.md](wasi-io.md))。
    I/O のたびに途中経過を履歴に出す。途中で失敗したら, そこまでの記録とエラーを残す
 
-結果の値はレコードやリストなら整形した JSON で出す (`formatRunValue`)。
+結果の値は, 入力と同じ式のツリー (`ExpressionTreeEditor` の `editable={false}`) で出す (issue #801)。
+`runValueExpression` が値をそれに評価される式 (リテラル・`list`・`record`・`variant`) にする。
+
+- stage1 から受け取る値は JavaScript の数なので, 整数と整数の値の浮動小数 (`2.0`) は値だけでは見分けられない。
+  そこで実行と並べて入力の式の型を型チェッカーに聞き (`probeInferredTypeAt(式, [])` を `findExpectedType` に渡す),
+  結果の記録に `type` として残す。型が `float` の数は浮動小数のリテラル (`2.0`) にする
+- 型はリストの要素 (`item_type`)・レコードのフィールド (`field_type`)・直和型のタグのペイロード (`payload_type`) とたどる。
+  型パーツの参照 (`reference`) と型を返すパーツの呼び出し (`apply`, `core.option(T: float)` など) は
+  `resolveRunValueType` がパーツの宣言 (型の式) に展開する。`apply` は宣言 `(T) => union {...}` の本体の引数の変数を呼び出しの型引数にする。
+  `A = B`, `B = A` のような循環は 32 段で諦める
+- 型が分からないとき (推論できない式) は, 整数でない数だけを浮動小数のリテラル (`1.5`) にする
+- NaN は `core.float-nan` の参照にする ([float.md](float.md))
+- タグ付きの値は `type_part` を `none` にした `variant` の式にする
+- 式で書けない値 (関数のクロージャ, `null`, ±Infinity) を含むときだけ, 前と同じ整形した JSON の文字列で出す (`formatRunValue`)
 
 ## コンパイラを作り直す
 

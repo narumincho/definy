@@ -1169,6 +1169,44 @@
       }
     },
     {
+      "name": "float-nan",
+      "part_type": {
+        "#float": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "NaN (not a number). The square root of -1.0. The run panel shows a NaN result as this part"
+        },
+        {
+          "language": "ja",
+          "text": "NaN (非数). -1.0 の平方根. 実行パネルは結果の NaN をこのパーツで表示する"
+        }
+      ],
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-square-root"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": -1,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "name": "power-of-ten",
       "part_type": {
         "#function": {
