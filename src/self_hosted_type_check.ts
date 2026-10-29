@@ -20,6 +20,8 @@ import {
 } from "./stage1_compiler.ts";
 import {
   bytesToUrlSafeBase64NoPad,
+  deriveModuleIdBytesSync,
+  deriveModulePartIdSync,
   encodeCborItem,
   sha256BytesSync,
 } from "./cbor.ts";
@@ -655,6 +657,14 @@ export function checkModuleCommitParts(options: {
   readonly replacedModuleIds: ReadonlySet<string>;
   readonly committed: ReadonlyArray<LatestPart>;
   readonly latestParts: ReadonlyMap<string, LatestPart>;
+  /**
+   * パーツの定義の式 (docs/part-definition.md). コミットの型環境で `core.part-content` になるかを検査する.
+   * ユーザーが作った定義のパーツの呼び出しで定義したパーツのもの
+   */
+  readonly definitionChecks?: ReadonlyArray<{
+    readonly name: string;
+    readonly expression: unknown;
+  }>;
 }): ReadonlyArray<{
   readonly name: string;
   readonly outcome: SelfHostedTypeCheckOutcome;
@@ -710,6 +720,21 @@ export function checkModuleCommitParts(options: {
         },
       })),
     ];
+  }
+  const partContentType = variant("reference", {
+    part_hash: deriveModulePartIdSync(
+      deriveModuleIdBytesSync("core"),
+      "part-content",
+    ),
+  });
+  for (const definition of options.definitionChecks ?? []) {
+    results.push({
+      name: definition.name,
+      outcome: session.check({
+        expression: definition.expression,
+        partType: partContentType,
+      }),
+    });
   }
   if (toCheck.length === 0) {
     return results;

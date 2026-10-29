@@ -7,7 +7,13 @@ import {
   type CommitModuleParams,
   type AccountCredentials,
 } from "../src/auth.ts";
-import { bytesToUrlSafeBase64NoPad, type DecodedPart } from "../src/cbor.ts";
+import {
+  bytesToBase64,
+  bytesToUrlSafeBase64NoPad,
+  encodeCborItem,
+  sha256EventHashIdSync,
+  type DecodedPart,
+} from "../src/cbor.ts";
 import {
   resolvePartPlaceholders,
   resolveSeedPartType,
@@ -115,6 +121,217 @@ async function partReference(
     },
   };
 }
+
+/**
+ * 中身を定義の式 `definition` で書いたパーツ (docs/part-definition.md). 中身は CAS に送っておく
+ */
+async function definedPart(
+  store: WorkerStore,
+  env: Env,
+  name: string,
+  definition: unknown,
+): Promise<DecodedPart> {
+  const bytes = encodeCborItem(definition);
+  const contentHash = sha256EventHashIdSync(bytes);
+  await store.uploadContent(
+    [{ contentHash, contentBytes: bytesToBase64(bytes) }],
+    env,
+  );
+  return {
+    name,
+    description: [],
+    partType: null,
+    expression: null,
+    contentHash,
+    unresolved: true,
+  };
+}
+
+const coreCall = async (
+  partName: string,
+  args: Readonly<Record<string, unknown>>,
+): Promise<unknown> => ({
+  "#call": {
+    function: await partReference("", "core", partName),
+    arguments: Object.entries(args).map(([name, value]) => ({ name, value })),
+  },
+});
+
+const some = (value: unknown) => ({
+  "#variant": {
+    tag: "some",
+    payload: { "#some": value },
+    type_part: { "#none": null },
+  },
+});
+const quoted = (expression: unknown) => ({
+  "#record_get": { record: { "#quote": expression }, key: "expression" },
+});
+
+describe("ユーザーが作った定義のパーツ (docs/part-definition.md)", () => {
+  /** app.define-number(description, value): 型が number で式が value の数のリテラルのパーツを定義する */
+  const defineNumber = async () =>
+    part(
+      "define-number",
+      {
+        "#function": {
+          parameters: [
+            {
+              name: "description",
+              type: {
+                "#list": {
+                  item_type: {
+                    "#reference": {
+                      part_hash: await deriveModulePartId(
+                        await deriveModuleIdBytes("core"),
+                        "localized-text",
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            { name: "value", type: { "#number": null } },
+          ],
+          return_type: {
+            "#reference": {
+              part_hash: await deriveModulePartId(
+                await deriveModuleIdBytes("core"),
+                "part-content",
+              ),
+            },
+          },
+        },
+      },
+      {
+        "#function": {
+          parameters: [
+            { parameter_id: 0, parameter_name: "description" },
+            { parameter_id: 1, parameter_name: "value" },
+          ],
+          body: await coreCall("define-part", {
+            description: { "#variable": { variable_id: 0 } },
+            visibility: {
+              "#variant": {
+                tag: "public",
+                payload: { "#none": null },
+                type_part: { "#none": null },
+              },
+            },
+            part_type: some(quoted({ "#type_number": null })),
+            expression: some({
+              "#variant": {
+                tag: "number",
+                payload: { "#some": { "#variable": { variable_id: 1 } } },
+                type_part: {
+                  "#some": await deriveModulePartId(
+                    await deriveModuleIdBytes("core"),
+                    "expression",
+                  ),
+                },
+              },
+            }),
+          }),
+        },
+      },
+    );
+  const callDefineNumber = async (args: Readonly<Record<string, unknown>>) => ({
+    "#call": {
+      function: await partReference("", "app", "define-number"),
+      arguments: Object.entries(args).map(([name, value]) => ({ name, value })),
+    },
+  });
+
+  it("定義の式はコミットの中の定義のパーツで評価し, その中身で型検査する", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    const answer = await definedPart(
+      store,
+      env,
+      "answer",
+      await callDefineNumber({
+        description: { "#list": [] },
+        value: { "#number": 42 },
+      }),
+    );
+    const double = part(
+      "double",
+      { "#number": null },
+      await coreCall("plus", {
+        left: await partReference("", "app", "answer"),
+        right: await partReference("", "app", "answer"),
+      }),
+    );
+    expect(
+      await submitCommit(store, env, user, "app", [
+        await defineNumber(),
+        answer,
+        double,
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    // 別のプロジェクトからも, 受け付けたコミットの中で評価した型で参照できる
+    expect(
+      await submitCommit(store, env, user, "other", [
+        part(
+          "half",
+          { "#number": null },
+          await coreCall("divide", {
+            left: await partReference("", "app", "answer"),
+            right: { "#number": 2 },
+          }),
+        ),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    expect(
+      (
+        await submitCommit(store, env, user, "other2", [
+          part(
+            "wrong",
+            { "#string": null },
+            await partReference("", "app", "answer"),
+          ),
+        ])
+      ).status,
+    ).toBe(400);
+  });
+
+  it("定義の式も型検査し, 評価して core.part-content にならなければ拒否する", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    // 知らない引数を渡す定義の式は, 評価はできても型エラー
+    const extra = await submitCommit(store, env, user, "app", [
+      await defineNumber(),
+      await definedPart(
+        store,
+        env,
+        "answer",
+        await callDefineNumber({
+          description: { "#list": [] },
+          value: { "#number": 42 },
+          extra: { "#number": 1 },
+        }),
+      ),
+    ]);
+    expect(extra.status).toBe(400);
+    expect(extra.message).toContain("app.answer (definition)");
+    // 定義のパーツがコミットに無ければ評価できない
+    const missing = await submitCommit(store, env, user, "lib", [
+      await definedPart(
+        store,
+        env,
+        "answer",
+        await callDefineNumber({
+          description: { "#list": [] },
+          value: { "#number": 42 },
+        }),
+      ),
+    ]);
+    expect(missing.status).toBe(400);
+    expect(missing.message).toContain(
+      "is not a part definition that evaluates to a core.part-content",
+    );
+  });
+});
 
 describe("SubmitEvent の型検査", () => {
   it("型の合うコミットは受け付ける (他のモジュールのパーツの呼び出しも引数の型まで検査する)", async () => {

@@ -17,6 +17,7 @@ definy の構文と意味 (`core.expression` / `core.type-ast` の宣言, 型チ
 | #794 | 型引数は普通の引数 (`core.list-map(T: number, ...)`), 型を返すパーツ `core.option`, 型は実行時にも値            | type-arguments.md              |
 | -    | パーツの定義もパーツ: 中身は `core.define-part(...)` / `core.define-type(...)` の定義の式。名前は外             | part-definition.md             |
 | -    | パーツの型も型の式で書く (`type_type` / `type_code` / `type_parameter` を足す)。type-ast は型チェッカーの中だけ | type-expression.md             |
+| -    | ユーザーが作った定義のパーツの呼び出しも, コミットの中で評価して読む                                            | part-definition.md             |
 
 ## 実行時にエラーになる場所 (残り)
 
@@ -49,7 +50,6 @@ Elm と同じく実行時エラーは無い方針。2026-10-28 に確かめた�
 - 浮動小数の 0 除算: 今は IEEE 754 のまま (`1.0 / 0.0` は無限大, `0.0 / 0.0` は NaN)。0.0 にするかは決定待ち ([float.md](float.md))
 - 型引数の推論 (Idris2 の暗黙の引数)。今は必ず書く ([type-arguments.md](type-arguments.md))
 - コンパイラ組み込みのパーツ (`core.list-get` など) を型引数を取る形にするか。今は型チェッカーが名前で特別扱いしている
-- ユーザーが作った定義のパーツの呼び出しを読むこと ([part-definition.md](part-definition.md) の「まだ無いもの」)
 
 ## 型パーツの再帰 (循環) について
 

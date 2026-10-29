@@ -292,3 +292,62 @@ export function decodePartDefinition(
     ? partContentFromValue(value)
     : undefined;
 }
+
+/** 定義の式を評価する関数 (src/definition_evaluator.ts の `evaluateDefinition` に評価器を渡したもの) */
+export type DefinitionEvaluator = (
+  definition: unknown,
+  resolve: (id: string) => unknown,
+) => unknown;
+
+/**
+ * コミットのパーツの中身を, 定義の式から求める (キーはパーツ ID).
+ * `core.define-part` / `core.define-type` の呼び出しはその場で評価し ({@link decodePartDefinition}),
+ * それ以外 (ユーザーが作った定義のパーツの呼び出しなど) は `evaluate` でコミットの中で評価する.
+ * 評価で参照するパーツの式は, コミットのパーツなら求めた中身の式, そうでなければ `external` で引く.
+ * 中身の求まったパーツを使って繰り返し評価するので, 定義のパーツ自体を定義のパーツで定義してもよい.
+ * 評価できない (`evaluate` が無い, 循環している, `core.part-content` にならない) パーツは入らない.
+ * その場で評価できて `core.part-content` にならないものは評価器でも評価しない
+ */
+export function resolveDefinitionsInCommit(options: {
+  readonly definitions: ReadonlyMap<string, unknown>;
+  readonly external: (id: string) => unknown;
+  readonly evaluate: DefinitionEvaluator | undefined;
+  /** 評価した値がパーツ `id` の中身 (`core.part-content`) の形か. 省くと {@link isPartContent} */
+  readonly conforms?: (id: string, value: unknown) => boolean;
+}): ReadonlyMap<string, PartContent> {
+  const conforms =
+    options.conforms ?? ((_: string, value: unknown) => isPartContent(value));
+  const contents = new Map<string, PartContent>();
+  let pending: Array<readonly [string, unknown]> = [];
+  for (const [id, definition] of options.definitions) {
+    const value = evaluatePartDefinition(definition);
+    if (value !== undefined && conforms(id, value)) {
+      contents.set(id, partContentFromValue(value));
+    } else if (value === undefined) {
+      pending.push([id, definition]);
+    }
+  }
+  const evaluate = options.evaluate;
+  if (evaluate === undefined) {
+    return contents;
+  }
+  const resolve = (id: string): unknown =>
+    options.definitions.has(id)
+      ? (contents.get(id)?.expression ?? undefined)
+      : options.external(id);
+  for (let progress = true; progress && pending.length > 0;) {
+    progress = false;
+    const next: Array<readonly [string, unknown]> = [];
+    for (const [id, definition] of pending) {
+      const value = evaluate(definition, resolve);
+      if (value !== undefined && conforms(id, value)) {
+        contents.set(id, partContentFromValue(value));
+        progress = true;
+      } else {
+        next.push([id, definition]);
+      }
+    }
+    pending = next;
+  }
+  return contents;
+}
