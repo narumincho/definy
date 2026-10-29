@@ -758,30 +758,35 @@ body.sidebar-resizing {
   user-select: none;
 }
 
-.sidebar-header {
+/* 絞り込みの欄. 狭い画面ではドロワーを閉じるボタンを右に並べる */
+.sidebar-filter-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 35px;
-  padding: 0 0.5rem 0 1rem;
-  font-size: 0.76rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+  gap: 0.3rem;
+  padding: 0.5rem 0.5rem 0.4rem;
   flex-shrink: 0;
 }
 
-.sidebar-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.sidebar-filter-container .sidebar-filter-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-action-btn {
+  place-items: center;
+  width: 28px;
+  height: 28px;
   font-size: 1.05rem;
-  font-weight: 400;
   line-height: 1;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+}
+
+.sidebar-action-btn:hover {
+  background: var(--bg-chrome-hover);
+  color: var(--text-primary);
 }
 
 .sidebar-close-btn {
@@ -871,26 +876,128 @@ body.sidebar-resizing {
   color: var(--text-primary);
 }
 
-/* プロジェクト ▸ モジュール ▸ パーツ の段を字下げで示す */
+/* プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ の段を字下げで示す (docs/ui.md「エクスプローラー」).
+   行は左の開閉ボタン (›/⌄) と, その段の詳細のページへのリンクからなる */
+.sidebar-tree-row {
+  --tree-indent: 0.7rem;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-left: 0.25rem;
+}
+
+.sidebar-tree-row[data-level="branch"] {
+  padding-left: calc(0.25rem + var(--tree-indent));
+}
+
+.sidebar-tree-row[data-level="commit"] {
+  padding-left: calc(0.25rem + var(--tree-indent) * 2);
+}
+
+.sidebar-tree-row[data-level="module"] {
+  padding-left: calc(0.25rem + var(--tree-indent) * 3);
+}
+
+.sidebar-tree-row[data-level="part"] {
+  padding-left: calc(0.25rem + var(--tree-indent) * 4);
+}
+
+.sidebar-tree-toggle,
+.sidebar-tree-toggle-spacer {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 22px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+}
+
+.sidebar-tree-toggle:hover {
+  background: var(--bg-chrome-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-tree-row .sidebar-tree-node {
+  flex: 1;
+  min-width: 0;
+  padding-left: 0.25rem;
+}
+
 .sidebar-tree-node.project-node {
   font-weight: 600;
 }
 
 .sidebar-tree-node.module-node {
-  padding-left: 1.2rem;
   font-weight: 500;
 }
 
 .sidebar-tree-node.part-node {
-  padding-left: 2.6rem;
   font-size: 0.84rem;
+}
+
+.sidebar-tree-node[aria-current="page"]:not(.part-node) {
+  background: var(--overlay-3);
+  color: var(--text-primary);
+}
+
+/* ブランチの作成者, コミットのメッセージ */
+.sidebar-node-detail {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.sidebar-tree-node .sidebar-node-label:has(+ .sidebar-node-detail) {
+  flex: 0 1 auto;
+}
+
+/* コミットの短いハッシュは削らず, メッセージのほうを削る */
+.sidebar-tree-node .sidebar-node-label.font-mono {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+/* 「+ ○○の追加」 */
+.sidebar-tree-node.sidebar-add-node {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.sidebar-tree-node.sidebar-add-node:hover {
+  color: var(--primary);
+}
+
+.sidebar-add-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sidebar-tree-loading {
+  padding: 0.25rem 0.5rem 0.25rem calc(0.25rem + 0.7rem * 2 + 20px + 0.25rem);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.tree-icon-branch,
+.tree-icon-commit {
+  color: var(--green);
 }
 
 /* プロジェクトの行の表示しているブランチ */
 .sidebar-branch {
-  flex-shrink: 1;
-  min-width: 0;
-  max-width: 45%;
+  flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1695,6 +1802,7 @@ a.hierarchy-name:hover {
 }
 
 .hierarchy-branch-select {
+  width: auto;
   max-width: 14rem;
   padding: 0.05rem 0.3rem;
   font-size: 0.84rem;
@@ -3728,4 +3836,23 @@ a.account-card {
 
 .part-header .part-actions .btn {
   white-space: nowrap;
+}
+
+/* プロジェクトのページの新しいブランチの欄 (docs/branch.md「ブランチの作成」) */
+.new-branch-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.new-branch-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.new-branch-row input {
+  flex: 1;
+  min-width: 10rem;
+  max-width: 20rem;
 }

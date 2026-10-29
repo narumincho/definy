@@ -320,10 +320,13 @@ test.describe("definy UI E2E", () => {
       "already has a part",
     );
     // エクスプローラーにもコミット前の新しいパーツが出る
+    // (同じ dev サーバーで前に流したテストの square もあるので, このモジュールのプロジェクトの中で数える)
     await expect(
-      page.locator(".sidebar-tree-node.part-node", {
-        has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
-      }),
+      page
+        .locator(`.sidebar-project-group[data-project="${moduleName}"]`)
+        .locator(".sidebar-tree-node.part-node", {
+          has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
+        }),
     ).toHaveCount(1);
 
     // コミットするとモジュールができる
@@ -534,6 +537,81 @@ test.describe("definy UI E2E", () => {
         .first()
         .locator(".tree-badge", { hasText: /^10$/ }),
     ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("explorer shows project / branch / commit / module / part and adds a branch", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now().toString().slice(-6);
+    const alice = await generateAccountCredentials(`alice_b${suffix}`);
+    const submit = async (
+      signed: SignedEventResult | SignedProjectCommitResult,
+    ): Promise<void> => {
+      const res = await submitEvent(request, signed);
+      expect(res.ok(), await res.text()).toBe(true);
+    };
+    await submit(await createSignedAccountEvent(alice));
+    const moduleName = `tree_${suffix}`;
+    await submit(
+      await createSignedSingleModuleCommitEvent({
+        credentials: alice,
+        moduleName,
+        branch: "main",
+        moduleDescription: [],
+        message: "first",
+        parentCommitHash: null,
+        parts: [
+          {
+            name: "one",
+            description: [],
+            partType: { "#number": null },
+            expression: { "#number": 1 },
+          },
+        ],
+      }),
+    );
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, alice);
+    await page.goto("/");
+
+    // プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ. 表示しているブランチは開いている
+    // (プロジェクト名は省くとモジュール名と同じ. src/test_commit.ts)
+    const projectGroup = page.locator(
+      `.sidebar-project-group[data-project="${moduleName}"]`,
+    );
+    await expect(projectGroup).toBeVisible({ timeout: 15000 });
+    await expect(projectGroup.locator(".branch-node")).toContainText("main");
+    await expect(projectGroup.locator(".commit-node")).toContainText("first");
+    const partNode = projectGroup.locator(".sidebar-tree-node.part-node", {
+      hasText: /^one$/,
+    });
+    await expect(partNode).toBeVisible();
+
+    // 左の › で開閉し, 名前はその段のページへのリンク
+    const moduleRow = projectGroup.locator(".sidebar-tree-row", {
+      has: page.locator(".module-node"),
+    });
+    await moduleRow.locator(".sidebar-tree-toggle").click();
+    await expect(partNode).toHaveCount(0);
+    await moduleRow.locator(".sidebar-tree-toggle").click();
+    await expect(partNode).toBeVisible();
+    await moduleRow.locator(".module-node").click();
+    await page.waitForURL(new RegExp(`/module/${moduleName}`));
+
+    // 「ブランチの追加」でプロジェクトのページの新しいブランチの欄を開いて作る
+    await projectGroup.locator('[data-add="branch"]').click();
+    await page.waitForURL(/add=branch/);
+    await page.locator("#new-branch-name").fill("feature");
+    await page.locator(".new-branch-form button[type='submit']").click();
+    await expect(page.locator("#project-branch-select")).toHaveValue(
+      "feature",
+      { timeout: 15000 },
+    );
+    await expect(
+      projectGroup.locator(".branch-node", { hasText: "feature" }),
+    ).toBeVisible();
   });
 
   test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({

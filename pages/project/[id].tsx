@@ -1,7 +1,8 @@
 import { useEffect, useState, type JSX } from "react";
-import { useParams } from "@void/react";
+import { useParams, useRouter } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
 import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
+import { NewBranchForm } from "../../src/components/NewBranchForm.tsx";
 import {
   AccountLink,
   dateLocale,
@@ -56,6 +57,8 @@ function branchHistory(
  */
 export default function ProjectDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  // エクスプローラーの「ブランチの追加」は `?add=branch` で開き, 新しいブランチの欄に入力する
+  const addBranch = useRouter().query.get("add") === "branch";
   const { language, projects, modules, decodedCommits, loadEvent } =
     useDefiny();
 
@@ -133,6 +136,8 @@ export default function ProjectDetailPage(): JSX.Element {
         projectName={project.name}
         conflicts={mergeConflicts}
       />
+
+      <NewBranchForm project={project} autoFocus={addBranch} />
 
       <div className="module-parts-section">
         <h3>
