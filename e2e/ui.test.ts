@@ -140,22 +140,19 @@ test.describe("definy UI E2E", () => {
     await expect(page).toHaveTitle("definy");
 
     // クライアント側の遷移でもタイトルが変わる
-    await page.locator('.activity-item[href^="/parts"]').click();
-    await expect(page).toHaveURL(/\/parts\?lang=en$/);
-    await expect(page).toHaveTitle("Parts | definy");
+    await page.locator('.activity-item[href^="/modules"]').click();
+    await expect(page).toHaveURL(/\/modules\?lang=en$/);
+    await expect(page).toHaveTitle("Modules | definy");
 
     // パーツ名はクライアントのデータから決まる (Void が head() のタイトルで上書きしたあとに設定し直す)
     await page
-      .locator(".part-card", { hasText: "triangle-area" })
+      .locator(".sidebar-tree-node.part-node", { hasText: /^triangle-area$/ })
       .first()
       .click();
     await expect(page).toHaveTitle("sample.triangle-area | definy");
 
-    await page.locator('.activity-item[href^="/modules"]').click();
-    await expect(page).toHaveTitle("Modules | definy");
-
     await page.goBack();
-    await expect(page).toHaveTitle("sample.triangle-area | definy");
+    await expect(page).toHaveTitle("Modules | definy");
 
     // サーバーが返す HTML のタイトルも表示言語に合わせる
     const response = await page.request.get("/history?lang=ja");
@@ -574,7 +571,8 @@ test.describe("definy UI E2E", () => {
     await page.addInitScript((account) => {
       localStorage.setItem("definy.account.v1", JSON.stringify(account));
     }, alice);
-    await page.goto("/");
+    // プロジェクトの木は左端のメニューの「プロジェクト」の欄 (イベントのページではイベントの一覧になる)
+    await page.goto("/modules");
 
     // プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ. 表示しているブランチは開いている
     // (プロジェクト名は省くとモジュール名と同じ. src/test_commit.ts)
@@ -630,6 +628,24 @@ test.describe("definy UI E2E", () => {
     await expect(
       projectGroup.locator(".branch-node", { hasText: "feature" }),
     ).toBeVisible();
+
+    // 左端のメニューでサイドバーの欄が変わる: イベント → イベント一覧, アカウント一覧 → アカウント一覧, 設定 → 空
+    await page.locator('.activity-item[href^="/accounts"]').click();
+    await page.waitForURL(/\/accounts/);
+    await expect(page.locator(".sidebar-project-group")).toHaveCount(0);
+    await expect(
+      page.locator(".sidebar-account-node", { hasText: alice.accountName }),
+    ).toBeVisible();
+    await page.locator(".activity-item").first().click();
+    await expect(page.locator(".sidebar-event-node").first()).toBeVisible();
+    await page.locator(".sidebar-event-node").first().click();
+    await page.waitForURL(/\/event\//);
+    await expect(
+      page.locator(".sidebar-event-node[aria-current='page']"),
+    ).toHaveCount(1);
+    await page.locator('.activity-item[href^="/settings"]').click();
+    await page.waitForURL(/\/settings/);
+    await expect(page.locator(".sidebar-scroll")).toBeEmpty();
   });
 
   test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({
@@ -787,10 +803,10 @@ test.describe("definy UI E2E", () => {
         .locator(".run-history-output"),
     ).toHaveText("25", { timeout: 15000 });
     await page
-      .locator(".activity-item", { hasText: /Parts|パーツ/ })
+      .locator(".activity-item", { hasText: /Accounts|アカウント/ })
       .first()
       .click();
-    await page.waitForURL(/\/parts/);
+    await page.waitForURL(/\/accounts/);
     await expect(runPanel).toBeVisible();
   });
 

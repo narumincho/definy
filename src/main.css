@@ -767,6 +767,12 @@ body.sidebar-resizing {
   flex-shrink: 0;
 }
 
+/* 絞り込みはプロジェクトの木だけ. 他の欄では狭い画面の閉じるボタンだけになるので, 広い画面では出さない */
+.sidebar-filter-container:not([data-view="projects"]) {
+  display: none;
+  justify-content: flex-end;
+}
+
 .sidebar-filter-container .sidebar-filter-input {
   flex: 1;
   min-width: 0;
@@ -3538,6 +3544,10 @@ a.account-card {
     display: inline-grid;
   }
 
+  .sidebar-filter-container:not([data-view="projects"]) {
+    display: flex;
+  }
+
   /* ドロワーの幅は固定なので境界のドラッグは出さない */
   .sidebar-resizer {
     display: none;
@@ -3889,4 +3899,34 @@ a.account-card {
   flex: 1;
   min-width: 10rem;
   max-width: 20rem;
+}
+
+/* サイドバーのイベント・アカウントの一覧 (src/components/SidebarLists.tsx) */
+.sidebar-list {
+  padding-top: 0.25rem;
+}
+
+.sidebar-event-node[data-event-type="project_commit"] .sidebar-event-icon {
+  color: var(--blue);
+}
+
+.sidebar-event-node[data-event-type="create_account"] .sidebar-event-icon {
+  color: var(--green);
+}
+
+.sidebar-event-node[data-invalid] .sidebar-event-icon {
+  color: var(--red);
+}
+
+.sidebar-account-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--blue-text);
+  background: var(--blue-bg-strong);
+  border-radius: 50%;
 }

@@ -25,6 +25,7 @@ import { withNewParts } from "../new_part.ts";
 import { MAIN_BRANCH } from "../event_content.ts";
 import { buildExplorerTree } from "../explorer_tree.ts";
 import type { LanguageCode } from "../types.ts";
+import { AccountList, EventList } from "./SidebarLists.tsx";
 
 const SIDEBAR_WIDTH_STORAGE_KEY = "definy.sidebar.width";
 const MIN_SIDEBAR_WIDTH = 160;
@@ -83,6 +84,7 @@ export function ExplorerSidebar(): JSX.Element {
     currentAccount,
     selectBranch,
     loadEvent,
+    sidebarView,
     setSidebarOpen,
     partTypeCheckResults,
     typeCheckMessage,
@@ -162,6 +164,8 @@ export function ExplorerSidebar(): JSX.Element {
   const currentPath = router.path;
   // ブランチの行は `/project/{名前}?branch={ブランチ}` へのリンク. そのときはプロジェクトではなくブランチを強調する
   const currentBranchQuery = router.query.get("branch");
+  // アクティビティバーで選んだ欄 (今のページのパスで決まる)
+  const view = sidebarView;
   const selectedPart = useMemo(() => {
     const id = partIdFromPath(currentPath);
     if (id === null) return undefined;
@@ -314,16 +318,24 @@ export function ExplorerSidebar(): JSX.Element {
 
   return (
     <aside className="workbench-sidebar" ref={asideRef}>
-      <div className="sidebar-filter-container">
-        <input
-          type="search"
-          className="sidebar-filter-input"
-          placeholder={label(language, "Filter...", "絞り込み...", "Filtri...")}
-          value={filterQuery}
-          onChange={(e) => {
-            setFilterQuery(e.target.value);
-          }}
-        />
+      <div className="sidebar-filter-container" data-view={view}>
+        {/* 絞り込みはプロジェクトの木だけ */}
+        {view === "projects" && (
+          <input
+            type="search"
+            className="sidebar-filter-input"
+            placeholder={label(
+              language,
+              "Filter...",
+              "絞り込み...",
+              "Filtri...",
+            )}
+            value={filterQuery}
+            onChange={(e) => {
+              setFilterQuery(e.target.value);
+            }}
+          />
+        )}
         {/* 狭い画面のドロワーを閉じる (CSS で狭い画面だけ表示) */}
         <button
           type="button"
@@ -337,314 +349,346 @@ export function ExplorerSidebar(): JSX.Element {
       </div>
 
       <div className="sidebar-scroll" ref={scrollRef}>
-        {query === "" && (
-          <AddRow
-            level="project"
-            href="/new-part"
-            text={addLabel(
-              "Add project",
-              "プロジェクトの追加",
-              "Aldoni projekton",
-            )}
-            onNavigate={closeSidebar}
-          />
-        )}
-        {tree.map((project) => {
-          const pKey = projectKey(project.name);
-          const projectOpen = query !== "" || isOpen(pKey, true);
-          const projectHasMatch =
-            query === "" ||
-            project.branches.some((branch) =>
-              branch.commit?.modules.some((mod) =>
-                mod.parts.some((part) => matchesQuery(mod.name, part.name)),
-              ),
-            );
-          if (!projectHasMatch) return null;
-          return (
-            <div
-              key={project.name}
-              className="sidebar-project-group"
-              data-project={project.name}
-            >
-              <TreeRow
+        {view === "events" && <EventList onNavigate={closeSidebar} />}
+        {view === "accounts" && <AccountList onNavigate={closeSidebar} />}
+        {view === "projects" && (
+          <>
+            {query === "" && (
+              <AddRow
                 level="project"
-                open={projectOpen}
-                onToggle={() => {
-                  toggle(pKey);
-                }}
-                href={`/project/${encodeURIComponent(project.name)}`}
-                icon={ProjectIcon}
-                text={project.name}
-                current={
-                  currentBranchQuery === null &&
-                  currentPath === `/project/${encodeURIComponent(project.name)}`
-                }
+                href="/new-part"
+                text={addLabel(
+                  "Add project",
+                  "プロジェクトの追加",
+                  "Aldoni projekton",
+                )}
                 onNavigate={closeSidebar}
-                language={language}
               />
-              {projectOpen && (
-                <>
-                  {query === "" &&
-                    project.branches.some((b) => b.latestEventHash !== "") && (
-                      <AddRow
-                        level="branch"
-                        href={`/project/${encodeURIComponent(project.name)}?add=branch`}
-                        text={addLabel(
-                          "Add branch",
-                          "ブランチの追加",
-                          "Aldoni branĉon",
-                        )}
-                        onNavigate={closeSidebar}
-                      />
-                    )}
-                  {project.branches.map((branch) => {
-                    const bKey = branchKey(project.name, branch.name);
-                    const cKey = commitKey(project.name, branch.name);
-                    const branchOpen =
-                      query !== "" || isOpen(bKey, branch.displayed);
-                    const commitOpen =
-                      query !== "" || isOpen(cKey, branch.displayed);
-                    const commit = branch.commit;
-                    const onNavigate = navigateIn(project.name, branch.name);
-                    // ブランチにコミットできるのは作成者だけなので, 中の「追加」は自分のブランチ
-                    // (とまだコミットの無い新しいプロジェクト) にだけ出す. ブランチの追加は誰でもできる
-                    const canEdit =
-                      query === "" &&
-                      (branch.creatorAccountId === null ||
-                        branch.creatorAccountId === currentAccount?.accountId);
-                    const branchModules =
-                      commit?.modules
-                        .map((mod) => ({
-                          ...mod,
-                          shownParts:
-                            query === ""
-                              ? mod.parts
-                              : mod.parts.filter((part) =>
-                                  matchesQuery(mod.name, part.name),
-                                ),
-                        }))
-                        .filter(
-                          (mod) => query === "" || mod.shownParts.length > 0,
-                        ) ?? [];
-                    if (query !== "" && branchModules.length === 0) {
-                      return null;
+            )}
+            {tree.map((project) => {
+              const pKey = projectKey(project.name);
+              const projectOpen = query !== "" || isOpen(pKey, true);
+              const projectHasMatch =
+                query === "" ||
+                project.branches.some((branch) =>
+                  branch.commit?.modules.some((mod) =>
+                    mod.parts.some((part) => matchesQuery(mod.name, part.name)),
+                  ),
+                );
+              if (!projectHasMatch) return null;
+              return (
+                <div
+                  key={project.name}
+                  className="sidebar-project-group"
+                  data-project={project.name}
+                >
+                  <TreeRow
+                    level="project"
+                    open={projectOpen}
+                    onToggle={() => {
+                      toggle(pKey);
+                    }}
+                    href={`/project/${encodeURIComponent(project.name)}`}
+                    icon={ProjectIcon}
+                    text={project.name}
+                    current={
+                      currentBranchQuery === null &&
+                      currentPath ===
+                        `/project/${encodeURIComponent(project.name)}`
                     }
-                    return (
-                      <div key={branch.name} className="sidebar-branch-group">
-                        <TreeRow
-                          level="branch"
-                          open={branchOpen}
-                          onToggle={() => {
-                            toggle(bKey);
-                          }}
-                          href={`/project/${encodeURIComponent(project.name)}?branch=${encodeURIComponent(branch.name)}`}
-                          icon={BranchIcon}
-                          text={branch.name}
-                          current={
-                            currentBranchQuery === branch.name &&
-                            currentPath ===
-                              `/project/${encodeURIComponent(project.name)}`
-                          }
-                          detail={
-                            branch.creatorAccountId === null ||
-                            branch.creatorAccountId === ""
-                              ? undefined
-                              : (accountNames.get(branch.creatorAccountId) ??
-                                branch.creatorAccountId.slice(0, 8))
-                          }
-                          badge={
-                            branch.displayed
-                              ? label(language, "shown", "表示中", "montrata")
-                              : undefined
-                          }
-                          onNavigate={onNavigate}
-                          language={language}
-                        />
-                        {branchOpen && (
-                          <>
-                            {canEdit && (
-                              <AddRow
-                                level="commit"
-                                href={CHANGES_ONLY_HREF}
-                                text={addLabel(
-                                  "Add commit",
-                                  "コミットの追加",
-                                  "Aldoni enmeton",
-                                )}
-                                onNavigate={onNavigate}
-                              />
+                    onNavigate={closeSidebar}
+                    language={language}
+                  />
+                  {projectOpen && (
+                    <>
+                      {query === "" &&
+                        project.branches.some(
+                          (b) => b.latestEventHash !== "",
+                        ) && (
+                          <AddRow
+                            level="branch"
+                            href={`/project/${encodeURIComponent(project.name)}?add=branch`}
+                            text={addLabel(
+                              "Add branch",
+                              "ブランチの追加",
+                              "Aldoni branĉon",
                             )}
-                            {commit === null ? (
-                              <div
-                                className="sidebar-tree-loading"
-                                data-level="commit"
-                              >
-                                {label(
-                                  language,
-                                  "Loading...",
-                                  "読み込み中...",
-                                  "Ŝargante...",
-                                )}
-                              </div>
-                            ) : (
-                              <div className="sidebar-commit-group">
-                                <TreeRow
-                                  level="commit"
-                                  open={commitOpen}
-                                  onToggle={() => {
-                                    toggle(cKey);
-                                  }}
-                                  href={
-                                    commit.eventHash === ""
-                                      ? CHANGES_ONLY_HREF
-                                      : `/event/${commit.eventHash}`
-                                  }
-                                  icon={CommitIcon}
-                                  current={
-                                    commit.eventHash !== "" &&
-                                    currentPath === `/event/${commit.eventHash}`
-                                  }
-                                  text={
-                                    commit.eventHash === ""
-                                      ? label(
-                                          language,
-                                          "Not committed",
-                                          "未コミット",
-                                          "Neenmetita",
-                                        )
-                                      : commit.eventHash.slice(0, 8)
-                                  }
-                                  mono={commit.eventHash !== ""}
-                                  detail={commit.message}
-                                  onNavigate={closeSidebar}
-                                  language={language}
-                                />
-                                {commitOpen && (
-                                  <>
-                                    {canEdit && (
-                                      <AddRow
-                                        level="module"
-                                        href={`/new-part?project=${encodeURIComponent(project.name)}`}
-                                        text={addLabel(
-                                          "Add module",
-                                          "モジュールの追加",
-                                          "Aldoni modulon",
-                                        )}
-                                        onNavigate={onNavigate}
-                                      />
-                                    )}
-                                    {branchModules.map((mod) => {
-                                      const mKey = moduleKey(
-                                        project.name,
-                                        branch.name,
-                                        mod.name,
-                                      );
-                                      const moduleOpen =
-                                        query !== "" ||
-                                        isOpen(mKey, branch.displayed);
-                                      const moduleTypeErrorCount =
-                                        branch.displayed
-                                          ? mod.parts.filter(
-                                              (p) => typeErrorOf(p) !== null,
-                                            ).length
-                                          : 0;
-                                      return (
-                                        <div
-                                          key={mod.name}
-                                          className="sidebar-module-group"
-                                        >
-                                          <TreeRow
-                                            level="module"
-                                            open={moduleOpen}
-                                            onToggle={() => {
-                                              toggle(mKey);
-                                            }}
-                                            href={`/module/${encodeURIComponent(mod.name)}`}
-                                            icon={ModuleIcon}
-                                            text={mod.name}
-                                            current={
-                                              branch.displayed &&
-                                              currentPath ===
-                                                `/module/${encodeURIComponent(mod.name)}`
-                                            }
-                                            typeErrorCount={
-                                              moduleTypeErrorCount
-                                            }
-                                            count={mod.parts.length}
-                                            onNavigate={onNavigate}
-                                            language={language}
-                                          />
-                                          {moduleOpen && (
-                                            <div className="sidebar-module-parts">
-                                              {canEdit && (
-                                                <AddRow
-                                                  level="part"
-                                                  href={`/new-part?module=${encodeURIComponent(mod.name)}`}
-                                                  text={addLabel(
-                                                    "Add part",
-                                                    "パーツの追加",
-                                                    "Aldoni parton",
-                                                  )}
-                                                  onNavigate={onNavigate}
-                                                />
-                                              )}
-                                              {mod.shownParts.map((part) => {
-                                                // 作業中の変更は表示しているブランチに重ねている
-                                                const change = branch.displayed
-                                                  ? workingChanges.parts.get(
-                                                      part.partId,
-                                                    )
-                                                  : undefined;
-                                                return (
-                                                  <PartNode
-                                                    key={part.partId}
-                                                    partId={part.partId}
-                                                    name={
-                                                      change?.name ?? part.name
-                                                    }
-                                                    deleted={
-                                                      change?.deleted === true
-                                                    }
-                                                    isChanged={
-                                                      change !== undefined
-                                                    }
-                                                    typeError={
-                                                      branch.displayed
-                                                        ? typeErrorOf(part)
-                                                        : null
-                                                    }
-                                                    isSelected={
-                                                      branch.displayed &&
-                                                      part.partId ===
-                                                        selectedPartId
-                                                    }
-                                                    onNavigate={
-                                                      branch.displayed
-                                                        ? closeSidebar
-                                                        : onNavigate
-                                                    }
-                                                  />
-                                                );
-                                              })}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </>
+                            onNavigate={closeSidebar}
+                          />
                         )}
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          );
-        })}
+                      {project.branches.map((branch) => {
+                        const bKey = branchKey(project.name, branch.name);
+                        const cKey = commitKey(project.name, branch.name);
+                        const branchOpen =
+                          query !== "" || isOpen(bKey, branch.displayed);
+                        const commitOpen =
+                          query !== "" || isOpen(cKey, branch.displayed);
+                        const commit = branch.commit;
+                        const onNavigate = navigateIn(
+                          project.name,
+                          branch.name,
+                        );
+                        // ブランチにコミットできるのは作成者だけなので, 中の「追加」は自分のブランチ
+                        // (とまだコミットの無い新しいプロジェクト) にだけ出す. ブランチの追加は誰でもできる
+                        const canEdit =
+                          query === "" &&
+                          (branch.creatorAccountId === null ||
+                            branch.creatorAccountId ===
+                              currentAccount?.accountId);
+                        const branchModules =
+                          commit?.modules
+                            .map((mod) => ({
+                              ...mod,
+                              shownParts:
+                                query === ""
+                                  ? mod.parts
+                                  : mod.parts.filter((part) =>
+                                      matchesQuery(mod.name, part.name),
+                                    ),
+                            }))
+                            .filter(
+                              (mod) =>
+                                query === "" || mod.shownParts.length > 0,
+                            ) ?? [];
+                        if (query !== "" && branchModules.length === 0) {
+                          return null;
+                        }
+                        return (
+                          <div
+                            key={branch.name}
+                            className="sidebar-branch-group"
+                          >
+                            <TreeRow
+                              level="branch"
+                              open={branchOpen}
+                              onToggle={() => {
+                                toggle(bKey);
+                              }}
+                              href={`/project/${encodeURIComponent(project.name)}?branch=${encodeURIComponent(branch.name)}`}
+                              icon={BranchIcon}
+                              text={branch.name}
+                              current={
+                                currentBranchQuery === branch.name &&
+                                currentPath ===
+                                  `/project/${encodeURIComponent(project.name)}`
+                              }
+                              detail={
+                                branch.creatorAccountId === null ||
+                                branch.creatorAccountId === ""
+                                  ? undefined
+                                  : (accountNames.get(
+                                      branch.creatorAccountId,
+                                    ) ?? branch.creatorAccountId.slice(0, 8))
+                              }
+                              badge={
+                                branch.displayed
+                                  ? label(
+                                      language,
+                                      "shown",
+                                      "表示中",
+                                      "montrata",
+                                    )
+                                  : undefined
+                              }
+                              onNavigate={onNavigate}
+                              language={language}
+                            />
+                            {branchOpen && (
+                              <>
+                                {canEdit && (
+                                  <AddRow
+                                    level="commit"
+                                    href={CHANGES_ONLY_HREF}
+                                    text={addLabel(
+                                      "Add commit",
+                                      "コミットの追加",
+                                      "Aldoni enmeton",
+                                    )}
+                                    onNavigate={onNavigate}
+                                  />
+                                )}
+                                {commit === null ? (
+                                  <div
+                                    className="sidebar-tree-loading"
+                                    data-level="commit"
+                                  >
+                                    {label(
+                                      language,
+                                      "Loading...",
+                                      "読み込み中...",
+                                      "Ŝargante...",
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="sidebar-commit-group">
+                                    <TreeRow
+                                      level="commit"
+                                      open={commitOpen}
+                                      onToggle={() => {
+                                        toggle(cKey);
+                                      }}
+                                      href={
+                                        commit.eventHash === ""
+                                          ? CHANGES_ONLY_HREF
+                                          : `/event/${commit.eventHash}`
+                                      }
+                                      icon={CommitIcon}
+                                      current={
+                                        commit.eventHash !== "" &&
+                                        currentPath ===
+                                          `/event/${commit.eventHash}`
+                                      }
+                                      text={
+                                        commit.eventHash === ""
+                                          ? label(
+                                              language,
+                                              "Not committed",
+                                              "未コミット",
+                                              "Neenmetita",
+                                            )
+                                          : commit.eventHash.slice(0, 8)
+                                      }
+                                      mono={commit.eventHash !== ""}
+                                      detail={commit.message}
+                                      onNavigate={closeSidebar}
+                                      language={language}
+                                    />
+                                    {commitOpen && (
+                                      <>
+                                        {canEdit && (
+                                          <AddRow
+                                            level="module"
+                                            href={`/new-part?project=${encodeURIComponent(project.name)}`}
+                                            text={addLabel(
+                                              "Add module",
+                                              "モジュールの追加",
+                                              "Aldoni modulon",
+                                            )}
+                                            onNavigate={onNavigate}
+                                          />
+                                        )}
+                                        {branchModules.map((mod) => {
+                                          const mKey = moduleKey(
+                                            project.name,
+                                            branch.name,
+                                            mod.name,
+                                          );
+                                          const moduleOpen =
+                                            query !== "" ||
+                                            isOpen(mKey, branch.displayed);
+                                          const moduleTypeErrorCount =
+                                            branch.displayed
+                                              ? mod.parts.filter(
+                                                  (p) =>
+                                                    typeErrorOf(p) !== null,
+                                                ).length
+                                              : 0;
+                                          return (
+                                            <div
+                                              key={mod.name}
+                                              className="sidebar-module-group"
+                                            >
+                                              <TreeRow
+                                                level="module"
+                                                open={moduleOpen}
+                                                onToggle={() => {
+                                                  toggle(mKey);
+                                                }}
+                                                href={`/module/${encodeURIComponent(mod.name)}`}
+                                                icon={ModuleIcon}
+                                                text={mod.name}
+                                                current={
+                                                  branch.displayed &&
+                                                  currentPath ===
+                                                    `/module/${encodeURIComponent(mod.name)}`
+                                                }
+                                                typeErrorCount={
+                                                  moduleTypeErrorCount
+                                                }
+                                                count={mod.parts.length}
+                                                onNavigate={onNavigate}
+                                                language={language}
+                                              />
+                                              {moduleOpen && (
+                                                <div className="sidebar-module-parts">
+                                                  {canEdit && (
+                                                    <AddRow
+                                                      level="part"
+                                                      href={`/new-part?module=${encodeURIComponent(mod.name)}`}
+                                                      text={addLabel(
+                                                        "Add part",
+                                                        "パーツの追加",
+                                                        "Aldoni parton",
+                                                      )}
+                                                      onNavigate={onNavigate}
+                                                    />
+                                                  )}
+                                                  {mod.shownParts.map(
+                                                    (part) => {
+                                                      // 作業中の変更は表示しているブランチに重ねている
+                                                      const change =
+                                                        branch.displayed
+                                                          ? workingChanges.parts.get(
+                                                              part.partId,
+                                                            )
+                                                          : undefined;
+                                                      return (
+                                                        <PartNode
+                                                          key={part.partId}
+                                                          partId={part.partId}
+                                                          name={
+                                                            change?.name ??
+                                                            part.name
+                                                          }
+                                                          deleted={
+                                                            change?.deleted ===
+                                                            true
+                                                          }
+                                                          isChanged={
+                                                            change !== undefined
+                                                          }
+                                                          typeError={
+                                                            branch.displayed
+                                                              ? typeErrorOf(
+                                                                  part,
+                                                                )
+                                                              : null
+                                                          }
+                                                          isSelected={
+                                                            branch.displayed &&
+                                                            part.partId ===
+                                                              selectedPartId
+                                                          }
+                                                          onNavigate={
+                                                            branch.displayed
+                                                              ? closeSidebar
+                                                              : onNavigate
+                                                          }
+                                                        />
+                                                      );
+                                                    },
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
 
       <div

@@ -23,6 +23,7 @@ import { MAIN_BRANCH, type Visibility } from "./event_content.ts";
 import type { VisibilityTarget } from "./visibility.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
+import type { SidebarView } from "./sidebar_view.ts";
 import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
 import { useAccount } from "./state/useAccount.ts";
 import {
@@ -144,6 +145,8 @@ export type DefinyContextValue = {
     outcome: SelfHostedTypeCheckOutcome,
   ) => string | null;
   readonly sidebarOpen: boolean;
+  /** 左端のアクティビティバーで選んでいる, サイドバーの欄 (src/sidebar_view.ts) */
+  readonly sidebarView: SidebarView;
   readonly toggleSidebar: () => void;
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
@@ -246,6 +249,7 @@ export function DefinyProvider({
       findExpectedType: typeCheck.findExpectedType,
       typeCheckMessage: typeCheck.typeCheckMessage,
       sidebarOpen: ui.sidebarOpen,
+      sidebarView: ui.sidebarView,
       toggleSidebar: ui.toggleSidebar,
       setSidebarOpen: ui.setSidebarOpen,
       commandPaletteOpen: ui.commandPaletteOpen,
@@ -262,6 +266,7 @@ export function DefinyProvider({
       ui.language,
       ui.setLanguage,
       ui.sidebarOpen,
+      ui.sidebarView,
       ui.toggleSidebar,
       ui.setSidebarOpen,
       ui.commandPaletteOpen,
