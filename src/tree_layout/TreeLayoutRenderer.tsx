@@ -479,8 +479,9 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
           margin: "0.15rem 0",
           padding: "0.25rem 0.5rem 0.35rem 0.5rem",
           borderRadius: "var(--radius-lg)",
+          // 長い行の文字列リテラルなど中身が枠より広いときも, 背景を中身の幅まで広げる (#800)
           width: "fit-content",
-          maxWidth: "100%",
+          minWidth: "max-content",
           boxSizing: "border-box",
         }}
         onClick={handleSelect}
@@ -560,10 +561,7 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
             }}
           >
             {bodyChildren.map((child) => (
-              <div
-                key={child.id}
-                style={{ width: "fit-content", maxWidth: "100%" }}
-              >
+              <div key={child.id} style={{ width: "fit-content" }}>
                 <TreeNode {...props} node={child} />
               </div>
             ))}
