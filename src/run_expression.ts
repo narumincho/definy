@@ -14,6 +14,8 @@ import {
   type WasiIoHost,
   type WasiIoStep,
 } from "./wasi_io.ts";
+import { isRecord, none, some, variant, variantOf } from "./definy_value.ts";
+import { floatExpressionFromNumber } from "./tree_layout/expression.ts";
 
 export type RunOutcome =
   | {
@@ -86,7 +88,60 @@ export async function runExpression(
   }
 }
 
-/** 結果の値を画面に出す文字列にする */
+/**
+ * 結果の値を, それに評価される式 (`core.expression` の値) にする. 実行パネルは入力と同じ式のツリーで結果を表示する.
+ * 整数でない数は浮動小数のリテラルにする. 式で書けない値 (関数, `null`, NaN・±Infinity) を含むときは `null`
+ */
+export function runValueExpression(value: DefinyValue): unknown {
+  if (typeof value === "number") {
+    return Number.isInteger(value)
+      ? variant("number", value)
+      : floatExpressionFromNumber(value);
+  }
+  if (typeof value === "string") {
+    return variant("string", value);
+  }
+  if (typeof value === "boolean") {
+    return variant("boolean", value);
+  }
+  if (value === null || "__closure" in value) {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    const items = value.map(runValueExpression);
+    return items.includes(null) ? null : variant("list", items);
+  }
+  const tagged = variantOf(value);
+  if (tagged !== undefined) {
+    if (tagged.payload === null) {
+      return variant("variant", {
+        tag: tagged.tag,
+        payload: none(),
+        type_part: none(),
+      });
+    }
+    const payload = runValueExpression(tagged.payload as DefinyValue);
+    return payload === null
+      ? null
+      : variant("variant", {
+          tag: tagged.tag,
+          payload: some(payload),
+          type_part: none(),
+        });
+  }
+  if (!isRecord(value)) {
+    return null;
+  }
+  const fields = Object.entries(value).map(([key, item]) => ({
+    key,
+    value: runValueExpression(item as DefinyValue),
+  }));
+  return fields.some((item) => item.value === null)
+    ? null
+    : variant("record", fields);
+}
+
+/** 結果の値を画面に出す文字列にする (式のツリーで表示できない値のとき) */
 export function formatRunValue(value: DefinyValue): string {
   if (value === null) return "null";
   if (typeof value === "object") {

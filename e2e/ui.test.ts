@@ -810,6 +810,31 @@ test.describe("definy UI E2E", () => {
     await expect(runPanel).toBeVisible();
   });
 
+  test("run panel shows the result value as an expression tree", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.prime-numbers");
+    await expect(page.locator(".part-definition-tree")).toBeVisible({
+      timeout: 15000,
+    });
+    const runPanel = page.locator(".run-panel");
+    await page.locator(".run-panel-toggle").click();
+    await runPanel.locator(".run-panel-use-part").click();
+    await runPanel.locator(".run-panel-run").click();
+
+    // 結果のリストは JSON の文字列ではなく, 入力と同じ式のツリーで出す (#801)
+    const entry = runPanel.locator(".run-history-entry").first();
+    await expect(entry).toHaveAttribute("data-outcome", "value", {
+      timeout: 15000,
+    });
+    const value = entry.locator(".run-history-value");
+    await expect(value.locator(".expression-tree-container")).toBeVisible();
+    await expect(
+      value.locator(".tree-badge", { hasText: "2" }).first(),
+    ).toBeVisible();
+    await expect(value).not.toContainText("[");
+  });
+
   test("run panel rebuilds the compiler from the shown core parts and runs with it", async ({
     page,
   }) => {

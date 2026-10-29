@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+} from "react";
 import { useRouter } from "@void/react";
 import { CloseIcon, PlayIcon } from "../icons.tsx";
 import { label } from "../language.ts";
@@ -9,8 +16,10 @@ import {
   formatRunValue,
   formatWasiIoStep,
   runExpression,
+  runValueExpression,
   type RunOutcome,
 } from "../run_expression.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
 import {
   addRunEntry,
   loadRunHistory,
@@ -367,15 +376,29 @@ function RunOutcomeView({
       return <pre className="run-history-output error">{outcome.message}</pre>;
     case "value":
       // wasi.io の値は値そのものではなく, 動かした I/O の記録と done のメッセージを出す
-      return (
-        <pre className="run-history-output">
-          {outcome.wasiIo === null
-            ? formatRunValue(outcome.value)
-            : [
-                ...outcome.wasiIo.steps.map(formatWasiIoStep),
-                outcome.wasiIo.message ?? "...",
-              ].join("\n")}
-        </pre>
-      );
+      if (outcome.wasiIo !== null) {
+        return (
+          <pre className="run-history-output">
+            {[
+              ...outcome.wasiIo.steps.map(formatWasiIoStep),
+              outcome.wasiIo.message ?? "...",
+            ].join("\n")}
+          </pre>
+        );
+      }
+      return <RunValueView value={outcome.value} />;
   }
+}
+
+/** 結果の値を, 入力と同じ式のツリーで表示する. 式で書けない値 (関数など) は文字列で出す */
+function RunValueView({ value }: { readonly value: DefinyValue }): JSX.Element {
+  const expression = useMemo(() => runValueExpression(value), [value]);
+  if (expression === null) {
+    return <pre className="run-history-output">{formatRunValue(value)}</pre>;
+  }
+  return (
+    <div className="run-history-output run-history-value">
+      <ExpressionTreeEditor expression={expression} editable={false} />
+    </div>
+  );
 }

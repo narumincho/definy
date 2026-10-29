@@ -1300,6 +1300,14 @@ body.sidebar-resizing {
   color: var(--red-text);
 }
 
+/* 結果の値の式のツリー (#801). ツリーの枠をそのまま使うので外側の枠は付けない */
+.run-history-value {
+  padding: 0;
+  background: none;
+  white-space: normal;
+  overflow-x: auto;
+}
+
 /* ヘッダーのロゴの右の元に戻す・やり直す */
 .header-undo-redo {
   display: flex;

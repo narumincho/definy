@@ -29,7 +29,13 @@
 3. 結果が `wasi.io` の値なら `runWasiIo` で `done` まで動かす ([wasi-io.md](wasi-io.md))。
    I/O のたびに途中経過を履歴に出す。途中で失敗したら, そこまでの記録とエラーを残す
 
-結果の値はレコードやリストなら整形した JSON で出す (`formatRunValue`)。
+結果の値は, 入力と同じ式のツリー (`ExpressionTreeEditor` の `editable={false}`) で出す (issue #801)。
+`runValueExpression` が値をそれに評価される式 (リテラル・`list`・`record`・`variant`) にする。
+
+- 整数でない数は浮動小数のリテラル (`1.5`) にする。stage1 から受け取る値は JavaScript の数なので,
+  整数の値の浮動小数 (`2.0`) は整数のリテラル `2` と同じに見える
+- タグ付きの値は `type_part` を `none` にした `variant` の式にする
+- 式で書けない値 (関数のクロージャ, `null`, NaN・±Infinity) を含むときだけ, 前と同じ整形した JSON の文字列で出す (`formatRunValue`)
 
 ## コンパイラを作り直す
 
