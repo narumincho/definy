@@ -5,10 +5,6 @@ import {
   createInvalidSignatureSamples,
   invalidSignatureSampleContents,
 } from "../src/invalid_signature_samples.ts";
-import {
-  type UnverifiedEventRecord,
-  verifyEventRecord,
-} from "../src/signed_event.ts";
 import type { Env, SeedBundle } from "./types.ts";
 import { casItem, newSignedAccountEvent } from "./test_helpers.ts";
 
@@ -226,7 +222,7 @@ it("handleWorkerRequest loads seed bundle and serves EventService RPCs", async (
   expect(wasmBytes[1]).toBe(0x61);
 });
 
-it("DebugService/SubmitUnverifiedEvent stores invalid signatures only when enabled", async () => {
+it("署名が不正なイベントは SubmitEvent で常に拒否し, 署名を確かめずに保存する経路は無い", async () => {
   const samples = await createInvalidSignatureSamples();
   const post = (path: string, signedEventBytes: string): Request =>
     new Request(`https://definy.workers.dev/definy.v1.${path}`, {
@@ -240,7 +236,6 @@ it("DebugService/SubmitUnverifiedEvent stores invalid signatures only when enabl
     contents: [...invalidSignatureSampleContents()],
   });
 
-  // 通常の SubmitEvent は不正な署名をすべて拒否する
   for (const sample of samples) {
     const res = await handleWorkerRequest(
       post("EventService/SubmitEvent", sample.signedEventBytes),
@@ -249,49 +244,24 @@ it("DebugService/SubmitUnverifiedEvent stores invalid signatures only when enabl
     );
     expect(res.status).toBe(400);
   }
-
-  // フラグが無ければデバッグ用エンドポイントも拒否する
-  const disabledRes = await handleWorkerRequest(
+  // 以前のデバッグ用エンドポイント (DebugService/SubmitUnverifiedEvent) も受け付けない
+  const debugRes = await handleWorkerRequest(
     post("DebugService/SubmitUnverifiedEvent", samples[0]!.signedEventBytes),
     {},
     store,
   );
-  expect(disabledRes.status).toBe(403);
-
-  // フラグがあれば形式だけ確認して保存し、GetEvents で配信される
-  const env: Env = { DEFINY_ALLOW_UNVERIFIED_EVENTS: "true" };
-  const garbageRes = await handleWorkerRequest(
-    post(
-      "DebugService/SubmitUnverifiedEvent",
-      bytesToBase64(new Uint8Array([7, 8, 9])),
-    ),
-    env,
-    store,
-  );
-  expect(garbageRes.status).toBe(400);
-  for (const sample of samples) {
-    const res = await handleWorkerRequest(
-      post("DebugService/SubmitUnverifiedEvent", sample.signedEventBytes),
-      env,
-      store,
-    );
-    expect(res.status).toBe(200);
-    expect((await res.json()).status).toBe("accepted");
-  }
+  expect(debugRes.ok).toBe(false);
 
   const eventsRes = await handleWorkerRequest(
     new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
       method: "POST",
       body: JSON.stringify({}),
     }),
-    env,
+    {},
     store,
   );
   const { events } = (await eventsRes.json()) as {
-    readonly events: ReadonlyArray<UnverifiedEventRecord>;
+    readonly events: ReadonlyArray<unknown>;
   };
-  expect(events.length).toBe(samples.length);
-  for (const event of events) {
-    expect((await verifyEventRecord(event)).status).toBe("invalid");
-  }
+  expect(events).toEqual([]);
 });

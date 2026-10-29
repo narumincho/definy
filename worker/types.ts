@@ -47,21 +47,6 @@ export type Env = {
   readonly DB?: D1Database;
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
-  /**
-   * システムアカウントの公開鍵 (URL-safe base64). 型検査でコンパイラ組み込みのパーツを置けるモジュールを見分けるのに使う.
-   * 未設定なら開発用の鍵 (docs/system-account.md)
-   */
-  readonly DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?: string;
-  /**
-   * `HttpProxyService/Fetch` (CORS の仲介) を使えるアカウント ID (カンマ・空白区切りで複数可).
-   * 管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) はいつでも使える
-   */
-  readonly DEFINY_HTTP_PROXY_ACCOUNT_IDS?: string;
-  /**
-   * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
-   * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
-   */
-  readonly DEFINY_ALLOW_UNVERIFIED_EVENTS?: string;
 };
 
 /**

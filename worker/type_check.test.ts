@@ -271,7 +271,7 @@ describe("SubmitEvent の型検査", () => {
     expect(result.message).toContain("part 'app.double': type error");
   });
 
-  it("コンパイラ組み込みのパーツは名前を変えてもシステムアカウントなら受け付ける", async () => {
+  it("コンパイラ組み込みのパーツは定義の式で決まり, 名前やアカウントによらず受け付ける", async () => {
     const { store, env } = await createSeededStore();
     const system = await importAccountCredentials(
       bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
@@ -321,12 +321,18 @@ describe("SubmitEvent の型検査", () => {
       message: "",
     });
 
-    // 一般のアカウントのコンパイラ組み込みは, 名前によらず検査できないので拒否する
+    // 一般のアカウントのモジュールでも, 定義の式がコンパイラ組み込みなら受け付ける
     const user = await generateAccountCredentials("user");
+    expect(
+      await submitCommit(store, env, user, "app", [
+        part("string-concat", null, { "#builtin": "string_concat" }),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    // 組み込みでなく型の無いパーツは拒否する
     const result = await submitCommit(store, env, user, "app", [
-      part("string-concat", null, { "#builtin": "string_concat" }),
+      part("untyped", null, { "#number": 1 }),
     ]);
     expect(result.status).toBe(400);
-    expect(result.message).toContain("part 'app.string-concat': not supported");
+    expect(result.message).toContain("part 'app.untyped': not supported");
   }, 60_000);
 });

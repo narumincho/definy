@@ -101,6 +101,20 @@ class UnsupportedPartError extends Error {
   override readonly name = "UnsupportedPartError";
 }
 
+/**
+ * コンパイラ組み込みのパーツか. パーツの定義で決まり, モジュールやアカウントによらない.
+ * 式が `{"#builtin": ...}` のパーツ (`core.plus` など) と, 式の無い型パーツ (`core.number` などの組み込みの型)
+ */
+export function isCompilerBuiltinPart(part: {
+  readonly partType: unknown;
+  readonly expression: unknown;
+}): boolean {
+  return (
+    compilerBuiltinName(part.expression) !== undefined ||
+    (part.expression == null && isTypePartType(part.partType))
+  );
+}
+
 /** `core.type-check-against` に渡す `expr` と `expected_type` の値 */
 function partCheckArguments(
   part: PartToCheck,
@@ -627,8 +641,8 @@ function partTypeKey(partType: unknown): string {
  * - 型環境は `latestParts` (全モジュールの最新のコミットのパーツ) に, このコミットのパーツを重ねたもの
  * - パーツの型が 1 つも変わっていなければ, 式が変わったパーツ (と新しいパーツ) だけを検査する.
  *   型が変わったら, それを参照するパーツに影響するのでモジュールの全パーツを検査する
- * - `allowBuiltinParts` が真なら, 式の無いパーツや `core.expression` で表せないパーツ
- *   (コンパイラ組み込み) を検査せずに受け入れる (結果に含めない). システムアカウントのビルトインモジュール用
+ * - コンパイラ組み込みのパーツ ({@link isCompilerBuiltinPart}) は検査せずに受け入れる (結果に含めない).
+ *   組み込みかどうかはパーツの定義で決まり, モジュールやアカウントによらない
  * - 式を CAS に預けているパーツは, 呼び出し側で `expression` を埋めておく
  *   (コミットのパーツと, 型環境の型パーツ)
  */
@@ -641,7 +655,6 @@ export function checkModuleCommitParts(options: {
   readonly replacedModuleIds: ReadonlySet<string>;
   readonly committed: ReadonlyArray<LatestPart>;
   readonly latestParts: ReadonlyMap<string, LatestPart>;
-  readonly allowBuiltinParts: boolean;
 }): ReadonlyArray<{
   readonly name: string;
   readonly outcome: SelfHostedTypeCheckOutcome;
@@ -674,8 +687,8 @@ export function checkModuleCommitParts(options: {
   }> = [];
   let toCheck: ReadonlyArray<LatestPart>;
   try {
-    if (!options.allowBuiltinParts) {
-      for (const part of partsOf(session.withoutExpression())) {
+    for (const part of partsOf(session.withoutExpression())) {
+      if (!isCompilerBuiltinPart(part)) {
         results.push({
           name: part.name,
           outcome: {
@@ -707,7 +720,7 @@ export function checkModuleCommitParts(options: {
     const outcome = outcomes[i];
     if (
       outcome === undefined ||
-      (options.allowBuiltinParts && outcome.kind === "unsupported")
+      (outcome.kind === "unsupported" && isCompilerBuiltinPart(part))
     ) {
       return;
     }

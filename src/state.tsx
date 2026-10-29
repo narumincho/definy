@@ -19,7 +19,7 @@ import type {
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
 import type { CommitTarget } from "./branches.ts";
-import { MAIN_BRANCH, type Visibility } from "./event_content.ts";
+import type { Visibility } from "./event_content.ts";
 import type { VisibilityTarget } from "./visibility.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
@@ -196,15 +196,6 @@ export function DefinyProvider({
     partNames: events.partNames,
     currentAccount: account.currentAccount,
     buildCommitModules: working.buildCommitModules,
-    // seed の definy プロジェクト (core が入っている) の main はシステムアカウントが作る
-    systemAccountId:
-      events.branchesByProject
-        .get(
-          events.modules.find((m) => m.name === "core")?.projectName ??
-            "definy",
-        )
-        ?.find((branch) => branch.name === MAIN_BRANCH)?.creatorAccountId ??
-      null,
   });
 
   const value = useMemo<DefinyContextValue>(

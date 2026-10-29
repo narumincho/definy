@@ -23,12 +23,8 @@ const proxyRequest = {
 };
 
 describe("HttpProxyService/Fetch", () => {
-  it("許可されたアカウントの署名があればリクエストを仲介し, レスポンスをそのまま返す", async () => {
-    const proxyUser = await generateAccountCredentials("proxy-user");
-    const env: Env = {
-      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
-      DEFINY_HTTP_PROXY_ACCOUNT_IDS: proxyUser.accountId,
-    };
+  it("管理者の署名があればリクエストを仲介し, レスポンスをそのまま返す", async () => {
+    const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
     const sent: Array<{
       readonly url: string;
       readonly method: string;
@@ -52,29 +48,27 @@ describe("HttpProxyService/Fetch", () => {
       });
     }) as typeof fetch;
 
-    for (const credentials of [adminCredentials, proxyUser]) {
-      const res = await handleWorkerRequest(
-        await signedPost(proxyUrl, proxyRequest, credentials),
-        env,
-        new WorkerStore(),
-        mockFetch,
-      );
-      expect(res.status).toBe(200);
-      const json = (await res.json()) as HttpProxyFetchResponse;
-      expect(json.status).toBe(201);
-      expect(json.headers).toContainEqual({ name: "x-test", value: "1" });
-      expect(new TextDecoder().decode(base64ToBytes(json.bodyBase64))).toBe(
-        '{"success":true}',
-      );
-    }
-    expect(sent.map((request) => request.method)).toEqual(["PUT", "PUT"]);
+    const res = await handleWorkerRequest(
+      await signedPost(proxyUrl, proxyRequest, adminCredentials),
+      env,
+      new WorkerStore(),
+      mockFetch,
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as HttpProxyFetchResponse;
+    expect(json.status).toBe(201);
+    expect(json.headers).toContainEqual({ name: "x-test", value: "1" });
+    expect(new TextDecoder().decode(base64ToBytes(json.bodyBase64))).toBe(
+      '{"success":true}',
+    );
+    expect(sent.map((request) => request.method)).toEqual(["PUT"]);
     expect(sent[0]?.url).toBe(proxyRequest.url);
     // 送り先の Authorization は仲介するリクエストのもの (definy の署名ではない)
     expect(sent[0]?.authorization).toBe("Bearer cf-token");
     expect(Array.from(sent[0]?.body ?? [])).toEqual([0, 97, 115, 109]);
   });
 
-  it("署名が無ければ 401, 許可されていないアカウントなら 403 で, 仲介しない", async () => {
+  it("署名が無ければ 401, 管理者でないアカウントなら 403 で, 仲介しない", async () => {
     const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
     let fetched = 0;
     const mockFetch = (async () => {

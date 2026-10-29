@@ -47,4 +47,4 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 ## 今後
 
 - 書き込み (`SubmitEvent`, `UploadContent`) は, 署名の検証と D1 への書き込みを能力として渡せるようになってから。
-- `DebugService` / `HttpProxyService` は EventService ではないので, まだ TypeScript。
+- `HttpProxyService` は EventService ではないので, まだ TypeScript。

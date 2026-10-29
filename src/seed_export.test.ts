@@ -348,7 +348,7 @@ describe("exportSeeds", () => {
       const { contentHash, contentBytes } = partContentItem({
         description: [{ language: "en", text: "Hydrated from CAS" }],
         visibility: "public",
-        partType: null,
+        partType: { "#number": null },
         expression: { "#number": 42 },
       });
 
@@ -381,7 +381,7 @@ describe("exportSeeds", () => {
           {
             name: "cas-part",
             description: [],
-            partType: null,
+            partType: { "#number": null },
             contentHash,
             unresolved: true,
           },

@@ -59,7 +59,7 @@ Cloudflare の API などはブラウザからの CORS を許可していない�
 (`proto/definy/v1/http_proxy.proto`, `worker/index.ts` の `proxyFetch`)。
 
 - 誰でも使えるとオープンプロキシになるので, 署名付き `Authorization` ([rpc-authorization.md](rpc-authorization.md)) が要り,
-  管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) か `DEFINY_HTTP_PROXY_ACCOUNT_IDS` に列挙したアカウントだけが使える (他は 403, 署名無しは 401)
+  管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) だけが使える (他は 403, 署名無しは 401)
 - 送り先は http / https だけ。`host` / `content-length` / `connection` / `transfer-encoding` は付け直さない。リダイレクトは追わない
 - 本文は JSON の中で標準 Base64 (`bodyBase64`)
 - 仲介するリクエストの `Authorization` (Cloudflare の API トークンなど) はそのまま送り先に送る。サーバーは保存もログもしない

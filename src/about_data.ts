@@ -337,16 +337,6 @@ export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [
     },
   },
   {
-    service: "DebugService",
-    name: "SubmitUnverifiedEvent",
-    request: "SubmitEventRequest",
-    desc: {
-      en: "Local development only. Save events without signature verification to test browser-side signature checks.",
-      ja: "ローカル開発専用。署名を検証せずにイベントを保存し、ブラウザ側の署名チェックを確認します。",
-      eo: "Nur por loka programado. Konservi eventojn sen kontroli subskribon por testi foliumilflankan subskriban kontrolon.",
-    },
-  },
-  {
     service: "EventService",
     name: "CheckMissingHashes",
     request: "CheckMissingHashesRequest",

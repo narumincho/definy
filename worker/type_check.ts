@@ -38,7 +38,6 @@ import {
 import type { ContentItem } from "../src/content_store.ts";
 import { evaluatePartDefinition } from "../src/part_definition.ts";
 import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
-import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
 
@@ -53,12 +52,6 @@ export type PartStoreReader = {
     env?: Env,
   ) => Promise<ReadonlyArray<ContentItem>>;
 };
-
-/** システムアカウントの公開鍵. 未設定なら seed と同じ開発用の鍵 */
-async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
-  const publicKey = env?.DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?.trim();
-  return publicKey ? base64ToBytes(publicKey) : await devSystemAccountBytes();
-}
 
 const EVENTS_PAGE_SIZE = 500;
 
@@ -426,10 +419,6 @@ export async function checkSubmittedProjectCommit(
   );
   const latest = await loadLatestParts(store, env);
   const latestParts: ReadonlyMap<string, LatestPart> = latest.parts;
-  // コンパイラ組み込みのパーツを置けるのはシステムアカウントのモジュールだけ
-  const allowBuiltinParts =
-    bytesToUrlSafeBase64NoPad(decoded.accountIdBytes) ===
-    bytesToUrlSafeBase64NoPad(await systemAccountBytes(env));
   // 参照できない (非公開の) パーツへの参照は, 型を検査する前に拒否する (docs/visibility.md)
   const violations = checkReferenceVisibility(visibilityCheckerModule, {
     projectName: commit.projectName,
@@ -448,7 +437,6 @@ export async function checkSubmittedProjectCommit(
     ]),
     committed,
     latestParts,
-    allowBuiltinParts,
   }).flatMap(({ name, outcome }) => {
     const message = outcomeErrorMessage(name, outcome);
     return message === null ? [] : [message];
