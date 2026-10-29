@@ -60,3 +60,21 @@ DEFINY_ALLOW_UNVERIFIED_EVENTS=true
 - アカウント名に `invalid-signature-sample` が出ない
 
 `invalid_signature_sample` モジュールや "このパーツが見えていたら…" という説明のパーツが見えたら、ブラウザ側の検証が漏れている。
+
+## 署名が不正なイベントを送るテストのパーツ (`definy.check-invalid-signatures-rejected`)
+
+サーバーが署名の不正なイベントを拒否することを, definy のパーツ (`wasi.io` のプログラム) で確かめる。
+パーツのページの実行パネルで `definy.check-invalid-signatures-rejected` を実行すると, 実行している definy のサーバーに 3 件送り,
+`OK: すべて署名が不正として拒否されました` か `NG: ...` と, 1 件ごとのレスポンスを出す。
+
+- `definy.invalid-signature-test-signed-account` / `definy.invalid-signature-test-signed-commit`: 正しく署名したイベント (CBOR の SignedEvent) のバイト列のリテラル。
+  seed のサンプルと同じ公開済みの鍵 (`SEED_SAMPLE_SIGNER_KEY_SEED`) と時刻で TypeScript で署名して作った。definy には CBOR のエンコードも Ed25519 も無いので, 正しく署名したものは definy の外で作る
+- `definy.invalid-signature-test-events`: それを definy で書き換えた 3 件 (`std.bytes-replace`)。署名の 1 バイト目を反転 (`255 - バイト`) したもの,
+  署名した後にメッセージの `Signed` を `Forged` にしたもの, `account_id` を開発用のシステムアカウントにすり替えたもの。書き換える位置はバイト列の中の位置のリテラル
+- `definy.submit-events-expect-rejected(base_url, events)`: イベントを Base64 (`std.bytes-to-base64`) にして `EventService/SubmitEvent` に 1 件ずつ POST し,
+  400 で, レスポンスに `Ed25519 signature verification failed` がある (`std.string-contains`) ものを「署名が不正として拒否された」とする。
+  別の理由 (アカウントが作成済みなど) の拒否は NG にする。`base_url` が `""` なら実行しているページと同じサーバー
+- テスト: `worker/invalid_signature_test_part.test.ts` で, seed を入れた Worker に対して実行し, 3 件とも OK になること,
+  書き換える前のイベントは NG になること, `std.bytes-to-base64` が標準 Base64 と一致することを確かめる
+- ビット演算の組み込み (`core.bit-and` など) は definy 製のコンパイラがまだ扱わない ([builtin-parts.md](builtin-parts.md)) ので, Base64 は割り算と余りで書いた
+- 正しく署名したイベントのバイト列を変えたら, 書き換える位置 (署名の 1 バイト目, メッセージ, `account_id`) も合わせて変える
