@@ -902,6 +902,45 @@ body.sidebar-resizing {
   padding-left: calc(0.25rem + var(--tree-indent) * 4);
 }
 
+/* VSCode の sticky scroll のように, スクロールしても上の段の行を上端に重ねて残す.
+   各段の行はその段のまとまり (.sidebar-*-group) の先頭なので, まとまりが画面から出るまで止まる.
+   上の段の行の下に並ぶよう, 行の高さを揃えて段ごとに top をずらす */
+.sidebar-scroll {
+  --tree-row-height: 26px;
+  /* 選択中のパーツへスクロールしたとき, 上端に止まった行の下に隠れないようにする */
+  scroll-padding-top: calc(var(--tree-row-height) * 4);
+}
+
+.sidebar-project-group > .sidebar-tree-row:first-child,
+.sidebar-branch-group > .sidebar-tree-row:first-child,
+.sidebar-commit-group > .sidebar-tree-row:first-child,
+.sidebar-module-group > .sidebar-tree-row:first-child {
+  position: sticky;
+  height: var(--tree-row-height);
+  box-sizing: border-box;
+  background: var(--bg-chrome);
+}
+
+.sidebar-project-group > .sidebar-tree-row:first-child {
+  top: 0;
+  z-index: 4;
+}
+
+.sidebar-branch-group > .sidebar-tree-row:first-child {
+  top: var(--tree-row-height);
+  z-index: 3;
+}
+
+.sidebar-commit-group > .sidebar-tree-row:first-child {
+  top: calc(var(--tree-row-height) * 2);
+  z-index: 2;
+}
+
+.sidebar-module-group > .sidebar-tree-row:first-child {
+  top: calc(var(--tree-row-height) * 3);
+  z-index: 1;
+}
+
 .sidebar-tree-toggle,
 .sidebar-tree-toggle-spacer {
   display: inline-grid;
@@ -937,11 +976,6 @@ body.sidebar-resizing {
 
 .sidebar-tree-node.part-node {
   font-size: 0.84rem;
-}
-
-.sidebar-tree-node[aria-current="page"]:not(.part-node) {
-  background: var(--overlay-3);
-  color: var(--text-primary);
 }
 
 /* ブランチの作成者, コミットのメッセージ */
@@ -1010,15 +1044,15 @@ body.sidebar-resizing {
   border-radius: var(--radius-xs);
 }
 
-/* 開いているパーツ. VSCode のエクスプローラーと同じく,
+/* 開いているページの行 (プロジェクト・ブランチ・コミット・モジュール・パーツ). VSCode のエクスプローラーと同じく,
    エクスプローラーにフォーカスが無いときは控えめな背景,
    フォーカスがあるときは青い背景と枠線で強調する */
-.sidebar-tree-node.part-node.selected {
+.sidebar-tree-node[aria-current="page"] {
   background: var(--overlay-3);
   color: var(--text-primary);
 }
 
-.sidebar-scroll:focus-within .sidebar-tree-node.part-node.selected {
+.sidebar-scroll:focus-within .sidebar-tree-node[aria-current="page"] {
   background: var(--bg-selection-strong);
   outline: 1px solid var(--border-focus);
   outline-offset: -1px;

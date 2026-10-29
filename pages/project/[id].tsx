@@ -58,9 +58,18 @@ function branchHistory(
 export default function ProjectDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   // エクスプローラーの「ブランチの追加」は `?add=branch` で開き, 新しいブランチの欄に入力する
-  const addBranch = useRouter().query.get("add") === "branch";
-  const { language, projects, modules, decodedCommits, loadEvent } =
-    useDefiny();
+  const router = useRouter();
+  const addBranch = router.query.get("add") === "branch";
+  // エクスプローラーのブランチの行は `?branch=` で開く. そのブランチを表示する
+  const branchQuery = router.query.get("branch");
+  const {
+    language,
+    projects,
+    modules,
+    decodedCommits,
+    loadEvent,
+    selectBranch,
+  } = useDefiny();
 
   const project: ProjectSnapshot = projects.find((p) => p.name === id) ?? {
     name: id ?? "unknown",
@@ -75,6 +84,21 @@ export default function ProjectDetailPage(): JSX.Element {
   };
 
   usePageTitle(project.name);
+  useEffect(() => {
+    if (
+      branchQuery !== null &&
+      branchQuery !== project.branch &&
+      project.branches.some((b) => b.name === branchQuery)
+    ) {
+      selectBranch(project.name, branchQuery);
+    }
+  }, [
+    branchQuery,
+    project.branch,
+    project.branches,
+    project.name,
+    selectBranch,
+  ]);
   const [mergeConflicts, setMergeConflicts] = useState<ReadonlyArray<string>>(
     [],
   );

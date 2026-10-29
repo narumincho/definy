@@ -158,7 +158,10 @@ export function ExplorerSidebar(): JSX.Element {
 
   // 開いているパーツ (VSCode のアクティブなファイルのように強調表示する).
   // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
-  const currentPath = useRouter().path;
+  const router = useRouter();
+  const currentPath = router.path;
+  // ブランチの行は `/project/{名前}?branch={ブランチ}` へのリンク. そのときはプロジェクトではなくブランチを強調する
+  const currentBranchQuery = router.query.get("branch");
   const selectedPart = useMemo(() => {
     const id = partIdFromPath(currentPath);
     if (id === null) return undefined;
@@ -206,7 +209,7 @@ export function ExplorerSidebar(): JSX.Element {
   useEffect(() => {
     if (!revealPendingRef.current) return;
     const selectedElement = scrollRef.current?.querySelector(
-      '.part-node[aria-current="page"]',
+      '.sidebar-tree-node[aria-current="page"]',
     );
     if (selectedElement == null) return;
     revealPendingRef.current = false;
@@ -373,6 +376,7 @@ export function ExplorerSidebar(): JSX.Element {
                 icon={ProjectIcon}
                 text={project.name}
                 current={
+                  currentBranchQuery === null &&
                   currentPath === `/project/${encodeURIComponent(project.name)}`
                 }
                 onNavigate={closeSidebar}
@@ -433,9 +437,14 @@ export function ExplorerSidebar(): JSX.Element {
                           onToggle={() => {
                             toggle(bKey);
                           }}
-                          href={`/project/${encodeURIComponent(project.name)}`}
+                          href={`/project/${encodeURIComponent(project.name)}?branch=${encodeURIComponent(branch.name)}`}
                           icon={BranchIcon}
                           text={branch.name}
+                          current={
+                            currentBranchQuery === branch.name &&
+                            currentPath ===
+                              `/project/${encodeURIComponent(project.name)}`
+                          }
                           detail={
                             branch.creatorAccountId === null ||
                             branch.creatorAccountId === ""
@@ -478,7 +487,7 @@ export function ExplorerSidebar(): JSX.Element {
                                 )}
                               </div>
                             ) : (
-                              <>
+                              <div className="sidebar-commit-group">
                                 <TreeRow
                                   level="commit"
                                   open={commitOpen}
@@ -491,6 +500,10 @@ export function ExplorerSidebar(): JSX.Element {
                                       : `/event/${commit.eventHash}`
                                   }
                                   icon={CommitIcon}
+                                  current={
+                                    commit.eventHash !== "" &&
+                                    currentPath === `/event/${commit.eventHash}`
+                                  }
                                   text={
                                     commit.eventHash === ""
                                       ? label(
@@ -620,7 +633,7 @@ export function ExplorerSidebar(): JSX.Element {
                                     })}
                                   </>
                                 )}
-                              </>
+                              </div>
                             )}
                           </>
                         )}

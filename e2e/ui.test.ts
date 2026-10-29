@@ -589,6 +589,13 @@ test.describe("definy UI E2E", () => {
     });
     await expect(partNode).toBeVisible();
 
+    // スクロールしても上の段の行は上端に残る (VSCode の sticky scroll)
+    await expect(
+      projectGroup.locator(".sidebar-tree-row", {
+        has: page.locator(".module-node"),
+      }),
+    ).toHaveCSS("position", "sticky");
+
     // 左の › で開閉し, 名前はその段のページへのリンク
     const moduleRow = projectGroup.locator(".sidebar-tree-row", {
       has: page.locator(".module-node"),
@@ -599,6 +606,17 @@ test.describe("definy UI E2E", () => {
     await expect(partNode).toBeVisible();
     await moduleRow.locator(".module-node").click();
     await page.waitForURL(new RegExp(`/module/${moduleName}`));
+    // 開いているページの行はパーツと同じく強調する
+    await expect(moduleRow.locator(".module-node")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await projectGroup.locator(".commit-node").click();
+    await page.waitForURL(/\/event\//);
+    await expect(projectGroup.locator(".commit-node")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
 
     // 「ブランチの追加」でプロジェクトのページの新しいブランチの欄を開いて作る
     await projectGroup.locator('[data-add="branch"]').click();
