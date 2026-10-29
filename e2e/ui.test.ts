@@ -1186,6 +1186,32 @@ test.describe("definy UI E2E", () => {
     await expect(page.locator(".dropdown-search-input")).toHaveCount(0);
   });
 
+  test("expression tree editor shows and edits line breaks in text literals (#800)", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.greet");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await valueTree
+      .locator(".tree-badge", { hasText: /^"Hello, "$/ })
+      .first()
+      .click();
+    const textarea = valueTree.locator(".tree-badge textarea");
+    await expect(textarea).toBeVisible();
+    // Shift + Enter で改行する. 複数行になって入力欄が作り直されても続けて入力できる
+    await page.keyboard.type("Hello,");
+    await page.keyboard.press("Shift+Enter");
+    await page.keyboard.type("  world");
+    await expect(textarea).toHaveValue("Hello,\n  world");
+    await page.keyboard.press("Enter");
+    await expect(textarea).toHaveCount(0);
+    // 改行・行頭の空白をそのまま見せる
+    const badge = valueTree.locator(".tree-badge", { hasText: "world" });
+    expect(await badge.innerText()).toBe('"Hello,\n  world"');
+  });
+
   test("expression tree editor opens the referenced part with Ctrl + click", async ({
     page,
   }) => {

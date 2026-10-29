@@ -171,6 +171,17 @@ export const SHORTCUT_GROUPS: ReadonlyArray<ShortcutGroup> = [
           ),
       },
       {
+        id: "tree-text-newline",
+        keys: [["Shift", "Enter"]],
+        description: (l) =>
+          label(
+            l,
+            "Insert a line break in the text literal",
+            "文字列リテラルの入力欄で改行",
+            "Enmeti linsalton en la teksta literalo",
+          ),
+      },
+      {
         id: "tree-deselect",
         keys: [["Escape"]],
         description: (l) =>
