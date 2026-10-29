@@ -1936,6 +1936,481 @@
       }
     },
     {
+      "name": "block",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction block (0x02)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 block のオペコード (0x02)"
+        }
+      ],
+      "expression": {
+        "#number": 2
+      }
+    },
+    {
+      "name": "block-type-empty",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The empty Wasm block type (0x40), for block, loop and if without a result"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の空のブロック型 (0x40)。結果の無い block / loop / if に使う"
+        }
+      ],
+      "expression": {
+        "#number": 64
+      }
+    },
+    {
+      "name": "br",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction br (0x0c)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 br のオペコード (0x0c)"
+        }
+      ],
+      "expression": {
+        "#number": 12
+      }
+    },
+    {
+      "name": "br-if",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction br_if (0x0d)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 br_if のオペコード (0x0d)"
+        }
+      ],
+      "expression": {
+        "#number": 13
+      }
+    },
+    {
+      "name": "global-get",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction global.get (0x23)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 global.get のオペコード (0x23)"
+        }
+      ],
+      "expression": {
+        "#number": 35
+      }
+    },
+    {
+      "name": "global-set",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction global.set (0x24)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 global.set のオペコード (0x24)"
+        }
+      ],
+      "expression": {
+        "#number": 36
+      }
+    },
+    {
+      "name": "i32-add",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.add (0x6a)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.add のオペコード (0x6a)"
+        }
+      ],
+      "expression": {
+        "#number": 106
+      }
+    },
+    {
+      "name": "i32-and",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.and (0x71)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.and のオペコード (0x71)"
+        }
+      ],
+      "expression": {
+        "#number": 113
+      }
+    },
+    {
+      "name": "i32-ge-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.ge_u (0x4f)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.ge_u のオペコード (0x4f)"
+        }
+      ],
+      "expression": {
+        "#number": 79
+      }
+    },
+    {
+      "name": "i32-gt-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.gt_u (0x4b)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.gt_u のオペコード (0x4b)"
+        }
+      ],
+      "expression": {
+        "#number": 75
+      }
+    },
+    {
+      "name": "i32-lt-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.lt_u (0x49)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.lt_u のオペコード (0x49)"
+        }
+      ],
+      "expression": {
+        "#number": 73
+      }
+    },
+    {
+      "name": "i32-ne",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.ne (0x47)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.ne のオペコード (0x47)"
+        }
+      ],
+      "expression": {
+        "#number": 71
+      }
+    },
+    {
+      "name": "i32-or",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.or (0x72)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.or のオペコード (0x72)"
+        }
+      ],
+      "expression": {
+        "#number": 114
+      }
+    },
+    {
+      "name": "i32-shl",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.shl (0x74)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.shl のオペコード (0x74)"
+        }
+      ],
+      "expression": {
+        "#number": 116
+      }
+    },
+    {
+      "name": "i32-shr-u",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.shr_u (0x76)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.shr_u のオペコード (0x76)"
+        }
+      ],
+      "expression": {
+        "#number": 118
+      }
+    },
+    {
+      "name": "i32-sub",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.sub (0x6b)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.sub のオペコード (0x6b)"
+        }
+      ],
+      "expression": {
+        "#number": 107
+      }
+    },
+    {
+      "name": "i32-wrap-i64",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.wrap_i64 (0xa7)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.wrap_i64 のオペコード (0xa7)"
+        }
+      ],
+      "expression": {
+        "#number": 167
+      }
+    },
+    {
+      "name": "i64-store",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.store (0x37)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.store のオペコード (0x37)"
+        }
+      ],
+      "expression": {
+        "#number": 55
+      }
+    },
+    {
+      "name": "loop",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction loop (0x03)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 loop のオペコード (0x03)"
+        }
+      ],
+      "expression": {
+        "#number": 3
+      }
+    },
+    {
+      "name": "memory-grow",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction memory.grow (0x40)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 memory.grow のオペコード (0x40)"
+        }
+      ],
+      "expression": {
+        "#number": 64
+      }
+    },
+    {
+      "name": "memory-size",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction memory.size (0x3f)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 memory.size のオペコード (0x3f)"
+        }
+      ],
+      "expression": {
+        "#number": 63
+      }
+    },
+    {
+      "name": "return",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction return (0x0f)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 return のオペコード (0x0f)"
+        }
+      ],
+      "expression": {
+        "#number": 15
+      }
+    },
+    {
+      "name": "select",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction select (0x1b)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 select のオペコード (0x1b)"
+        }
+      ],
+      "expression": {
+        "#number": 27
+      }
+    },
+    {
+      "name": "value-type-i32",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Wasm value type i32 (0x7f), for local variable declarations and block types"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の値の型 i32 (0x7f)。ローカル変数の宣言やブロック型に使う"
+        }
+      ],
+      "expression": {
+        "#number": 127
+      }
+    },
+    {
+      "name": "value-type-i64",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Wasm value type i64 (0x7e), for local variable declarations and block types"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の値の型 i64 (0x7e)。ローカル変数の宣言やブロック型に使う"
+        }
+      ],
+      "expression": {
+        "#number": 126
+      }
+    },
+    {
       "name": "misc-prefix",
       "part_type": {
         "#number": null
@@ -2385,6 +2860,113 @@
                           }
                         }
                       ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "code-entry",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "function",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "An entry of the Wasm code section: the byte length of the function (unsigned LEB128) followed by the function (local variable declarations and instructions)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm のコードセクションの 1 つの関数: 関数 (ローカル変数の宣言と命令列) のバイト数 (符号なし LEB128) と関数"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "function"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.list-concat"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "wasm.unsigned-leb128"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "n",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-length"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
                     }
                   }
                 }

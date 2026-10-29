@@ -26,7 +26,7 @@ Elm と同じく実行時エラーは無い方針。2026-10-28 に確かめた�
 | 自分自身を参照する値のパーツ `P = P`                | 型検査を通る (`ok`)。stage1 はインライン化中の再参照を `unreachable` にする | 型チェッカーに通した                 |
 | 渡されなかったパーツ (式の無いパーツ・消えたパーツ) | `unreachable`。呼び出し側は `unresolved` を見て実行前に止めている           | docs と実装                          |
 | `bit_and` などのビット演算の組み込み                | `unreachable` (評価器では `unit`)                                           | [builtin-parts.md](builtin-parts.md) |
-| メモリの確保に失敗 (`memory.grow` が -1)            | `unreachable`                                                               | `scripts/wasm_runtime_functions.py`  |
+| メモリの確保に失敗 (`memory.grow` が -1)            | `unreachable`                                                               | `core.wasm-runtime-alloc`            |
 | 末尾位置でない深い再帰, 終わらない再帰              | スタックオーバーフロー, 止まらない (Elm も同じ。資源の上限として別に扱う)   |                                      |
 
 型検査を通った式では起きないもの: `record_get` の無いフィールド (`unreachable`), どのアームにも一致しない `match` (`unreachable`),
