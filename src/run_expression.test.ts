@@ -82,21 +82,23 @@ describe("formatRunValue", () => {
 });
 
 describe("runValueExpression", () => {
+  const noType = { type: null, floatNanPartId: undefined };
+
   it("数値・文字列・真偽値はリテラルの式になる", () => {
-    expect(runValueExpression(25)).toEqual({ "#number": 25 });
-    expect(runValueExpression(1.5)).toEqual({
+    expect(runValueExpression(25, noType)).toEqual({ "#number": 25 });
+    expect(runValueExpression(1.5, noType)).toEqual({
       "#float": { mantissa: 15, exponent: -1 },
     });
-    expect(runValueExpression("a")).toEqual({ "#string": "a" });
-    expect(runValueExpression(true)).toEqual({ "#boolean": true });
+    expect(runValueExpression("a", noType)).toEqual({ "#string": "a" });
+    expect(runValueExpression(true, noType)).toEqual({ "#boolean": true });
   });
 
   it("リスト・レコード・タグ付きの値は中身ごと式になる", () => {
     expect(
-      runValueExpression([
-        { name: "x", value: { "#some": 1 } },
-        { "#none": null },
-      ] as never),
+      runValueExpression(
+        [{ name: "x", value: { "#some": 1 } }, { "#none": null }] as never,
+        noType,
+      ),
     ).toEqual({
       "#list": [
         {
@@ -127,12 +129,56 @@ describe("runValueExpression", () => {
 
   it("式で書けない値を含むときは null", () => {
     expect(
-      runValueExpression([
-        1,
-        { __closure: true, tableIdx: 0, envPtr: 0 },
-      ] as never),
+      runValueExpression(
+        [1, { __closure: true, tableIdx: 0, envPtr: 0 }] as never,
+        noType,
+      ),
     ).toBeNull();
-    expect(runValueExpression(null)).toBeNull();
-    expect(runValueExpression(Number.NaN)).toBeNull();
+    expect(runValueExpression(null, noType)).toBeNull();
+    expect(runValueExpression(Number.POSITIVE_INFINITY, noType)).toBeNull();
+    // core.float-nan が無ければ NaN も書けない
+    expect(runValueExpression(Number.NaN, noType)).toBeNull();
+  });
+
+  it("NaN は core.float-nan の参照になる", () => {
+    expect(
+      runValueExpression([Number.NaN], {
+        type: null,
+        floatNanPartId: "nan-id",
+      }),
+    ).toEqual({
+      "#list": [
+        { "#part_reference": { part_definition_event_hash: "nan-id" } },
+      ],
+    });
+  });
+
+  it("型が float の数は整数の値でも浮動小数のリテラルにする", () => {
+    const float = { "#float": null };
+    expect(
+      runValueExpression(2, { type: float, floatNanPartId: undefined }),
+    ).toEqual({ "#float": { mantissa: 2, exponent: 0 } });
+    expect(
+      runValueExpression([2], {
+        type: { "#list": { item_type: float } },
+        floatNanPartId: undefined,
+      }),
+    ).toEqual({ "#list": [{ "#float": { mantissa: 2, exponent: 0 } }] });
+    expect(
+      runValueExpression({ x: 2, n: 2 } as never, {
+        type: {
+          "#record": [
+            { key: "x", field_type: float },
+            { key: "n", field_type: { "#number": null } },
+          ],
+        },
+        floatNanPartId: undefined,
+      }),
+    ).toEqual({
+      "#record": [
+        { key: "x", value: { "#float": { mantissa: 2, exponent: 0 } } },
+        { key: "n", value: { "#number": 2 } },
+      ],
+    });
   });
 });

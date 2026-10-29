@@ -40,6 +40,7 @@ import {
   partReferenceExpression,
 } from "../tree_layout/expression.ts";
 import { partParameters, partSelection } from "../tree_layout/selection.ts";
+import { probeInferredTypeAt } from "../tree_layout/type_inference.ts";
 import type { LanguageCode } from "../types.ts";
 
 /** 実行パネルの入力欄の式のツリーの枠の ID */
@@ -59,6 +60,7 @@ export function RunPanel(): JSX.Element {
     partsByIdHash,
     partNames,
     workingChanges,
+    findExpectedType,
     currentAccount,
     runPanelOpen,
     setRunPanelOpen,
@@ -120,33 +122,41 @@ export function RunPanel(): JSX.Element {
         return;
       }
       const secretKeyBase64 = currentAccount?.secretKeyBase64;
+      // 結果の表示 (浮動小数か整数か) のため, 実行と並べて式の型を型チェッカーに聞く
+      const typePromise = findExpectedType({
+        partType: hole(),
+        expression: probeInferredTypeAt(expression, []),
+      }).catch((): null => null);
+      const outcome = await runExpression(expression, {
+        compiler,
+        resolvePart,
+        wasiIoHost: {
+          handle: browserWasiIoHandler(
+            loadWasiIoSettings(),
+            currentAccount !== null && secretKeyBase64 !== undefined
+              ? { ...currentAccount, secretKeyBase64 }
+              : null,
+          ),
+          getSecret: loadSecret,
+          onSecretUse: (use) => {
+            recordSecretUse(use, RUN_PANEL_SOURCE);
+          },
+        },
+        onProgress: (steps) => {
+          finish({
+            kind: "value",
+            value: null,
+            wasiIo: { steps, message: null },
+          });
+        },
+      });
       finish(
-        await runExpression(expression, {
-          compiler,
-          resolvePart,
-          wasiIoHost: {
-            handle: browserWasiIoHandler(
-              loadWasiIoSettings(),
-              currentAccount !== null && secretKeyBase64 !== undefined
-                ? { ...currentAccount, secretKeyBase64 }
-                : null,
-            ),
-            getSecret: loadSecret,
-            onSecretUse: (use) => {
-              recordSecretUse(use, RUN_PANEL_SOURCE);
-            },
-          },
-          onProgress: (steps) => {
-            finish({
-              kind: "value",
-              value: null,
-              wasiIo: { steps, message: null },
-            });
-          },
-        }),
+        outcome.kind === "value" && outcome.wasiIo === null
+          ? { ...outcome, type: await typePromise }
+          : outcome,
       );
     },
-    [currentAccount, resolvePart],
+    [currentAccount, resolvePart, findExpectedType],
   );
 
   // Ctrl + ` で実行パネルを出す・隠す (VS Code のターミナルと同じ)
@@ -386,13 +396,29 @@ function RunOutcomeView({
           </pre>
         );
       }
-      return <RunValueView value={outcome.value} />;
+      return <RunValueView value={outcome.value} type={outcome.type ?? null} />;
   }
 }
 
-/** 結果の値を, 入力と同じ式のツリーで表示する. 式で書けない値 (関数など) は文字列で出す */
-function RunValueView({ value }: { readonly value: DefinyValue }): JSX.Element {
-  const expression = useMemo(() => runValueExpression(value), [value]);
+/**
+ * 結果の値を, 入力と同じ式のツリーで表示する. 式の型 `type` が分かれば浮動小数と整数を見分ける.
+ * 式で書けない値 (関数など) は文字列で出す
+ */
+function RunValueView({
+  value,
+  type,
+}: {
+  readonly value: DefinyValue;
+  readonly type: unknown;
+}): JSX.Element {
+  const { parts } = useDefiny();
+  const floatNanPartId =
+    parts.find((p) => p.moduleName === "core" && p.name === "float-nan")
+      ?.partIdHash ?? undefined;
+  const expression = useMemo(
+    () => runValueExpression(value, { type, floatNanPartId }),
+    [value, type, floatNanPartId],
+  );
   if (expression === null) {
     return <pre className="run-history-output">{formatRunValue(value)}</pre>;
   }

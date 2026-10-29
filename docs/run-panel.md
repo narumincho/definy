@@ -32,10 +32,13 @@
 結果の値は, 入力と同じ式のツリー (`ExpressionTreeEditor` の `editable={false}`) で出す (issue #801)。
 `runValueExpression` が値をそれに評価される式 (リテラル・`list`・`record`・`variant`) にする。
 
-- 整数でない数は浮動小数のリテラル (`1.5`) にする。stage1 から受け取る値は JavaScript の数なので,
-  整数の値の浮動小数 (`2.0`) は整数のリテラル `2` と同じに見える
+- stage1 から受け取る値は JavaScript の数なので, 整数と整数の値の浮動小数 (`2.0`) は値だけでは見分けられない。
+  そこで実行と並べて入力の式の型を型チェッカーに聞き (`probeInferredTypeAt(式, [])` を `findExpectedType` に渡す),
+  結果の記録に `type` として残す。型が `float` の数 (リストの要素・レコードのフィールドの型もたどる) は浮動小数のリテラル (`2.0`) にする
+- 型が分からないとき (推論できない式・タグ付きの値のペイロード) は, 整数でない数だけを浮動小数のリテラル (`1.5`) にする
+- NaN は `core.float-nan` の参照にする ([float.md](float.md))
 - タグ付きの値は `type_part` を `none` にした `variant` の式にする
-- 式で書けない値 (関数のクロージャ, `null`, NaN・±Infinity) を含むときだけ, 前と同じ整形した JSON の文字列で出す (`formatRunValue`)
+- 式で書けない値 (関数のクロージャ, `null`, ±Infinity) を含むときだけ, 前と同じ整形した JSON の文字列で出す (`formatRunValue`)
 
 ## コンパイラを作り直す
 

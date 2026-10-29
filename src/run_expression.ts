@@ -14,8 +14,18 @@ import {
   type WasiIoHost,
   type WasiIoStep,
 } from "./wasi_io.ts";
-import { isRecord, none, some, variant, variantOf } from "./definy_value.ts";
-import { floatExpressionFromNumber } from "./tree_layout/expression.ts";
+import {
+  field,
+  isRecord,
+  none,
+  some,
+  variant,
+  variantOf,
+} from "./definy_value.ts";
+import {
+  floatExpressionFromNumber,
+  partReferenceExpression,
+} from "./tree_layout/expression.ts";
 
 export type RunOutcome =
   | {
@@ -26,6 +36,8 @@ export type RunOutcome =
         readonly steps: ReadonlyArray<WasiIoStep>;
         readonly message: string | null;
       } | null;
+      /** 入力した式の型 (`core.type-ast` の値). 結果の表示に使う. 分からなければ無いか `null` */
+      readonly type?: unknown;
     }
   /** 参照しているパーツが見つからないか, 式が無いか, コンパイラ組み込み (パーツ ID の並び) */
   | {
@@ -88,13 +100,34 @@ export async function runExpression(
   }
 }
 
+export type RunValueExpressionOptions = {
+  /**
+   * 式の型 (`core.type-ast` の値). 分からなければ `null`.
+   * stage1 から受け取る浮動小数は JavaScript の数なので, 整数の値の浮動小数 (`2.0`) は型が `float` のときだけ見分けられる
+   */
+  readonly type: unknown;
+  /** NaN を表す `core.float-nan` のパーツ ID. 無ければ NaN は式で書けない */
+  readonly floatNanPartId: string | undefined;
+};
+
 /**
  * 結果の値を, それに評価される式 (`core.expression` の値) にする. 実行パネルは入力と同じ式のツリーで結果を表示する.
- * 整数でない数は浮動小数のリテラルにする. 式で書けない値 (関数, `null`, NaN・±Infinity) を含むときは `null`
+ * 型が `float` の数と整数でない数は浮動小数のリテラル, NaN は `core.float-nan` の参照にする.
+ * 式で書けない値 (関数, `null`, ±Infinity) を含むときは `null`
  */
-export function runValueExpression(value: DefinyValue): unknown {
+export function runValueExpression(
+  value: DefinyValue,
+  options: RunValueExpressionOptions,
+): unknown {
+  const type = variantOf(options.type);
+  const typePayload = type?.payload;
   if (typeof value === "number") {
-    return Number.isInteger(value)
+    if (Number.isNaN(value)) {
+      return options.floatNanPartId === undefined
+        ? null
+        : partReferenceExpression(options.floatNanPartId);
+    }
+    return Number.isInteger(value) && type?.tag !== "float"
       ? variant("number", value)
       : floatExpressionFromNumber(value);
   }
@@ -108,7 +141,11 @@ export function runValueExpression(value: DefinyValue): unknown {
     return null;
   }
   if (Array.isArray(value)) {
-    const items = value.map(runValueExpression);
+    const itemType =
+      type?.tag === "list" ? field(typePayload, "item_type") : null;
+    const items = value.map((item) =>
+      runValueExpression(item, { ...options, type: itemType ?? null }),
+    );
     return items.includes(null) ? null : variant("list", items);
   }
   const tagged = variantOf(value);
@@ -120,7 +157,11 @@ export function runValueExpression(value: DefinyValue): unknown {
         type_part: none(),
       });
     }
-    const payload = runValueExpression(tagged.payload as DefinyValue);
+    // タグ付きの値の型 (型パーツの参照) からペイロードの型はまだ求めない
+    const payload = runValueExpression(tagged.payload as DefinyValue, {
+      ...options,
+      type: null,
+    });
     return payload === null
       ? null
       : variant("variant", {
@@ -132,9 +173,18 @@ export function runValueExpression(value: DefinyValue): unknown {
   if (!isRecord(value)) {
     return null;
   }
+  const fieldTypes = type?.tag === "record" ? typePayload : null;
   const fields = Object.entries(value).map(([key, item]) => ({
     key,
-    value: runValueExpression(item as DefinyValue),
+    value: runValueExpression(item as DefinyValue, {
+      ...options,
+      type: Array.isArray(fieldTypes)
+        ? (field(
+            fieldTypes.find((f) => field(f, "key") === key),
+            "field_type",
+          ) ?? null)
+        : null,
+    }),
   }));
   return fields.some((item) => item.value === null)
     ? null

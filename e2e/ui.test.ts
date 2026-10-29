@@ -835,6 +835,25 @@ test.describe("definy UI E2E", () => {
     await expect(value).not.toContainText("[");
   });
 
+  test("run panel shows a NaN result as core.float-nan", async ({ page }) => {
+    await page.goto("/part/core.float-nan");
+    await expect(page.locator(".part-definition-tree")).toBeVisible({
+      timeout: 15000,
+    });
+    const runPanel = page.locator(".run-panel");
+    await page.locator(".run-panel-toggle").click();
+    await runPanel.locator(".run-panel-use-part").click();
+    await runPanel.locator(".run-panel-run").click();
+
+    const entry = runPanel.locator(".run-history-entry").first();
+    await expect(entry).toHaveAttribute("data-outcome", "value", {
+      timeout: 15000,
+    });
+    await expect(entry.locator(".run-history-value")).toHaveText(
+      "core.float-nan",
+    );
+  });
+
   test("run panel rebuilds the compiler from the shown core parts and runs with it", async ({
     page,
   }) => {
