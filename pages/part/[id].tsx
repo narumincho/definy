@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
 import { useParams, useRouter } from "@void/react";
-import { Link } from "../../src/components/Link.tsx";
+import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
 import {
   label,
   localizedText,
@@ -95,6 +95,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     checkPartType,
     typeCheckMessage,
     setPageUndo,
+    projectOfModule,
   } = useDefiny();
   const router = useRouter();
   const isNewPart = !parts.some((p) => p.partId === part.partId);
@@ -348,26 +349,17 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
   return (
     <div className="part-detail-view">
       <div className="part-header card">
-        <div className="breadcrumb">
-          <Link href={`/module/${part.moduleName}`} className="breadcrumb-link">
-            {part.moduleName}
-          </Link>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">{currentName}</span>
+        <HierarchyBreadcrumb
+          projectName={projectOfModule(part.moduleName) ?? ""}
+          moduleName={part.moduleName}
+          partName={currentName}
+        >
           {hasChange && (
-            <span
-              className="badge badge-warning"
-              style={{
-                marginLeft: "0.4rem",
-                background: "var(--yellow-bg-strong)",
-                color: "var(--yellow)",
-                border: "1px solid var(--yellow-border)",
-              }}
-            >
+            <span className="badge badge-warning part-modified-badge">
               ● {label(language, "Modified", "編集中の変更あり", "Modifita")}
             </span>
           )}
-        </div>
+        </HierarchyBreadcrumb>
 
         <div
           className="part-actions"

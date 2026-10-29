@@ -44,7 +44,7 @@ definy には GitHub のフォークは無く, ブランチだけで編集を分
   `npm run build:seeds` のコンパイルした `wasm/branch_summarizer.wasm` (コミットしない) でこれを呼ぶ。ブランチは最初に現れた順で,
   作成者・最新のコミット・コミットの数は規則 (`core.branch-first-commit`, `core.branch-latest-commit`) と同じ求め方。
   `latestCommitHashOf` (`worker/type_check.ts`) もこれを使う
-- 表示するブランチはプロジェクトごとに選ぶ (プロジェクトのページの「ブランチ」. 既定は `main`, localStorage `definy.selected_branches.v2`)。
+- 表示するブランチはプロジェクトごとに選ぶ (各ページの階層のパンくずの「ブランチ」. 既定は `main`, localStorage `definy.selected_branches.v2`)。
   モジュール・パーツの一覧, パーツの詳細, 型環境 (`committedParts`) は各プロジェクトの表示しているブランチのものになる
   (`useEvents`)。モジュールのページは, そのモジュールの入っているプロジェクトの表示しているブランチを出す。
 - コミット履歴は表示しているブランチの最新のコミットから親をたどる (読んでいないコミットは 1 件ずつ読む, 50 件まで)。ブランチを作る前の `main` のコミットも入る。

@@ -80,6 +80,39 @@ export function PartsIcon(props: IconProps): JSX.Element {
   );
 }
 
+/** プロジェクト (モジュールをまとめる単位) のフォルダのアイコン */
+export function ProjectIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </StrokeIcon>
+  );
+}
+
+/** ブランチのアイコン */
+export function BranchIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="6" cy="5" r="2" />
+      <circle cx="6" cy="19" r="2" />
+      <circle cx="18" cy="7" r="2" />
+      <path d="M6 7v10" />
+      <path d="M18 9c0 5-12 3-12 8" />
+    </StrokeIcon>
+  );
+}
+
+/** コミットのアイコン */
+export function CommitIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props}>
+      <circle cx="12" cy="12" r="3.5" />
+      <path d="M3 12h5.5" />
+      <path d="M15.5 12H21" />
+    </StrokeIcon>
+  );
+}
+
 /** モジュールと個々のパーツの両方に使う箱のアイコン */
 export function ModuleIcon(props: IconProps): JSX.Element {
   return (

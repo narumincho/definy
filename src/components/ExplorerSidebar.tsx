@@ -9,10 +9,17 @@ import {
 } from "react";
 import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
-import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
+import {
+  ChevronRightIcon,
+  ModuleIcon,
+  PartsIcon,
+  ProjectIcon,
+} from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { withNewParts } from "../new_part.ts";
+import { MAIN_BRANCH } from "../event_content.ts";
+import type { ModuleSnapshot } from "../types.ts";
 
 const SIDEBAR_WIDTH_STORAGE_KEY = "definy.sidebar.width";
 const MIN_SIDEBAR_WIDTH = 160;
@@ -50,6 +57,7 @@ function saveSidebarWidth(width: number | null): void {
 export function ExplorerSidebar(): JSX.Element {
   const {
     language,
+    projects,
     modules: committedModules,
     parts: committedParts,
     workingChanges,
@@ -79,6 +87,27 @@ export function ExplorerSidebar(): JSX.Element {
   const [collapsedModules, setCollapsedModules] = useState<ReadonlySet<string>>(
     new Set(),
   );
+  const [collapsedProjects, setCollapsedProjects] = useState<
+    ReadonlySet<string>
+  >(new Set());
+  // プロジェクト ▸ モジュール ▸ パーツ の木にする. プロジェクトはモジュールが最初に現れた順
+  const projectGroups = useMemo(() => {
+    const groups = new Map<string, ModuleSnapshot[]>();
+    for (const mod of modules) {
+      const group = groups.get(mod.projectName);
+      if (group === undefined) {
+        groups.set(mod.projectName, [mod]);
+      } else {
+        group.push(mod);
+      }
+    }
+    return Array.from(groups, ([projectName, projectModules]) => ({
+      projectName,
+      branch:
+        projects.find((p) => p.name === projectName)?.branch ?? MAIN_BRANCH,
+      modules: projectModules,
+    }));
+  }, [modules, projects]);
   // エクスプローラーの幅. ワークベンチのグリッドの列 (`--sidebar-width`) をワークベンチの要素に直接書き換える.
   // ドラッグ中に React の state を変えると大きなツリーを毎回描画し直すので, 確定したときだけ state にする.
   // `null` は CSS の既定の幅 (画面の幅で変わる). 初回レンダーは SSR と揃え, 保存値はマウント後に反映する
@@ -124,6 +153,9 @@ export function ExplorerSidebar(): JSX.Element {
   }, [currentPath, parts]);
   const selectedPartId = selectedPart?.partId;
   const selectedModuleId = selectedPart?.moduleId;
+  const selectedProjectName = modules.find(
+    (m) => m.moduleId === selectedModuleId,
+  )?.projectName;
 
   // 選択が変わったら, 折りたたまれたモジュールを開いて選択中のパーツが見えるようにする
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -137,7 +169,15 @@ export function ExplorerSidebar(): JSX.Element {
       next.delete(selectedModuleId);
       return next;
     });
-  }, [selectedPartId, selectedModuleId]);
+    setCollapsedProjects((prev) => {
+      if (selectedProjectName === undefined || !prev.has(selectedProjectName)) {
+        return prev;
+      }
+      const next = new Set(prev);
+      next.delete(selectedProjectName);
+      return next;
+    });
+  }, [selectedPartId, selectedModuleId, selectedProjectName]);
   // モジュールを開いた後のレンダーで要素が現れてからスクロールする
   useEffect(() => {
     if (!revealPendingRef.current) return;
@@ -161,6 +201,18 @@ export function ExplorerSidebar(): JSX.Element {
         next.delete(moduleId);
       } else {
         next.add(moduleId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleProjectCollapse = useCallback((projectName: string) => {
+    setCollapsedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectName)) {
+        next.delete(projectName);
+      } else {
+        next.add(projectName);
       }
       return next;
     });
@@ -270,85 +322,154 @@ export function ExplorerSidebar(): JSX.Element {
             )}
           </div>
         ) : (
-          modules.map((mod) => {
-            const isCollapsed = collapsedModules.has(mod.moduleId);
-            const moduleParts = parts.filter(
-              (p) => p.moduleId === mod.moduleId,
-            );
-            const filteredParts = query
-              ? moduleParts.filter(
+          projectGroups.map(
+            ({ projectName, branch, modules: projectModules }) => {
+              const isProjectCollapsed = collapsedProjects.has(projectName);
+              const matches = (mod: ModuleSnapshot): boolean =>
+                parts.some(
                   (p) =>
-                    p.name.toLowerCase().includes(query) ||
-                    `${mod.name}.${p.name}`.toLowerCase().includes(query),
-                )
-              : moduleParts;
-
-            if (query && filteredParts.length === 0) {
-              return null;
-            }
-            const moduleTypeErrorCount = moduleParts.filter(
-              (p) => typeErrorOf(p) !== null,
-            ).length;
-
-            return (
-              <div key={mod.moduleId} className="sidebar-module-group">
-                <button
-                  type="button"
-                  className="sidebar-tree-node module-node"
-                  onClick={() => {
-                    toggleModuleCollapse(mod.moduleId);
-                  }}
+                    p.moduleId === mod.moduleId &&
+                    (p.name.toLowerCase().includes(query) ||
+                      `${mod.name}.${p.name}`.toLowerCase().includes(query)),
+                );
+              if (query && !projectModules.some(matches)) {
+                return null;
+              }
+              return (
+                <div
+                  key={projectName}
+                  className="sidebar-project-group"
+                  data-project={projectName}
                 >
-                  <ChevronRightIcon
-                    size={14}
-                    className={`sidebar-chevron ${isCollapsed ? "" : "expanded"}`}
-                  />
-                  <ModuleIcon
-                    size={15}
-                    className="sidebar-node-icon tree-icon-module"
-                  />
-                  <span className="sidebar-node-label">{mod.name}</span>
-                  {moduleTypeErrorCount > 0 && (
-                    <span
-                      className="sidebar-type-error-count"
-                      title={label(
-                        language,
-                        `${moduleTypeErrorCount} parts with type errors`,
-                        `型エラーのあるパーツ ${moduleTypeErrorCount} 件`,
-                        `${moduleTypeErrorCount} partoj kun tiperaroj`,
-                      )}
-                    >
-                      {moduleTypeErrorCount}
+                  <button
+                    type="button"
+                    className="sidebar-tree-node project-node"
+                    aria-expanded={!isProjectCollapsed}
+                    onClick={() => {
+                      toggleProjectCollapse(projectName);
+                    }}
+                  >
+                    <ChevronRightIcon
+                      size={14}
+                      className={`sidebar-chevron ${isProjectCollapsed ? "" : "expanded"}`}
+                    />
+                    <ProjectIcon
+                      size={15}
+                      className="sidebar-node-icon tree-icon-project"
+                    />
+                    <span className="sidebar-node-label">
+                      {projectName === ""
+                        ? label(
+                            language,
+                            "(no project)",
+                            "(プロジェクトなし)",
+                            "(sen projekto)",
+                          )
+                        : projectName}
                     </span>
-                  )}
-                  <span className="sidebar-count">{moduleParts.length}</span>
-                </button>
+                    <span
+                      className="sidebar-branch"
+                      title={label(language, "Branch", "ブランチ", "Branĉo")}
+                    >
+                      {branch}
+                    </span>
+                  </button>
+                  {!isProjectCollapsed &&
+                    projectModules.map((mod) => {
+                      const isCollapsed = collapsedModules.has(mod.moduleId);
+                      const moduleParts = parts.filter(
+                        (p) => p.moduleId === mod.moduleId,
+                      );
+                      const filteredParts = query
+                        ? moduleParts.filter(
+                            (p) =>
+                              p.name.toLowerCase().includes(query) ||
+                              `${mod.name}.${p.name}`
+                                .toLowerCase()
+                                .includes(query),
+                          )
+                        : moduleParts;
 
-                {!isCollapsed && (
-                  <div className="sidebar-module-parts">
-                    {filteredParts.map((part) => {
-                      const change = workingChanges.parts.get(part.partId);
-                      const isChanged = change !== undefined;
-                      const typeError = typeErrorOf(part);
-                      const isSelected = part.partId === selectedPartId;
+                      if (query && filteredParts.length === 0) {
+                        return null;
+                      }
+                      const moduleTypeErrorCount = moduleParts.filter(
+                        (p) => typeErrorOf(p) !== null,
+                      ).length;
+
                       return (
-                        <PartNode
-                          key={part.partId}
-                          partId={part.partId}
-                          name={change?.name ?? part.name}
-                          deleted={change?.deleted === true}
-                          isChanged={isChanged}
-                          typeError={typeError}
-                          isSelected={isSelected}
-                          onNavigate={closeSidebar}
-                        />
+                        <div
+                          key={mod.moduleId}
+                          className="sidebar-module-group"
+                        >
+                          <button
+                            type="button"
+                            className="sidebar-tree-node module-node"
+                            onClick={() => {
+                              toggleModuleCollapse(mod.moduleId);
+                            }}
+                          >
+                            <ChevronRightIcon
+                              size={14}
+                              className={`sidebar-chevron ${isCollapsed ? "" : "expanded"}`}
+                            />
+                            <ModuleIcon
+                              size={15}
+                              className="sidebar-node-icon tree-icon-module"
+                            />
+                            <span className="sidebar-node-label">
+                              {mod.name}
+                            </span>
+                            {moduleTypeErrorCount > 0 && (
+                              <span
+                                className="sidebar-type-error-count"
+                                title={label(
+                                  language,
+                                  `${moduleTypeErrorCount} parts with type errors`,
+                                  `型エラーのあるパーツ ${moduleTypeErrorCount} 件`,
+                                  `${moduleTypeErrorCount} partoj kun tiperaroj`,
+                                )}
+                              >
+                                {moduleTypeErrorCount}
+                              </span>
+                            )}
+                            <span className="sidebar-count">
+                              {moduleParts.length}
+                            </span>
+                          </button>
+
+                          {!isCollapsed && (
+                            <div className="sidebar-module-parts">
+                              {filteredParts.map((part) => {
+                                const change = workingChanges.parts.get(
+                                  part.partId,
+                                );
+                                const isChanged = change !== undefined;
+                                const typeError = typeErrorOf(part);
+                                const isSelected =
+                                  part.partId === selectedPartId;
+                                return (
+                                  <PartNode
+                                    key={part.partId}
+                                    partId={part.partId}
+                                    name={change?.name ?? part.name}
+                                    deleted={change?.deleted === true}
+                                    isChanged={isChanged}
+                                    typeError={typeError}
+                                    isSelected={isSelected}
+                                    onNavigate={closeSidebar}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
-                  </div>
-                )}
-              </div>
-            );
-          })
+                </div>
+              );
+            },
+          )
         )}
       </div>
 
@@ -417,7 +538,7 @@ const PartNode = memo(function PartNode({
       aria-current={isSelected ? "page" : undefined}
       onClick={onNavigate}
     >
-      <ModuleIcon size={15} className="sidebar-node-icon tree-icon-part" />
+      <PartsIcon size={15} className="sidebar-node-icon tree-icon-part" />
       <span className="sidebar-node-label">{name}</span>
       {typeError !== null && (
         <span

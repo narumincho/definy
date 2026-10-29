@@ -820,8 +820,12 @@ body.sidebar-resizing {
   flex-shrink: 0;
 }
 
+.tree-icon-project {
+  color: var(--blue);
+}
+
 .tree-icon-module {
-  color: #d8a657;
+  color: var(--yellow);
 }
 
 .tree-icon-part {
@@ -867,13 +871,36 @@ body.sidebar-resizing {
   color: var(--text-primary);
 }
 
+/* プロジェクト ▸ モジュール ▸ パーツ の段を字下げで示す */
+.sidebar-tree-node.project-node {
+  font-weight: 600;
+}
+
 .sidebar-tree-node.module-node {
+  padding-left: 1.2rem;
   font-weight: 500;
 }
 
 .sidebar-tree-node.part-node {
-  padding-left: 1.5rem;
+  padding-left: 2.6rem;
   font-size: 0.84rem;
+}
+
+/* プロジェクトの行の表示しているブランチ */
+.sidebar-branch {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--green-text);
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+  border-radius: var(--radius-xs);
 }
 
 /* 開いているパーツ. VSCode のエクスプローラーと同じく,
@@ -1567,6 +1594,137 @@ button.card:hover {
 .breadcrumb-current {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* プロジェクト / ブランチ (コミット) / モジュール / パーツ の階層のパンくず (docs/ui.md「階層のパンくず」).
+   各段に種類 (プロジェクト・ブランチ…) の小さな見出しとアイコンを付け, 階層の種類が名前だけでも分かるようにする */
+.hierarchy-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  min-width: 0;
+}
+
+.hierarchy-breadcrumb-list {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.3rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+}
+
+.hierarchy-segment {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--overlay-1);
+}
+
+/* 段の間の区切り. 上の段に入っていることを示す */
+.hierarchy-segment + .hierarchy-segment {
+  margin-left: 1.1rem;
+  position: relative;
+}
+
+.hierarchy-segment + .hierarchy-segment::before {
+  content: "›";
+  position: absolute;
+  left: -0.85rem;
+  color: var(--text-muted);
+}
+
+.hierarchy-segment[aria-current="page"] {
+  border-color: var(--border-strong);
+  background: var(--overlay-3);
+}
+
+.hierarchy-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* アイコンの色はエクスプローラーの木 (.tree-icon-*) と揃える */
+.hierarchy-segment[data-level="project"] .hierarchy-icon {
+  color: var(--blue);
+}
+
+.hierarchy-segment[data-level="branch"] .hierarchy-icon,
+.hierarchy-segment[data-level="commit"] .hierarchy-icon {
+  color: var(--green);
+}
+
+.hierarchy-segment[data-level="module"] .hierarchy-icon {
+  color: var(--yellow);
+}
+
+.hierarchy-segment[data-level="part"] .hierarchy-icon {
+  color: var(--purple);
+}
+
+.hierarchy-kind {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.hierarchy-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.hierarchy-name:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.hierarchy-segment[aria-current="page"] .hierarchy-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.hierarchy-branch-select {
+  max-width: 14rem;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.84rem;
+  color: var(--text);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+}
+
+.hierarchy-commit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.hierarchy-commit:hover {
+  color: var(--text-primary);
+}
+
+.hierarchy-commit-icon {
+  flex-shrink: 0;
+}
+
+.part-modified-badge {
+  background: var(--yellow-bg-strong);
+  color: var(--yellow);
+  border: 1px solid var(--yellow-border);
 }
 
 .settings-view {
@@ -3549,4 +3707,25 @@ a.account-card {
   flex-shrink: 0;
   padding-top: 0.3rem;
   color: var(--text-secondary);
+}
+
+/* パーツのページの先頭: 階層のパンくずと, 公開範囲・削除などの操作を 1 行に並べる (狭ければ折り返す) */
+.part-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.part-header .part-actions {
+  align-items: center;
+}
+
+.part-header .part-actions select {
+  width: auto;
+}
+
+.part-header .part-actions .btn {
+  white-space: nowrap;
 }

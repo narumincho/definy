@@ -122,9 +122,9 @@ test.describe("definy UI E2E", () => {
     const partName = await chip.textContent();
     await chip.click();
     await page.waitForURL(/\/part\//);
-    await expect(page.locator(".breadcrumb-current")).toHaveText(
-      partName ?? "",
-    );
+    await expect(
+      page.locator('.hierarchy-segment[aria-current="page"] .hierarchy-name'),
+    ).toHaveText(partName ?? "");
 
     // カードのリンク以外の場所 (時刻) を押すとイベント詳細へ. 時刻の上にはカード全体のリンクが重なっている
     await page.goto("/");
@@ -571,7 +571,9 @@ test.describe("definy UI E2E", () => {
     await page.waitForURL(/\/part\/.+/, { timeout: 10000 });
 
     // パンくずにモジュール名とパーツ名が表示されていることを確認
-    const breadcrumb = page.locator(".breadcrumb-current");
+    const breadcrumb = page.locator(
+      '.hierarchy-segment[aria-current="page"] .hierarchy-name',
+    );
     await expect(breadcrumb).toBeVisible();
     await expect(breadcrumb).toHaveText("triangle-area");
 
