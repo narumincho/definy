@@ -42,7 +42,8 @@ core.define-type(
   それ以外 (型を返す関数 `core.option` なども) は `core.define-part`。同じ中身からは同じ式になるので content hash も変わらない
 - 引数の値は評価するとその値になるリテラルの式で書く (`literalExpression`)。タグ付きの値は型パーツを指定しない
   Variant (`type_part: none`)。パーツの式は `quote(e).expression` で書く (quote の値は `core.code` なので `.expression` を取る)
-- パーツの型 (`core.type-ast` の値) は quote できない (`core.expression` ではない) ので, Variant とレコードのリテラルで書く
+- パーツの型は型の式 ([type-expression.md](type-expression.md)) なので, 式と同じく `quote(T).expression` で書く
+  (`part_type: some(quote((x: number) -> string).expression)`)。`core.define-type` は型を `type_type` にする
 
 ## 読み方 (評価)
 

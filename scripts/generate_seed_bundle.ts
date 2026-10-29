@@ -29,7 +29,10 @@ import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { compileSeedFunction } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import { createStage1Compiler } from "../src/stage1_compiler.ts";
-import { resolvePartPlaceholders } from "../src/seed_parts.ts";
+import {
+  resolvePartPlaceholders,
+  resolveSeedPartType,
+} from "../src/seed_parts.ts";
 import {
   loadProjectSeeds,
   type ProjectSeedData,
@@ -129,10 +132,9 @@ async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
       parsed.parts.map(async (p) => {
         const partCopy = { ...p };
         delete partCopy.$schema;
+        // パーツの型は seed では型の式. 読み込んだあとは型チェッカーの形 (`core.type-ast`) にする
         if (partCopy.part_type != null) {
-          partCopy.part_type = await resolvePartPlaceholders(
-            partCopy.part_type,
-          );
+          partCopy.part_type = await resolveSeedPartType(partCopy.part_type);
         }
         if (partCopy.expression != null) {
           partCopy.expression = await resolvePartPlaceholders(

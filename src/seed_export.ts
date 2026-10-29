@@ -15,6 +15,7 @@ import {
   type PartContent,
 } from "./event_content.ts";
 import { decodePartDefinition } from "./part_definition.ts";
+import { partTypeToExpression } from "./part_type_expression.ts";
 import {
   loadProjectSeeds,
   PROJECT_SEEDS_DIR,
@@ -272,7 +273,8 @@ async function hydrateCommitParts(
 
     const partData: Record<string, unknown> = { name: part.name };
     if (content.partType !== null) {
-      partData.part_type = content.partType;
+      // seed には型の式で書く (docs/type-expression.md)
+      partData.part_type = partTypeToExpression(content.partType);
     }
     partData.description = content.description;
     if (content.visibility === "private") {

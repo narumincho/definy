@@ -3,7 +3,8 @@
 definy の値 (数値・文字列・真偽値・リスト・レコード・タグ付きの値) は、seeds の JSON、イベントの中身 ([event.md](event.md)) の CBOR、
 localStorage の作業中の変更、クリップボードのどれでも同じ形で書く。
 
-パーツの式は `core.expression` の値、パーツの型は `core.type-ast` の値をこの形のまま保存し、stage1 や型チェッカーにもそのまま渡す。
+パーツの式とパーツの型はどちらも `core.expression` の値 (型は型の式. [type-expression.md](type-expression.md)) で保存する。
+式は stage1 や型チェッカーにそのまま渡し, 型は型チェッカーの形 (`core.type-ast`) にしてから渡す。
 TypeScript の側には式の構造を別の形に変える層 (以前の `toSelfHostedAst` / `partTypeToSelfHostedAst` など) は無い。
 式の形を決めるのは seeds/core.json の型パーツ `core.expression` と `core.type-ast` の宣言だけ。
 

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
-import { resolvePartPlaceholders } from "./seed_parts.ts";
+import { resolvePartPlaceholders, resolveSeedPartType } from "./seed_parts.ts";
 import {
   checkParts,
   compileTypeChecker,
@@ -54,7 +54,7 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
       parts.push({
         id: await deriveModulePartId(moduleId, name),
         name: `${seed.module_name}.${name}`,
-        partType: await resolvePartPlaceholders(part.part_type ?? null),
+        partType: await resolveSeedPartType(part.part_type),
         expression: await resolvePartPlaceholders(part.expression ?? null),
       });
     }
@@ -368,6 +368,36 @@ describe("self-hosted type check (stage1)", () => {
       "type_error",
       "ok",
       "ok",
+    ]);
+  }, 600_000);
+
+  it("type・Code<T>・型引数の参照も型の式で, 値の位置では型が type", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const typeType = { "#type": null };
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: typeType, expression: { "#type_type": null } },
+        {
+          partType: typeType,
+          expression: {
+            "#type_code": { value_type: { "#type_number": null } },
+          },
+        },
+        // Code<T> の中も型の式
+        {
+          partType: typeType,
+          expression: { "#type_code": { value_type: { "#number": 1 } } },
+        },
+        { partType: { "#number": null }, expression: { "#type_type": null } },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "ok",
+      "type_error",
+      "type_error",
     ]);
   }, 600_000);
 

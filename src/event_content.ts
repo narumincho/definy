@@ -15,6 +15,10 @@ import {
   variant,
   variantOf,
 } from "./definy_value.ts";
+import {
+  expressionToPartType,
+  partTypeToExpression,
+} from "./part_type_expression.ts";
 import { conformsToTypeDeclaration } from "./seed_schema.ts";
 
 /**
@@ -31,7 +35,10 @@ export type PartContent = {
   readonly description: LocalizedText;
   /** 省くと公開 */
   readonly visibility?: Visibility;
-  /** パーツの型 (`core.type-ast` の値). 型指定が無ければ `null` */
+  /**
+   * パーツの型 (型チェッカーの形. `core.type-ast` の値). 型指定が無ければ `null`.
+   * `core.part-content` には型の式 (`core.expression`) で置く (docs/type-expression.md)
+   */
   readonly partType: unknown;
   /** 式 (`core.expression` の値). 式の無いパーツなら `null` */
   readonly expression: unknown;
@@ -180,7 +187,9 @@ export function encodePartContent(content: PartContent): unknown {
   return {
     description: encodeLocalizedText(content.description),
     visibility: encodeVisibility(content.visibility),
-    part_type: optionOf(content.partType),
+    part_type: optionOf(
+      content.partType === null ? null : partTypeToExpression(content.partType),
+    ),
     expression: optionOf(content.expression),
   };
 }
@@ -205,9 +214,15 @@ export function partContentFromValue(value: unknown): PartContent {
   return {
     description: decodeLocalizedText(field(value, "description")),
     visibility: decodeVisibility(field(value, "visibility")),
-    partType: optionOrNull(field(value, "part_type")),
+    partType: partTypeFromValue(field(value, "part_type")),
     expression: optionOrNull(field(value, "expression")),
   };
+}
+
+/** `core.part-content` の `part_type` (型の式の option) を型チェッカーの形にする. 型の式でなければ `null` */
+function partTypeFromValue(value: unknown): unknown {
+  const expression = optionValue(value);
+  return expression === undefined ? null : expressionToPartType(expression);
 }
 
 /** 中身を読んだパーツにする (content hash はそのまま) */

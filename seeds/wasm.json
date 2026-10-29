@@ -15,19 +15,19 @@
     {
       "name": "signed-leb128",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "n",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -535,19 +535,19 @@
     {
       "name": "unsigned-leb128",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "n",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -744,25 +744,25 @@
     {
       "name": "uleb-range",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "start",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "count",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -1064,7 +1064,7 @@
     {
       "name": "unreachable",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1083,7 +1083,7 @@
     {
       "name": "if",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1102,7 +1102,7 @@
     {
       "name": "else",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1121,7 +1121,7 @@
     {
       "name": "end",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1140,7 +1140,7 @@
     {
       "name": "call",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1159,7 +1159,7 @@
     {
       "name": "call-indirect",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1178,7 +1178,7 @@
     {
       "name": "return-call-indirect",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1197,7 +1197,7 @@
     {
       "name": "local-get",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1216,7 +1216,7 @@
     {
       "name": "local-set",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1235,7 +1235,7 @@
     {
       "name": "local-tee",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1254,7 +1254,7 @@
     {
       "name": "i32-load",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1273,7 +1273,7 @@
     {
       "name": "i64-load",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1292,7 +1292,7 @@
     {
       "name": "i32-load8-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1311,7 +1311,7 @@
     {
       "name": "i32-store",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1330,7 +1330,7 @@
     {
       "name": "i32-store8",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1349,7 +1349,7 @@
     {
       "name": "i32-const",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1368,7 +1368,7 @@
     {
       "name": "i64-const",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1387,7 +1387,7 @@
     {
       "name": "i32-eqz",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1406,7 +1406,7 @@
     {
       "name": "i32-eq",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1425,7 +1425,7 @@
     {
       "name": "i64-eqz",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1444,7 +1444,7 @@
     {
       "name": "i64-eq",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1463,7 +1463,7 @@
     {
       "name": "i64-lt-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1482,7 +1482,7 @@
     {
       "name": "i64-gt-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1501,7 +1501,7 @@
     {
       "name": "i64-le-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1520,7 +1520,7 @@
     {
       "name": "i64-ge-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1539,7 +1539,7 @@
     {
       "name": "i64-add",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1558,7 +1558,7 @@
     {
       "name": "i64-sub",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1577,7 +1577,7 @@
     {
       "name": "i64-mul",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1596,7 +1596,7 @@
     {
       "name": "i64-div-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1615,7 +1615,7 @@
     {
       "name": "i64-rem-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1634,7 +1634,7 @@
     {
       "name": "i64-extend-i32-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1653,7 +1653,7 @@
     {
       "name": "f64-load",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1672,7 +1672,7 @@
     {
       "name": "f64-store",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1691,7 +1691,7 @@
     {
       "name": "f64-const",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1710,7 +1710,7 @@
     {
       "name": "f64-eq",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1729,7 +1729,7 @@
     {
       "name": "f64-lt",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1748,7 +1748,7 @@
     {
       "name": "f64-le",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1767,7 +1767,7 @@
     {
       "name": "f64-ceil",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1786,7 +1786,7 @@
     {
       "name": "f64-floor",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1805,7 +1805,7 @@
     {
       "name": "f64-trunc",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1824,7 +1824,7 @@
     {
       "name": "f64-sqrt",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1843,7 +1843,7 @@
     {
       "name": "f64-add",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1862,7 +1862,7 @@
     {
       "name": "f64-sub",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1881,7 +1881,7 @@
     {
       "name": "f64-mul",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1900,7 +1900,7 @@
     {
       "name": "f64-div",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1919,7 +1919,7 @@
     {
       "name": "f64-convert-i64-s",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1938,7 +1938,7 @@
     {
       "name": "block",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1957,7 +1957,7 @@
     {
       "name": "block-type-empty",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1976,7 +1976,7 @@
     {
       "name": "br",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -1995,7 +1995,7 @@
     {
       "name": "br-if",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2014,7 +2014,7 @@
     {
       "name": "global-get",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2033,7 +2033,7 @@
     {
       "name": "global-set",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2052,7 +2052,7 @@
     {
       "name": "i32-add",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2071,7 +2071,7 @@
     {
       "name": "i32-and",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2090,7 +2090,7 @@
     {
       "name": "i32-ge-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2109,7 +2109,7 @@
     {
       "name": "i32-gt-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2128,7 +2128,7 @@
     {
       "name": "i32-lt-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2147,7 +2147,7 @@
     {
       "name": "i32-ne",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2166,7 +2166,7 @@
     {
       "name": "i32-or",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2185,7 +2185,7 @@
     {
       "name": "i32-shl",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2204,7 +2204,7 @@
     {
       "name": "i32-shr-u",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2223,7 +2223,7 @@
     {
       "name": "i32-sub",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2242,7 +2242,7 @@
     {
       "name": "i32-wrap-i64",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2261,7 +2261,7 @@
     {
       "name": "i64-store",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2280,7 +2280,7 @@
     {
       "name": "loop",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2299,7 +2299,7 @@
     {
       "name": "memory-grow",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2318,7 +2318,7 @@
     {
       "name": "memory-size",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2337,7 +2337,7 @@
     {
       "name": "return",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2356,7 +2356,7 @@
     {
       "name": "select",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2375,7 +2375,7 @@
     {
       "name": "value-type-i32",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2394,7 +2394,7 @@
     {
       "name": "value-type-i64",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2413,7 +2413,7 @@
     {
       "name": "misc-prefix",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2432,7 +2432,7 @@
     {
       "name": "section-custom",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2451,7 +2451,7 @@
     {
       "name": "section-type",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2470,7 +2470,7 @@
     {
       "name": "section-import",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2489,7 +2489,7 @@
     {
       "name": "section-function",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2508,7 +2508,7 @@
     {
       "name": "section-table",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2527,7 +2527,7 @@
     {
       "name": "section-memory",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2546,7 +2546,7 @@
     {
       "name": "section-global",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2565,7 +2565,7 @@
     {
       "name": "section-export",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2584,7 +2584,7 @@
     {
       "name": "section-start",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2603,7 +2603,7 @@
     {
       "name": "section-element",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2622,7 +2622,7 @@
     {
       "name": "section-code",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2641,7 +2641,7 @@
     {
       "name": "section-data",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2660,7 +2660,7 @@
     {
       "name": "section-data-count",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -2679,9 +2679,9 @@
     {
       "name": "module-header",
       "part_type": {
-        "#list": {
+        "#type_list": {
           "item_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -2727,29 +2727,29 @@
     {
       "name": "section",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "id",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "payload",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -2872,23 +2872,23 @@
     {
       "name": "code-entry",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "function",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }

@@ -18,9 +18,10 @@ describe("partType と型の式の相互変換", () => {
         ),
       ) as { parts: ReadonlyArray<{ part_type?: unknown }> };
       for (const part of seed.parts) {
-        const partType = part.part_type ?? null;
-        expect(expressionToPartType(partTypeToExpression(partType))).toEqual(
-          partType,
+        // seed のパーツの型は型の式
+        const expression = part.part_type ?? null;
+        expect(partTypeToExpression(expressionToPartType(expression))).toEqual(
+          expression,
         );
       }
     }

@@ -100,7 +100,7 @@ describe("core.event-content", () => {
     expect(encoded).toEqual({
       description: [{ language: "ja", text: "答え" }],
       visibility: { "#private": null },
-      part_type: { "#some": { "#number": null } },
+      part_type: { "#some": { "#type_number": null } },
       expression: { "#some": { "#number": 42 } },
     });
     expect(decodePartContent(encoded)).toEqual(content);

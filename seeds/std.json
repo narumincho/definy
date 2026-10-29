@@ -15,17 +15,17 @@
     {
       "name": "abs",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "x",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -128,23 +128,23 @@
     {
       "name": "min",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "a",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "b",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -231,23 +231,23 @@
     {
       "name": "max",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "a",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "b",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -334,17 +334,17 @@
     {
       "name": "sign",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "x",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -467,17 +467,17 @@
     {
       "name": "bool-to-string",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "b",
               "type": {
-                "#boolean": null
+                "#type_boolean": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -532,21 +532,21 @@
     {
       "name": "list-is-empty",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "xs",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#boolean": null
+            "#type_boolean": null
           }
         }
       },
@@ -617,21 +617,21 @@
     {
       "name": "list-head",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "xs",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -642,7 +642,7 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -701,19 +701,19 @@
     {
       "name": "string-to-utf8-bytes",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "text",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -764,60 +764,60 @@
     {
       "name": "bytes-to-stream",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#record": [
+            "#type_record": [
               {
                 "key": "initialState",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               },
               {
                 "key": "next",
-                "field_type": {
-                  "#function": {
+                "value": {
+                  "#type_function": {
                     "parameters": [
                       {
                         "name": "state",
                         "type": {
-                          "#number": null
+                          "#type_number": null
                         }
                       }
                     ],
                     "return_type": {
-                      "#union": [
+                      "#type_union": [
                         {
                           "tag": "yield",
                           "payload_type": {
                             "#some": {
-                              "#record": [
+                              "#type_record": [
                                 {
                                   "key": "chunk",
-                                  "field_type": {
-                                    "#list": {
+                                  "value": {
+                                    "#type_list": {
                                       "item_type": {
-                                        "#number": null
+                                        "#type_number": null
                                       }
                                     }
                                   }
                                 },
                                 {
                                   "key": "nextState",
-                                  "field_type": {
-                                    "#number": null
+                                  "value": {
+                                    "#type_number": null
                                   }
                                 }
                               ]
@@ -1030,56 +1030,56 @@
     {
       "name": "string-to-utf8-stream",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "text",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#record": [
+            "#type_record": [
               {
                 "key": "initialState",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               },
               {
                 "key": "next",
-                "field_type": {
-                  "#function": {
+                "value": {
+                  "#type_function": {
                     "parameters": [
                       {
                         "name": "state",
                         "type": {
-                          "#number": null
+                          "#type_number": null
                         }
                       }
                     ],
                     "return_type": {
-                      "#union": [
+                      "#type_union": [
                         {
                           "tag": "yield",
                           "payload_type": {
                             "#some": {
-                              "#record": [
+                              "#type_record": [
                                 {
                                   "key": "chunk",
-                                  "field_type": {
-                                    "#list": {
+                                  "value": {
+                                    "#type_list": {
                                       "item_type": {
-                                        "#number": null
+                                        "#type_number": null
                                       }
                                     }
                                   }
                                 },
                                 {
                                   "key": "nextState",
-                                  "field_type": {
-                                    "#number": null
+                                  "value": {
+                                    "#type_number": null
                                   }
                                 }
                               ]
@@ -1308,60 +1308,60 @@
     {
       "name": "string-list-to-utf8-stream",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "chunks",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#string": null
+                    "#type_string": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#record": [
+            "#type_record": [
               {
                 "key": "initialState",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               },
               {
                 "key": "next",
-                "field_type": {
-                  "#function": {
+                "value": {
+                  "#type_function": {
                     "parameters": [
                       {
                         "name": "state",
                         "type": {
-                          "#number": null
+                          "#type_number": null
                         }
                       }
                     ],
                     "return_type": {
-                      "#union": [
+                      "#type_union": [
                         {
                           "tag": "yield",
                           "payload_type": {
                             "#some": {
-                              "#record": [
+                              "#type_record": [
                                 {
                                   "key": "chunk",
-                                  "field_type": {
-                                    "#list": {
+                                  "value": {
+                                    "#type_list": {
                                       "item_type": {
-                                        "#number": null
+                                        "#type_number": null
                                       }
                                     }
                                   }
                                 },
                                 {
                                   "key": "nextState",
-                                  "field_type": {
-                                    "#number": null
+                                  "value": {
+                                    "#type_number": null
                                   }
                                 }
                               ]
@@ -1567,29 +1567,29 @@
     {
       "name": "string-index-of",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "text",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "target",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "startIndex",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -1916,17 +1916,17 @@
     {
       "name": "url-path",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "url",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -2360,17 +2360,17 @@
     {
       "name": "url-query",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "url",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -2558,14 +2558,14 @@
     {
       "name": "byte-at-or-zero",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -2573,12 +2573,12 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -2676,17 +2676,17 @@
     {
       "name": "base64-digit",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -2771,14 +2771,14 @@
     {
       "name": "bytes-to-base64-from",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -2786,12 +2786,12 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -3782,21 +3782,21 @@
     {
       "name": "bytes-to-base64",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -3851,14 +3851,14 @@
     {
       "name": "bytes-replace-from",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -3866,15 +3866,15 @@
             {
               "name": "start",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "replacement",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -3882,24 +3882,24 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "result",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -4244,14 +4244,14 @@
     {
       "name": "bytes-replace",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -4259,24 +4259,24 @@
             {
               "name": "start",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "replacement",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -4363,29 +4363,29 @@
     {
       "name": "string-contains-from",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "pattern",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#boolean": null
+            "#type_boolean": null
           }
         }
       },
@@ -4675,23 +4675,23 @@
     {
       "name": "string-contains",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "pattern",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#boolean": null
+            "#type_boolean": null
           }
         }
       },

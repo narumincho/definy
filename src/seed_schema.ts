@@ -1,7 +1,7 @@
 /**
  * seeds/*.json の JSON Schema (seeds/schemas/module-seed.schema.json) を, core の型パーツの宣言から作る.
  *
- * パーツの式は `core.expression` の値, パーツの型は `core.type-ast` の値をそのまま書くので
+ * パーツの式も型も `core.expression` の値 (型は型の式) をそのまま書くので
  * (docs/value-encoding.md), 式と型の形は core の型パーツの宣言 (`type_union` / `type_record` ...) が決める.
  * スキーマを手で書くと宣言とずれるので, 宣言を JSON Schema にする. `npm run build:schema` で書き直す
  */
@@ -102,7 +102,7 @@ export function typeDeclarationToJsonSchema(declaration: unknown): JsonSchema {
   return {};
 }
 
-/** seed のモジュールの型パーツ (`part_type` が `type`) を JSON Schema の定義にする */
+/** seed のモジュールの型パーツ (`part_type` が型の式 `type`) を JSON Schema の定義にする */
 function typePartDefinitions(
   moduleName: string,
   parts: ReadonlyArray<SeedSchemaPart>,
@@ -110,7 +110,7 @@ function typePartDefinitions(
   return parts
     .filter(
       (part) =>
-        variantOf(part.part_type)?.tag === "type" &&
+        variantOf(part.part_type)?.tag === "type_type" &&
         part.expression !== undefined &&
         part.expression !== null,
     )
@@ -132,7 +132,7 @@ export function buildModuleSeedSchema(
     $schema: "http://json-schema.org/draft-07/schema#",
     title: "ModuleSeed",
     description:
-      "Seed データファイル (seeds/*.json) のモジュール表現. パーツの式は core.expression, 型は core.type-ast の値 (docs/value-encoding.md). src/seed_schema.ts が core の型パーツの宣言から作る",
+      "Seed データファイル (seeds/*.json) のモジュール表現. パーツの式と型はどちらも core.expression の値 (型は型の式. docs/type-expression.md) (docs/value-encoding.md). src/seed_schema.ts が core の型パーツの宣言から作る",
     type: "object",
     required: ["module_name", "parts"],
     properties: {
@@ -156,7 +156,7 @@ export function buildModuleSeedSchema(
           name: { type: "string" },
           description: { $ref: "#/definitions/Description" },
           visibility: { $ref: "#/definitions/Visibility" },
-          part_type: nullable("#/definitions/core.type-ast"),
+          part_type: nullable("#/definitions/core.expression"),
           expression: nullable("#/definitions/core.expression"),
           content_hash: nullable("#/definitions/ContentHash"),
         },

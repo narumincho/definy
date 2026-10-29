@@ -2,8 +2,9 @@
  * definy の値 (数値・文字列・真偽値・リスト・レコード・タグ付きの値) の JSON / CBOR での表し方
  * (docs/value-encoding.md).
  *
- * パーツの式 (`core.expression` の値) と宣言型 (`core.type-ast` の値) はこの形のまま保存し,
- * stage1 や型チェッカーにもそのまま渡す. TypeScript 側は式の構造を別の形に変換しない.
+ * パーツの式と宣言型 (どちらも `core.expression` の値. 型は型の式) はこの形のまま保存し,
+ * 式は stage1 や型チェッカーにもそのまま渡す. 宣言型だけは型チェッカーの形 (`core.type-ast`) にして渡す
+ * (src/part_type_expression.ts).
  *
  * - 数値・文字列・真偽値: JSON / CBOR の整数・文字列・真偽値
  * - リスト: 配列

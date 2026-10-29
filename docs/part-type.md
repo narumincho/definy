@@ -10,11 +10,11 @@ definy では「型も式である」という思想に基づき、パーツの�
 
 ## 対応する型と式
 
-パーツの型 (`partType`) は `core.type-ast` の値 ([value-encoding.md](value-encoding.md)) で、
-型の式 (型パーツの宣言と同じ `core.expression` の `type_*` の値) と
-[src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts) で相互変換できる。
+パーツの型は型パーツの宣言と同じ型の式 (`core.expression` の `type_*` などの値) で書き, seed と CAS にもその形で置く
+([type-expression.md](type-expression.md))。TypeScript の中 (`partType`) と型チェッカーは `core.type-ast` の値で扱い,
+[src/part_type_expression.ts](../src/part_type_expression.ts) で相互変換する。
 
-| `partType` (`core.type-ast`)                                     | 型の式                                                                          | 説明                                                                                       |
+| `partType` (`core.type-ast`)                                     | 型の式 (seed, CAS)                                                              | 説明                                                                                       |
 | :--------------------------------------------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |
 | `{"#number": null}` / `{"#string": null}` / `{"#boolean": null}` | `{"#type_number": null}` / `{"#type_string": null}` / `{"#type_boolean": null}` | 64 ビット数値型・文字列型・真偽値型                                                        |
 | `{"#secret": null}`                                              | `{"#type_secret": null}`                                                        | シークレット ([secret.md](secret.md))                                                      |
@@ -23,9 +23,9 @@ definy では「型も式である」という思想に基づき、パーツの�
 | `{"#record": [{key, field_type}]}`                               | `{"#type_record": [{key, value}]}`                                              | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
 | `{"#union": [{tag, payload_type: option}]}`                      | `{"#type_union": [{tag, payload_type: option}]}`                                | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
 | `{"#reference": {part_hash: ID}}`                                | `{"#part_reference": {part_definition_event_hash: ID}}`                         | 定義済み型パーツの参照                                                                     |
-| `{"#code": T}`                                                   | `{"#type_code": {value_type: T}}` (エディタの中だけ)                            | quote した式の型 `Code<T>` ([quote.md](quote.md))                                          |
-| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言). 型引数の型 ([type-arguments.md](type-arguments.md))               |
-| `{"#parameter": "T"}`                                            | `{"#type_parameter": "T"}` (エディタの中だけ)                                   | 関数の型の型引数 `T` の参照                                                                |
+| `{"#code": T}`                                                   | `{"#type_code": {value_type: T}}`                                               | quote した式の型 `Code<T>` ([quote.md](quote.md))                                          |
+| `{"#type": null}`                                                | `{"#type_type": null}`                                                          | 型パーツ (式が型の宣言). 型引数の型 ([type-arguments.md](type-arguments.md))               |
+| `{"#parameter": "T"}`                                            | `{"#type_parameter": "T"}`                                                      | 関数の型の型引数 `T` の参照                                                                |
 | `{"#apply": {part_hash, arguments: [{name, type}]}}`             | `{"#call": {function: part_reference, arguments: [{name, value}]}}`             | 型を返すパーツの呼び出し `core.option(T: number)`                                          |
 | `null`                                                           | `null`                                                                          | 型指定なし                                                                                 |
 

@@ -15,7 +15,7 @@
     {
       "name": "wasi.datetime",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -31,7 +31,7 @@
     {
       "name": "wasi.wall-clock",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -47,7 +47,7 @@
     {
       "name": "wasi.monotonic-clock",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -63,7 +63,7 @@
     {
       "name": "wasi.random",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -79,29 +79,29 @@
     {
       "name": "clock-now",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "clock",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "now",
-                    "field_type": {
-                      "#function": {
+                    "value": {
+                      "#type_function": {
                         "parameters": [],
                         "return_type": {
-                          "#record": [
+                          "#type_record": [
                             {
                               "key": "seconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             },
                             {
                               "key": "nanoseconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             }
                           ]
@@ -114,17 +114,17 @@
             }
           ],
           "return_type": {
-            "#record": [
+            "#type_record": [
               {
                 "key": "seconds",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               },
               {
                 "key": "nanoseconds",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               }
             ]
@@ -170,19 +170,19 @@
     {
       "name": "monotonic-now",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "clock",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "now",
-                    "field_type": {
-                      "#function": {
+                    "value": {
+                      "#type_function": {
                         "parameters": [],
                         "return_type": {
-                          "#number": null
+                          "#type_number": null
                         }
                       }
                     }
@@ -192,7 +192,7 @@
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -235,19 +235,19 @@
     {
       "name": "random-u64",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "random",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "get_random_u64",
-                    "field_type": {
-                      "#function": {
+                    "value": {
+                      "#type_function": {
                         "parameters": [],
                         "return_type": {
-                          "#number": null
+                          "#type_number": null
                         }
                       }
                     }
@@ -257,7 +257,7 @@
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -300,29 +300,29 @@
     {
       "name": "clock-get-seconds",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "clock",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "now",
-                    "field_type": {
-                      "#function": {
+                    "value": {
+                      "#type_function": {
                         "parameters": [],
                         "return_type": {
-                          "#record": [
+                          "#type_record": [
                             {
                               "key": "seconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             },
                             {
                               "key": "nanoseconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             }
                           ]
@@ -335,7 +335,7 @@
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -383,29 +383,29 @@
     {
       "name": "clock-is-expired",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "clock",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "now",
-                    "field_type": {
-                      "#function": {
+                    "value": {
+                      "#type_function": {
                         "parameters": [],
                         "return_type": {
-                          "#record": [
+                          "#type_record": [
                             {
                               "key": "seconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             },
                             {
                               "key": "nanoseconds",
-                              "field_type": {
-                                "#number": null
+                              "value": {
+                                "#type_number": null
                               }
                             }
                           ]
@@ -419,12 +419,12 @@
             {
               "name": "deadline",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#boolean": null
+            "#type_boolean": null
           }
         }
       },
@@ -500,7 +500,7 @@
     {
       "name": "outgoing-request",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -594,7 +594,7 @@
     {
       "name": "incoming-response",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -659,7 +659,7 @@
     {
       "name": "http-result",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -699,7 +699,7 @@
     {
       "name": "io",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {

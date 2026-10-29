@@ -15,7 +15,7 @@
     {
       "name": "cloudflare-workers-runtime-script",
       "part_type": {
-        "#string": null
+        "#type_string": null
       },
       "description": [
         {
@@ -34,23 +34,23 @@
     {
       "name": "cloudflare-workers-script-upload-body",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "wasm",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -209,23 +209,23 @@
     {
       "name": "json-string-after",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "json",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "pattern",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -519,23 +519,23 @@
     {
       "name": "json-string-field",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "json",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -767,7 +767,7 @@
     {
       "name": "cloudflare-api-token",
       "part_type": {
-        "#secret": null
+        "#type_secret": null
       },
       "description": [
         {
@@ -792,227 +792,229 @@
     {
       "name": "deploy-to-cloudflare-workers",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "worker_name",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "api_token",
               "type": {
-                "#secret": null
+                "#type_secret": null
               }
             },
             {
               "name": "handler",
               "type": {
-                "#code": {
-                  "#function": {
-                    "parameters": [
-                      {
-                        "name": "req",
-                        "type": {
-                          "#record": [
-                            {
-                              "key": "method",
-                              "field_type": {
-                                "#string": null
-                              }
-                            },
-                            {
-                              "key": "url",
-                              "field_type": {
-                                "#string": null
-                              }
-                            },
-                            {
-                              "key": "headers",
-                              "field_type": {
-                                "#list": {
-                                  "item_type": {
-                                    "#record": [
-                                      {
-                                        "key": "name",
-                                        "field_type": {
-                                          "#string": null
-                                        }
-                                      },
-                                      {
-                                        "key": "value",
-                                        "field_type": {
-                                          "#string": null
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              }
-                            },
-                            {
-                              "key": "body",
-                              "field_type": {
-                                "#record": [
-                                  {
-                                    "key": "initialState",
-                                    "field_type": {
-                                      "#number": null
-                                    }
-                                  },
-                                  {
-                                    "key": "next",
-                                    "field_type": {
-                                      "#function": {
-                                        "parameters": [
-                                          {
-                                            "name": "state",
-                                            "type": {
-                                              "#number": null
-                                            }
-                                          }
-                                        ],
-                                        "return_type": {
-                                          "#union": [
-                                            {
-                                              "tag": "yield",
-                                              "payload_type": {
-                                                "#some": {
-                                                  "#record": [
-                                                    {
-                                                      "key": "chunk",
-                                                      "field_type": {
-                                                        "#list": {
-                                                          "item_type": {
-                                                            "#number": null
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "key": "nextState",
-                                                      "field_type": {
-                                                        "#number": null
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "tag": "done",
-                                              "payload_type": {
-                                                "#none": null
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    ],
-                    "return_type": {
-                      "#record": [
+                "#type_code": {
+                  "value_type": {
+                    "#type_function": {
+                      "parameters": [
                         {
-                          "key": "status",
-                          "field_type": {
-                            "#number": null
-                          }
-                        },
-                        {
-                          "key": "headers",
-                          "field_type": {
-                            "#list": {
-                              "item_type": {
-                                "#record": [
-                                  {
-                                    "key": "name",
-                                    "field_type": {
-                                      "#string": null
-                                    }
-                                  },
-                                  {
-                                    "key": "value",
-                                    "field_type": {
-                                      "#string": null
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "key": "body",
-                          "field_type": {
-                            "#record": [
+                          "name": "req",
+                          "type": {
+                            "#type_record": [
                               {
-                                "key": "initialState",
-                                "field_type": {
-                                  "#number": null
+                                "key": "method",
+                                "value": {
+                                  "#type_string": null
                                 }
                               },
                               {
-                                "key": "next",
-                                "field_type": {
-                                  "#function": {
-                                    "parameters": [
-                                      {
-                                        "name": "state",
-                                        "type": {
-                                          "#number": null
-                                        }
-                                      }
-                                    ],
-                                    "return_type": {
-                                      "#union": [
+                                "key": "url",
+                                "value": {
+                                  "#type_string": null
+                                }
+                              },
+                              {
+                                "key": "headers",
+                                "value": {
+                                  "#type_list": {
+                                    "item_type": {
+                                      "#type_record": [
                                         {
-                                          "tag": "yield",
-                                          "payload_type": {
-                                            "#some": {
-                                              "#record": [
-                                                {
-                                                  "key": "chunk",
-                                                  "field_type": {
-                                                    "#list": {
-                                                      "item_type": {
-                                                        "#number": null
-                                                      }
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "nextState",
-                                                  "field_type": {
-                                                    "#number": null
-                                                  }
-                                                }
-                                              ]
-                                            }
+                                          "key": "name",
+                                          "value": {
+                                            "#type_string": null
                                           }
                                         },
                                         {
-                                          "tag": "done",
-                                          "payload_type": {
-                                            "#none": null
+                                          "key": "value",
+                                          "value": {
+                                            "#type_string": null
                                           }
                                         }
                                       ]
                                     }
                                   }
                                 }
+                              },
+                              {
+                                "key": "body",
+                                "value": {
+                                  "#type_record": [
+                                    {
+                                      "key": "initialState",
+                                      "value": {
+                                        "#type_number": null
+                                      }
+                                    },
+                                    {
+                                      "key": "next",
+                                      "value": {
+                                        "#type_function": {
+                                          "parameters": [
+                                            {
+                                              "name": "state",
+                                              "type": {
+                                                "#type_number": null
+                                              }
+                                            }
+                                          ],
+                                          "return_type": {
+                                            "#type_union": [
+                                              {
+                                                "tag": "yield",
+                                                "payload_type": {
+                                                  "#some": {
+                                                    "#type_record": [
+                                                      {
+                                                        "key": "chunk",
+                                                        "value": {
+                                                          "#type_list": {
+                                                            "item_type": {
+                                                              "#type_number": null
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "key": "nextState",
+                                                        "value": {
+                                                          "#type_number": null
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "tag": "done",
+                                                "payload_type": {
+                                                  "#none": null
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
                               }
                             ]
                           }
                         }
-                      ]
+                      ],
+                      "return_type": {
+                        "#type_record": [
+                          {
+                            "key": "status",
+                            "value": {
+                              "#type_number": null
+                            }
+                          },
+                          {
+                            "key": "headers",
+                            "value": {
+                              "#type_list": {
+                                "item_type": {
+                                  "#type_record": [
+                                    {
+                                      "key": "name",
+                                      "value": {
+                                        "#type_string": null
+                                      }
+                                    },
+                                    {
+                                      "key": "value",
+                                      "value": {
+                                        "#type_string": null
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "key": "body",
+                            "value": {
+                              "#type_record": [
+                                {
+                                  "key": "initialState",
+                                  "value": {
+                                    "#type_number": null
+                                  }
+                                },
+                                {
+                                  "key": "next",
+                                  "value": {
+                                    "#type_function": {
+                                      "parameters": [
+                                        {
+                                          "name": "state",
+                                          "type": {
+                                            "#type_number": null
+                                          }
+                                        }
+                                      ],
+                                      "return_type": {
+                                        "#type_union": [
+                                          {
+                                            "tag": "yield",
+                                            "payload_type": {
+                                              "#some": {
+                                                "#type_record": [
+                                                  {
+                                                    "key": "chunk",
+                                                    "value": {
+                                                      "#type_list": {
+                                                        "item_type": {
+                                                          "#type_number": null
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "nextState",
+                                                    "value": {
+                                                      "#type_number": null
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "tag": "done",
+                                            "payload_type": {
+                                              "#none": null
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
                     }
                   }
                 }
@@ -1020,8 +1022,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "wasi.io"
               }
             }
@@ -2487,7 +2489,7 @@
     {
       "name": "json",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -2582,7 +2584,7 @@
     {
       "name": "stored-event",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -2653,7 +2655,7 @@
     {
       "name": "service-response",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -2689,7 +2691,7 @@
     {
       "name": "service-io",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -3005,13 +3007,13 @@
     {
       "name": "stored-event-json",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "event",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.stored-event"
                   }
                 }
@@ -3019,8 +3021,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.json"
               }
             }
@@ -3337,15 +3339,15 @@
     {
       "name": "branch-latest-event-hashes",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "branches",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "core.branch-summary"
                       }
                     }
@@ -3356,14 +3358,14 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#string": null
+                "#type_string": null
               }
             }
           }
@@ -3542,15 +3544,15 @@
     {
       "name": "branch-items-json",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "branches",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "core.branch-summary"
                       }
                     }
@@ -3561,9 +3563,9 @@
             {
               "name": "events",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#union": [
+                    "#type_union": [
                       {
                         "tag": "none",
                         "payload_type": {
@@ -3574,8 +3576,8 @@
                         "tag": "some",
                         "payload_type": {
                           "#some": {
-                            "#reference": {
-                              "part_hash": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
                                 "$part": "definy.stored-event"
                               }
                             }
@@ -3590,15 +3592,15 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -4081,13 +4083,13 @@
     {
       "name": "get-project-branches",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "request",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -4095,8 +4097,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -4343,17 +4345,17 @@
     {
       "name": "handle-rpc",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "method",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -4364,13 +4366,13 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#function": {
+                    "#type_function": {
                       "parameters": [
                         {
                           "name": "request",
                           "type": {
-                            "#reference": {
-                              "part_hash": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
                                 "$part": "definy.json"
                               }
                             }
@@ -4378,8 +4380,8 @@
                         }
                       ],
                       "return_type": {
-                        "#reference": {
-                          "part_hash": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
                             "$part": "definy.service-io"
                           }
                         }
@@ -4673,7 +4675,7 @@
     {
       "name": "content-item",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -4705,25 +4707,25 @@
     {
       "name": "json-fields-get",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "fields",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#record": [
+                    "#type_record": [
                       {
                         "key": "key",
-                        "field_type": {
-                          "#string": null
+                        "value": {
+                          "#type_string": null
                         }
                       },
                       {
                         "key": "value",
-                        "field_type": {
-                          "#reference": {
-                            "part_hash": {
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
                               "$part": "definy.json"
                             }
                           }
@@ -4737,18 +4739,18 @@
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -4759,8 +4761,8 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "definy.json"
                       }
                     }
@@ -5012,13 +5014,13 @@
     {
       "name": "json-get",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -5027,12 +5029,12 @@
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -5043,8 +5045,8 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "definy.json"
                       }
                     }
@@ -5158,13 +5160,13 @@
     {
       "name": "json-get-string",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -5173,12 +5175,12 @@
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -5189,7 +5191,7 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#string": null
+                    "#type_string": null
                   }
                 }
               }
@@ -5349,13 +5351,13 @@
     {
       "name": "json-get-number",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -5364,12 +5366,12 @@
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -5380,7 +5382,7 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#number": null
+                    "#type_number": null
                   }
                 }
               }
@@ -5540,15 +5542,15 @@
     {
       "name": "json-strings",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "items",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "definy.json"
                       }
                     }
@@ -5559,14 +5561,14 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#string": null
+                "#type_string": null
               }
             }
           }
@@ -5772,13 +5774,13 @@
     {
       "name": "json-get-strings",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -5787,12 +5789,12 @@
             {
               "name": "key",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#union": [
+            "#type_union": [
               {
                 "tag": "none",
                 "payload_type": {
@@ -5803,9 +5805,9 @@
                 "tag": "some",
                 "payload_type": {
                   "#some": {
-                    "#list": {
+                    "#type_list": {
                       "item_type": {
-                        "#string": null
+                        "#type_string": null
                       }
                     }
                   }
@@ -5989,14 +5991,14 @@
     {
       "name": "json-string-array",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "items",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#string": null
+                    "#type_string": null
                   }
                 }
               }
@@ -6004,15 +6006,15 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -6201,17 +6203,17 @@
     {
       "name": "is-space",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "character",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#boolean": null
+            "#type_boolean": null
           }
         }
       },
@@ -6290,23 +6292,23 @@
     {
       "name": "string-trim-start-index",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -6551,29 +6553,29 @@
     {
       "name": "string-trim-end-index",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "start",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "end",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -6814,17 +6816,17 @@
     {
       "name": "string-trim",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "value",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#string": null
+            "#type_string": null
           }
         }
       },
@@ -6970,17 +6972,17 @@
     {
       "name": "rpc-error-status",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "code",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -7075,24 +7077,24 @@
     {
       "name": "rpc-error",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "code",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "message",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -7246,15 +7248,15 @@
     {
       "name": "stored-events-json",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "events",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#reference": {
-                      "part_hash": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
                         "$part": "definy.stored-event"
                       }
                     }
@@ -7265,15 +7267,15 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -7466,13 +7468,13 @@
     {
       "name": "content-item-json",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "item",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.content-item"
                   }
                 }
@@ -7480,8 +7482,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.json"
               }
             }
@@ -7598,14 +7600,14 @@
     {
       "name": "found-content-items-json",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "items",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#union": [
+                    "#type_union": [
                       {
                         "tag": "none",
                         "payload_type": {
@@ -7616,8 +7618,8 @@
                         "tag": "some",
                         "payload_type": {
                           "#some": {
-                            "#reference": {
-                              "part_hash": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
                                 "$part": "definy.content-item"
                               }
                             }
@@ -7632,15 +7634,15 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -7870,13 +7872,13 @@
     {
       "name": "get-event",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "request",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -7884,8 +7886,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -8418,13 +8420,13 @@
     {
       "name": "get-events",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "request",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -8432,8 +8434,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -9019,13 +9021,13 @@
     {
       "name": "get-content",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "request",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -9033,8 +9035,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -9753,13 +9755,13 @@
     {
       "name": "check-missing-hashes",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "request",
               "type": {
-                "#reference": {
-                  "part_hash": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
                     "$part": "definy.json"
                   }
                 }
@@ -9767,8 +9769,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "definy.service-io"
               }
             }
@@ -9988,9 +9990,9 @@
     {
       "name": "invalid-signature-test-signed-account",
       "part_type": {
-        "#list": {
+        "#type_list": {
           "item_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -10660,9 +10662,9 @@
     {
       "name": "invalid-signature-test-signed-commit",
       "part_type": {
-        "#list": {
+        "#type_list": {
           "item_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -12769,11 +12771,11 @@
     {
       "name": "invalid-signature-test-events",
       "part_type": {
-        "#list": {
+        "#type_list": {
           "item_type": {
-            "#list": {
+            "#type_list": {
               "item_type": {
-                "#number": null
+                "#type_number": null
               }
             }
           }
@@ -13067,22 +13069,22 @@
     {
       "name": "submit-events-expect-rejected-from",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "base_url",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "events",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#list": {
+                    "#type_list": {
                       "item_type": {
-                        "#number": null
+                        "#type_number": null
                       }
                     }
                   }
@@ -13092,25 +13094,25 @@
             {
               "name": "index",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             },
             {
               "name": "report",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "failures",
               "type": {
-                "#number": null
+                "#type_number": null
               }
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "wasi.io"
               }
             }
@@ -14126,22 +14128,22 @@
     {
       "name": "submit-events-expect-rejected",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "base_url",
               "type": {
-                "#string": null
+                "#type_string": null
               }
             },
             {
               "name": "events",
               "type": {
-                "#list": {
+                "#type_list": {
                   "item_type": {
-                    "#list": {
+                    "#type_list": {
                       "item_type": {
-                        "#number": null
+                        "#type_number": null
                       }
                     }
                   }
@@ -14150,8 +14152,8 @@
             }
           ],
           "return_type": {
-            "#reference": {
-              "part_hash": {
+            "#part_reference": {
+              "part_definition_event_hash": {
                 "$part": "wasi.io"
               }
             }
@@ -14233,8 +14235,8 @@
     {
       "name": "check-invalid-signatures-rejected",
       "part_type": {
-        "#reference": {
-          "part_hash": {
+        "#part_reference": {
+          "part_definition_event_hash": {
             "$part": "wasi.io"
           }
         }
