@@ -31,6 +31,7 @@ import {
   some,
   variant,
   variantOf,
+  variantPayload,
 } from "./definy_value.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
@@ -85,7 +86,14 @@ export type SelfHostedTypeCheckOutcome =
 
 /** 型パーツ (宣言型が `core.type-ast` の `type`) か */
 export function isTypePartType(partType: unknown): boolean {
-  return isVariant(partType, "type");
+  // 型引数を取る型 (`core.option: (T: type) -> type`) も型パーツ (`core.is-type-part-type`)
+  return (
+    isVariant(partType, "type") ||
+    isVariant(
+      field(variantPayload(partType, "function"), "return_type"),
+      "type",
+    )
+  );
 }
 
 /** 検査できないパーツ (未入力のある式・型の無いパーツ・コンパイラ組み込み) */
@@ -470,6 +478,19 @@ export function formatTypeAst(
     case "reference": {
       const partId = String(field(payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
+    }
+    case "parameter":
+      return String(payload);
+    case "apply": {
+      const partId = String(field(payload, "part_hash"));
+      return `${resolveName(partId) ?? partId.slice(0, 8)}(${items(
+        field(payload, "arguments"),
+      )
+        .map(
+          (argument) =>
+            `${String(field(argument, "name"))}: ${format(field(argument, "type"))}`,
+        )
+        .join(", ")})`;
     }
     case "builtin": {
       // 組み込みの型は引数の型を持たないので, 引数名だけ出す (`builtin less_than(left, right)`)

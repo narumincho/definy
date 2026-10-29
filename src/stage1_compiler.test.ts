@@ -228,7 +228,7 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
         case "builtin":
         case "plus":
           return { "#builtin": id };
-        // 型パーツの宣言式と未入力のある式は stage1 に渡さない
+        // 未入力のある式は stage1 に渡さない. 型パーツは宣言式のまま渡す (実行時には参照の値になる)
         case "type":
           return { "#type_number": null };
         case "unfinished":
@@ -240,8 +240,9 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     expect(parts).toEqual([
       { id: "builtin", expression: { "#builtin": "builtin" } },
       { id: "plus", expression: { "#builtin": "plus" } },
+      { id: "type", expression: { "#type_number": null } },
     ]);
-    expect(unresolved).toEqual(["unfinished", "type", "missing"]);
+    expect(unresolved).toEqual(["unfinished", "missing"]);
   });
 
   it("未入力のある式はコンパイルしない", () => {

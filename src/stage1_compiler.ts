@@ -397,8 +397,8 @@ export function collectPartReferenceIds(
  * 式が (参照先をたどって) 参照するパーツを集める.
  * 末尾から取り出す LIFO の順序。stage1 を作ったときと同じ順序で, `wasm/stage1.wasm` の再生成でバイト一致させるために必要。
  * `resolve` は ID からパーツの式 (`core.expression` の値) を返す. 見つからない・式を持たないときは `undefined`.
- * 見つからない・式を持たない・型パーツの宣言式・未入力のあるパーツの ID は `unresolved` に入れる
- * (stage1 はその参照を unreachable にコンパイルする).
+ * 見つからない・式を持たない・未入力のあるパーツの ID は `unresolved` に入れる
+ * (stage1 はその参照を unreachable にコンパイルする). 型パーツは宣言式のまま入れるが, その先はたどらない.
  * コンパイラ組み込みのパーツ (`core.plus` など) も式 (`core.expression` の `builtin`) のまま入れる
  */
 export function collectReferencedParts(
@@ -420,12 +420,14 @@ export function collectReferencedParts(
     }
     seen.add(id);
     const partExpression = resolve(id);
-    if (
-      partExpression == null ||
-      isTypeDeclaration(partExpression) ||
-      containsHole(partExpression)
-    ) {
+    if (partExpression == null || containsHole(partExpression)) {
       unresolved.push(id);
+      continue;
+    }
+    // 型パーツ (式が型の宣言) は実行時には参照のままの値になる (`core.type-expression-construct`) ので,
+    // 宣言の中で参照するパーツはたどらない
+    if (isTypeDeclaration(partExpression)) {
+      parts.push({ id, expression: partExpression });
       continue;
     }
     queue = [...queue, ...collectPartReferenceIds(partExpression)];

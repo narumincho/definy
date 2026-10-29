@@ -4153,6 +4153,434 @@
         }
       },
       "expected": true
+    },
+    {
+      "name": "list-map takes the item types as arguments",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-map"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "U",
+              "value": {
+                "#type_boolean": null
+              }
+            },
+            {
+              "name": "f",
+              "value": {
+                "#function": {
+                  "parameters": [
+                    {
+                      "parameter_id": 0,
+                      "parameter_name": "item"
+                    }
+                  ],
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 2
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "xs",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "list-fold takes the item and result types as arguments",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-fold"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "A",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "reducer",
+              "value": {
+                "#function": {
+                  "parameters": [
+                    {
+                      "parameter_id": 0,
+                      "parameter_name": "acc"
+                    },
+                    {
+                      "parameter_id": 1,
+                      "parameter_name": "item"
+                    }
+                  ],
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.plus"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "init",
+              "value": {
+                "#number": 0
+              }
+            },
+            {
+              "name": "xs",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": 6
+    },
+    {
+      "name": "a type expression is a value",
+      "expression": {
+        "#type_list": {
+          "item_type": {
+            "#type_number": null
+          }
+        }
+      },
+      "expected": {
+        "#type_list": {
+          "item_type": {
+            "#type_number": null
+          }
+        }
+      }
+    },
+    {
+      "name": "a type part that takes a type argument returns a type value",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.option"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_string": null
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#type_union": [
+          {
+            "tag": "none",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "some",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "a reference to a type part is a reference value, equal only to the same part",
+      "expression": {
+        "#list": [
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-env"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.option"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "T",
+                          "value": {
+                            "#type_number": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "expected": [
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "a type parameter can be used in a type expression in the body",
+      "expression": {
+        "#let": {
+          "variable_id": 0,
+          "variable_name": "wrap",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "T"
+                }
+              ],
+              "body": {
+                "#type_record": [
+                  {
+                    "key": "value",
+                    "value": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arguments": [
+                {
+                  "name": "T",
+                  "value": {
+                    "#type_list": {
+                      "item_type": {
+                        "#type_number": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": {
+        "#type_record": [
+          {
+            "key": "value",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_number": null
+                }
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

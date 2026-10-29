@@ -1720,6 +1720,80 @@
         {
           "type": "object",
           "required": [
+            "#parameter"
+          ],
+          "properties": {
+            "#parameter": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#apply"
+          ],
+          "properties": {
+            "#apply": {
+              "type": "object",
+              "required": [
+                "part_hash",
+                "arguments"
+              ],
+              "properties": {
+                "part_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "arguments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "type"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "type": {
+                        "$ref": "#/definitions/core.type-ast"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#secret"
           ],
           "properties": {
@@ -2671,7 +2745,8 @@
       "type": "object",
       "required": [
         "variables",
-        "parts"
+        "parts",
+        "type_parameters"
       ],
       "properties": {
         "variables": {
@@ -2714,6 +2789,32 @@
               },
               "part_type": {
                 "$ref": "#/definitions/core.type-ast"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "type_parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "parameter_id",
+              "parameter_name"
+            ],
+            "properties": {
+              "parameter_id": {
+                "type": "integer"
+              },
+              "parameter_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/PartPlaceholder"
+                  }
+                ]
               }
             },
             "additionalProperties": false

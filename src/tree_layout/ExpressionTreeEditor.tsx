@@ -75,6 +75,7 @@ import {
 const NO_EXPECTED_VARIANTS = expectedVariantsFromTypeAst(null);
 import { type DefinyValue } from "../stage1_compiler.ts";
 import { callParameterNamesOf } from "./part_type.ts";
+import { isVariant } from "../definy_value.ts";
 
 /** 式にマウスを置いてからホバーの表示を出すまでの時間 */
 const HOVER_DELAY_MS = 350;
@@ -318,6 +319,7 @@ export function ExpressionTreeEditor({
     parts,
     partNames,
     expectedType,
+    expectsType: isVariant(expectedTypeAst, "type"),
     patternVariants,
     expectedVariants,
     setSelectedPath,

@@ -15,6 +15,8 @@
  * | `record([{ key, field_type }])`                | `type_record([{ key, value }])`                            |
  * | `union([{ tag, payload_type }])`               | `type_union([{ tag, payload_type }])`                      |
  * | `reference({ part_hash })`                     | `part_reference({ part_definition_event_hash })`           |
+ * | `parameter(name)` (型引数)                      | `type_parameter(name)` (エディタの中だけ)                  |
+ * | `apply({ part_hash, arguments: [{ name, type }] })` | `call({ function: part_reference, arguments: [{ name, value }] })` |
  * | `builtin(name)` (組み込みの関数の型)            | `builtin(name)`                                            |
  * | `null` (型指定なし)                            | `null`                                                     |
  *
@@ -105,6 +107,18 @@ export function partTypeToExpression(partType: unknown): unknown {
       return variant("part_reference", {
         part_definition_event_hash: field(payload, "part_hash"),
       });
+    case "parameter":
+      return variant("type_parameter", payload);
+    case "apply":
+      return variant("call", {
+        function: variant("part_reference", {
+          part_definition_event_hash: field(payload, "part_hash"),
+        }),
+        arguments: arrayOf(field(payload, "arguments")).map((a) => ({
+          name: String(field(a, "name") ?? ""),
+          value: partTypeToExpression(field(a, "type")),
+        })),
+      });
     case "builtin":
       return variant("builtin", payload);
   }
@@ -164,6 +178,24 @@ export function expressionToPartType(expression: unknown): unknown {
       return variant("reference", {
         part_hash: field(payload, "part_definition_event_hash"),
       });
+    case "type_parameter":
+      return variant("parameter", payload);
+    case "call": {
+      const callee = variantPayload(
+        field(payload, "function"),
+        "part_reference",
+      );
+      if (callee === undefined) {
+        return null;
+      }
+      return variant("apply", {
+        part_hash: field(callee, "part_definition_event_hash"),
+        arguments: arrayOf(field(payload, "arguments")).map((a) => ({
+          name: String(field(a, "name") ?? ""),
+          type: expressionToPartType(field(a, "value")),
+        })),
+      });
+    }
     case "builtin":
       return variant("builtin", payload);
   }

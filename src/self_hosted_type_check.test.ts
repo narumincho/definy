@@ -371,6 +371,224 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("型引数は普通の引数で, 後ろの引数の型と戻り値の型に入る (Zig / Idris2 と同じ)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const optionId = await deriveModulePartId(coreModuleId, "option");
+    const typeType = { "#type": null };
+    const parameter = (name: string) => ({ "#parameter": name });
+    const apply = (
+      partHash: string,
+      args: Readonly<Record<string, unknown>>,
+    ) => ({
+      "#apply": {
+        part_hash: partHash,
+        arguments: Object.entries(args).map(([name, type]) => ({ name, type })),
+      },
+    });
+    const listOf = (itemType: unknown) => ({
+      "#list": { item_type: itemType },
+    });
+    const variantOf = (tag: string, payload?: unknown) => ({
+      "#variant": {
+        tag,
+        payload:
+          payload === undefined ? { "#none": null } : { "#some": payload },
+        type_part: { "#none": null },
+      },
+    });
+    const lessThanTwo = {
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: await coreCall("less-than", {
+          left: { "#variable": { variable_id: 1 } },
+          right: { "#number": 2 },
+        }),
+      },
+    };
+    const mapLessThanTwo = async (T: unknown, U: unknown) =>
+      coreCall("list-map", {
+        T,
+        U,
+        f: lessThanTwo,
+        xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+      });
+    // ユーザーが書く型引数を取る型パーツ: pair(A: type, B: type) = { first: A, second: B }
+    const pairId = "test-pair";
+    const pairEnv = [
+      ...env,
+      {
+        partId: pairId,
+        partType: {
+          "#function": {
+            parameters: [
+              { name: "A", type: typeType },
+              { name: "B", type: typeType },
+            ],
+            return_type: typeType,
+          },
+        },
+        typeDeclaration: {
+          "#function": {
+            parameters: [
+              { parameter_id: 0, parameter_name: "A" },
+              { parameter_id: 1, parameter_name: "B" },
+            ],
+            body: {
+              "#type_record": [
+                { key: "first", value: { "#variable": { variable_id: 0 } } },
+                { key: "second", value: { "#variable": { variable_id: 1 } } },
+              ],
+            },
+          },
+        },
+      },
+    ];
+    // (T: type, x: T) -> T
+    const identityType = {
+      "#function": {
+        parameters: [
+          { name: "T", type: typeType },
+          { name: "x", type: parameter("T") },
+        ],
+        return_type: parameter("T"),
+      },
+    };
+    const identity = (body: unknown) => ({
+      "#function": {
+        parameters: [
+          { parameter_id: 0, parameter_name: "T" },
+          { parameter_id: 1, parameter_name: "x" },
+        ],
+        body,
+      },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // list-map(T: number, U: boolean, ...) は List<boolean>
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#type_number": null },
+            { "#type_boolean": null },
+          ),
+        },
+        {
+          partType: listOf({ "#number": null }),
+          expression: await mapLessThanTwo(
+            { "#type_number": null },
+            { "#type_boolean": null },
+          ),
+        },
+        // xs は List<T> なので T: string なら [1, 2] は渡せない
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#type_string": null },
+            { "#type_boolean": null },
+          ),
+        },
+        // 型引数には型を書く
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#number": 1 },
+            { "#type_boolean": null },
+          ),
+        },
+        // 型引数を取る型パーツ core.option
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("some", { "#number": 1 }),
+        },
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("none"),
+        },
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("some", { "#string": "a" }),
+        },
+        // 型引数を取る関数. 本体では T は T とだけ等しい
+        {
+          partType: identityType,
+          expression: identity({ "#variable": { variable_id: 1 } }),
+        },
+        { partType: identityType, expression: identity({ "#number": 1 }) },
+        // 型の式の中で型パーツを呼ぶ: List<option(T: number)>
+        {
+          partType: { "#type": null },
+          expression: {
+            "#type_list": {
+              item_type: {
+                "#call": {
+                  function: {
+                    "#part_reference": { part_definition_event_hash: optionId },
+                  },
+                  arguments: [{ name: "T", value: { "#type_number": null } }],
+                },
+              },
+            },
+          },
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+      "type_error",
+      "ok",
+      "ok",
+      "type_error",
+      "ok",
+      "type_error",
+      "ok",
+    ]);
+    expect(outcomes[1]).toMatchObject({
+      tag: "type_mismatch",
+      detail: {
+        expected: listOf({ "#number": null }),
+        actual: listOf({ "#boolean": null }),
+      },
+    });
+    const pairOutcomes = checkParts({
+      typeChecker,
+      parts: [
+        {
+          partType: apply(pairId, {
+            A: { "#number": null },
+            B: { "#string": null },
+          }),
+          expression: {
+            "#record": [
+              { key: "first", value: { "#number": 1 } },
+              { key: "second", value: { "#string": "a" } },
+            ],
+          },
+        },
+        {
+          partType: apply(pairId, {
+            B: { "#string": null },
+            A: { "#number": null },
+          }),
+          expression: {
+            "#record": [
+              { key: "first", value: { "#string": "a" } },
+              { key: "second", value: { "#string": "a" } },
+            ],
+          },
+        },
+      ],
+      env: pairEnv,
+    });
+    expect(pairOutcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+    ]);
+  }, 600_000);
+
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const mapperType = {
@@ -395,6 +613,8 @@ describe("self-hosted type check (stage1)", () => {
         "#function": {
           parameters: [{ parameter_id: 0, parameter_name: "f" }],
           body: await coreCall("list-map", {
+            T: { "#type_number": null },
+            U: { "#type_number": null },
             f,
             xs: { "#list": [{ "#number": 1 }] },
           }),

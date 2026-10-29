@@ -129,6 +129,22 @@ export function tryBuildControlOrTypeNode(
       }>;
       readonly return_type?: unknown;
     };
+    // 型が type の引数は型引数で, 関数の型の中 (ほかの引数の型と戻り値の型) から参照できる
+    const typeParameterNames = (fn.parameters ?? []).flatMap((parameter) =>
+      variantOf(parameter.type)?.tag === "type_type"
+        ? [String(parameter.name ?? "")]
+        : [],
+    );
+    const functionContext: ScopeContext =
+      typeParameterNames.length > 0
+        ? {
+            ...context,
+            typeParameters: [
+              ...(context.typeParameters ?? []),
+              ...typeParameterNames,
+            ],
+          }
+        : context;
     const parameterNodes = (fn.parameters ?? []).map(
       (parameter, index): LayoutNode => {
         const parameterPath = childPath(currentPath, {
@@ -145,7 +161,7 @@ export function tryBuildControlOrTypeNode(
               parameter.type,
               `${idPrefix}.p_${index}.type`,
               parameterPath,
-              context,
+              functionContext,
             ),
           ],
           computedWidth: 0,
@@ -172,7 +188,7 @@ export function tryBuildControlOrTypeNode(
               fn.return_type,
               `${idPrefix}.return.type`,
               returnPath,
-              context,
+              functionContext,
             ),
           ],
           computedWidth: 0,

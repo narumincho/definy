@@ -683,11 +683,13 @@ eval-value: expression -> env -> list<{ id: string, expression: expression }> ->
   `list<{ part_definition_event_hash: string, part_type: type-ast }>`
   - モジュール内のパーツ定義ハッシュと宣言型の対応関係を保持する環境。
 - `core.type-env`:
-  `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }> }`
-  - ローカル変数の静的スコープ束縛とモジュール内パーツ宣言型を統合した二層の型環境。
+  `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }>, type_parameters: list<{ parameter_id: number, parameter_name: string }> }`
+  - ローカル変数の静的スコープ束縛とモジュール内パーツ宣言型を統合した型環境。`type_parameters` はスコープにある型引数
+    (型が `type` の関数の引数. [type-arguments.md](type-arguments.md))。
 - `core.type-env-lookup`: `type-env -> number -> type-result`（変数の型を検索）
 - `core.type-env-extend`:
   `type-env -> number -> type-ast -> type-env`（変数の型束縛を追加）
+- `core.type-env-extend-parameter`: 関数の引数を足す。型が `type` の引数は `type_parameters` にも足す
 - `core.part-type-lookup`:
   `part-type-env -> string -> type-result`（パーツ宣言型を検索）
 - `core.type-env-lookup-part`:

@@ -24,7 +24,9 @@ definy では「型も式である」という思想に基づき、パーツの�
 | `{"#union": [{tag, payload_type: option}]}`                      | `{"#type_union": [{tag, payload_type: option}]}`                                | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
 | `{"#reference": {part_hash: ID}}`                                | `{"#part_reference": {part_definition_event_hash: ID}}`                         | 定義済み型パーツの参照                                                                     |
 | `{"#code": T}`                                                   | `{"#type_code": {value_type: T}}` (エディタの中だけ)                            | quote した式の型 `Code<T>` ([quote.md](quote.md))                                          |
-| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言)                                                                    |
+| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言). 型引数の型 ([type-arguments.md](type-arguments.md))               |
+| `{"#parameter": "T"}`                                            | `{"#type_parameter": "T"}` (エディタの中だけ)                                   | 関数の型の型引数 `T` の参照                                                                |
+| `{"#apply": {part_hash, arguments: [{name, type}]}}`             | `{"#call": {function: part_reference, arguments: [{name, value}]}}`             | 型を返すパーツの呼び出し `core.option(T: number)`                                          |
 | `null`                                                           | `null`                                                                          | 型指定なし                                                                                 |
 
 パーツの型はプロジェクトのコミット (`project_commit`) の各モジュールの各パーツ (`partType`) に入る。

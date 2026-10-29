@@ -86,6 +86,9 @@ export function tryBuildLiteralNode(
       return leaf(`secret ${String(field(payload, "label") ?? "")}`, "keyword");
     case "hole":
       return leaf("□", "identifier");
+    // 関数の型の型引数 (`T`) の参照 (エディタの中だけ. part_type.ts)
+    case "type_parameter":
+      return leaf(String(payload), "identifier");
   }
   // 型の式 (`type_number` など, 子を持たないもの) は `number` のように型の名前で出す
   if (tag.startsWith("type_") && payload === null) {

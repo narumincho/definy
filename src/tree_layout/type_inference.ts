@@ -127,6 +127,8 @@ export function getOptionValueForExpression(node: unknown): string | null {
     case "type_record":
     case "type_union":
       return `expr:type:${tag.slice("type_".length)}`;
+    case "type_parameter":
+      return `expr:type:parameter:${String(payload)}`;
     case "number":
       return "expr:number";
     case "float":

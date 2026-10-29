@@ -438,6 +438,56 @@
         }
       },
       {
+        "tag": "parameter",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "apply",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "part_hash",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "arguments",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "type",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
         "tag": "secret",
         "payload_type": {
           "#none": null

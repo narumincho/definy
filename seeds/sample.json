@@ -1490,6 +1490,12 @@
                                                                     "value": {
                                                                       "#list": []
                                                                     }
+                                                                  },
+                                                                  {
+                                                                    "key": "type_parameters",
+                                                                    "value": {
+                                                                      "#list": []
+                                                                    }
                                                                   }
                                                                 ]
                                                               }

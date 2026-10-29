@@ -52,6 +52,42 @@ describe("partType と型の式の相互変換", () => {
     });
   });
 
+  it("型引数と, 型引数を取る型パーツの適用を式にする", () => {
+    // (T: type, x: T) -> option(T: T)
+    const partType = {
+      "#function": {
+        parameters: [
+          { name: "T", type: { "#type": null } },
+          { name: "x", type: { "#parameter": "T" } },
+        ],
+        return_type: {
+          "#apply": {
+            part_hash: "option-id",
+            arguments: [{ name: "T", type: { "#parameter": "T" } }],
+          },
+        },
+      },
+    };
+    const expression = partTypeToExpression(partType);
+    expect(expression).toEqual({
+      "#type_function": {
+        parameters: [
+          { name: "T", type: { "#type_type": null } },
+          { name: "x", type: { "#type_parameter": "T" } },
+        ],
+        return_type: {
+          "#call": {
+            function: {
+              "#part_reference": { part_definition_event_hash: "option-id" },
+            },
+            arguments: [{ name: "T", value: { "#type_parameter": "T" } }],
+          },
+        },
+      },
+    });
+    expect(expressionToPartType(expression)).toEqual(partType);
+  });
+
   it("組み込みの関数の型 (型チェッカーが返す) も往復できる", () => {
     const builtin = { "#builtin": "less_than" };
     expect(partTypeToExpression(builtin)).toEqual({ "#builtin": "less_than" });

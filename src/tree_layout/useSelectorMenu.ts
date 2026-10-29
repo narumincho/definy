@@ -12,6 +12,7 @@ import {
   type PatternVariant,
 } from "./match_pattern.ts";
 import {
+  TYPE_SELECTOR_OPTIONS,
   buildSelectorOptions,
   filterAndRankOptions,
   highlightIndex,
@@ -35,6 +36,12 @@ import {
 
 type ExpectedVariants = ReturnType<typeof expectedVariantsFromTypeAst>;
 
+/** 値の式のエディタで書ける型の式の選択肢. `type` と `Code<T>` はパーツの型の行の中だけの式なので出さない */
+const TYPE_EXPRESSION_SELECTOR_OPTIONS = TYPE_SELECTOR_OPTIONS.filter(
+  (option) =>
+    option.value !== "expr:type:type" && option.value !== "expr:type:code",
+);
+
 export type UseSelectorMenuParams = {
   readonly mode: "expression" | "type";
   readonly editable: boolean;
@@ -44,6 +51,8 @@ export type UseSelectorMenuParams = {
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
   readonly expectedType: ExpectedType;
+  /** 選んだ位置で型 (`type` 型の値. 型引数など) を期待するか. そうなら型の選択肢を先に出す */
+  readonly expectsType?: boolean;
   /** 選んだ match のアームのパターンで選べるタグ (match の対象の型のタグ). 分からなければ `null` */
   readonly patternVariants: ReadonlyArray<PatternVariant> | null;
   /** 選んだ位置で期待する型から求めた Variant の選択肢の情報 ({@link expectedVariantsFromTypeAst}) */
@@ -81,6 +90,7 @@ export function useSelectorMenu({
   parts,
   partNames,
   expectedType,
+  expectsType = false,
   patternVariants,
   expectedVariants,
   setSelectedPath,
@@ -120,13 +130,11 @@ export function useSelectorMenu({
           variants: patternVariants,
         });
       }
-      const scopeVariables = findExpressionNode(
-        layoutRoot,
-        path,
-      )?.scopeVariables;
+      const expressionNode = findExpressionNode(layoutRoot, path);
       const options = buildSelectorOptions({
         mode,
-        scopeVariables,
+        scopeVariables: expressionNode?.scopeVariables,
+        typeParameters: expressionNode?.typeParameters,
         partOptions,
         variantOptions,
       });
@@ -139,11 +147,14 @@ export function useSelectorMenu({
         ...goToDefinitionOption(expression, path),
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
+        // 型引数の位置では型の式 (`number`, `List` など) を先に出す
+        ...(expectsType ? TYPE_EXPRESSION_SELECTOR_OPTIONS : []),
         ...options,
         ...clipboardSelectorOptions(),
       ];
     },
     [
+      expectsType,
       expression,
       layoutRoot,
       mode,

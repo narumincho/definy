@@ -24,6 +24,9 @@ import {
 
 const typeNumber = variant("type_number");
 
+/** 型のツリーエディタの型引数 (`T`) の選択肢の value の頭. 後ろに型引数の名前が付く */
+export const TYPE_PARAMETER_OPTION_PREFIX = "expr:type:parameter:";
+
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:number": typeNumber,
@@ -268,7 +271,8 @@ export function applySelection(
   if (
     expectedFunction !== undefined &&
     selectionValue !== "expr:hole" &&
-    !(selectionValue in TYPE_SELECTIONS)
+    !(selectionValue in TYPE_SELECTIONS) &&
+    !selectionValue.startsWith(TYPE_PARAMETER_OPTION_PREFIX)
   ) {
     return applySelectionInLambda(
       expr,
@@ -330,6 +334,11 @@ export function applySelection(
     ]);
   } else if (selectionValue in TYPE_SELECTIONS) {
     newSubExpr = TYPE_SELECTIONS[selectionValue];
+  } else if (selectionValue.startsWith(TYPE_PARAMETER_OPTION_PREFIX)) {
+    newSubExpr = variant(
+      "type_parameter",
+      selectionValue.slice(TYPE_PARAMETER_OPTION_PREFIX.length),
+    );
   } else if (selectionValue.startsWith("variant:")) {
     return updateExpressionAtPath(expr, path, (current) =>
       variantFromOptionValue(selectionValue, current),
