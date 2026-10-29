@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findSecretUsages, secretLiteralOf } from "./secret.ts";
+import { findSecretUsages, listSecrets, secretLiteralOf } from "./secret.ts";
 import type { PartSnapshot } from "./types.ts";
 
 const part = (partId: string, expression: unknown): PartSnapshot => ({
@@ -68,5 +68,44 @@ describe("シークレット", () => {
       "s1",
     );
     expect(usages.map((usage) => usage.partId)).toEqual(["deploy", "copy"]);
+  });
+});
+
+describe("シークレットの一覧", () => {
+  const secretPart = (partId: string, id: string, label: string) =>
+    part(partId, {
+      "#secret": { id, label, allowed_url_prefixes: ["https://a/"] },
+    });
+
+  it("シークレットのパーツと, 値を入れてあるシークレットを ID ごとにまとめて名前順に並べる", () => {
+    const items = listSecrets(
+      [
+        secretPart("b-token", "s-b", "B トークン"),
+        secretPart("a-token", "s-a", "A トークン"),
+        secretPart("a-token-copy", "s-a", "A トークン"),
+        part("other", { "#string": "x" }),
+      ],
+      {
+        "s-a": { label: "A トークン", value: "v" },
+        "s-gone": { label: "消えたパーツ", value: "w" },
+      },
+    );
+    expect(
+      items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        parts: item.parts.map((p) => p.partId),
+        stored: item.stored?.value,
+      })),
+    ).toEqual([
+      {
+        id: "s-a",
+        label: "A トークン",
+        parts: ["a-token", "a-token-copy"],
+        stored: "v",
+      },
+      { id: "s-b", label: "B トークン", parts: ["b-token"], stored: undefined },
+      { id: "s-gone", label: "消えたパーツ", parts: [], stored: "w" },
+    ]);
   });
 });

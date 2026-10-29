@@ -30,7 +30,7 @@
   | アカウント一覧     | `/accounts` | アカウントの一覧 (押すとアカウントのページ)                                              |
   | 設定               | `/settings` | 空                                                                                       |
   - 欄は今のページのパスで決める (`sidebarViewOf`, `src/sidebar_view.ts`). プロジェクト・モジュール・パーツ・パーツ一覧・履歴・新しいパーツのページはプロジェクト,
-    アカウントのページはアカウント一覧, About は設定. 状態は `sidebarView` (`src/state/useUiState.ts`)
+    アカウントのページはアカウント一覧, About とシークレット一覧 (`/settings/secrets`) は設定. 状態は `sidebarView` (`src/state/useUiState.ts`)
   - イベント詳細 (`/event/...`) はイベントの一覧からもプロジェクトの木のコミットからも開くので, 前の欄のままにする
     (最初に開いたページなら「イベント」). パーツ一覧 (`/parts`) とコミット履歴 (`/history`) はアクティビティバーから外したが,
     ページは残している (変更のページ `/parts?changes=only` は「コミットの追加」から, どちらもコマンドパレットから開ける)

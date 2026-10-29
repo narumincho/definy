@@ -121,6 +121,14 @@ export default function SettingsPage(): JSX.Element {
             "API-ĵetonoj kaj aliaj sekretoj estas enigataj en la paĝo de ĉiu sekreta parto (ekzemple definy.cloudflare-api-token) kaj konservataj nur en ĉi tiu retumilo.",
           )}
         </p>
+        <Link href="/settings/secrets" className="settings-secrets-link">
+          {label(
+            language,
+            "List of secrets →",
+            "シークレットの一覧 →",
+            "Listo de sekretoj →",
+          )}
+        </Link>
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <input
             type="checkbox"

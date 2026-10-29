@@ -37,6 +37,14 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
   シークレットのパーツのページの「使用履歴」に出す
 - 「使用箇所」は, そのシークレットのパーツを参照しているパーツと, 同じ ID のリテラルを書いているパーツ (`src/secret.ts`)
 
+## 一覧 (設定 → シークレット)
+
+- `/settings/secrets` (`pages/settings/secrets.tsx`). 設定の「I/O をするプログラムの実行」の「シークレットの一覧 →」から開く
+- シークレットのパーツ (式がシークレットリテラルのパーツ) と, このブラウザに値を入れてあるシークレット (`definy.secrets`) を
+  ID ごとにまとめて名前順に出す (`listSecrets`, `src/secret.ts`). パーツが消えて値だけ残っているものは「パーツなし」として出し, 値を消せる
+- 値はふだん `••••••••` で隠し (長さも出さない), 「表示」を押したときだけ出す. ほかに送ってよい宛先・入力日時・最後に使った記録・ID を出す
+- 値を入れる・変えるのはシークレットのパーツのページ (送ってよい宛先をパーツの式から取るため). 一覧からは値を消すだけ
+
 ## 実装
 
 - `seeds/core.json`: `core.expression` の `secret({ id, label, allowed_url_prefixes })` と `type_secret`, `core.type-ast` の `secret`。
@@ -45,5 +53,6 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
   以前は TypeScript の変換が `allowed_url_prefixes` を捨てていたが, 今は `core.expression` の `secret` が持つ (definy 側は読まない)
 - `src/wasi_io.ts`: `secret_headers` に値を入れる (`withSecretHeaders`)
 - `src/components/SecretPanel.tsx`: パーツのページの欄
-- テスト: `src/self_hosted_type_check.test.ts` (型), `src/wasi_io.test.ts` (値の挿入・宛先の制限), `src/secret.test.ts` (使用箇所),
+- `pages/settings/secrets.tsx`: 設定のシークレット一覧
+- テスト: `src/self_hosted_type_check.test.ts` (型), `src/wasi_io.test.ts` (値の挿入・宛先の制限), `src/secret.test.ts` (使用箇所・一覧), `e2e/ui.test.ts` (一覧のマスク表示),
   `src/tree_layout/quote.test.ts` (エディタ)

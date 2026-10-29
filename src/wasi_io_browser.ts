@@ -77,14 +77,27 @@ function loadSecrets(): Readonly<Record<string, StoredSecret>> {
     : {};
 }
 
+function isStoredSecret(stored: StoredSecret | undefined): boolean {
+  return (
+    stored !== undefined &&
+    typeof stored.value === "string" &&
+    Array.isArray(stored.allowedUrlPrefixes)
+  );
+}
+
 /** 入れてあるシークレットの値 (無ければ `undefined`) */
 export function loadSecret(id: string): StoredSecret | undefined {
   const stored = loadSecrets()[id];
-  return stored !== undefined &&
-    typeof stored.value === "string" &&
-    Array.isArray(stored.allowedUrlPrefixes)
-    ? stored
-    : undefined;
+  return isStoredSecret(stored) ? stored : undefined;
+}
+
+/** このブラウザに入れてあるすべてのシークレットの値 (ID → 値. 設定画面の一覧用) */
+export function loadAllSecrets(): Readonly<Record<string, StoredSecret>> {
+  return Object.fromEntries(
+    Object.entries(loadSecrets()).filter(([, stored]) =>
+      isStoredSecret(stored),
+    ),
+  );
 }
 
 /** シークレットの値と, 送ってよい URL の先頭を保存する */
@@ -122,6 +135,16 @@ export function loadSecretUsage(
   return (Array.isArray(json) ? (json as SecretUsageEntry[]) : [])
     .filter((entry) => entry.secretId === secretId)
     .reverse();
+}
+
+/** シークレットごとの最後に使った (使おうとした) 記録 */
+export function loadLatestSecretUsage(): ReadonlyMap<string, SecretUsageEntry> {
+  const json = readJson(SECRET_USAGE_KEY);
+  const latest = new Map<string, SecretUsageEntry>();
+  for (const entry of Array.isArray(json) ? (json as SecretUsageEntry[]) : []) {
+    latest.set(entry.secretId, entry);
+  }
+  return latest;
 }
 
 export function recordSecretUse(use: WasiSecretUse, partName: string): void {
