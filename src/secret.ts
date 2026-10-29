@@ -67,3 +67,49 @@ export function findSecretUsages(
         containsSecretLiteral(part.expression, secretId)),
   );
 }
+
+/** 設定画面のシークレット一覧の 1 行 */
+export type SecretListItem<Stored> = {
+  readonly id: string;
+  readonly label: string;
+  /** シークレットリテラルだけを式にしているパーツ (シークレットのパーツ) */
+  readonly parts: ReadonlyArray<PartSnapshot>;
+  /** このブラウザに入れてある値 (無ければ `undefined`) */
+  readonly stored: Stored | undefined;
+};
+
+/**
+ * 設定画面のシークレット一覧: シークレットのパーツと, このブラウザに値を入れてあるシークレットを ID ごとにまとめる.
+ * パーツが消えても値が残っているもの (パーツが無い行) も出す. 名前順
+ */
+export function listSecrets<Stored extends { readonly label: string }>(
+  parts: ReadonlyArray<PartSnapshot>,
+  stored: Readonly<Record<string, Stored>>,
+): ReadonlyArray<SecretListItem<Stored>> {
+  const byId = new Map<string, { label: string; parts: Array<PartSnapshot> }>();
+  for (const part of parts) {
+    const secret = secretLiteralOf(part.expression);
+    if (secret === null) {
+      continue;
+    }
+    const item = byId.get(secret.id);
+    if (item === undefined) {
+      byId.set(secret.id, { label: secret.label, parts: [part] });
+    } else {
+      item.parts.push(part);
+    }
+  }
+  for (const [id, value] of Object.entries(stored)) {
+    if (!byId.has(id)) {
+      byId.set(id, { label: value.label, parts: [] });
+    }
+  }
+  return [...byId.entries()]
+    .map(([id, item]) => ({
+      id,
+      label: item.label,
+      parts: item.parts,
+      stored: stored[id],
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label) || a.id.localeCompare(b.id));
+}

@@ -648,6 +648,39 @@ test.describe("definy UI E2E", () => {
     await expect(page.locator(".sidebar-scroll")).toBeEmpty();
   });
 
+  test("settings lists secrets with masked values", async ({ page }) => {
+    await page.goto("/settings");
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "definy.secrets",
+        JSON.stringify({
+          "cloudflare-api-token-6c1f0e3a9b2d4c58": {
+            value: "sk-e2e-secret-value",
+            label: "Cloudflare API トークン",
+            allowedUrlPrefixes: ["https://api.cloudflare.com/"],
+            updatedAt: "2026-10-29T21:00:00.000Z",
+          },
+        }),
+      );
+    });
+    await page.locator('a[href^="/settings/secrets"]').click();
+    await page.waitForURL(/\/settings\/secrets/);
+    const item = page.locator(".secret-list-item", {
+      hasText: "cloudflare-api-token-6c1f0e3a9b2d4c58",
+    });
+    await expect(
+      item.locator('a[href^="/part/"]', {
+        hasText: "definy.cloudflare-api-token",
+      }),
+    ).toBeVisible({ timeout: 15000 });
+    // 値はふだん隠し, 「表示」で出す
+    await expect(item).not.toContainText("sk-e2e-secret-value");
+    await item.getByRole("button", { name: "Show" }).click();
+    await expect(item).toContainText("sk-e2e-secret-value");
+    await item.getByRole("button", { name: "Delete value" }).click();
+    await expect(item).toContainText("Not entered");
+  });
+
   test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({
     page,
   }) => {
