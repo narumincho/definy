@@ -13,6 +13,7 @@ import {
   matchExpression,
   literalArm,
   wildcardArm,
+  floatExpression,
   numberExpression,
   partReferenceExpression,
   partReferenceIdOf,
@@ -26,6 +27,7 @@ const typeNumber = variant("type_number");
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:number": typeNumber,
+  "expr:type:float": variant("type_float"),
   "expr:type:string": variant("type_string"),
   "expr:type:boolean": variant("type_boolean"),
   "expr:type:type": variant("type_type"),
@@ -281,6 +283,8 @@ export function applySelection(
 
   if (selectionValue === "expr:number") {
     newSubExpr = numberExpression(0);
+  } else if (selectionValue === "expr:float") {
+    newSubExpr = floatExpression(0, 0);
   } else if (selectionValue === "expr:string") {
     newSubExpr = stringExpression("");
   } else if (selectionValue === "expr:boolean:true") {

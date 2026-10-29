@@ -247,6 +247,12 @@
         }
       },
       {
+        "tag": "float",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
         "tag": "string",
         "payload_type": {
           "#none": null
@@ -448,6 +454,12 @@
         }
       },
       {
+        "tag": "type_float",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
         "tag": "type_string",
         "payload_type": {
           "#none": null
@@ -602,6 +614,27 @@
         "payload_type": {
           "#some": {
             "#type_number": null
+          }
+        }
+      },
+      {
+        "tag": "float",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "mantissa",
+                "value": {
+                  "#type_number": null
+                }
+              },
+              {
+                "key": "exponent",
+                "value": {
+                  "#type_number": null
+                }
+              }
+            ]
           }
         }
       },

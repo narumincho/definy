@@ -40,6 +40,8 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 | `list_get`                                                                                                                                                                          | `core.list-get`               | `list`, `index`         |
 | `list_append`                                                                                                                                                                       | `core.list-append`            | `list`, `item`          |
 
+浮動小数の組み込み (`float_plus` など) は [float.md](float.md)。
+
 `bit_and` などのビット演算はまだ definy 製のコンパイラ・型チェッカー・評価器が扱わない
 (型検査では引数名が合わないエラー, コンパイルすると unreachable, 評価すると `unit`).
 

@@ -55,6 +55,7 @@ class A:
     def call(self, f): return self.op(0x10, *uleb(f))
     def load(self, off): return self.op(0x28, 2, *uleb(off))
     def load64(self, off): return self.op(0x29, 3, *uleb(off))
+    def load_f64(self, off): return self.op(0x2B, 3, *uleb(off))
     def load8(self, off): return self.op(0x2D, 0, *uleb(off))
     def store(self, off): return self.op(0x36, 2, *uleb(off))
     def store64(self, off): return self.op(0x37, 3, *uleb(off))
@@ -73,6 +74,7 @@ class A:
 I32_EQZ, I32_EQ, I32_NE, I32_LT_U, I32_GT_U, I32_GE_U, I32_LE_U = 0x45, 0x46, 0x47, 0x49, 0x4B, 0x4F, 0x4D
 I32_ADD, I32_SUB, I32_AND, I32_OR, I32_SHL, I32_SHR_U = 0x6A, 0x6B, 0x71, 0x72, 0x74, 0x76
 I64_EQ, I64_LT_S, I64_GT_S, I64_GE_S = 0x51, 0x53, 0x55, 0x59
+F64_EQ = 0x61
 WRAP, EXTEND_U, SELECT, DROP, UNREACHABLE = 0xA7, 0xAD, 0x1B, 0x1A, 0x00
 
 # 関数番号
@@ -119,8 +121,12 @@ a.get(2).i32(1).op(I32_ADD).set(2).br(0)
 a.end().end().i32(1)
 helper(3, [(2, I32)], a)
 # 5 values_equal(a, b) -> i32. 中身で比べる (core.value-equals と同じ). リスト・レコード・バリアントは中まで辿り,
-# レコードはフィールドの順番によらずキーで比べる. 関数 (クロージャ) は同じ箱のときだけ等しい
-a = A().get(0).get(1).op(I32_EQ).if_().i32(1).ret().end()
+# レコードはフィールドの順番によらずキーで比べる. 関数 (クロージャ) は同じ箱のときだけ等しい.
+# 浮動小数 (タグ 7) は IEEE 754 の比較 (f64.eq) なので, 同じ箱でも NaN は等しくない
+a = A().get(0).load8(0).i32(7).op(I32_EQ).if_()
+a.get(1).load8(0).i32(7).op(I32_EQ).if_().get(0).load_f64(8).get(1).load_f64(8).op(F64_EQ).ret().end()
+a.i32(0).ret().end()
+a.get(0).get(1).op(I32_EQ).if_().i32(1).ret().end()
 a.get(0).load8(0).tee(2).get(1).load8(0).op(I32_NE).if_().i32(0).ret().end()
 a.get(2).i32(2).op(I32_EQ).if_().get(0).get(1).call(F_STRING_EQ).ret().end()
 a.get(2).op(I32_EQZ).if_().get(0).load64(8).get(1).load64(8).op(I64_EQ).ret().end()

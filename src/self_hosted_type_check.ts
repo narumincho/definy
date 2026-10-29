@@ -432,6 +432,7 @@ export function formatTypeAst(
   const { payload } = tagged;
   switch (tagged.tag) {
     case "number":
+    case "float":
     case "string":
     case "boolean":
     case "type":

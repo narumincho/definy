@@ -19,6 +19,42 @@ export function numberExpression(value: number): unknown {
   return variant("number", value);
 }
 
+/**
+ * 浮動小数のリテラル `mantissa × 10^exponent` (`core.expression` の `float`).
+ * 値を 2 進の浮動小数で持たず 10 進で持つので, JSON や CBOR でも整数として正確に保存できる
+ */
+export function floatExpression(mantissa: number, exponent: number): unknown {
+  return variant("float", { mantissa, exponent });
+}
+
+/**
+ * 有限の数を浮動小数のリテラルにする. JavaScript の最短の 10 進表記 (`String(value)`) の仮数と指数にするので,
+ * 打った `1.5` や `0.1` がそのままのリテラルになる. 有限でなければ `null`
+ */
+export function floatExpressionFromNumber(value: number): unknown {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const match = /^(-?)(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/.exec(String(value));
+  if (match === null) {
+    return null;
+  }
+  const [, sign = "", integer = "", fraction = "", exponent = "0"] = match;
+  const digits = `${integer}${fraction}`.replace(/^0+(?=\d)/, "");
+  return floatExpression(
+    Number(`${sign}${digits}`),
+    Number(exponent) - fraction.length,
+  );
+}
+
+/** 浮動小数のリテラルの表示. 整数でも `2.0` のように小数点を付けて整数のリテラルと見分ける */
+export function formatFloatLiteral(payload: unknown): string {
+  const mantissa = Number(field(payload, "mantissa") ?? 0);
+  const exponent = Number(field(payload, "exponent") ?? 0);
+  const text = String(Number(`${mantissa}e${exponent}`));
+  return /[.eEN]/.test(text) ? text : `${text}.0`;
+}
+
 export function stringExpression(value: string): unknown {
   return variant("string", value);
 }

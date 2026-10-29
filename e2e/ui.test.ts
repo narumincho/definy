@@ -321,7 +321,9 @@ test.describe("definy UI E2E", () => {
     );
     // エクスプローラーにもコミット前の新しいパーツが出る
     await expect(
-      page.locator(".sidebar-tree-node.part-node", { hasText: "square" }),
+      page.locator(".sidebar-tree-node.part-node", {
+        has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
+      }),
     ).toHaveCount(1);
 
     // コミットするとモジュールができる

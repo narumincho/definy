@@ -33,6 +33,7 @@ import type { PartSnapshot } from "../types.ts";
 
 const SIMPLE_TYPES: ReadonlyArray<readonly [string, string]> = [
   ["number", "type_number"],
+  ["float", "type_float"],
   ["string", "type_string"],
   ["boolean", "type_boolean"],
   ["type", "type_type"],

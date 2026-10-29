@@ -116,6 +116,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
   switch (tag) {
     // 型の式 (part_type.ts)
     case "type_number":
+    case "type_float":
     case "type_string":
     case "type_boolean":
     case "type_type":
@@ -128,6 +129,8 @@ export function getOptionValueForExpression(node: unknown): string | null {
       return `expr:type:${tag.slice("type_".length)}`;
     case "number":
       return "expr:number";
+    case "float":
+      return "expr:float";
     case "string":
       return "expr:string";
     case "boolean":

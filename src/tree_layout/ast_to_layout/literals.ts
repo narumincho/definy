@@ -1,6 +1,7 @@
 import type { LayoutNode, PathStep } from "../types.ts";
 import { field, variantOf } from "../../definy_value.ts";
 import type { ScopeContext } from "./types.ts";
+import { formatFloatLiteral } from "../expression.ts";
 
 export function tryBuildLiteralNode(
   expr: unknown,
@@ -49,6 +50,8 @@ export function tryBuildLiteralNode(
   switch (tag) {
     case "number":
       return leaf(String(payload ?? 0), "literalNumber");
+    case "float":
+      return leaf(formatFloatLiteral(payload), "literalNumber");
     case "string":
       return leaf(`"${String(payload ?? "")}"`, "literalString");
     case "boolean":

@@ -54,6 +54,8 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
   (`{"#any": null}`, `{"#bind": {variable_id, variable_name}}`, `{"#variant": {tag, payload}}`, `{"#string": ...}`,
   `{"#number": ...}`, `{"#boolean": ...}`)。どの値にも一致するアームは `#any` か `#bind` のアームで、ほかの default の欄は無い
   ([match-pattern.md](match-pattern.md))。
+- 浮動小数のリテラル: `{"#float": {mantissa, exponent}}` で値は `mantissa × 10^exponent` (どちらも整数. [float.md](float.md))。
+  型の式は `{"#type_float": null}`, 型 (`core.type-ast`) は `{"#float": null}`。
 - `variant`: `{tag, payload: option<式>, type_part: option<パーツ ID>}`。
 - `secret`: `{id, label, allowed_url_prefixes}` ([secret.md](secret.md))。
 - 未入力: `{"#hole": {"probe": false}}`。型チェッカーに期待する型を聞く位置は `probe: true`。

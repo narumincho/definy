@@ -320,6 +320,57 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("浮動小数のリテラルの型は float で, 整数とは別の型", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const float = (mantissa: number, exponent: number) => ({
+      "#float": { mantissa, exponent },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#float": null }, expression: float(15, -1) },
+        {
+          partType: { "#float": null },
+          expression: await coreCall("float-plus", {
+            left: float(1, -1),
+            right: float(2, -1),
+          }),
+        },
+        // 整数は浮動小数として使えない
+        {
+          partType: { "#float": null },
+          expression: await coreCall("float-plus", {
+            left: { "#number": 1 },
+            right: float(2, -1),
+          }),
+        },
+        { partType: { "#number": null }, expression: float(1, 0) },
+        {
+          partType: { "#number": null },
+          expression: await coreCall("float-floor", { value: float(15, -1) }),
+        },
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("equal", {
+            left: float(1, 0),
+            right: await coreCall("float-from-integer", {
+              value: { "#number": 1 },
+            }),
+          }),
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "ok",
+      "type_error",
+      "type_error",
+      "ok",
+      "ok",
+    ]);
+  }, 600_000);
+
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const mapperType = {

@@ -130,7 +130,13 @@ function layoutLiteral(node: unknown): LaidOutLiteral {
   function layout(n: unknown): number {
     if (typeof n === "number") {
       const at = reserve(16);
-      view.setBigInt64(at + 8, BigInt(n), true);
+      if (Number.isInteger(n)) {
+        view.setBigInt64(at + 8, BigInt(n), true);
+      } else {
+        // 整数でない数 (NaN と ±Infinity を含む) は浮動小数の箱 (タグ 7) にする
+        buffer[at] = 7;
+        view.setFloat64(at + 8, n, true);
+      }
       return at;
     }
     if (typeof n === "boolean") {
@@ -205,6 +211,9 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   }
   if (tag === 1) {
     return mem[ptr + 8] !== 0;
+  }
+  if (tag === 7) {
+    return view.getFloat64(ptr + 8, true);
   }
   if (tag === 2) {
     const len = view.getUint32(ptr + 4, true);
@@ -306,6 +315,24 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
   ["string_slice", ["value", "start", "end"]],
   ["list_get", ["list", "index"]],
   ["list_append", ["list", "item"]],
+  ...[
+    "float_plus",
+    "float_minus",
+    "float_multiply",
+    "float_divide",
+    "float_less_than",
+    "float_less_than_or_equal",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [
+    name,
+    ["left", "right"],
+  ]),
+  ...[
+    "float_from_integer",
+    "float_floor",
+    "float_ceiling",
+    "float_truncate",
+    "float_square_root",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [name, ["value"]]),
 ]);
 
 /** 式 (`core.expression` の値) に未入力 (`hole`) があるか */

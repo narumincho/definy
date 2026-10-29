@@ -31,6 +31,13 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "number",
   },
   {
+    value: "expr:float",
+    name: "float",
+    detail: "0.0",
+    category: "Literal",
+    returnType: "any",
+  },
+  {
     value: "expr:string",
     name: "string",
     detail: '""',
@@ -117,6 +124,12 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   {
     value: "expr:type:number",
     name: "number",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:float",
+    name: "float",
     category: "Type",
     returnType: "any",
   },

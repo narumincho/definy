@@ -3424,6 +3424,735 @@
         }
       },
       "expected": 89
+    },
+    {
+      "name": "float literal",
+      "expression": {
+        "#float": {
+          "mantissa": 15,
+          "exponent": -1
+        }
+      },
+      "expected": 1.5
+    },
+    {
+      "name": "float literal with a positive exponent",
+      "expression": {
+        "#float": {
+          "mantissa": 25,
+          "exponent": 2
+        }
+      },
+      "expected": 2500
+    },
+    {
+      "name": "float literal is correctly rounded",
+      "expression": {
+        "#float": {
+          "mantissa": 1,
+          "exponent": -1
+        }
+      },
+      "expected": 0.1
+    },
+    {
+      "name": "float literal with a large exponent",
+      "expression": {
+        "#float": {
+          "mantissa": 1,
+          "exponent": 25
+        }
+      },
+      "expected": 1e+25
+    },
+    {
+      "name": "float plus",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-plus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.30000000000000004
+    },
+    {
+      "name": "float minus",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-minus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 25,
+                  "exponent": -2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.75
+    },
+    {
+      "name": "float multiply",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-multiply"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": -4,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -6
+    },
+    {
+      "name": "float divide",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 3,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.3333333333333333
+    },
+    {
+      "name": "float divide by zero is Infinity, not an error",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 300
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 1,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "NaN is not equal to itself",
+      "expression": {
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "x",
+          "value": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.float-divide"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#float": {
+                      "mantissa": 0,
+                      "exponent": 0
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#float": {
+                      "mantissa": 0,
+                      "exponent": 0
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "float less than",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "float less than with NaN is false",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "float less than or equal",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than-or-equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "float from integer",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-from-integer"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "value",
+                      "value": {
+                        "#number": 7
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3.5
+    },
+    {
+      "name": "float floor",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-floor"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": -15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -2
+    },
+    {
+      "name": "float ceiling",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-ceiling"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 12,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "float truncate goes toward zero",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": -17,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -1
+    },
+    {
+      "name": "float truncate of NaN is 0",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "float truncate of a too large value is clamped",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 300
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 9223372036854775807
+    },
+    {
+      "name": "float square root",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-square-root"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1.4142135623730951
+    },
+    {
+      "name": "float equal compares values",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 5,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 1,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 2,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
     }
   ]
 }

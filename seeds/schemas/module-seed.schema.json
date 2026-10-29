@@ -158,6 +158,18 @@
         {
           "type": "object",
           "required": [
+            "#type_float"
+          ],
+          "properties": {
+            "#type_float": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#type_string"
           ],
           "properties": {
@@ -351,6 +363,31 @@
           "properties": {
             "#number": {
               "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
+              "type": "object",
+              "required": [
+                "mantissa",
+                "exponent"
+              ],
+              "properties": {
+                "mantissa": {
+                  "type": "integer"
+                },
+                "exponent": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -1153,6 +1190,18 @@
         {
           "type": "object",
           "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#string"
           ],
           "properties": {
@@ -1404,6 +1453,18 @@
           ],
           "properties": {
             "#number": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
               "type": "null"
             }
           },
