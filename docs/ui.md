@@ -375,10 +375,10 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる.
 パーツ詳細の `type` の行は, 型を式にして式のツリーエディタで編集する
 (`ExpressionTreeEditor` の `mode="type"`).
 
-- パーツの型 (`partType`, `core.type-ast` の値) と型の式 (`core.expression` の `type_*` の値) の相互変換は
-  [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts). seed の全パーツの型が往復で変わらないことをテストしている
+- パーツの型 (`partType`, `core.type-ast` の値) と型の式 (`core.expression` の `type_*` の値. seed や CAS の形) の相互変換は
+  [src/part_type_expression.ts](../src/part_type_expression.ts). seed の全パーツの型が往復で変わらないことをテストしている
   - 対応は [part-type.md](part-type.md) の表 (`number` ↔ `type_number`, `list` ↔ `type_list`, `reference` ↔ `part_reference` など)
-  - `type` (型そのもの) と `code` は型パーツの宣言に無いので, エディタの中だけの `type_type` / `type_code` にする. 未入力 (`hole`) は `null` に戻す
+  - 未入力 (`hole`) は `null` に戻す
 - 型のメニューの候補は number / string / boolean / type / list / function / record / union と,
   型のパーツ (`partType` が `type` のパーツ, `reference` で参照する). 期待型の推論はしない
 - 行の右端の × で型指定をなくす

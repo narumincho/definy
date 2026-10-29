@@ -15,7 +15,7 @@
     {
       "name": "triangle-area",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -100,7 +100,7 @@
     {
       "name": "greet",
       "part_type": {
-        "#string": null
+        "#type_string": null
       },
       "description": [
         {
@@ -141,7 +141,7 @@
     {
       "name": "is-even-sample",
       "part_type": {
-        "#string": null
+        "#type_string": null
       },
       "description": [
         {
@@ -237,9 +237,9 @@
     {
       "name": "prime-numbers",
       "part_type": {
-        "#list": {
+        "#type_list": {
           "item_type": {
-            "#number": null
+            "#type_number": null
           }
         }
       },
@@ -276,7 +276,7 @@
     {
       "name": "option-number",
       "part_type": {
-        "#type": null
+        "#type_type": null
       },
       "description": [
         {
@@ -310,7 +310,7 @@
     {
       "name": "match-option-sample",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -400,7 +400,7 @@
     {
       "name": "sample-ast-calc",
       "part_type": {
-        "#number": null
+        "#type_number": null
       },
       "description": [
         {
@@ -767,40 +767,40 @@
     {
       "name": "self-hosted-definy-server",
       "part_type": {
-        "#function": {
+        "#type_function": {
           "parameters": [
             {
               "name": "req",
               "type": {
-                "#record": [
+                "#type_record": [
                   {
                     "key": "method",
-                    "field_type": {
-                      "#string": null
+                    "value": {
+                      "#type_string": null
                     }
                   },
                   {
                     "key": "url",
-                    "field_type": {
-                      "#string": null
+                    "value": {
+                      "#type_string": null
                     }
                   },
                   {
                     "key": "headers",
-                    "field_type": {
-                      "#list": {
+                    "value": {
+                      "#type_list": {
                         "item_type": {
-                          "#record": [
+                          "#type_record": [
                             {
                               "key": "name",
-                              "field_type": {
-                                "#string": null
+                              "value": {
+                                "#type_string": null
                               }
                             },
                             {
                               "key": "value",
-                              "field_type": {
-                                "#string": null
+                              "value": {
+                                "#type_string": null
                               }
                             }
                           ]
@@ -810,47 +810,47 @@
                   },
                   {
                     "key": "body",
-                    "field_type": {
-                      "#record": [
+                    "value": {
+                      "#type_record": [
                         {
                           "key": "initialState",
-                          "field_type": {
-                            "#number": null
+                          "value": {
+                            "#type_number": null
                           }
                         },
                         {
                           "key": "next",
-                          "field_type": {
-                            "#function": {
+                          "value": {
+                            "#type_function": {
                               "parameters": [
                                 {
                                   "name": "state",
                                   "type": {
-                                    "#number": null
+                                    "#type_number": null
                                   }
                                 }
                               ],
                               "return_type": {
-                                "#union": [
+                                "#type_union": [
                                   {
                                     "tag": "yield",
                                     "payload_type": {
                                       "#some": {
-                                        "#record": [
+                                        "#type_record": [
                                           {
                                             "key": "chunk",
-                                            "field_type": {
-                                              "#list": {
+                                            "value": {
+                                              "#type_list": {
                                                 "item_type": {
-                                                  "#number": null
+                                                  "#type_number": null
                                                 }
                                               }
                                             }
                                           },
                                           {
                                             "key": "nextState",
-                                            "field_type": {
-                                              "#number": null
+                                            "value": {
+                                              "#type_number": null
                                             }
                                           }
                                         ]
@@ -876,29 +876,29 @@
             }
           ],
           "return_type": {
-            "#record": [
+            "#type_record": [
               {
                 "key": "status",
-                "field_type": {
-                  "#number": null
+                "value": {
+                  "#type_number": null
                 }
               },
               {
                 "key": "headers",
-                "field_type": {
-                  "#list": {
+                "value": {
+                  "#type_list": {
                     "item_type": {
-                      "#record": [
+                      "#type_record": [
                         {
                           "key": "name",
-                          "field_type": {
-                            "#string": null
+                          "value": {
+                            "#type_string": null
                           }
                         },
                         {
                           "key": "value",
-                          "field_type": {
-                            "#string": null
+                          "value": {
+                            "#type_string": null
                           }
                         }
                       ]
@@ -908,47 +908,47 @@
               },
               {
                 "key": "body",
-                "field_type": {
-                  "#record": [
+                "value": {
+                  "#type_record": [
                     {
                       "key": "initialState",
-                      "field_type": {
-                        "#number": null
+                      "value": {
+                        "#type_number": null
                       }
                     },
                     {
                       "key": "next",
-                      "field_type": {
-                        "#function": {
+                      "value": {
+                        "#type_function": {
                           "parameters": [
                             {
                               "name": "state",
                               "type": {
-                                "#number": null
+                                "#type_number": null
                               }
                             }
                           ],
                           "return_type": {
-                            "#union": [
+                            "#type_union": [
                               {
                                 "tag": "yield",
                                 "payload_type": {
                                   "#some": {
-                                    "#record": [
+                                    "#type_record": [
                                       {
                                         "key": "chunk",
-                                        "field_type": {
-                                          "#list": {
+                                        "value": {
+                                          "#type_list": {
                                             "item_type": {
-                                              "#number": null
+                                              "#type_number": null
                                             }
                                           }
                                         }
                                       },
                                       {
                                         "key": "nextState",
-                                        "field_type": {
-                                          "#number": null
+                                        "value": {
+                                          "#type_number": null
                                         }
                                       }
                                     ]
@@ -2713,8 +2713,8 @@
     {
       "name": "deploy-self-hosted-definy-server",
       "part_type": {
-        "#reference": {
-          "part_hash": {
+        "#part_reference": {
+          "part_definition_event_hash": {
             "$part": "wasi.io"
           }
         }
@@ -2798,8 +2798,8 @@
     {
       "name": "deploy-hello-worker",
       "part_type": {
-        "#reference": {
-          "part_hash": {
+        "#part_reference": {
+          "part_definition_event_hash": {
             "$part": "wasi.io"
           }
         }

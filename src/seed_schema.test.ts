@@ -56,7 +56,7 @@ describe("seeds の JSON Schema", () => {
           ...(part.part_type != null &&
           !conformsToTypeDeclaration(
             part.part_type,
-            resolveTypePart("core.type-ast"),
+            resolveTypePart("core.expression"),
             resolveTypePart,
           )
             ? [`${name} part_type`]

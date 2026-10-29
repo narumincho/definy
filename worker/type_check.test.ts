@@ -8,7 +8,10 @@ import {
   type AccountCredentials,
 } from "../src/auth.ts";
 import { bytesToUrlSafeBase64NoPad, type DecodedPart } from "../src/cbor.ts";
-import { resolvePartPlaceholders } from "../src/seed_parts.ts";
+import {
+  resolvePartPlaceholders,
+  resolveSeedPartType,
+} from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
@@ -293,7 +296,7 @@ describe("SubmitEvent の型検査", () => {
             // 組み込みかどうかは式 ({"#builtin": "bit_and"}) で決まり, 名前によらない.
             // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
             seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
-            await resolvePartPlaceholders(seedPart.part_type ?? null),
+            await resolveSeedPartType(seedPart.part_type),
             await resolvePartPlaceholders(seedPart.expression ?? null),
           ),
         ),

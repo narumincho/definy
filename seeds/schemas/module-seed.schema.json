@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ModuleSeed",
-  "description": "Seed データファイル (seeds/*.json) のモジュール表現. パーツの式は core.expression, 型は core.type-ast の値 (docs/value-encoding.md). src/seed_schema.ts が core の型パーツの宣言から作る",
+  "description": "Seed データファイル (seeds/*.json) のモジュール表現. パーツの式と型はどちらも core.expression の値 (型は型の式. docs/type-expression.md) (docs/value-encoding.md). src/seed_schema.ts が core の型パーツの宣言から作る",
   "type": "object",
   "required": [
     "module_name",
@@ -54,7 +54,7 @@
         "part_type": {
           "anyOf": [
             {
-              "$ref": "#/definitions/core.type-ast"
+              "$ref": "#/definitions/core.expression"
             },
             {
               "type": "null"
@@ -924,6 +924,58 @@
           "properties": {
             "#type_secret": {
               "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_type"
+          ],
+          "properties": {
+            "#type_type": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_code"
+          ],
+          "properties": {
+            "#type_code": {
+              "type": "object",
+              "required": [
+                "value_type"
+              ],
+              "properties": {
+                "value_type": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_parameter"
+          ],
+          "properties": {
+            "#type_parameter": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -2222,7 +2274,7 @@
               ],
               "properties": {
                 "#some": {
-                  "$ref": "#/definitions/core.type-ast"
+                  "$ref": "#/definitions/core.expression"
                 }
               },
               "additionalProperties": false

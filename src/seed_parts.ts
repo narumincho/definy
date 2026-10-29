@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { expressionToPartType } from "./part_type_expression.ts";
 
 export {
   DEV_SYSTEM_KEY_SEED,
@@ -34,6 +35,16 @@ export async function resolvePartPlaceholders(expr: unknown): Promise<unknown> {
     return Object.fromEntries(entries);
   }
   return expr;
+}
+
+/**
+ * seed のパーツの型 (`part_type`. 型の式) を, プレースホルダーを解決して型チェッカーの形 (`core.type-ast`) にする.
+ * 型の無いパーツなら `null`
+ */
+export async function resolveSeedPartType(partType: unknown): Promise<unknown> {
+  return partType == null
+    ? null
+    : expressionToPartType(await resolvePartPlaceholders(partType));
 }
 
 /** `seeds/*.json` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */

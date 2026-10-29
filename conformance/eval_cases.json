@@ -4581,6 +4581,183 @@
           }
         ]
       }
+    },
+    {
+      "name": "type, Code<T> and a type parameter are type expressions",
+      "expression": {
+        "#list": [
+          {
+            "#type_type": null
+          },
+          {
+            "#type_code": {
+              "value_type": {
+                "#type_number": null
+              }
+            }
+          },
+          {
+            "#type_parameter": "T"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "#type_type": null
+        },
+        {
+          "#type_code": {
+            "value_type": {
+              "#type_number": null
+            }
+          }
+        },
+        {
+          "#type_parameter": "T"
+        }
+      ]
+    },
+    {
+      "name": "a part type can be quoted as a type expression",
+      "expression": {
+        "#record_get": {
+          "record": {
+            "#quote": {
+              "#type_function": {
+                "parameters": [
+                  {
+                    "name": "T",
+                    "type": {
+                      "#type_type": null
+                    }
+                  },
+                  {
+                    "name": "x",
+                    "type": {
+                      "#type_code": {
+                        "value_type": {
+                          "#type_parameter": "T"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "return_type": {
+                  "#type_parameter": "T"
+                }
+              }
+            }
+          },
+          "key": "expression"
+        }
+      },
+      "expected": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "T",
+              "type": {
+                "#type_type": null
+              }
+            },
+            {
+              "name": "x",
+              "type": {
+                "#type_code": {
+                  "value_type": {
+                    "#type_parameter": "T"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_parameter": "T"
+          }
+        }
+      }
+    },
+    {
+      "name": "type-expression-to-type-ast reads type, Code<T> and type parameters",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.type-expression-to-type-ast"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "expr",
+              "value": {
+                "#record_get": {
+                  "record": {
+                    "#quote": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "T",
+                            "type": {
+                              "#type_type": null
+                            }
+                          },
+                          {
+                            "name": "x",
+                            "type": {
+                              "#type_code": {
+                                "value_type": {
+                                  "#type_parameter": "T"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#type_parameter": "T"
+                        }
+                      }
+                    }
+                  },
+                  "key": "expression"
+                }
+              }
+            },
+            {
+              "name": "parameters",
+              "value": {
+                "#list": []
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#some": {
+          "#function": {
+            "parameters": [
+              {
+                "name": "T",
+                "type": {
+                  "#type": null
+                }
+              },
+              {
+                "name": "x",
+                "type": {
+                  "#code": {
+                    "#parameter": "T"
+                  }
+                }
+              }
+            ],
+            "return_type": {
+              "#parameter": "T"
+            }
+          }
+        }
+      }
     }
   ]
 }

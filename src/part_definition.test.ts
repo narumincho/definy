@@ -11,6 +11,7 @@ import {
 import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
+  resolveSeedPartType,
 } from "./seed_parts.ts";
 import {
   collectReferencedParts,
@@ -38,7 +39,7 @@ async function seedPartContent(
   return {
     description: part.description as PartContent["description"],
     visibility: part.visibility === "private" ? "private" : "public",
-    partType: await resolvePartPlaceholders(part.part_type ?? null),
+    partType: await resolveSeedPartType(part.part_type),
     expression: await resolvePartPlaceholders(part.expression ?? null),
   };
 }
@@ -85,6 +86,33 @@ describe("パーツの定義の式", () => {
     });
     expect(callee(partDefinitionExpression(valuePart))).toEqual({
       "#part_reference": { part_definition_event_hash: ids.definePart },
+    });
+    // パーツの型は型の式で, quote して書く (Variant のリテラルではない)
+    const argumentsOf = (definition: unknown) =>
+      (
+        definition as {
+          "#call": {
+            arguments: ReadonlyArray<{ name: string; value: unknown }>;
+          };
+        }
+      )["#call"].arguments;
+    expect(
+      argumentsOf(partDefinitionExpression(valuePart)).find(
+        (argument) => argument.name === "part_type",
+      )?.value,
+    ).toEqual({
+      "#variant": {
+        tag: "some",
+        payload: {
+          "#some": {
+            "#record_get": {
+              record: { "#quote": { "#type_number": null } },
+              key: "expression",
+            },
+          },
+        },
+        type_part: { "#none": null },
+      },
     });
     for (const content of [typePart, valuePart, emptyPart]) {
       expect(decodePartDefinition(partDefinitionExpression(content))).toEqual(

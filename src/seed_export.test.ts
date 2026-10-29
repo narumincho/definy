@@ -14,7 +14,11 @@ import {
   type LocalizedText,
 } from "./cbor.ts";
 import { exportSeeds } from "./seed_export.ts";
-import { DEV_SYSTEM_KEY_SEED, resolvePartPlaceholders } from "./seed_parts.ts";
+import {
+  DEV_SYSTEM_KEY_SEED,
+  resolvePartPlaceholders,
+  resolveSeedPartType,
+} from "./seed_parts.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/test_helpers.ts";
@@ -192,10 +196,7 @@ describe("exportSeeds", () => {
       const resolvedExistingParts: ReadonlyArray<DecodedPart> =
         await Promise.all(
           currentSampleSeed.parts.map(async (p) => {
-            const partType =
-              p.part_type != null
-                ? await resolvePartPlaceholders(p.part_type)
-                : null;
+            const partType = await resolveSeedPartType(p.part_type);
             const expression =
               p.expression != null
                 ? await resolvePartPlaceholders(p.expression)

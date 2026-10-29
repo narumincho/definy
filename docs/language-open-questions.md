@@ -7,15 +7,16 @@ definy の構文と意味 (`core.expression` / `core.type-ast` の宣言, 型チ
 
 2026-10-28 にユーザーが決めた方針で直し, 2026-10-29 にマージした。詳しくは各 docs。
 
-| PR   | 内容                                                                                                 | docs                           |
-| :--- | :--------------------------------------------------------------------------------------------------- | :----------------------------- |
-| #789 | 0 除算は 0, `-2^63 / -1` は折り返す, `equal` を中身で比べる, 型パーツの参照だけの循環を型エラーに    | builtin-parts.md, part-type.md |
-| #790 | `core.list-get` は範囲外で `none` を返す (option. Elm と同じ)                                        | builtin-parts.md               |
-| #791 | `match` のパターンを木 (`core.pattern`) にする。`_` (`any`) と文字列 `"_"` を区別する                | match-pattern.md               |
-| #792 | 呼び出しの引数は名前で対応させ, 順番は自由。実行時は引数名の順に渡す                                 | call-syntax.md                 |
-| #793 | 浮動小数のリテラルと組み込みのパーツ (`core.float-plus` など)                                        | float.md                       |
-| #794 | 型引数は普通の引数 (`core.list-map(T: number, ...)`), 型を返すパーツ `core.option`, 型は実行時にも値 | type-arguments.md              |
-| -    | パーツの定義もパーツ: 中身は `core.define-part(...)` / `core.define-type(...)` の定義の式。名前は外  | part-definition.md             |
+| PR   | 内容                                                                                                            | docs                           |
+| :--- | :-------------------------------------------------------------------------------------------------------------- | :----------------------------- |
+| #789 | 0 除算は 0, `-2^63 / -1` は折り返す, `equal` を中身で比べる, 型パーツの参照だけの循環を型エラーに               | builtin-parts.md, part-type.md |
+| #790 | `core.list-get` は範囲外で `none` を返す (option. Elm と同じ)                                                   | builtin-parts.md               |
+| #791 | `match` のパターンを木 (`core.pattern`) にする。`_` (`any`) と文字列 `"_"` を区別する                           | match-pattern.md               |
+| #792 | 呼び出しの引数は名前で対応させ, 順番は自由。実行時は引数名の順に渡す                                            | call-syntax.md                 |
+| #793 | 浮動小数のリテラルと組み込みのパーツ (`core.float-plus` など)                                                   | float.md                       |
+| #794 | 型引数は普通の引数 (`core.list-map(T: number, ...)`), 型を返すパーツ `core.option`, 型は実行時にも値            | type-arguments.md              |
+| -    | パーツの定義もパーツ: 中身は `core.define-part(...)` / `core.define-type(...)` の定義の式。名前は外             | part-definition.md             |
+| -    | パーツの型も型の式で書く (`type_type` / `type_code` / `type_parameter` を足す)。type-ast は型チェッカーの中だけ | type-expression.md             |
 
 ## 実行時にエラーになる場所 (残り)
 
@@ -80,5 +81,5 @@ Elm と同じく実行時エラーは無い方針。2026-10-28 に確かめた�
 - `core.value` に `unit` があるが, 型に unit が無い
 - `let` で再帰する関数を書けない。バイト列の型が無い (`core.string-to-bytes` は数値のリスト)。文字 (コードポイント) 単位の文字列の操作が無い
 - 空のリスト・型パーツの無い `variant`・ラムダ式は, 期待する型が無いと型が決まらない
-- 型の式 (`core.expression` の `type_*`) と `core.type-ast` が別の形のまま。`Code<T>`・`type`・型引数の参照は型の式に無い
-  (エディタの中だけ) ので, 定義の式ではパーツの型を Variant のリテラルで書いている ([part-definition.md](part-definition.md))
+- 型チェッカーの入力 (`core.build-type-env`) はパーツの型を `core.type-ast` で受け取り, TypeScript が型の式から変換して渡している
+  ([type-expression.md](type-expression.md))

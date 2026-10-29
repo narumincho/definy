@@ -5,12 +5,12 @@
 
 ## 構文と型
 
-| 形                                     | 例                                                                               |
-| -------------------------------------- | -------------------------------------------------------------------------------- |
-| 式 (`core.expression`, seeds もこの形) | `{"#quote": e}`                                                                  |
-| 型 (`core.type-ast`)                   | `{"#code": T}`。表示は `Code<T>`                                                 |
-| ツリーエディタ (式)                    | `{"#quote": e}`, パスの段 `quoteExpression`                                      |
-| ツリーエディタ (型の式)                | `{"#type_code": {"value_type": T}}` (エディタの中だけ), パスの段 `typeCodeValue` |
+| 形                                     | 例                                                            |
+| -------------------------------------- | ------------------------------------------------------------- |
+| 式 (`core.expression`, seeds もこの形) | `{"#quote": e}`                                               |
+| 型 (`core.type-ast`)                   | `{"#code": T}`。表示は `Code<T>`                              |
+| ツリーエディタ (式)                    | `{"#quote": e}`, パスの段 `quoteExpression`                   |
+| ツリーエディタ (型の式)                | `{"#type_code": {"value_type": T}}`, パスの段 `typeCodeValue` |
 
 - `quote(e)` の型は `Code<e の型>`。`Code<T>` は型パーツ `core.code` (`{ expression: core.expression, part_ids: List<string> }`) として扱う
   (`core.type-resolve` が `code` を `core.code` の参照に解決する) ので, `.expression` や `.part_ids` でフィールドを読める

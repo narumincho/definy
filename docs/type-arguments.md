@@ -87,7 +87,7 @@ core.type-result        // => {"#part_reference": {part_definition_event_hash: "
 
 - パーツの型の行 (型のツリーエディタ): 関数の型の中では, 型が `type` の引数を `Type parameter` の選択肢に出す
   (`typeParameters`, `src/tree_layout/ast_to_layout/control_and_types.ts`)。選ぶと型引数の参照 `type_parameter("T")`
-  (エディタの中だけの式. `part_type.ts` で `parameter("T")` と相互変換) になる
+  (`part_type_expression.ts` で `parameter("T")` と相互変換. [type-expression.md](type-expression.md)) になる
 - 型パーツの選択肢には型を返すパーツも出し, 選ぶと型引数が未入力の呼び出し `core.option(T: □)` になる。
   `apply` は型の式では `call` (`part_type.ts`)
 - 値の式のエディタで期待する型が `type` の位置 (型引数) では, 型の式の選択肢 (`number`, `List` など) を先に出す (`expectsType`)

@@ -3,8 +3,8 @@
  *
  * `definy.handle-rpc` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
- * ストアを読む要求 (`read_commits` / `read_events`) をホスト (ここ) が読んで `then` に渡す. 処理は決めるだけで,
- * 読める範囲はホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
+ * ストアを読む要求 (`read_commits` / `read_events`) や書き込みの要求 (`write_event` / `write_contents`) をホスト (ここ) が
+ * 行って結果を `then` に渡す. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
 import { variant, variantOf } from "../src/definy_value.ts";
 import {
@@ -38,6 +38,32 @@ export type ServiceIoHost = {
   /** CAS に無いハッシュ */
   readonly readMissingContentHashes: (
     contentHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<string>>;
+  /** 署名済みイベント (Base64) の Ed25519 署名を確かめる. 不正なら理由 */
+  readonly verifySignedEvent: (signedEventBytes: string) => Promise<
+    | {
+        readonly eventHash: string;
+        readonly referencedContentHashes: ReadonlyArray<string>;
+      }
+    | { readonly invalid: string }
+  >;
+  /** 受け付ける規則 (`core.check-event`) で検査し, 受け付けない理由を返す (受け付けるなら空) */
+  readonly checkEventRules: (
+    signedEventBytes: string,
+  ) => Promise<ReadonlyArray<string>>;
+  /** プロジェクトのコミットなら型チェッカーで検査し, 型エラーを返す (無ければ空) */
+  readonly typeCheckCommit: (
+    signedEventBytes: string,
+  ) => Promise<ReadonlyArray<string>>;
+  /** イベントを保存し, イベントハッシュを返す */
+  readonly writeEvent: (signedEventBytes: string) => Promise<string>;
+  /** Base64 の中身の SHA-256 (URL-safe Base64. 同じ順. Base64 でなければ `undefined`) */
+  readonly hashContents: (
+    contentsBytes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<string | undefined>>;
+  /** 中身を CAS に保存し, 保存した content hash を返す */
+  readonly writeContents: (
+    items: ReadonlyArray<ContentItem>,
   ) => Promise<ReadonlyArray<string>>;
 };
 
@@ -158,6 +184,74 @@ export async function handleRpcInDefiny(
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(missing),
+        ]);
+        break;
+      }
+      case "verify_signed_event": {
+        const result = await host.verifySignedEvent(
+          String(
+            instance.read(instance.recordField(payload, "signed_event_bytes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            "invalid" in result
+              ? variant("invalid", result.invalid)
+              : variant("valid", {
+                  event_hash: result.eventHash,
+                  referenced_content_hashes: result.referencedContentHashes,
+                }),
+          ),
+        ]);
+        break;
+      }
+      case "check_event_rules":
+      case "type_check_commit":
+      case "write_event": {
+        const signedEventBytes = String(
+          instance.read(instance.recordField(payload, "signed_event_bytes")),
+        );
+        const result =
+          tag === "check_event_rules"
+            ? await host.checkEventRules(signedEventBytes)
+            : tag === "type_check_commit"
+              ? await host.typeCheckCommit(signedEventBytes)
+              : await host.writeEvent(signedEventBytes);
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(result),
+        ]);
+        break;
+      }
+      case "hash_contents": {
+        const hashes = await host.hashContents(
+          readStrings(
+            instance.read(instance.recordField(payload, "contents_bytes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            hashes.map((hash) =>
+              hash === undefined ? variant("none") : variant("some", hash),
+            ),
+          ),
+        ]);
+        break;
+      }
+      case "write_contents": {
+        const items = instance.read(
+          instance.recordField(payload, "items"),
+        ) as ReadonlyArray<{
+          readonly content_hash: string;
+          readonly content_bytes: string;
+        }>;
+        const stored = await host.writeContents(
+          items.map((item) => ({
+            contentHash: item.content_hash,
+            contentBytes: item.content_bytes,
+          })),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(stored),
         ]);
         break;
       }

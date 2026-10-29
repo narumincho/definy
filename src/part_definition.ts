@@ -9,7 +9,12 @@
  * src/part_definition.test.ts で確かめている
  */
 import { deriveModuleIdBytesSync, deriveModulePartIdSync } from "./cbor.ts";
-import { field, variantOf, VARIANT_PREFIX } from "./definy_value.ts";
+import {
+  field,
+  optionValue,
+  variantOf,
+  VARIANT_PREFIX,
+} from "./definy_value.ts";
 import {
   encodePartContent,
   isPartContent,
@@ -104,9 +109,10 @@ function quotedExpression(expression: unknown): unknown {
   };
 }
 
-const TYPE_TYPE = { "#type": null };
+/** 型の式 `type` */
+const TYPE_TYPE = { "#type_type": null };
 
-/** パーツの型が `type` (型パーツ) か */
+/** パーツの型 (型チェッカーの形) が `type` (型パーツ) か */
 function isTypeType(partType: unknown): boolean {
   return variantOf(partType)?.tag === "type";
 }
@@ -130,18 +136,22 @@ export function partDefinitionExpression(content: PartContent): unknown {
   return callOf(ids.definePart, {
     description: literalExpression(encoded.description),
     visibility: literalExpression(encoded.visibility),
-    part_type: literalExpression(encoded.part_type),
-    expression:
-      content.expression === null
-        ? literalExpression(NONE)
-        : {
-            "#variant": {
-              tag: "some",
-              payload: { "#some": quotedExpression(content.expression) },
-              type_part: NONE,
-            },
-          },
+    part_type: optionalQuotedExpression(optionValue(encoded.part_type)),
+    expression: optionalQuotedExpression(content.expression ?? undefined),
   });
+}
+
+/** 式が無ければ `none`, あれば `some(quote(expression).expression)` */
+function optionalQuotedExpression(expression: unknown): unknown {
+  return expression === undefined
+    ? literalExpression(NONE)
+    : {
+        "#variant": {
+          tag: "some",
+          payload: { "#some": quotedExpression(expression) },
+          type_part: NONE,
+        },
+      };
 }
 
 /** 評価できない式 */
