@@ -349,9 +349,13 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 - 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す), `memory`, 関数表 `table`, メモリを確保する `alloc` をエクスポートします (デプロイ先の `worker.js` のために, `evaluate` を `main` としてもエクスポート)。`table` と `alloc` は, 外から値を書いて関数を呼ぶため (`instantiateCompiledFunction`)。
   プログラムに出てくる文字列はデータセグメント (1024 番地から) に置きます (下の「文字列リテラル」)
 - ランタイム関数 (メモリの確保, 数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作,
-  `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
-  に固定のバイト列として入っています。組み立てるスクリプトは `scripts/wasm_runtime_functions.py`
-  (`python3 scripts/wasm_runtime_functions.py seeds/core.json` で seed のこのパーツだけを書き換える)
+  `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は関数ごとのパーツ
+  `core.wasm-runtime-alloc` 〜 `core.wasm-runtime-match-payload` (ローカル変数の宣言と命令列の `list<number>`) に,
+  オペコードを `wasm.local-get` などの参照, 即値を数字で書いています。`core.wasm-runtime-functions` はそれぞれを
+  `wasm.code-entry` (先頭にバイト数を付ける) で包んで並べるだけです。以前は Python のスクリプト (`scripts/wasm_runtime_functions.py`) で
+  バイト列を組み立てて seed に書き込んでいたが, definy のパーツとしてエディタで直せるように 2026-10-29 に移した (出力するバイト列は同じ)。
+  命令を書き換えたらバイト数は `wasm.code-entry` が数え直すが, 関数の番号と型は `core.compile-to-wasm` の型セクション・関数セクションと揃えること。
+  コンパイラの出力が変わるので, 続けて `npm run build:stage1 -- --bootstrap` と `npm run build:seeds` を実行する
 - **文字列リテラル**: 文字列リテラル・レコードのキー・`record_get` のキー・バリアントのタグ・`match` のパターンのタグと文字列リテラルは,
   データセグメントの文字列の箱を `i32.const アドレス` で指すだけにします。`core.compile-to-wasm` が最初に式と参照するパーツの式から
   重複の無い文字列の一覧を集め (`core.compile-collect-strings`, 先頭は `"true"` `"false"` なので 1024・1040 番地),
@@ -769,7 +773,9 @@ definy のコンパイラに依らない Wasm のバイナリの書き方は `wa
 
 数値のパーツの参照はコンパイル時にその数値に畳み込まれるので, 名前で書いても出力する Wasm はバイト単位で同じです。
 即値 (関数の番号・memarg・ブロック型), セクションの中身のバイト列, `core.compile-function-body` の前置き,
-`core.wasm-runtime-functions` (definy のコンパイラのランタイム関数なので core に置く) は数字のままです。
+ランタイム関数 `core.wasm-runtime-*` (definy のコンパイラのランタイム関数なので core に置く) も, オペコードだけ名前で書いて即値は数字のままです。
+ブロック型と値の型は `wasm.block-type-empty` (`0x40`), `wasm.value-type-i32` (`0x7f`), `wasm.value-type-i64` (`0x7e`),
+コードセクションの 1 つの関数は `wasm.code-entry(function)` (バイト数 + 関数) です。
 core と wasm は同じプロジェクト `definy` のモジュールなので, 互いのパーツを参照できます (コミットはプロジェクト単位)。
 
 - `number`: `i64.const` (`0x42`) + LEB128 エンコードバイト列

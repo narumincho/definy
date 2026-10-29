@@ -32,13 +32,13 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 
 - **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS が完結します。デプロイは definy のパーツがブラウザから行います ([cloudflare-workers.md](cloudflare-workers.md))。
 - **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build` の最初に `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で `seeds/*.json` から作られ、`dist/client/` にコピーされて D1 データベースの初期化時に自動同期されます。コミットはしません ([build-artifacts.md](build-artifacts.md))。
-- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`bash scripts/ensure-d1.sh`、`npm run build`、`wrangler deploy` を実行します。
+- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`npm run build`、`wrangler deploy` を実行します。
 
 ---
 
 ## 2. ディレクトリ構成
 
-- `wrangler.toml`: Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）
+- `wrangler.toml`: Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）。D1 の `database_id` はここに固定で書く
 - `public/`
   - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
   - `__definy_seed_bundle.json`: ビルトインシードデータ (`npm run build:seeds` が生成。コミットしない)
@@ -50,7 +50,6 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
   - `store.ts`: シードバンドルロード、D1 (SQLite) ストア
   - `cbor.ts`: 決定論的 CBOR & Ed25519 ユーティリティ
   - `types.ts`: 型定義
-- `scripts/ensure-d1.sh`: D1 データベースのプロビジョニングと UUID バインディング設定スクリプト
 
 ---
 
