@@ -6447,6 +6447,315 @@
       }
     },
     {
+      "name": "define-part",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "description",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.localized-text"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "visibility",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.visibility"
+                  }
+                }
+              }
+            },
+            {
+              "name": "part_type",
+              "type": {
+                "#union": [
+                  {
+                    "tag": "none",
+                    "payload_type": {
+                      "#none": null
+                    }
+                  },
+                  {
+                    "tag": "some",
+                    "payload_type": {
+                      "#some": {
+                        "#reference": {
+                          "part_hash": {
+                            "$part": "core.type-ast"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "expression",
+              "type": {
+                "#union": [
+                  {
+                    "tag": "none",
+                    "payload_type": {
+                      "#none": null
+                    }
+                  },
+                  {
+                    "tag": "some",
+                    "payload_type": {
+                      "#some": {
+                        "#reference": {
+                          "part_hash": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "core.part-content"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Define a part. The content stored for a part is an expression that evaluates to core.part-content, usually a call of this part or of a definition part built on it such as core.define-type (docs/part-definition.md). The name of the part is kept outside, in the commit"
+        },
+        {
+          "language": "ja",
+          "text": "パーツを定義する. パーツの中身として預けるのは評価すると core.part-content になる式で, ふつうはこのパーツか, これを使う定義のパーツ (core.define-type など) の呼び出し (docs/part-definition.md). パーツの名前は式の外 (コミット) に置く"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "description"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "visibility"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "part_type"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "expression"
+            }
+          ],
+          "body": {
+            "#record": [
+              {
+                "key": "description",
+                "value": {
+                  "#variable": {
+                    "variable_id": 0
+                  }
+                }
+              },
+              {
+                "key": "visibility",
+                "value": {
+                  "#variable": {
+                    "variable_id": 1
+                  }
+                }
+              },
+              {
+                "key": "part_type",
+                "value": {
+                  "#variable": {
+                    "variable_id": 2
+                  }
+                }
+              },
+              {
+                "key": "expression",
+                "value": {
+                  "#variable": {
+                    "variable_id": 3
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "define-type",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "description",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.localized-text"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "visibility",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.visibility"
+                  }
+                }
+              }
+            },
+            {
+              "name": "expression",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.expression"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "core.part-content"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Define a type part: core.define-part whose type is type. expression is the declaration (a type expression such as union {...}, or a function returning one)"
+        },
+        {
+          "language": "ja",
+          "text": "型パーツを定義する: 型が type の core.define-part. expression は宣言 (union {...} などの型の式か, それを返す関数)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "description"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "visibility"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "expression"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.define-part"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "description",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "visibility",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "part_type",
+                  "value": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#variant": {
+                            "tag": "type",
+                            "payload": {
+                              "#none": null
+                            },
+                            "type_part": {
+                              "#some": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "expression",
+                  "value": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#variable": {
+                            "variable_id": 2
+                          }
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "localized-text",
       "part_type": {
         "#type": null

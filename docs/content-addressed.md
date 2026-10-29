@@ -239,7 +239,8 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 ### ネゴシエーションの通信手順
 
 > コミットはパーツの名前と中身の content hash の一覧 (#763)。パーツの中身 (説明・公開/非公開・型・式. `core.part-content`.
-> [event.md](event.md)) は CAS に預ける。content hash は中身の CBOR の SHA-256 (URL-safe Base64)。
+> [event.md](event.md)) は, 評価するとその値になる定義の式 (`core.define-part(...)` など. [part-definition.md](part-definition.md))
+> にして CAS に預ける。content hash は定義の式の CBOR の SHA-256 (URL-safe Base64)。
 > 以前はブラウザが全パーツの式をコミットに入れていたので, core の 1 パーツを直すたびに約 2.2MB のイベントが増えていた。
 > 式だけを CAS に分けると約 0.44MB, 名前以外をすべて分けた今は約 65KB (Base64)。
 >

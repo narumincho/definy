@@ -137,7 +137,7 @@ it("中身の SHA-256 が content hash と一致しないものは使わない",
   expect(cachedContent("fake-hash")).toBeUndefined();
 });
 
-it("CAS に預けた中身が core.part-content の形でなければ受け付けない", async () => {
+it("CAS に預けた定義の式を評価した中身が core.part-content の形でなければ受け付けない", async () => {
   const store = new WorkerStore();
   const db = createSqliteD1Database();
   await store.seedD1(db, await loadTestSeedBundle());
@@ -171,5 +171,7 @@ it("CAS に預けた中身が core.part-content の形でなければ受け付�
   });
   await expect(
     submitProjectCommitEvent(signed.signedEventBytes, signed.contents, fetchFn),
-  ).rejects.toThrow("is not a core.part-content");
+  ).rejects.toThrow(
+    "is not a part definition that evaluates to a core.part-content",
+  );
 });
