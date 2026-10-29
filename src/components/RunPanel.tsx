@@ -343,6 +343,7 @@ export function RunPanel(): JSX.Element {
                 <RunOutcomeView
                   outcome={entry.outcome}
                   partNames={partNames}
+                  resolvePart={resolvePart}
                   language={language}
                 />
               </li>
@@ -357,10 +358,12 @@ export function RunPanel(): JSX.Element {
 function RunOutcomeView({
   outcome,
   partNames,
+  resolvePart,
   language,
 }: {
   readonly outcome: RunOutcome | null;
   readonly partNames: ReadonlyMap<string, string>;
+  readonly resolvePart: (partId: string) => unknown;
   readonly language: LanguageCode;
 }): JSX.Element {
   if (outcome === null) {
@@ -396,7 +399,13 @@ function RunOutcomeView({
           </pre>
         );
       }
-      return <RunValueView value={outcome.value} type={outcome.type ?? null} />;
+      return (
+        <RunValueView
+          value={outcome.value}
+          type={outcome.type ?? null}
+          resolvePart={resolvePart}
+        />
+      );
   }
 }
 
@@ -407,17 +416,19 @@ function RunOutcomeView({
 function RunValueView({
   value,
   type,
+  resolvePart,
 }: {
   readonly value: DefinyValue;
   readonly type: unknown;
+  readonly resolvePart: (partId: string) => unknown;
 }): JSX.Element {
   const { parts } = useDefiny();
   const floatNanPartId =
     parts.find((p) => p.moduleName === "core" && p.name === "float-nan")
       ?.partIdHash ?? undefined;
   const expression = useMemo(
-    () => runValueExpression(value, { type, floatNanPartId }),
-    [value, type, floatNanPartId],
+    () => runValueExpression(value, { type, floatNanPartId, resolvePart }),
+    [value, type, floatNanPartId, resolvePart],
   );
   if (expression === null) {
     return <pre className="run-history-output">{formatRunValue(value)}</pre>;
