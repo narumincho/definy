@@ -321,7 +321,9 @@ test.describe("definy UI E2E", () => {
     );
     // エクスプローラーにもコミット前の新しいパーツが出る
     await expect(
-      page.locator(".sidebar-tree-node.part-node", { hasText: "square" }),
+      page.locator(".sidebar-tree-node.part-node", {
+        has: page.locator(".sidebar-node-label", { hasText: /^square$/ }),
+      }),
     ).toHaveCount(1);
 
     // コミットするとモジュールができる
@@ -846,7 +848,7 @@ test.describe("definy UI E2E", () => {
       .locator(".dropdown-option", { hasText: /^core\.list-map(?!-)/ })
       .first()
       .click();
-    // f: は本体が未入力のラムダ式 (item) => □, xs: は未入力
+    // 型引数 T: と U:, xs: は未入力, f: は本体が未入力のラムダ式 (item) => □
     await expect(
       valueTree.locator('[data-node-id$=".fn"]', {
         hasText: /^core\.list-map$/,
@@ -857,7 +859,25 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
     await expect(
       valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(4);
+    // 型引数の位置では型の式を選べる (期待する型が type なので, 型の number を数値の number より先に出す)
+    const numberBadges = valueTree.locator(".tree-badge", {
+      hasText: /^number$/,
+    });
+    const numberBadgesBefore = await numberBadges.count();
+    await valueTree.locator(".tree-badge", { hasText: /^□$/ }).first().click();
+    await page.locator(".dropdown-search-input").fill("number");
+    await expect(
+      page.locator(".dropdown-option", { hasText: /^number/ }),
     ).toHaveCount(2);
+    await page
+      .locator(".dropdown-option", { hasText: /^number/ })
+      .first()
+      .click();
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(3);
+    await expect(numberBadges).toHaveCount(numberBadgesBefore + 1);
   });
 
   test("renaming a function parameter renames the arguments of the callers in other parts", async ({

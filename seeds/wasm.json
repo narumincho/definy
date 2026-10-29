@@ -157,9 +157,9 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#call": {
                                       "function": {
@@ -189,9 +189,9 @@
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#variable": {
                                       "variable_id": 2
@@ -214,9 +214,9 @@
                                   },
                                   "arms": [
                                     {
-                                      "tag": "true",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": true
+                                      },
                                       "body": {
                                         "#call": {
                                           "function": {
@@ -246,9 +246,9 @@
                                       }
                                     },
                                     {
-                                      "tag": "false",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": false
+                                      },
                                       "body": {
                                         "#variable": {
                                           "variable_id": 1
@@ -427,9 +427,9 @@
                                   },
                                   "arms": [
                                     {
-                                      "tag": "true",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": true
+                                      },
                                       "body": {
                                         "#list": [
                                           {
@@ -441,9 +441,9 @@
                                       }
                                     },
                                     {
-                                      "tag": "false",
-                                      "variable_id": -1,
-                                      "variable_name": "",
+                                      "pattern": {
+                                        "#boolean": false
+                                      },
                                       "body": {
                                         "#call": {
                                           "function": {
@@ -602,9 +602,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#list": [
                       {
@@ -616,9 +616,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#call": {
                       "function": {
@@ -821,9 +821,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#match": {
                       "target": {
@@ -855,9 +855,9 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#call": {
                               "function": {
@@ -881,9 +881,9 @@
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#list": []
                           }
@@ -893,9 +893,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#let": {
                       "variable_id": 2,
@@ -1404,6 +1404,63 @@
       }
     },
     {
+      "name": "i32-eq",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i32.eq (0x46)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i32.eq のオペコード (0x46)"
+        }
+      ],
+      "expression": {
+        "#number": 70
+      }
+    },
+    {
+      "name": "i64-eqz",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.eqz (0x50)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.eqz のオペコード (0x50)"
+        }
+      ],
+      "expression": {
+        "#number": 80
+      }
+    },
+    {
+      "name": "i64-eq",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.eq (0x51)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.eq のオペコード (0x51)"
+        }
+      ],
+      "expression": {
+        "#number": 81
+      }
+    },
+    {
       "name": "i64-lt-s",
       "part_type": {
         "#number": null
@@ -1591,6 +1648,310 @@
       ],
       "expression": {
         "#number": 173
+      }
+    },
+    {
+      "name": "f64-load",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.load (0x2B)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.load のオペコード (0x2B)"
+        }
+      ],
+      "expression": {
+        "#number": 43
+      }
+    },
+    {
+      "name": "f64-store",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.store (0x39)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.store のオペコード (0x39)"
+        }
+      ],
+      "expression": {
+        "#number": 57
+      }
+    },
+    {
+      "name": "f64-const",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.const (0x44)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.const のオペコード (0x44)"
+        }
+      ],
+      "expression": {
+        "#number": 68
+      }
+    },
+    {
+      "name": "f64-eq",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.eq (0x61)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.eq のオペコード (0x61)"
+        }
+      ],
+      "expression": {
+        "#number": 97
+      }
+    },
+    {
+      "name": "f64-lt",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.lt (0x63)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.lt のオペコード (0x63)"
+        }
+      ],
+      "expression": {
+        "#number": 99
+      }
+    },
+    {
+      "name": "f64-le",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.le (0x65)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.le のオペコード (0x65)"
+        }
+      ],
+      "expression": {
+        "#number": 101
+      }
+    },
+    {
+      "name": "f64-ceil",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.ceil (0x9B)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.ceil のオペコード (0x9B)"
+        }
+      ],
+      "expression": {
+        "#number": 155
+      }
+    },
+    {
+      "name": "f64-floor",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.floor (0x9C)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.floor のオペコード (0x9C)"
+        }
+      ],
+      "expression": {
+        "#number": 156
+      }
+    },
+    {
+      "name": "f64-trunc",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.trunc (0x9D)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.trunc のオペコード (0x9D)"
+        }
+      ],
+      "expression": {
+        "#number": 157
+      }
+    },
+    {
+      "name": "f64-sqrt",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.sqrt (0x9F)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.sqrt のオペコード (0x9F)"
+        }
+      ],
+      "expression": {
+        "#number": 159
+      }
+    },
+    {
+      "name": "f64-add",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.add (0xA0)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.add のオペコード (0xA0)"
+        }
+      ],
+      "expression": {
+        "#number": 160
+      }
+    },
+    {
+      "name": "f64-sub",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.sub (0xA1)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.sub のオペコード (0xA1)"
+        }
+      ],
+      "expression": {
+        "#number": 161
+      }
+    },
+    {
+      "name": "f64-mul",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.mul (0xA2)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.mul のオペコード (0xA2)"
+        }
+      ],
+      "expression": {
+        "#number": 162
+      }
+    },
+    {
+      "name": "f64-div",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.div (0xA3)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.div のオペコード (0xA3)"
+        }
+      ],
+      "expression": {
+        "#number": 163
+      }
+    },
+    {
+      "name": "f64-convert-i64-s",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction f64.convert_i64_s (0xB9)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 f64.convert_i64_s のオペコード (0xB9)"
+        }
+      ],
+      "expression": {
+        "#number": 185
+      }
+    },
+    {
+      "name": "misc-prefix",
+      "part_type": {
+        "#number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Prefix byte of the Wasm miscellaneous instructions (0xFC), such as i64.trunc_sat_f64_s (0xFC 6)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の 0xFC で始まる命令 (i64.trunc_sat_f64_s は 0xFC 6) の先頭のバイト"
+        }
+      ],
+      "expression": {
+        "#number": 252
       }
     },
     {

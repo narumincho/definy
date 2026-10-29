@@ -208,7 +208,7 @@ describe("self-hosted type check (stage1)", () => {
     const outcomes = checkParts({
       typeChecker,
       parts: [
-        // 引数の順番が組み込みの引数名の順と違う
+        // 引数は名前で対応させるので, 順番は組み込みの引数名の順と違ってよい
         numberPart(
           await coreCall("minus", {
             right: { "#number": 1 },
@@ -222,13 +222,19 @@ describe("self-hosted type check (stage1)", () => {
             b: { "#number": 2 },
           }),
         ),
-        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める
-        numberPart(
-          await coreCall("list-get", {
+        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める. 範囲外があるので option を返す
+        {
+          partType: {
+            "#union": [
+              { tag: "none", payload_type: { "#none": null } },
+              { tag: "some", payload_type: { "#some": { "#number": null } } },
+            ],
+          },
+          expression: await coreCall("list-get", {
             list: { "#list": [{ "#number": 1 }] },
             index: { "#number": 0 },
           }),
-        ),
+        },
         numberPart(
           await coreCall("list-get", {
             list: { "#list": [{ "#string": "a" }] },
@@ -239,13 +245,348 @@ describe("self-hosted type check (stage1)", () => {
       env,
     });
     expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
+  }, 600_000);
+
+  it("呼び出しの引数とラムダ式の引数は名前で対応させ, 順番は自由", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const functionType = {
+      "#function": {
+        parameters: [
+          { name: "a", type: { "#number": null } },
+          { name: "b", type: { "#string": null } },
+        ],
+        return_type: { "#number": null },
+      },
+    };
+    const lambda = (names: ReadonlyArray<string>, body: unknown) => ({
+      "#function": {
+        parameters: names.map((name, i) => ({
+          parameter_id: i,
+          parameter_name: name,
+        })),
+        body,
+      },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // 宣言の型と違う順番の引数のラムダ式. a は number
+        {
+          partType: functionType,
+          expression: lambda(["b", "a"], { "#variable": { variable_id: 1 } }),
+        },
+        // b は string なので number を返せない
+        {
+          partType: functionType,
+          expression: lambda(["b", "a"], { "#variable": { variable_id: 0 } }),
+        },
+        // 同じ名前の引数は書けない
+        {
+          partType: functionType,
+          expression: lambda(["a", "a"], { "#number": 0 }),
+        },
+        // 宣言と違う順番で引数を渡す
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("list-contains-string", {
+            index: { "#number": 0 },
+            target: { "#string": "a" },
+            list: { "#list": [{ "#string": "a" }] },
+          }),
+        },
+        // 足りない引数
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("list-contains-string", {
+            index: { "#number": 0 },
+            list: { "#list": [{ "#string": "a" }] },
+          }),
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
       "type_error",
       "type_error",
       "ok",
       "type_error",
     ]);
-    expect(outcomes[0]).toMatchObject({ tag: "invalid_type_declaration" });
-    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
+  }, 600_000);
+
+  it("浮動小数のリテラルの型は float で, 整数とは別の型", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const float = (mantissa: number, exponent: number) => ({
+      "#float": { mantissa, exponent },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#float": null }, expression: float(15, -1) },
+        {
+          partType: { "#float": null },
+          expression: await coreCall("float-plus", {
+            left: float(1, -1),
+            right: float(2, -1),
+          }),
+        },
+        // 整数は浮動小数として使えない
+        {
+          partType: { "#float": null },
+          expression: await coreCall("float-plus", {
+            left: { "#number": 1 },
+            right: float(2, -1),
+          }),
+        },
+        { partType: { "#number": null }, expression: float(1, 0) },
+        {
+          partType: { "#number": null },
+          expression: await coreCall("float-floor", { value: float(15, -1) }),
+        },
+        {
+          partType: { "#boolean": null },
+          expression: await coreCall("equal", {
+            left: float(1, 0),
+            right: await coreCall("float-from-integer", {
+              value: { "#number": 1 },
+            }),
+          }),
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "ok",
+      "type_error",
+      "type_error",
+      "ok",
+      "ok",
+    ]);
+  }, 600_000);
+
+  it("型引数は普通の引数で, 後ろの引数の型と戻り値の型に入る (Zig / Idris2 と同じ)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const optionId = await deriveModulePartId(coreModuleId, "option");
+    const typeType = { "#type": null };
+    const parameter = (name: string) => ({ "#parameter": name });
+    const apply = (
+      partHash: string,
+      args: Readonly<Record<string, unknown>>,
+    ) => ({
+      "#apply": {
+        part_hash: partHash,
+        arguments: Object.entries(args).map(([name, type]) => ({ name, type })),
+      },
+    });
+    const listOf = (itemType: unknown) => ({
+      "#list": { item_type: itemType },
+    });
+    const variantOf = (tag: string, payload?: unknown) => ({
+      "#variant": {
+        tag,
+        payload:
+          payload === undefined ? { "#none": null } : { "#some": payload },
+        type_part: { "#none": null },
+      },
+    });
+    const lessThanTwo = {
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: await coreCall("less-than", {
+          left: { "#variable": { variable_id: 1 } },
+          right: { "#number": 2 },
+        }),
+      },
+    };
+    const mapLessThanTwo = async (T: unknown, U: unknown) =>
+      coreCall("list-map", {
+        T,
+        U,
+        f: lessThanTwo,
+        xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+      });
+    // ユーザーが書く型引数を取る型パーツ: pair(A: type, B: type) = { first: A, second: B }
+    const pairId = "test-pair";
+    const pairEnv = [
+      ...env,
+      {
+        partId: pairId,
+        partType: {
+          "#function": {
+            parameters: [
+              { name: "A", type: typeType },
+              { name: "B", type: typeType },
+            ],
+            return_type: typeType,
+          },
+        },
+        typeDeclaration: {
+          "#function": {
+            parameters: [
+              { parameter_id: 0, parameter_name: "A" },
+              { parameter_id: 1, parameter_name: "B" },
+            ],
+            body: {
+              "#type_record": [
+                { key: "first", value: { "#variable": { variable_id: 0 } } },
+                { key: "second", value: { "#variable": { variable_id: 1 } } },
+              ],
+            },
+          },
+        },
+      },
+    ];
+    // (T: type, x: T) -> T
+    const identityType = {
+      "#function": {
+        parameters: [
+          { name: "T", type: typeType },
+          { name: "x", type: parameter("T") },
+        ],
+        return_type: parameter("T"),
+      },
+    };
+    const identity = (body: unknown) => ({
+      "#function": {
+        parameters: [
+          { parameter_id: 0, parameter_name: "T" },
+          { parameter_id: 1, parameter_name: "x" },
+        ],
+        body,
+      },
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // list-map(T: number, U: boolean, ...) は List<boolean>
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#type_number": null },
+            { "#type_boolean": null },
+          ),
+        },
+        {
+          partType: listOf({ "#number": null }),
+          expression: await mapLessThanTwo(
+            { "#type_number": null },
+            { "#type_boolean": null },
+          ),
+        },
+        // xs は List<T> なので T: string なら [1, 2] は渡せない
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#type_string": null },
+            { "#type_boolean": null },
+          ),
+        },
+        // 型引数には型を書く
+        {
+          partType: listOf({ "#boolean": null }),
+          expression: await mapLessThanTwo(
+            { "#number": 1 },
+            { "#type_boolean": null },
+          ),
+        },
+        // 型引数を取る型パーツ core.option
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("some", { "#number": 1 }),
+        },
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("none"),
+        },
+        {
+          partType: apply(optionId, { T: { "#number": null } }),
+          expression: variantOf("some", { "#string": "a" }),
+        },
+        // 型引数を取る関数. 本体では T は T とだけ等しい
+        {
+          partType: identityType,
+          expression: identity({ "#variable": { variable_id: 1 } }),
+        },
+        { partType: identityType, expression: identity({ "#number": 1 }) },
+        // 型の式の中で型パーツを呼ぶ: List<option(T: number)>
+        {
+          partType: { "#type": null },
+          expression: {
+            "#type_list": {
+              item_type: {
+                "#call": {
+                  function: {
+                    "#part_reference": { part_definition_event_hash: optionId },
+                  },
+                  arguments: [{ name: "T", value: { "#type_number": null } }],
+                },
+              },
+            },
+          },
+        },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+      "type_error",
+      "ok",
+      "ok",
+      "type_error",
+      "ok",
+      "type_error",
+      "ok",
+    ]);
+    expect(outcomes[1]).toMatchObject({
+      tag: "type_mismatch",
+      detail: {
+        expected: listOf({ "#number": null }),
+        actual: listOf({ "#boolean": null }),
+      },
+    });
+    const pairOutcomes = checkParts({
+      typeChecker,
+      parts: [
+        {
+          partType: apply(pairId, {
+            A: { "#number": null },
+            B: { "#string": null },
+          }),
+          expression: {
+            "#record": [
+              { key: "first", value: { "#number": 1 } },
+              { key: "second", value: { "#string": "a" } },
+            ],
+          },
+        },
+        {
+          partType: apply(pairId, {
+            B: { "#string": null },
+            A: { "#number": null },
+          }),
+          expression: {
+            "#record": [
+              { key: "first", value: { "#string": "a" } },
+              { key: "second", value: { "#string": "a" } },
+            ],
+          },
+        },
+      ],
+      env: pairEnv,
+    });
+    expect(pairOutcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+    ]);
   }, 600_000);
 
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
@@ -272,6 +613,8 @@ describe("self-hosted type check (stage1)", () => {
         "#function": {
           parameters: [{ parameter_id: 0, parameter_name: "f" }],
           body: await coreCall("list-map", {
+            T: { "#type_number": null },
+            U: { "#type_number": null },
             f,
             xs: { "#list": [{ "#number": 1 }] },
           }),
@@ -339,9 +682,7 @@ describe("self-hosted type check (stage1)", () => {
         "#match": {
           target: { "#string": "plus" },
           arms: arms.map(([tag, body]) => ({
-            tag,
-            variable_id: -1,
-            variable_name: "",
+            pattern: tag === "_" ? { "#any": null } : { "#string": tag },
             body,
           })),
         },
@@ -368,6 +709,144 @@ describe("self-hosted type check (stage1)", () => {
       "type_error",
     ]);
     expect(outcomes[1]).toMatchObject({ tag: "non_exhaustive_match" });
+  }, 600_000);
+
+  it("パターンは木で, ネストしたパターンで束縛した変数の型は中の値の型になる", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const any = { "#any": null };
+    const variantPattern = (tag: string, payload: unknown = any) => ({
+      "#variant": { tag, payload },
+    });
+    // option<option<number>>
+    const nestedOption = await coreCall("list-get", {
+      list: {
+        "#list": [
+          await coreCall("list-get", {
+            list: { "#list": [{ "#number": 5 }] },
+            index: { "#number": 0 },
+          }),
+        ],
+      },
+      index: { "#number": 0 },
+    });
+    const match = (
+      target: unknown,
+      arms: ReadonlyArray<readonly [unknown, unknown]>,
+    ): PartToCheck => ({
+      partType: { "#number": null },
+      expression: {
+        "#match": {
+          target,
+          arms: arms.map(([pattern, body]) => ({ pattern, body })),
+        },
+      },
+    });
+    const x = { "#bind": { variable_id: 1, variable_name: "x" } };
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        match(nestedOption, [
+          [
+            variantPattern("some", variantPattern("some", x)),
+            { "#variable": { variable_id: 1 } },
+          ],
+          [variantPattern("some", variantPattern("none")), { "#number": 1 }],
+          [variantPattern("none"), { "#number": 2 }],
+        ]),
+        // 中のタグが型に無い
+        match(nestedOption, [
+          [variantPattern("some", variantPattern("other")), { "#number": 1 }],
+          [any, { "#number": 2 }],
+        ]),
+        // some(none) が無いので網羅していない
+        match(nestedOption, [
+          [
+            variantPattern("some", variantPattern("some", x)),
+            { "#variable": { variable_id: 1 } },
+          ],
+          [variantPattern("none"), { "#number": 2 }],
+        ]),
+        // 数値のリテラルのパターン
+        match({ "#number": 3 }, [
+          [{ "#number": 3 }, { "#number": 1 }],
+          [x, { "#variable": { variable_id: 1 } }],
+        ]),
+        // 数値に文字列のパターン
+        match({ "#number": 3 }, [
+          [{ "#string": "3" }, { "#number": 1 }],
+          [any, { "#number": 2 }],
+        ]),
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[2]).toMatchObject({
+      tag: "non_exhaustive_match",
+      detail: { missing_tag: "some" },
+    });
+    expect(outcomes[4]).toMatchObject({ tag: "type_mismatch" });
+  }, 600_000);
+
+  it("型パーツの参照だけで循環する型パーツの宣言は型エラーで, その型の値の検査も止まる", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+    const cycleEnv: ReadonlyArray<PartTypeEntry> = [
+      ...env,
+      {
+        partId: "cycleA",
+        partType: { "#type": null },
+        typeDeclaration: reference("cycleB"),
+        builtin: undefined,
+      },
+      {
+        partId: "cycleB",
+        partType: { "#type": null },
+        typeDeclaration: reference("cycleA"),
+        builtin: undefined,
+      },
+      {
+        partId: "aliasOfNumber",
+        partType: { "#type": null },
+        typeDeclaration: reference("numberType"),
+        builtin: undefined,
+      },
+      {
+        partId: "numberType",
+        partType: { "#type": null },
+        typeDeclaration: { "#type_number": null },
+        builtin: undefined,
+      },
+    ];
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#type": null }, expression: reference("cycleB") },
+        {
+          partType: { "#reference": { part_hash: "cycleA" } },
+          expression: { "#number": 1 },
+        },
+        { partType: { "#type": null }, expression: reference("numberType") },
+        {
+          partType: { "#reference": { part_hash: "aliasOfNumber" } },
+          expression: { "#number": 1 },
+        },
+      ],
+      env: cycleEnv,
+    });
+    expect(outcomes).toMatchObject([
+      { kind: "type_error", tag: "invalid_type_declaration" },
+      { kind: "type_error", tag: "type_mismatch" },
+      { kind: "ok" },
+      { kind: "ok" },
+    ]);
   }, 600_000);
 
   it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
@@ -760,17 +1239,17 @@ describe("self-hosted type check (stage1)", () => {
                 target: { "#variable": { variable_id: 0 } },
                 arms: [
                   {
-                    tag: "number",
-                    variable_id: 1,
-                    variable_name: "n",
+                    pattern: {
+                      "#variant": {
+                        tag: "number",
+                        payload: {
+                          "#bind": { variable_id: 1, variable_name: "n" },
+                        },
+                      },
+                    },
                     body: { "#variable": { variable_id: 1 } },
                   },
-                  {
-                    tag: "_",
-                    variable_id: -1,
-                    variable_name: "",
-                    body: { "#number": 0 },
-                  },
+                  { pattern: { "#any": null }, body: { "#number": 0 } },
                 ],
               },
             },

@@ -30,6 +30,7 @@ function coreValueToConformanceValue(value: unknown): unknown {
   const payload = tagged.payload as DefinyValue;
   switch (tagged.tag) {
     case "number":
+    case "float":
     case "string":
     case "boolean":
       return payload;

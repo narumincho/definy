@@ -115,3 +115,44 @@ describe("buildSelectorOptions and resolveCurrentOptionValue", () => {
     expect(val).toBe("expr:number");
   });
 });
+
+describe("型のツリーエディタの型引数", () => {
+  it("関数の型の中では, 型が type の引数を型引数の選択肢に出し, 選ぶと型引数の参照にする", async () => {
+    const { expressionToLayoutNode } = await import("./ast_to_layout.ts");
+    const { findExpressionNode, applySelection } =
+      await import("./selection.ts");
+    // (T: type, x: number) -> number
+    const typeExpression = {
+      "#type_function": {
+        parameters: [
+          { name: "T", type: { "#type_type": null } },
+          { name: "x", type: { "#type_number": null } },
+        ],
+        return_type: { "#type_number": null },
+      },
+    };
+    const root = expressionToLayoutNode(typeExpression);
+    const returnPath = ["typeFunctionReturn"] as const;
+    const node = findExpressionNode(root, returnPath);
+    expect(node?.typeParameters).toEqual(["T"]);
+    const typeOptions = buildSelectorOptions({
+      mode: "type",
+      typeParameters: node?.typeParameters,
+      partOptions: [],
+    });
+    expect(typeOptions[0]).toMatchObject({
+      value: "expr:type:parameter:T",
+      name: "T",
+    });
+    expect(
+      applySelection(typeExpression, returnPath, "expr:type:parameter:T"),
+    ).toEqual({
+      "#type_function": {
+        parameters: typeExpression["#type_function"].parameters,
+        return_type: { "#type_parameter": "T" },
+      },
+    });
+    // 関数の型の外では型引数を参照できない
+    expect(expressionToLayoutNode(typeExpression).typeParameters).toEqual([]);
+  });
+});

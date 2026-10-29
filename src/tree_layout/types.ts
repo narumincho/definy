@@ -63,6 +63,8 @@ export type LayoutNode = {
    * 置換メニューの変数の選択肢に使う
    */
   readonly scopeVariables?: ReadonlyMap<number, string>;
+  /** 式 1 つ分のノードにだけ付く, その位置から参照できる型引数 (関数の型の引数で型が type のもの) の名前 */
+  readonly typeParameters?: ReadonlyArray<string>;
 };
 
 export type LayoutOptions = {

@@ -158,6 +158,18 @@
         {
           "type": "object",
           "required": [
+            "#type_float"
+          ],
+          "properties": {
+            "#type_float": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#type_string"
           ],
           "properties": {
@@ -351,6 +363,31 @@
           "properties": {
             "#number": {
               "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
+              "type": "object",
+              "required": [
+                "mantissa",
+                "exponent"
+              ],
+              "properties": {
+                "mantissa": {
+                  "type": "integer"
+                },
+                "exponent": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -697,42 +734,7 @@
                 "arms": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "required": [
-                      "tag",
-                      "variable_id",
-                      "variable_name",
-                      "body"
-                    ],
-                    "properties": {
-                      "tag": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "$ref": "#/definitions/PartPlaceholder"
-                          }
-                        ]
-                      },
-                      "variable_id": {
-                        "type": "integer"
-                      },
-                      "variable_name": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "$ref": "#/definitions/PartPlaceholder"
-                          }
-                        ]
-                      },
-                      "body": {
-                        "$ref": "#/definitions/core.expression"
-                      }
-                    },
-                    "additionalProperties": false
+                    "$ref": "#/definitions/core.match-arm"
                   }
                 }
               },
@@ -1032,6 +1034,145 @@
         }
       ]
     },
+    "core.pattern": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#any"
+          ],
+          "properties": {
+            "#any": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#bind"
+          ],
+          "properties": {
+            "#bind": {
+              "type": "object",
+              "required": [
+                "variable_id",
+                "variable_name"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                },
+                "variable_name": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variant"
+          ],
+          "properties": {
+            "#variant": {
+              "type": "object",
+              "required": [
+                "tag",
+                "payload"
+              ],
+              "properties": {
+                "tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "payload": {
+                  "$ref": "#/definitions/core.pattern"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#string"
+          ],
+          "properties": {
+            "#string": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#number"
+          ],
+          "properties": {
+            "#number": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#boolean"
+          ],
+          "properties": {
+            "#boolean": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.match-arm": {
+      "type": "object",
+      "required": [
+        "pattern",
+        "body"
+      ],
+      "properties": {
+        "pattern": {
+          "$ref": "#/definitions/core.pattern"
+        },
+        "body": {
+          "$ref": "#/definitions/core.expression"
+        }
+      },
+      "additionalProperties": false
+    },
     "core.value": {
       "anyOf": [
         {
@@ -1042,6 +1183,18 @@
           "properties": {
             "#number": {
               "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
+              "type": "number"
             }
           },
           "additionalProperties": false
@@ -1308,6 +1461,18 @@
         {
           "type": "object",
           "required": [
+            "#float"
+          ],
+          "properties": {
+            "#float": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
             "#string"
           ],
           "properties": {
@@ -1548,6 +1713,80 @@
           "properties": {
             "#code": {
               "$ref": "#/definitions/core.type-ast"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#parameter"
+          ],
+          "properties": {
+            "#parameter": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#apply"
+          ],
+          "properties": {
+            "#apply": {
+              "type": "object",
+              "required": [
+                "part_hash",
+                "arguments"
+              ],
+              "properties": {
+                "part_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "arguments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "type"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "type": {
+                        "$ref": "#/definitions/core.type-ast"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
@@ -2506,7 +2745,8 @@
       "type": "object",
       "required": [
         "variables",
-        "parts"
+        "parts",
+        "type_parameters"
       ],
       "properties": {
         "variables": {
@@ -2549,6 +2789,32 @@
               },
               "part_type": {
                 "$ref": "#/definitions/core.type-ast"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "type_parameters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "parameter_id",
+              "parameter_name"
+            ],
+            "properties": {
+              "parameter_id": {
+                "type": "integer"
+              },
+              "parameter_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/PartPlaceholder"
+                  }
+                ]
               }
             },
             "additionalProperties": false

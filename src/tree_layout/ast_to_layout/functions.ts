@@ -1,6 +1,6 @@
 import type { LayoutNode, PathStep } from "../types.ts";
 import { variantPayload } from "../../definy_value.ts";
-import { callOf, letChainOf } from "../expression.ts";
+import { callOf, letChainOf, partReferenceIdOf } from "../expression.ts";
 import {
   type BuildLayoutNodeFn,
   childPath,
@@ -145,8 +145,11 @@ export function tryBuildFunctionNode(
       computedHeight: 0,
       layoutMode: "inline",
     };
-    const args = callNode.arguments;
-    const argChildren: ReadonlyArray<LayoutNode> = args.map((arg, idx) => {
+    const args = argumentsInDeclarationOrder(
+      callNode.arguments,
+      calleeParameterNames(callNode.callee, context),
+    );
+    const argChildren: ReadonlyArray<LayoutNode> = args.map(({ arg, idx }) => {
       const argPath = childPath(currentPath, {
         kind: "callArgument",
         index: idx,
@@ -186,6 +189,38 @@ export function tryBuildFunctionNode(
   }
 
   return null;
+}
+
+/** 呼び出すパーツの引数名 (宣言の順). パーツでないか分からなければ `undefined` */
+function calleeParameterNames(
+  callee: unknown,
+  context: ScopeContext,
+): ReadonlyArray<string> | undefined {
+  const id = partReferenceIdOf(callee);
+  return id === null ? undefined : context.callParameterNames?.get(id);
+}
+
+/**
+ * 呼び出しの引数を, 呼び出す関数の引数の宣言の順に並べる (データ上の順番は自由. docs/call-syntax.md).
+ * 宣言に無い引数は後ろにデータの順で並べる. `idx` はデータ上の位置で, パスに使う
+ */
+export function argumentsInDeclarationOrder<
+  T extends { readonly name?: unknown },
+>(
+  args: ReadonlyArray<T>,
+  parameterNames: ReadonlyArray<string> | undefined,
+): ReadonlyArray<{ readonly arg: T; readonly idx: number }> {
+  const indexed = args.map((arg, idx) => ({ arg, idx }));
+  if (parameterNames === undefined) {
+    return indexed;
+  }
+  const rank = (name: unknown): number => {
+    const i = parameterNames.indexOf(String(name));
+    return i < 0 ? parameterNames.length : i;
+  };
+  return [...indexed].sort(
+    (a, b) => rank(a.arg.name) - rank(b.arg.name) || a.idx - b.idx,
+  );
 }
 
 /**

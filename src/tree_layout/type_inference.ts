@@ -7,6 +7,7 @@ import { variantOptionValueForExpression } from "./variant.ts";
 import {
   callOf,
   letChain,
+  isWildcardArm,
   matchOf,
   partReferenceIdOf,
   variableIdOf,
@@ -115,6 +116,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
   switch (tag) {
     // 型の式 (part_type.ts)
     case "type_number":
+    case "type_float":
     case "type_string":
     case "type_boolean":
     case "type_type":
@@ -125,8 +127,12 @@ export function getOptionValueForExpression(node: unknown): string | null {
     case "type_record":
     case "type_union":
       return `expr:type:${tag.slice("type_".length)}`;
+    case "type_parameter":
+      return `expr:type:parameter:${String(payload)}`;
     case "number":
       return "expr:number";
+    case "float":
+      return "expr:float";
     case "string":
       return "expr:string";
     case "boolean":
@@ -164,13 +170,11 @@ export function getOptionValueForExpression(node: unknown): string | null {
   return null;
 }
 
-const BOOLEAN_MATCH_TAGS: ReadonlySet<string> = new Set(["true", "false", "_"]);
-
 /** アームが `true` / `false` (と `_`) だけの, Bool に対する match か. `_` だけの match は違う */
 export function isBooleanMatch(expression: unknown): boolean {
   const arms = matchOf(expression)?.arms ?? [];
   return (
-    arms.some((arm) => arm.tag !== "_") &&
-    arms.every((arm) => BOOLEAN_MATCH_TAGS.has(String(arm.tag)))
+    arms.some((arm) => arm.kind === "boolean") &&
+    arms.every((arm) => arm.kind === "boolean" || isWildcardArm(arm))
   );
 }

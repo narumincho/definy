@@ -50,20 +50,27 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 - `let` は束縛 1 つずつの入れ子: `{"#let": {variable_id, variable_name, value, body}}`。
   式のツリーエディタは、続けて書いた let を 1 つのブロック (束縛の並びと本体) として見せる
   (`src/tree_layout/expression.ts` の `letChainOf` / `letChain`)。
-- `match` のアーム: `{tag, variable_id, variable_name, body}`。束縛しないアームは `variable_id: -1`, `variable_name: ""`。
-  どのタグにも一致するアームはタグ `_` のアームで、ほかの default の欄は無い。
+- `match` のアーム: `{pattern, body}`。`pattern` は `core.pattern` の値の木
+  (`{"#any": null}`, `{"#bind": {variable_id, variable_name}}`, `{"#variant": {tag, payload}}`, `{"#string": ...}`,
+  `{"#number": ...}`, `{"#boolean": ...}`)。どの値にも一致するアームは `#any` か `#bind` のアームで、ほかの default の欄は無い
+  ([match-pattern.md](match-pattern.md))。
+- 浮動小数のリテラル: `{"#float": {mantissa, exponent}}` で値は `mantissa × 10^exponent` (どちらも整数. [float.md](float.md))。
+  型の式は `{"#type_float": null}`, 型 (`core.type-ast`) は `{"#float": null}`。
 - `variant`: `{tag, payload: option<式>, type_part: option<パーツ ID>}`。
 - `secret`: `{id, label, allowed_url_prefixes}` ([secret.md](secret.md))。
 - 未入力: `{"#hole": {"probe": false}}`。型チェッカーに期待する型を聞く位置は `probe: true`。
 - コンパイラ組み込み: `{"#builtin": "plus"}` ([builtin-parts.md](builtin-parts.md))。
 - 型パーツの宣言も `core.expression` の値で、タグが `type_` で始まる
   (`type_number`, `type_list`, `type_record`, `type_union`, ...) か、型パーツの参照 (`part_reference`)。
+  型引数を取る型は型の式を返す関数 (`(T) => type_union [...]`) で、型の式の中で型パーツを `call` で呼べる。
+  型の式は実行時にもこの形の値になる ([type-arguments.md](type-arguments.md))。
 
 ## パーツの型 (`core.type-ast`)
 
 `{"#number": null}`, `{"#list": {"item_type": T}}`, `{"#function": {"parameters": [{"name", "type"}], "return_type": T}}`,
 `{"#record": [{"key", "field_type"}]}`, `{"#union": [{"tag", "payload_type": option<T>}]}`,
-`{"#reference": {"part_hash": ID}}`, `{"#code": T}`, `{"#type": null}` (型パーツ), `{"#secret": null}`。
+`{"#reference": {"part_hash": ID}}`, `{"#code": T}`, `{"#type": null}` (型パーツ・型引数の型), `{"#secret": null}`,
+`{"#parameter": "T"}` (型引数の参照), `{"#apply": {"part_hash": ID, "arguments": [{"name", "type"}]}}` (型を返すパーツの呼び出し)。
 型指定が無いパーツは `null`。式のツリーエディタでの編集のしかたは [part-type.md](part-type.md)。
 
 ## 形の検査

@@ -6,7 +6,13 @@ import {
 } from "./types.ts";
 import { FIELD_STEPS } from "../mutation.ts";
 import { field, optionValue, variantOf } from "../../definy_value.ts";
-import { armBindsVariable, matchOf } from "../expression.ts";
+import {
+  armBindsVariable,
+  matchOf,
+  patternBoundVariables,
+  patternLabel,
+  patternOfArm,
+} from "../expression.ts";
 
 /** FIELD_STEPS の式の表示名 */
 const FIELD_STEP_LABELS: Readonly<Record<string, string>> = {
@@ -39,21 +45,29 @@ export function tryBuildControlOrTypeNode(
     const armChildren: LayoutNode[] = [];
 
     for (const [idx, arm] of matchNode.arms.entries()) {
-      const armTag = String(arm.tag ?? "");
+      const pattern = patternOfArm(arm);
+      // 1 段のパターンで束縛する変数は名前を別のノードにして, その場で名前を変えられるようにする
       const binds = armBindsVariable(arm);
       const armVarId = Number(arm.variable_id);
       const armVarName =
         arm.variable_name.length > 0 ? arm.variable_name : `v${armVarId}`;
+      const patternText =
+        arm.kind === "bind" ? "_" : binds ? arm.tag : patternLabel(pattern);
+      const bound = patternBoundVariables(pattern);
 
-      const armContext = binds
-        ? {
-            ...context,
-            scopeVariables: new Map([
-              ...(context.scopeVariables ?? []),
-              [armVarId, armVarName],
-            ]),
-          }
-        : context;
+      const armContext =
+        bound.length > 0
+          ? {
+              ...context,
+              scopeVariables: new Map([
+                ...(context.scopeVariables ?? []),
+                ...bound.map(
+                  ({ id, name }) =>
+                    [id, name.length > 0 ? name : `v${id}`] as const,
+                ),
+              ]),
+            }
+          : context;
 
       const armPath = childPath(currentPath, {
         kind: "matchArmBody",
@@ -86,7 +100,7 @@ export function tryBuildControlOrTypeNode(
       armChildren.push({
         id: `${idPrefix}.arm_${idx}`,
         path: childPath(currentPath, { kind: "matchArmPattern", index: idx }),
-        label: `${armTag} =>`,
+        label: `${patternText} =>`,
         kind: "block",
         children: [...variableChildren, bodyChild],
         computedWidth: 0,
@@ -115,6 +129,22 @@ export function tryBuildControlOrTypeNode(
       }>;
       readonly return_type?: unknown;
     };
+    // 型が type の引数は型引数で, 関数の型の中 (ほかの引数の型と戻り値の型) から参照できる
+    const typeParameterNames = (fn.parameters ?? []).flatMap((parameter) =>
+      variantOf(parameter.type)?.tag === "type_type"
+        ? [String(parameter.name ?? "")]
+        : [],
+    );
+    const functionContext: ScopeContext =
+      typeParameterNames.length > 0
+        ? {
+            ...context,
+            typeParameters: [
+              ...(context.typeParameters ?? []),
+              ...typeParameterNames,
+            ],
+          }
+        : context;
     const parameterNodes = (fn.parameters ?? []).map(
       (parameter, index): LayoutNode => {
         const parameterPath = childPath(currentPath, {
@@ -131,7 +161,7 @@ export function tryBuildControlOrTypeNode(
               parameter.type,
               `${idPrefix}.p_${index}.type`,
               parameterPath,
-              context,
+              functionContext,
             ),
           ],
           computedWidth: 0,
@@ -158,7 +188,7 @@ export function tryBuildControlOrTypeNode(
               fn.return_type,
               `${idPrefix}.return.type`,
               returnPath,
-              context,
+              functionContext,
             ),
           ],
           computedWidth: 0,

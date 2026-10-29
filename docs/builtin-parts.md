@@ -28,7 +28,7 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 ## 組み込みのパーツ
 
 - 式が `{"#builtin": "plus"}` のパーツがコンパイラ組み込み. 組み込みかどうかはパーツ名ではなく式で決まる (`compilerBuiltinName`)
-- 引数名は下の表のとおり (順番どおりに書く). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
+- 引数名は下の表のとおり (順番は自由. [call-syntax.md](call-syntax.md) の「引数は名前で対応させる」). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
   `part_type` を持つ. `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
   どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない (型チェッカーは名前で検査する)
 
@@ -40,8 +40,35 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 | `list_get`                                                                                                                                                                          | `core.list-get`               | `list`, `index`         |
 | `list_append`                                                                                                                                                                       | `core.list-append`            | `list`, `item`          |
 
+浮動小数の組み込み (`float_plus` など) は [float.md](float.md)。
+
 `bit_and` などのビット演算はまだ definy 製のコンパイラ・型チェッカー・評価器が扱わない
 (型検査では引数名が合わないエラー, コンパイルすると unreachable, 評価すると `unit`).
+
+## 実行時エラーにしない
+
+definy には実行時エラーが無い (Elm と同じ)。組み込みのパーツはどの引数でも値を返す。
+
+| 呼び出し                              | 結果                                                                                                           |
+| :------------------------------------ | :------------------------------------------------------------------------------------------------------------- |
+| `core.divide(left: x, right: 0)`      | `0`                                                                                                            |
+| `core.divide(left: -2^63, right: -1)` | `-2^63` (折り返す. Wasm の `i64.div_s` のように trap しない)                                                   |
+| `core.remainder(left: x, right: 0)`   | `x` (`x = y * (x / y) + x % y` が `y = 0` でも成り立つように. Lean と同じ)                                     |
+| `core.equal` / `core.not-equal`       | リスト・レコード・バリアントも中身で比べる. レコードはフィールドの順番によらない. 関数は同じ値のときだけ等しい |
+
+除算は 0 に向かって丸める (`-7 / 2 = -3`, `-7 % 2 = -1`)。数値の加減乗算は 64 ビットで折り返す。
+`core.list-get` は Elm の `Array.get` と同じく option を返す: 範囲内なら `some(要素)`, 範囲外 (負の添字を含む) なら `none`。
+型チェッカーは要素の型 `T` から `union { none, some(T) }` を返す (`core.type-check-builtin-call`)。
+stage1 ではランタイム関数 `list_get` がバリアントの箱を作る。タグの文字列 `"none"` `"some"` は `core.compile-to-wasm` が
+文字列の表の先頭 (`"true"` `"false"` の後ろ, 1056・1072 番地) に置く。
+
+seed の 218 か所の呼び出しは, 範囲を確かめる `match` (`less-than-or-equal(list-length(xs), i)` など) を
+`match core.list-get(list: xs, index: i) { none => 範囲外のとき, some(item) => ... }` に機械的に書き換えた (2026-10-28)。
+ほかの条件で範囲を確かめていた所は, 範囲外のときに反対の腕の値を返す。ブートストラップは, 出力 (ランタイム関数と文字列の表) だけを
+変えた seed を古い stage1 でコンパイルし, それを stage1 にして書き換えた seed を `npm run build:stage1 -- --bootstrap` した。
+以前は stage1 の `core.equal` がリスト・レコード・バリアントの箱の `+8` の 8 バイトを比べるだけで,
+`equal([1], [1])` が `false`, ペイロードの無いバリアント `a` と `b` が `true` になっていた (2026-10-28 に直した)。
+`conformance/eval_cases.json` の「divide by zero is zero」などで stage1 と `core.eval-value` の両方で確かめる。
 
 ## definy 製のコンパイラ・型チェッカー・評価器での扱い
 
@@ -57,7 +84,7 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
   書いた順の引数の関数を数える (`core.call-argument-fn-base`) ので, 引数の順番が違ってもずれない.
   末尾位置の組み込みの呼び出しは末尾呼び出し (`return_call_indirect`) にしない (`core.compile-tail-instructions`)
 - 型検査: 型環境では組み込みのパーツの型を `core.type-ast` の `builtin(name)` にする (TypeScript 側の `moduleEntriesExpression`).
-  `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と順番どおり一致するか
+  `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と (順番によらず) 一致するか
   (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
   期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.
   組み込みのパーツ自身の式 (`builtin`) は宣言した関数の型と比べられないので検査しない (`unsupported`).

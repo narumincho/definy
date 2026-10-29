@@ -213,17 +213,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#string": "even"
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#string": "odd"
                   }
@@ -341,9 +341,17 @@
           },
           "arms": [
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "val",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "val"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#call": {
                   "function": {
@@ -373,9 +381,14 @@
               }
             },
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
@@ -1477,6 +1490,12 @@
                                                                     "value": {
                                                                       "#list": []
                                                                     }
+                                                                  },
+                                                                  {
+                                                                    "key": "type_parameters",
+                                                                    "value": {
+                                                                      "#list": []
+                                                                    }
                                                                   }
                                                                 ]
                                                               }
@@ -1497,25 +1516,44 @@
                                                               },
                                                               "arms": [
                                                                 {
-                                                                  "tag": "ok",
-                                                                  "variable_id": 30,
-                                                                  "variable_name": "t",
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "ok",
+                                                                      "payload": {
+                                                                        "#bind": {
+                                                                          "variable_id": 30,
+                                                                          "variable_name": "t"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "ok(number)"
                                                                   }
                                                                 },
                                                                 {
-                                                                  "tag": "error",
-                                                                  "variable_id": 31,
-                                                                  "variable_name": "err",
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "error",
+                                                                      "payload": {
+                                                                        "#bind": {
+                                                                          "variable_id": 31,
+                                                                          "variable_name": "err"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "error"
                                                                   }
                                                                 },
                                                                 {
-                                                                  "tag": "_",
-                                                                  "variable_id": 32,
-                                                                  "variable_name": "_",
+                                                                  "pattern": {
+                                                                    "#bind": {
+                                                                      "variable_id": 32,
+                                                                      "variable_name": "_"
+                                                                    }
+                                                                  },
                                                                   "body": {
                                                                     "#string": "unknown"
                                                                   }
@@ -1723,49 +1761,86 @@
                                                                                     {
                                                                                       "name": "right",
                                                                                       "value": {
-                                                                                        "#call": {
-                                                                                          "function": {
-                                                                                            "#part_reference": {
-                                                                                              "part_definition_event_hash": {
-                                                                                                "$part": "core.equal"
-                                                                                              }
+                                                                                        "#match": {
+                                                                                          "target": {
+                                                                                            "#call": {
+                                                                                              "function": {
+                                                                                                "#part_reference": {
+                                                                                                  "part_definition_event_hash": {
+                                                                                                    "$part": "core.list-get"
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "arguments": [
+                                                                                                {
+                                                                                                  "name": "list",
+                                                                                                  "value": {
+                                                                                                    "#variable": {
+                                                                                                      "variable_id": 18
+                                                                                                    }
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "name": "index",
+                                                                                                  "value": {
+                                                                                                    "#number": 0
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
                                                                                             }
                                                                                           },
-                                                                                          "arguments": [
+                                                                                          "arms": [
                                                                                             {
-                                                                                              "name": "left",
-                                                                                              "value": {
+                                                                                              "pattern": {
+                                                                                                "#variant": {
+                                                                                                  "tag": "none",
+                                                                                                  "payload": {
+                                                                                                    "#any": null
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "body": {
+                                                                                                "#boolean": false
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "pattern": {
+                                                                                                "#variant": {
+                                                                                                  "tag": "some",
+                                                                                                  "payload": {
+                                                                                                    "#bind": {
+                                                                                                      "variable_id": 96001,
+                                                                                                      "variable_name": "byte"
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "body": {
                                                                                                 "#call": {
                                                                                                   "function": {
                                                                                                     "#part_reference": {
                                                                                                       "part_definition_event_hash": {
-                                                                                                        "$part": "core.list-get"
+                                                                                                        "$part": "core.equal"
                                                                                                       }
                                                                                                     }
                                                                                                   },
                                                                                                   "arguments": [
                                                                                                     {
-                                                                                                      "name": "list",
+                                                                                                      "name": "left",
                                                                                                       "value": {
                                                                                                         "#variable": {
-                                                                                                          "variable_id": 18
+                                                                                                          "variable_id": 96001
                                                                                                         }
                                                                                                       }
                                                                                                     },
                                                                                                     {
-                                                                                                      "name": "index",
+                                                                                                      "name": "right",
                                                                                                       "value": {
                                                                                                         "#number": 0
                                                                                                       }
                                                                                                     }
                                                                                                   ]
                                                                                                 }
-                                                                                              }
-                                                                                            },
-                                                                                            {
-                                                                                              "name": "right",
-                                                                                              "value": {
-                                                                                                "#number": 0
                                                                                               }
                                                                                             }
                                                                                           ]
@@ -1779,49 +1854,86 @@
                                                                             {
                                                                               "name": "right",
                                                                               "value": {
-                                                                                "#call": {
-                                                                                  "function": {
-                                                                                    "#part_reference": {
-                                                                                      "part_definition_event_hash": {
-                                                                                        "$part": "core.equal"
-                                                                                      }
+                                                                                "#match": {
+                                                                                  "target": {
+                                                                                    "#call": {
+                                                                                      "function": {
+                                                                                        "#part_reference": {
+                                                                                          "part_definition_event_hash": {
+                                                                                            "$part": "core.list-get"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "arguments": [
+                                                                                        {
+                                                                                          "name": "list",
+                                                                                          "value": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 18
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "name": "index",
+                                                                                          "value": {
+                                                                                            "#number": 1
+                                                                                          }
+                                                                                        }
+                                                                                      ]
                                                                                     }
                                                                                   },
-                                                                                  "arguments": [
+                                                                                  "arms": [
                                                                                     {
-                                                                                      "name": "left",
-                                                                                      "value": {
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "none",
+                                                                                          "payload": {
+                                                                                            "#any": null
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "body": {
+                                                                                        "#boolean": false
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "some",
+                                                                                          "payload": {
+                                                                                            "#bind": {
+                                                                                              "variable_id": 96002,
+                                                                                              "variable_name": "byte"
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "body": {
                                                                                         "#call": {
                                                                                           "function": {
                                                                                             "#part_reference": {
                                                                                               "part_definition_event_hash": {
-                                                                                                "$part": "core.list-get"
+                                                                                                "$part": "core.equal"
                                                                                               }
                                                                                             }
                                                                                           },
                                                                                           "arguments": [
                                                                                             {
-                                                                                              "name": "list",
+                                                                                              "name": "left",
                                                                                               "value": {
                                                                                                 "#variable": {
-                                                                                                  "variable_id": 18
+                                                                                                  "variable_id": 96002
                                                                                                 }
                                                                                               }
                                                                                             },
                                                                                             {
-                                                                                              "name": "index",
+                                                                                              "name": "right",
                                                                                               "value": {
-                                                                                                "#number": 1
+                                                                                                "#number": 97
                                                                                               }
                                                                                             }
                                                                                           ]
                                                                                         }
-                                                                                      }
-                                                                                    },
-                                                                                    {
-                                                                                      "name": "right",
-                                                                                      "value": {
-                                                                                        "#number": 97
                                                                                       }
                                                                                     }
                                                                                   ]
@@ -1833,17 +1945,17 @@
                                                                       },
                                                                       "arms": [
                                                                         {
-                                                                          "tag": "true",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#boolean": true
+                                                                          },
                                                                           "body": {
                                                                             "#string": "true"
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "false",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#boolean": false
+                                                                          },
                                                                           "body": {
                                                                             "#string": "false"
                                                                           }
@@ -1860,9 +1972,9 @@
                                                                       },
                                                                       "arms": [
                                                                         {
-                                                                          "tag": "/healthz",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#string": "/healthz"
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {
@@ -2028,9 +2140,9 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "/api/self-host",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#string": "/api/self-host"
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {
@@ -2426,9 +2538,9 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "tag": "_",
-                                                                          "variable_id": -1,
-                                                                          "variable_name": "",
+                                                                          "pattern": {
+                                                                            "#any": null
+                                                                          },
                                                                           "body": {
                                                                             "#record": [
                                                                               {

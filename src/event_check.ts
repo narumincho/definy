@@ -118,14 +118,16 @@ export function checkEvent(
 ): ReadonlyArray<EventRejection> {
   const instance = instantiateCompiledFunction(checker);
   const result = instance.read(
-    instance.call([
-      instance.writeArgument(encodeEventContent(contentForCheck(content))),
-      instance.writeArgument({
+    instance.call({
+      content: instance.writeArgument(
+        encodeEventContent(contentForCheck(content)),
+      ),
+      facts: instance.writeArgument({
         account_id: facts.accountId,
         account_created: facts.accountCreated,
         commits: facts.commits.map(commitSummaryLiteral),
       }),
-    ]),
+    }),
   );
   if (!Array.isArray(result)) {
     throw new Error("core.check-event returned a non-list value");
@@ -254,14 +256,14 @@ export function conformsInDefiny(
 ): boolean {
   const instance = instantiateCompiledFunction(shapeChecker);
   const result = instance.read(
-    instance.call([
-      instance.writeArgument(toCoreValue(value)),
-      instance.writeArgument(
+    instance.call({
+      value: instance.writeArgument(toCoreValue(value)),
+      declaration: instance.writeArgument(
         variant("part_reference", { part_definition_event_hash: typeName }),
       ),
       // 型の宣言の一覧は同じオブジェクトなので, 並べた結果を使い回せる (writeArgument)
-      instance.writeArgument(TYPE_DECLARATIONS),
-    ]),
+      declarations: instance.writeArgument(TYPE_DECLARATIONS),
+    }),
   );
   if (typeof result !== "boolean") {
     throw new Error("core.value-conforms returned a non-boolean value");

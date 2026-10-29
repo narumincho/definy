@@ -8,7 +8,12 @@ import type { PartSnapshot } from "../types.ts";
 import type { PathStep } from "./types.ts";
 import { getExpressionAtPath } from "./mutation.ts";
 import { variantOptionValueByName } from "./variant.ts";
-import { field, isVariant, variantOf } from "../definy_value.ts";
+import {
+  field,
+  isVariant,
+  variantOf,
+  variantPayload,
+} from "../definy_value.ts";
 
 export type SelectorOption = {
   readonly value: string;
@@ -29,6 +34,13 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     detail: "0",
     category: "Literal",
     returnType: "number",
+  },
+  {
+    value: "expr:float",
+    name: "float",
+    detail: "0.0",
+    category: "Literal",
+    returnType: "any",
   },
   {
     value: "expr:string",
@@ -121,6 +133,12 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "any",
   },
   {
+    value: "expr:type:float",
+    name: "float",
+    category: "Type",
+    returnType: "any",
+  },
+  {
     value: "expr:type:string",
     name: "string",
     category: "Type",
@@ -187,8 +205,16 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
 export function typePartSelectorOptions(
   parts: ReadonlyArray<PartSnapshot>,
 ): ReadonlyArray<SelectorOption> {
+  // 型引数を取る型 (`core.option: (T: type) -> type`) も型パーツ. 選ぶと型引数が未入力の呼び出しになる
   return partSelectorOptions(
-    parts.filter((p) => isVariant(p.partType, "type")),
+    parts.filter(
+      (p) =>
+        isVariant(p.partType, "type") ||
+        isVariant(
+          field(variantPayload(p.partType, "function"), "return_type"),
+          "type",
+        ),
+    ),
   ).map((option) => ({ ...option, detail: undefined, category: "Type part" }));
 }
 
@@ -327,17 +353,29 @@ export function highlightIndex(highlight: Highlight): number | null {
 export function buildSelectorOptions({
   mode,
   scopeVariables,
+  typeParameters = [],
   partOptions,
   variantOptions = [],
 }: {
   readonly mode: "expression" | "type";
   readonly scopeVariables?: ReadonlyMap<number, string> | undefined;
+  /** 型のツリーエディタで, その位置から参照できる型引数の名前 */
+  readonly typeParameters?: ReadonlyArray<string> | undefined;
   readonly partOptions: ReadonlyArray<SelectorOption>;
   /** Variant (タグ付きの値) の選択肢. 構文の後, パーツの前に並べる */
   readonly variantOptions?: ReadonlyArray<SelectorOption>;
 }): ReadonlyArray<SelectorOption> {
   if (mode === "type") {
-    return [...TYPE_SELECTOR_OPTIONS, ...partOptions];
+    return [
+      ...typeParameters.map((name): SelectorOption => ({
+        value: `expr:type:parameter:${name}`,
+        name,
+        category: "Type parameter",
+        returnType: "any",
+      })),
+      ...TYPE_SELECTOR_OPTIONS,
+      ...partOptions,
+    ];
   }
   return [
     ...variableSelectorOptions(scopeVariables ?? new Map()),

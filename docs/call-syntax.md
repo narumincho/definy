@@ -4,11 +4,11 @@ definy では JavaScript のように関数を値として変数に入れたり,
 Java のメソッドのように, 関数は **名前を書いて呼び出す** だけで, 関数を受け取る引数には **必ずラムダ式 (関数リテラル) を直接書く**.
 
 ```text
-core.list-map(f: f, xs: xs)                    // 書けない (関数型の引数 f を値として渡している)
-core.list-map(f: (item) => f(item: item), xs: xs) // 書ける
-let g = core.plus in ...                        // 書けない (関数のパーツを呼ばずに値にしている)
-((x) => x)(x: 1)                                // 書けない (ラムダ式は呼び出せない)
-core.type-checker(...)(...)                     // 書けない (呼び出しの結果は呼び出せない)
+core.list-map(T: number, U: number, f: f, xs: xs)                       // 書けない (関数型の引数 f を値として渡している)
+core.list-map(T: number, U: number, f: (item) => f(item: item), xs: xs) // 書ける
+let g = core.plus in ...                                                // 書けない (関数のパーツを呼ばずに値にしている)
+((x) => x)(x: 1)                                                        // 書けない (ラムダ式は呼び出せない)
+core.type-checker(...)(...)                                             // 書けない (呼び出しの結果は呼び出せない)
 ```
 
 ## 呼び出せるもの (`core.callee`)
@@ -31,6 +31,27 @@ core.type-checker(...)(...)                     // 書けない (呼び出しの
   (UI は `core.callee` の形でしか呼び出しを作らない)
 - 評価器・コンパイラなど呼び出す関数を式として扱いたいところは `core.callee-to-expression` で式にしてから使う
   (`core.eval-value`, `core.compile-call`, `core.expression-children`, `core.expression-to-source`)
+
+## 引数は名前で対応させる (順番は自由)
+
+呼び出しの引数 (`call` の `arguments`) は名前で関数の引数に対応させるので, データ上で宣言と同じ順番である必要はない.
+`core.minus(right: 1, left: 10)` は `core.minus(left: 10, right: 1)` と同じで 9 になる. 式エディタは常に呼び出すパーツの引数の宣言の順に表示する.
+
+| 層                                                                 | 扱い                                                                                                                                                                                                                            |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 型検査 `core.type-check-call-arguments`                            | 関数の型の引数ごとに同じ名前の呼び出しの引数を探して検査する (`core.call-argument-find`). 数が違うか見つからなければ `invalid_type_declaration`                                                                                 |
+| 型検査 `core.type-check-function`                                  | ラムダ式の引数の型を, 期待する関数の型から名前で引く (`core.function-type-parameter-find`). 同じ名前の引数が 2 つあれば型エラー (`core.parameter-name-duplicated`)                                                              |
+| 型の比較 `core.type-equals` / `core.type-assignable`               | 関数の型の引数とレコードの型のフィールドを名前で比べる (順番によらない)                                                                                                                                                         |
+| 評価器 `core.eval-call-arguments`                                  | 関数の引数ごとに同じ名前の呼び出しの引数を評価して束縛する                                                                                                                                                                      |
+| コンパイラ `core.compile-call` / `core.compile-function-body`      | 実行時は引数を **引数名の UTF-8 のバイト列の辞書順** (`core.string-less-than`) に並べて渡す. 呼び出し側は引数を `core.call-argument-rank` の位置に書き, 関数側は `core.function-parameter-ids-by-name` の順にローカル変数へ読む |
+| 式エディタ (`argumentsInDeclarationOrder`, `callParameterNamesOf`) | 呼び出すパーツの型の引数の順に並べて表示する. パスの `callArgument` の番号はデータ上の位置のまま                                                                                                                                |
+
+- 呼び出す関数が実行時まで分からない (関数型の引数, レコードのフィールド) ので, 呼び出し側と関数側が型を知らなくても同じ並びにできるよう,
+  宣言の順ではなく名前の順を実行時の並びにした. 書いた順に評価するので, 引数の中のラムダ式の番号 (`fn_base`) もずれない
+- TypeScript から definy の関数を呼ぶときも名前の順に並べる. `instantiateCompiledFunction` の `call` は引数名 → ポインタのレコードを受け取って並べ,
+  `callClosure` に 2 つ以上の引数を渡すときは `argumentsByName` で並べる (`src/stage1_compiler.ts`)
+- 変更前の stage1 は宣言の順で渡すが, `core.compile-to-wasm` の引数 (`expr`, `parts`) は宣言の順と名前の順が同じなので,
+  `npm run build:stage1 -- --bootstrap` だけで新しい呼び出し規約の stage1 になった (98604 bytes)
 
 ## 型検査
 
@@ -57,7 +78,7 @@ seed の `core.list-map` `core.list-map-inner` `core.list-fold` `core.list-fold-
   呼び出しの引数に書いたラムダ式の引数は呼び出すパーツ (か関数型の変数) のその引数の型. 型の分からない変数はそのまま変数にする
 - 呼び出しを選んで別のパーツ・関数型の変数を選ぶと, 同じ名前の引数の式を引き継ぐ
 
-- 関数型の引数を持つパーツを選ぶと, その引数は本体が未入力のラムダ式になる (`core.list-map(f: (item) => □, xs: □)`)
+- 関数型の引数を持つパーツを選ぶと, その引数は本体が未入力のラムダ式になる (`core.list-map(T: □, U: □, f: (item) => □, xs: □)`)
 - 関数型の引数の位置 (`core.list-map` の `f:` など) で関数のパーツ・関数型の変数を選ぶと, `(item) => パーツ(x: item)` のようにラムダ式で包む
   ([ui.md](ui.md) の「式エディタの操作」)
 - 関数のパーツの引数名を変えると, そのパーツを呼び出している式の引数名も合わせて変える ([ui.md](ui.md) の「式エディタの操作」)

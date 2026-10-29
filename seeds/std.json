@@ -78,9 +78,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#call": {
                       "function": {
@@ -110,9 +110,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -203,9 +203,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -213,9 +213,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 2
@@ -306,9 +306,9 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 1
@@ -316,9 +316,9 @@
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#variable": {
                       "variable_id": 2
@@ -397,17 +397,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#number": 1
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#match": {
                       "target": {
@@ -439,17 +439,17 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#number": -1
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#number": 0
                           }
@@ -508,17 +508,17 @@
               },
               "arms": [
                 {
-                  "tag": "true",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": true
+                  },
                   "body": {
                     "#string": "true"
                   }
                 },
                 {
-                  "tag": "false",
-                  "variable_id": -1,
-                  "variable_name": "",
+                  "pattern": {
+                    "#boolean": false
+                  },
                   "body": {
                     "#string": "false"
                   }
@@ -631,18 +631,33 @@
             }
           ],
           "return_type": {
-            "#number": null
+            "#union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#number": null
+                  }
+                }
+              }
+            ]
           }
         }
       },
       "description": [
         {
           "language": "en",
-          "text": "Get the first item of a list"
+          "text": "Get the first item of a list (none if the list is empty)"
         },
         {
           "language": "ja",
-          "text": "リストの先頭要素を取得します"
+          "text": "リストの先頭要素を取得します (空のリストなら none)"
         }
       ],
       "expression": {
@@ -953,9 +968,9 @@
                         },
                         "arms": [
                           {
-                            "tag": "true",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": true
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -986,9 +1001,9 @@
                             }
                           },
                           {
-                            "tag": "false",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": false
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "done",
@@ -1215,9 +1230,9 @@
                         },
                         "arms": [
                           {
-                            "tag": "true",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": true
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -1264,9 +1279,9 @@
                             }
                           },
                           {
-                            "tag": "false",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#boolean": false
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "done",
@@ -1411,40 +1426,24 @@
                             "function": {
                               "#part_reference": {
                                 "part_definition_event_hash": {
-                                  "$part": "core.less-than"
+                                  "$part": "core.list-get"
                                 }
                               }
                             },
                             "arguments": [
                               {
-                                "name": "left",
+                                "name": "list",
                                 "value": {
                                   "#variable": {
-                                    "variable_id": 2
+                                    "variable_id": 1
                                   }
                                 }
                               },
                               {
-                                "name": "right",
+                                "name": "index",
                                 "value": {
-                                  "#call": {
-                                    "function": {
-                                      "#part_reference": {
-                                        "part_definition_event_hash": {
-                                          "$part": "core.list-length"
-                                        }
-                                      }
-                                    },
-                                    "arguments": [
-                                      {
-                                        "name": "value",
-                                        "value": {
-                                          "#variable": {
-                                            "variable_id": 1
-                                          }
-                                        }
-                                      }
-                                    ]
+                                  "#variable": {
+                                    "variable_id": 2
                                   }
                                 }
                               }
@@ -1453,9 +1452,38 @@
                         },
                         "arms": [
                           {
-                            "tag": "true",
-                            "variable_id": -1,
-                            "variable_name": "",
+                            "pattern": {
+                              "#variant": {
+                                "tag": "none",
+                                "payload": {
+                                  "#any": null
+                                }
+                              }
+                            },
+                            "body": {
+                              "#variant": {
+                                "tag": "done",
+                                "payload": {
+                                  "#none": null
+                                },
+                                "type_part": {
+                                  "#none": null
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "pattern": {
+                              "#variant": {
+                                "tag": "some",
+                                "payload": {
+                                  "#bind": {
+                                    "variable_id": 1003,
+                                    "variable_name": "item"
+                                  }
+                                }
+                              }
+                            },
                             "body": {
                               "#variant": {
                                 "tag": "yield",
@@ -1477,32 +1505,8 @@
                                               {
                                                 "name": "value",
                                                 "value": {
-                                                  "#call": {
-                                                    "function": {
-                                                      "#part_reference": {
-                                                        "part_definition_event_hash": {
-                                                          "$part": "core.list-get"
-                                                        }
-                                                      }
-                                                    },
-                                                    "arguments": [
-                                                      {
-                                                        "name": "list",
-                                                        "value": {
-                                                          "#variable": {
-                                                            "variable_id": 1
-                                                          }
-                                                        }
-                                                      },
-                                                      {
-                                                        "name": "index",
-                                                        "value": {
-                                                          "#variable": {
-                                                            "variable_id": 2
-                                                          }
-                                                        }
-                                                      }
-                                                    ]
+                                                  "#variable": {
+                                                    "variable_id": 1003
                                                   }
                                                 }
                                               }
@@ -1542,22 +1546,6 @@
                                       }
                                     ]
                                   }
-                                },
-                                "type_part": {
-                                  "#none": null
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "tag": "false",
-                            "variable_id": -1,
-                            "variable_name": "",
-                            "body": {
-                              "#variant": {
-                                "tag": "done",
-                                "payload": {
-                                  "#none": null
                                 },
                                 "type_part": {
                                   "#none": null
@@ -1738,17 +1726,17 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#number": -1
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#match": {
                               "target": {
@@ -1838,9 +1826,9 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#variable": {
                                       "variable_id": 3
@@ -1848,9 +1836,9 @@
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#call": {
                                       "function": {
@@ -2032,9 +2020,9 @@
                       },
                       "arms": [
                         {
-                          "tag": "true",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": true
+                          },
                           "body": {
                             "#call": {
                               "function": {
@@ -2064,9 +2052,9 @@
                           }
                         },
                         {
-                          "tag": "false",
-                          "variable_id": -1,
-                          "variable_name": "",
+                          "pattern": {
+                            "#boolean": false
+                          },
                           "body": {
                             "#number": 0
                           }
@@ -2183,17 +2171,17 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
                                   "body": {
                                     "#string": "/"
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": -1,
-                                  "variable_name": "",
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
                                   "body": {
                                     "#let": {
                                       "variable_id": 6,
@@ -2229,9 +2217,9 @@
                                           },
                                           "arms": [
                                             {
-                                              "tag": "true",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
                                               "body": {
                                                 "#variable": {
                                                   "variable_id": 5
@@ -2239,9 +2227,9 @@
                                               }
                                             },
                                             {
-                                              "tag": "false",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
                                               "body": {
                                                 "#call": {
                                                   "function": {
@@ -2300,17 +2288,17 @@
                                           },
                                           "arms": [
                                             {
-                                              "tag": "true",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
                                               "body": {
                                                 "#string": "/"
                                               }
                                             },
                                             {
-                                              "tag": "false",
-                                              "variable_id": -1,
-                                              "variable_name": "",
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
                                               "body": {
                                                 "#call": {
                                                   "function": {
@@ -2472,17 +2460,17 @@
                   },
                   "arms": [
                     {
-                      "tag": "true",
-                      "variable_id": -1,
-                      "variable_name": "",
+                      "pattern": {
+                        "#boolean": true
+                      },
                       "body": {
                         "#string": ""
                       }
                     },
                     {
-                      "tag": "false",
-                      "variable_id": -1,
-                      "variable_name": "",
+                      "pattern": {
+                        "#boolean": false
+                      },
                       "body": {
                         "#call": {
                           "function": {

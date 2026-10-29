@@ -41,8 +41,8 @@ export function summarizeBranches(
 ): ReadonlyArray<ProjectBranchSummary> {
   const instance = instantiateCompiledFunction(summarizer);
   const result = instance.read(
-    instance.call([
-      instance.writeArgument(
+    instance.call({
+      commits: instance.writeArgument(
         commits.map((commit) => ({
           event_hash: commit.eventHash,
           account_id: commit.accountId,
@@ -52,7 +52,7 @@ export function summarizeBranches(
           module_names: [],
         })),
       ),
-    ]),
+    }),
   );
   if (!Array.isArray(result)) {
     throw new Error("core.project-branches returned a non-list value");

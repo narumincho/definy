@@ -32,15 +32,18 @@ const expression = {
           target: variable(2),
           arms: [
             {
-              tag: "some",
-              variable_id: 3,
-              variable_name: "v",
+              pattern: {
+                "#variant": {
+                  tag: "some",
+                  payload: { "#bind": { variable_id: 3, variable_name: "v" } },
+                },
+              },
               body: { "#list": [variable(3), variable(1), variable(0)] },
             },
             {
-              tag: "none",
-              variable_id: -1,
-              variable_name: "",
+              pattern: {
+                "#variant": { tag: "none", payload: { "#any": null } },
+              },
               body: {
                 "#call": {
                   function: variable(0),

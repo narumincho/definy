@@ -11,7 +11,9 @@ import {
   isHole,
   letChain,
   matchExpression,
-  NO_VARIABLE,
+  literalArm,
+  wildcardArm,
+  floatExpression,
   numberExpression,
   partReferenceExpression,
   partReferenceIdOf,
@@ -22,9 +24,13 @@ import {
 
 const typeNumber = variant("type_number");
 
+/** 型のツリーエディタの型引数 (`T`) の選択肢の value の頭. 後ろに型引数の名前が付く */
+export const TYPE_PARAMETER_OPTION_PREFIX = "expr:type:parameter:";
+
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:number": typeNumber,
+  "expr:type:float": variant("type_float"),
   "expr:type:string": variant("type_string"),
   "expr:type:boolean": variant("type_boolean"),
   "expr:type:type": variant("type_type"),
@@ -265,7 +271,8 @@ export function applySelection(
   if (
     expectedFunction !== undefined &&
     selectionValue !== "expr:hole" &&
-    !(selectionValue in TYPE_SELECTIONS)
+    !(selectionValue in TYPE_SELECTIONS) &&
+    !selectionValue.startsWith(TYPE_PARAMETER_OPTION_PREFIX)
   ) {
     return applySelectionInLambda(
       expr,
@@ -280,6 +287,8 @@ export function applySelection(
 
   if (selectionValue === "expr:number") {
     newSubExpr = numberExpression(0);
+  } else if (selectionValue === "expr:float") {
+    newSubExpr = floatExpression(0, 0);
   } else if (selectionValue === "expr:string") {
     newSubExpr = stringExpression("");
   } else if (selectionValue === "expr:boolean:true") {
@@ -315,22 +324,21 @@ export function applySelection(
   } else if (selectionValue === "expr:match") {
     // 対象の型はまだ分からないので `_ =>` だけにしておき,
     // 対象を決めてから `_ =>` のパターンのメニューで足りないアームを足す
-    newSubExpr = matchExpression(hole(), [
-      { tag: "_", variable_id: NO_VARIABLE, variable_name: "", body: hole() },
-    ]);
+    newSubExpr = matchExpression(hole(), [wildcardArm(hole())]);
   } else if (selectionValue === "expr:match_boolean") {
-    const arm = (tag: string) => ({
-      tag,
-      variable_id: NO_VARIABLE,
-      variable_name: "",
-      body: numberExpression(0),
-    });
+    const arm = (tag: string) =>
+      literalArm("boolean", tag, numberExpression(0));
     newSubExpr = matchExpression(booleanExpression(false), [
       arm("true"),
       arm("false"),
     ]);
   } else if (selectionValue in TYPE_SELECTIONS) {
     newSubExpr = TYPE_SELECTIONS[selectionValue];
+  } else if (selectionValue.startsWith(TYPE_PARAMETER_OPTION_PREFIX)) {
+    newSubExpr = variant(
+      "type_parameter",
+      selectionValue.slice(TYPE_PARAMETER_OPTION_PREFIX.length),
+    );
   } else if (selectionValue.startsWith("variant:")) {
     return updateExpressionAtPath(expr, path, (current) =>
       variantFromOptionValue(selectionValue, current),

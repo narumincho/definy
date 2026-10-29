@@ -10,6 +10,7 @@ import {
   hole,
   letChain,
   letChainOf,
+  floatExpressionFromNumber,
   numberExpression,
   stringExpression,
 } from "./expression.ts";
@@ -245,7 +246,12 @@ export function setNumberValue(
   path: ReadonlyArray<PathStep>,
   value: number,
 ): unknown {
-  return updateExpressionAtPath(expr, path, () => numberExpression(value));
+  // 浮動小数のリテラルと, 整数のリテラルに小数を打ったときは浮動小数のリテラルにする
+  return updateExpressionAtPath(expr, path, (current) =>
+    variantOf(current)?.tag === "float" || !Number.isInteger(value)
+      ? (floatExpressionFromNumber(value) ?? current)
+      : numberExpression(value),
+  );
 }
 
 export function setStringValue(

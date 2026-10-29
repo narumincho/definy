@@ -84,9 +84,9 @@ export function checkReferenceVisibility(
 ): ReadonlyArray<VisibilityViolation> {
   const instance = instantiateCompiledFunction(checker);
   const result = instance.read(
-    instance.call([
-      instance.writeArgument(projectName),
-      instance.writeArgument(
+    instance.call({
+      project_name: instance.writeArgument(projectName),
+      committed: instance.writeArgument(
         committed.map((part) => ({
           id: part.partId,
           name: part.name,
@@ -97,7 +97,7 @@ export function checkReferenceVisibility(
           expression: optionValue(part.expression),
         })),
       ),
-      instance.writeArgument(
+      environment: instance.writeArgument(
         Array.from(environment, ([id, target]) => ({
           id,
           name: target.name,
@@ -107,7 +107,7 @@ export function checkReferenceVisibility(
           module_visibility: variant(target.moduleVisibility),
         })),
       ),
-    ]),
+    }),
   );
   if (!Array.isArray(result)) {
     throw new Error(

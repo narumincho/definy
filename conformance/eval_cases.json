@@ -620,17 +620,17 @@
           },
           "arms": [
             {
-              "tag": "true",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": true
+              },
               "body": {
                 "#string": "yes"
               }
             },
             {
-              "tag": "false",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": false
+              },
               "body": {
                 "#string": "no"
               }
@@ -649,17 +649,17 @@
           },
           "arms": [
             {
-              "tag": "true",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": true
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "false",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#boolean": false
+              },
               "body": {
                 "#number": 2
               }
@@ -990,7 +990,91 @@
           ]
         }
       },
-      "expected": 20
+      "expected": {
+        "#some": 20
+      }
+    },
+    {
+      "name": "list get out of range is none",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-get"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 10
+                  },
+                  {
+                    "#number": 20
+                  },
+                  {
+                    "#number": 30
+                  }
+                ]
+              }
+            },
+            {
+              "name": "index",
+              "value": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#none": null
+      }
+    },
+    {
+      "name": "list get negative index is none",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-get"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 10
+                  },
+                  {
+                    "#number": 20
+                  },
+                  {
+                    "#number": 30
+                  }
+                ]
+              }
+            },
+            {
+              "name": "index",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#none": null
+      }
     },
     {
       "name": "list concat",
@@ -1345,17 +1429,30 @@
           },
           "arms": [
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
             },
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "v",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "v"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#call": {
                   "function": {
@@ -1406,17 +1503,30 @@
           },
           "arms": [
             {
-              "tag": "none",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
               "body": {
                 "#number": 0
               }
             },
             {
-              "tag": "some",
-              "variable_id": 1,
-              "variable_name": "v",
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#bind": {
+                      "variable_id": 1,
+                      "variable_name": "v"
+                    }
+                  }
+                }
+              },
               "body": {
                 "#variable": {
                   "variable_id": 1
@@ -1965,25 +2075,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2024,25 +2134,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2061,25 +2171,25 @@
           },
           "arms": [
             {
-              "tag": "plus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "plus"
+              },
               "body": {
                 "#number": 1
               }
             },
             {
-              "tag": "minus",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#string": "minus"
+              },
               "body": {
                 "#number": 2
               }
             },
             {
-              "tag": "_",
-              "variable_id": -1,
-              "variable_name": "",
+              "pattern": {
+                "#any": null
+              },
               "body": {
                 "#number": 0
               }
@@ -2088,6 +2198,2389 @@
         }
       },
       "expected": 0
+    },
+    {
+      "name": "divide by zero is zero",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "remainder by zero is the left side",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "divide min by minus one wraps",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -9223372036854775808
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": -9223372036854775808
+    },
+    {
+      "name": "divide negative truncates",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -7
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": -3
+    },
+    {
+      "name": "remainder min by minus one",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -9223372036854775808
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": -1
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "equal compares lists by content",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal lists differ",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal lists differ in length",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 1
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal compares records by key",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  },
+                  {
+                    "key": "b",
+                    "value": {
+                      "#string": "x"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#record": [
+                  {
+                    "key": "b",
+                    "value": {
+                      "#string": "x"
+                    }
+                  },
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal records differ",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 1
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#record": [
+                  {
+                    "key": "a",
+                    "value": {
+                      "#number": 2
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal variants differ by tag",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "a",
+                  "payload": {
+                    "#none": null
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "b",
+                  "payload": {
+                    "#none": null
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "equal variants with payload",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#list": [
+                        {
+                          "#number": 1
+                        }
+                      ]
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#list": [
+                        {
+                          "#number": 1
+                        }
+                      ]
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal variant payload differs",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#number": 1
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#some": {
+                      "#number": 2
+                    }
+                  },
+                  "type_part": {
+                    "#none": null
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "nested pattern binds the inner value",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "some",
+              "payload": {
+                "#some": {
+                  "#variant": {
+                    "tag": "some",
+                    "payload": {
+                      "#some": {
+                        "#number": 5
+                      }
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "x"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#variable": {
+                  "variable_id": 1
+                }
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 5
+    },
+    {
+      "name": "nested pattern falls to the next arm when the inner tag differs",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "some",
+              "payload": {
+                "#some": {
+                  "#variant": {
+                    "tag": "none",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "x"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#variable": {
+                  "variable_id": 1
+                }
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "some",
+                  "payload": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "none",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "string pattern \"_\" is a literal, not the wildcard",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "_"
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#string": "a"
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#string": "_"
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "string pattern \"_\" does not match other strings",
+      "expression": {
+        "#match": {
+          "target": {
+            "#string": "z"
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#string": "_"
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "number pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": 3
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#number": 1
+              },
+              "body": {
+                "#number": 10
+              }
+            },
+            {
+              "pattern": {
+                "#number": 3
+              },
+              "body": {
+                "#number": 30
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 30
+    },
+    {
+      "name": "negative number pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": -2
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#number": 2
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#number": -2
+              },
+              "body": {
+                "#number": 2
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "variant tag \"_\" is matched by a variant pattern",
+      "expression": {
+        "#match": {
+          "target": {
+            "#variant": {
+              "tag": "_",
+              "payload": {
+                "#none": null
+              },
+              "type_part": {
+                "#none": null
+              }
+            }
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "x",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 0
+              }
+            },
+            {
+              "pattern": {
+                "#variant": {
+                  "tag": "_",
+                  "payload": {
+                    "#any": null
+                  }
+                }
+              },
+              "body": {
+                "#number": 1
+              }
+            },
+            {
+              "pattern": {
+                "#any": null
+              },
+              "body": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "bind pattern binds the whole value",
+      "expression": {
+        "#match": {
+          "target": {
+            "#number": 7
+          },
+          "arms": [
+            {
+              "pattern": {
+                "#bind": {
+                  "variable_id": 1,
+                  "variable_name": "n"
+                }
+              },
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 8
+    },
+    {
+      "name": "builtin call arguments in any order",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.minus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "right",
+              "value": {
+                "#number": 1
+              }
+            },
+            {
+              "name": "left",
+              "value": {
+                "#number": 10
+              }
+            }
+          ]
+        }
+      },
+      "expected": 9
+    },
+    {
+      "name": "function call arguments are matched by name, not by position",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "sub",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "x"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "x",
+                  "value": {
+                    "#number": 10
+                  }
+                },
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "function call arguments in a different order than the parameters",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "sub",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "x"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 3
+                  }
+                },
+                {
+                  "name": "x",
+                  "value": {
+                    "#number": 10
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "function with three parameters called in reverse order",
+      "expression": {
+        "#let": {
+          "variable_id": 5,
+          "variable_name": "f",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 0,
+                  "parameter_name": "c"
+                },
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "b"
+                },
+                {
+                  "parameter_id": 2,
+                  "parameter_name": "a"
+                }
+              ],
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.minus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 5
+                }
+              },
+              "arguments": [
+                {
+                  "name": "a",
+                  "value": {
+                    "#number": 100
+                  }
+                },
+                {
+                  "name": "b",
+                  "value": {
+                    "#number": 10
+                  }
+                },
+                {
+                  "name": "c",
+                  "value": {
+                    "#number": 1
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 89
+    },
+    {
+      "name": "float literal",
+      "expression": {
+        "#float": {
+          "mantissa": 15,
+          "exponent": -1
+        }
+      },
+      "expected": 1.5
+    },
+    {
+      "name": "float literal with a positive exponent",
+      "expression": {
+        "#float": {
+          "mantissa": 25,
+          "exponent": 2
+        }
+      },
+      "expected": 2500
+    },
+    {
+      "name": "float literal is correctly rounded",
+      "expression": {
+        "#float": {
+          "mantissa": 1,
+          "exponent": -1
+        }
+      },
+      "expected": 0.1
+    },
+    {
+      "name": "float literal with a large exponent",
+      "expression": {
+        "#float": {
+          "mantissa": 1,
+          "exponent": 25
+        }
+      },
+      "expected": 1e+25
+    },
+    {
+      "name": "float plus",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-plus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.30000000000000004
+    },
+    {
+      "name": "float minus",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-minus"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 25,
+                  "exponent": -2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.75
+    },
+    {
+      "name": "float multiply",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-multiply"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": -4,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -6
+    },
+    {
+      "name": "float divide",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 3,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0.3333333333333333
+    },
+    {
+      "name": "float divide by zero is Infinity, not an error",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 300
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 1,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "NaN is not equal to itself",
+      "expression": {
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "x",
+          "value": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.float-divide"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#float": {
+                      "mantissa": 0,
+                      "exponent": 0
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#float": {
+                      "mantissa": 0,
+                      "exponent": 0
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "float less than",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "float less than with NaN is false",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "float less than or equal",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-less-than-or-equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "float from integer",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-divide"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-from-integer"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "value",
+                      "value": {
+                        "#number": 7
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3.5
+    },
+    {
+      "name": "float floor",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-floor"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": -15,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -2
+    },
+    {
+      "name": "float ceiling",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-ceiling"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 12,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "float truncate goes toward zero",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": -17,
+                  "exponent": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -1
+    },
+    {
+      "name": "float truncate of NaN is 0",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 0,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "float truncate of a too large value is clamped",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-truncate"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 1,
+                  "exponent": 300
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 9223372036854775807
+    },
+    {
+      "name": "float square root",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.float-square-root"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "#float": {
+                  "mantissa": 2,
+                  "exponent": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 1.4142135623730951
+    },
+    {
+      "name": "float equal compares values",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#float": {
+                  "mantissa": 5,
+                  "exponent": -1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.float-divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#float": {
+                          "mantissa": 1,
+                          "exponent": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#float": {
+                          "mantissa": 2,
+                          "exponent": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "list-map takes the item types as arguments",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-map"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "U",
+              "value": {
+                "#type_boolean": null
+              }
+            },
+            {
+              "name": "f",
+              "value": {
+                "#function": {
+                  "parameters": [
+                    {
+                      "parameter_id": 0,
+                      "parameter_name": "item"
+                    }
+                  ],
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 2
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "xs",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "list-fold takes the item and result types as arguments",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-fold"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "A",
+              "value": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "reducer",
+              "value": {
+                "#function": {
+                  "parameters": [
+                    {
+                      "parameter_id": 0,
+                      "parameter_name": "acc"
+                    },
+                    {
+                      "parameter_id": 1,
+                      "parameter_name": "item"
+                    }
+                  ],
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.plus"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "init",
+              "value": {
+                "#number": 0
+              }
+            },
+            {
+              "name": "xs",
+              "value": {
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "expected": 6
+    },
+    {
+      "name": "a type expression is a value",
+      "expression": {
+        "#type_list": {
+          "item_type": {
+            "#type_number": null
+          }
+        }
+      },
+      "expected": {
+        "#type_list": {
+          "item_type": {
+            "#type_number": null
+          }
+        }
+      }
+    },
+    {
+      "name": "a type part that takes a type argument returns a type value",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.option"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "T",
+              "value": {
+                "#type_string": null
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "#type_union": [
+          {
+            "tag": "none",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "some",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "a reference to a type part is a reference value, equal only to the same part",
+      "expression": {
+        "#list": [
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-env"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.option"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "T",
+                          "value": {
+                            "#type_number": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "expected": [
+        true,
+        false,
+        false
+      ]
+    },
+    {
+      "name": "a type parameter can be used in a type expression in the body",
+      "expression": {
+        "#let": {
+          "variable_id": 0,
+          "variable_name": "wrap",
+          "value": {
+            "#function": {
+              "parameters": [
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "T"
+                }
+              ],
+              "body": {
+                "#type_record": [
+                  {
+                    "key": "value",
+                    "value": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "body": {
+            "#call": {
+              "function": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arguments": [
+                {
+                  "name": "T",
+                  "value": {
+                    "#type_list": {
+                      "item_type": {
+                        "#type_number": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": {
+        "#type_record": [
+          {
+            "key": "value",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_number": null
+                }
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

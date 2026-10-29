@@ -8,6 +8,7 @@
  * (docs/self-hosting.md の「definy 製型チェッカーの実行」).
  */
 import {
+  argumentsByName,
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
   collectReferencedParts,
@@ -30,6 +31,7 @@ import {
   some,
   variant,
   variantOf,
+  variantPayload,
 } from "./definy_value.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
@@ -84,7 +86,14 @@ export type SelfHostedTypeCheckOutcome =
 
 /** 型パーツ (宣言型が `core.type-ast` の `type`) か */
 export function isTypePartType(partType: unknown): boolean {
-  return isVariant(partType, "type");
+  // 型引数を取る型 (`core.option: (T: type) -> type`) も型パーツ (`core.is-type-part-type`)
+  return (
+    isVariant(partType, "type") ||
+    isVariant(
+      field(variantPayload(partType, "function"), "return_type"),
+      "type",
+    )
+  );
 }
 
 /** 検査できないパーツ (未入力のある式・型の無いパーツ・コンパイラ組み込み) */
@@ -325,11 +334,11 @@ function createModuleCommitSession(options: {
   const ensureInstance = (): NonNullable<typeof current> => {
     if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
       const instance = instantiateCompiledFunction(options.typeChecker);
-      const planPtr = instance.call([
-        instance.writeArgument(latest),
-        instance.writeArgument(committed),
-        instance.writeArgument(moduleId),
-      ]);
+      const planPtr = instance.call({
+        latest: instance.writeArgument(latest),
+        committed: instance.writeArgument(committed),
+        module_id: instance.writeArgument(moduleId),
+      });
       current = {
         instance,
         planPtr,
@@ -367,10 +376,13 @@ function createModuleCommitSession(options: {
       }
       return typeResultToOutcome(
         instance.read(
-          instance.callClosure(checkerPtr, [
-            instance.writeArgument(args.expression),
-            instance.writeArgument(args.expectedType),
-          ]),
+          instance.callClosure(
+            checkerPtr,
+            argumentsByName({
+              expr: instance.writeArgument(args.expression),
+              expected_type: instance.writeArgument(args.expectedType),
+            }),
+          ),
         ),
       );
     } catch (e) {
@@ -428,6 +440,7 @@ export function formatTypeAst(
   const { payload } = tagged;
   switch (tagged.tag) {
     case "number":
+    case "float":
     case "string":
     case "boolean":
     case "type":
@@ -465,6 +478,19 @@ export function formatTypeAst(
     case "reference": {
       const partId = String(field(payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
+    }
+    case "parameter":
+      return String(payload);
+    case "apply": {
+      const partId = String(field(payload, "part_hash"));
+      return `${resolveName(partId) ?? partId.slice(0, 8)}(${items(
+        field(payload, "arguments"),
+      )
+        .map(
+          (argument) =>
+            `${String(field(argument, "name"))}: ${format(field(argument, "type"))}`,
+        )
+        .join(", ")})`;
     }
     case "builtin": {
       // 組み込みの型は引数の型を持たないので, 引数名だけ出す (`builtin less_than(left, right)`)

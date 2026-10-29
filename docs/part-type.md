@@ -24,7 +24,9 @@ definy では「型も式である」という思想に基づき、パーツの�
 | `{"#union": [{tag, payload_type: option}]}`                      | `{"#type_union": [{tag, payload_type: option}]}`                                | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
 | `{"#reference": {part_hash: ID}}`                                | `{"#part_reference": {part_definition_event_hash: ID}}`                         | 定義済み型パーツの参照                                                                     |
 | `{"#code": T}`                                                   | `{"#type_code": {value_type: T}}` (エディタの中だけ)                            | quote した式の型 `Code<T>` ([quote.md](quote.md))                                          |
-| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言)                                                                    |
+| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言). 型引数の型 ([type-arguments.md](type-arguments.md))               |
+| `{"#parameter": "T"}`                                            | `{"#type_parameter": "T"}` (エディタの中だけ)                                   | 関数の型の型引数 `T` の参照                                                                |
+| `{"#apply": {part_hash, arguments: [{name, type}]}}`             | `{"#call": {function: part_reference, arguments: [{name, value}]}}`             | 型を返すパーツの呼び出し `core.option(T: number)`                                          |
 | `null`                                                           | `null`                                                                          | 型指定なし                                                                                 |
 
 パーツの型はプロジェクトのコミット (`project_commit`) の各モジュールの各パーツ (`partType`) に入る。
@@ -84,6 +86,14 @@ definy
 ([self-hosting.md](self-hosting.md) の「seed・UI のパーツ検査」)。
 組み込みの seed のパーツがこの型検査でエラーにならないことは `src/self_hosted_type_check.test.ts` で確かめている。
 seed を編集したらこのテストを通すこと.
+
+### 型パーツの参照の展開と循環
+
+`core.type-resolve` は参照を型パーツの定義に展開し, 定義がまた型パーツの参照ならそれも展開する (`core.type-resolve-from`)。
+型の構築子 (レコード・union・リストなど) を通らずに辿った参照に戻ったら, そこで展開をやめてその参照を返す。
+型パーツの宣言がそのような循環 (`A = B`, `B = A`) なら, 型チェッカーは `invalid_type_declaration` にする (`core.type-reference-cycle`)。
+以前は循環した型の値を検査すると型チェッカーが展開を繰り返し, 約 9 秒走ってから `unreachable` で落ちていた。
+`core.expression` のように型の構築子を通る再帰はそのまま書ける。
 
 ### 型検査で見つかった seed の誤り (修正済み)
 

@@ -117,7 +117,8 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 
 1. **[済] 型宣言の意味検査**: record field 名と union tag の重複、空 variant
    集合を `invalid_type_declaration` として拒否し、型パーツ同士の相互参照も解決します（Phase 9〜10）。
-   型定義パーツ自体の再帰参照（循環）の規則は未決定です。
+   型パーツの参照だけで循環する宣言 (`A = B`, `B = A`) は `invalid_type_declaration` にします ([part-type.md](part-type.md))。
+   型の構築子を通る再帰 (`core.expression`) は書けます。それ以外の再帰の規則は [language-open-questions.md](language-open-questions.md)。
 2. **[済] module type environment**: `core.build-type-env` が
    全パーツの hash と宣言型 (型パーツは宣言した型も) から環境を作り、
    `PartReference`・構築子・相互参照を解決します。
@@ -341,6 +342,7 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 | 4    | レコード          | +4 にフィールド数, +8 から (キーの文字列の箱, 値の箱) のポインタの組 |
 | 5    | 関数 (クロージャ) | +4 に関数表の番号, +8 に捕捉した変数の配列 (無ければ 0)              |
 | 6    | バリアント        | +4 にタグの文字列の箱, +8 にペイロードの箱 (無ければ 0)              |
+| 7    | 浮動小数          | +8 に f64 ([float.md](float.md))                                     |
 
 - メモリは確保するだけで解放しません (1 回の評価は短いので)。ヒープの先頭はグローバル変数 0 で, 確保は 8 バイト境界に揃え,
   足りなければ `memory.grow` します。確保したばかりのメモリは 0 なので, 数値の箱はタグを書かずに済みます
@@ -350,7 +352,7 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
   `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
   に固定のバイト列として入っています。組み立てるスクリプトは `scripts/wasm_runtime_functions.py`
   (`python3 scripts/wasm_runtime_functions.py seeds/core.json` で seed のこのパーツだけを書き換える)
-- **文字列リテラル**: 文字列リテラル・レコードのキー・`record_get` のキー・バリアントのタグ・`match` のアームのタグは,
+- **文字列リテラル**: 文字列リテラル・レコードのキー・`record_get` のキー・バリアントのタグ・`match` のパターンのタグと文字列リテラルは,
   データセグメントの文字列の箱を `i32.const アドレス` で指すだけにします。`core.compile-to-wasm` が最初に式と参照するパーツの式から
   重複の無い文字列の一覧を集め (`core.compile-collect-strings`, 先頭は `"true"` `"false"` なので 1024・1040 番地),
   箱を 1024 番地から並べた表 (`core.compile-string-table`) を `ctx.strings` で `core.compile-string-literal` に渡します。
@@ -566,7 +568,8 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型 (`core.typ
     - `core.union-variant-type-lookup`:
       直和型から指定タグのペイロード型を線形探索（引数なし variant は `{}`
       レコード型として統一）
-    - `core.find-tag-in-arms`: マッチアーム一覧に対象タグが含まれるかを線形探索
+    - `core.find-tag-in-arms` (今は無い. パターンの木の網羅性は [match-pattern.md](match-pattern.md)):
+      マッチアーム一覧に対象タグが含まれるかを線形探索
     - `core.check-union-exhaustiveness`:
       直和型の全タグがマッチアームに網羅されているかを検証し、欠落時に
       `non_exhaustive_match` を返却
@@ -680,11 +683,13 @@ eval-value: expression -> env -> list<{ id: string, expression: expression }> ->
   `list<{ part_definition_event_hash: string, part_type: type-ast }>`
   - モジュール内のパーツ定義ハッシュと宣言型の対応関係を保持する環境。
 - `core.type-env`:
-  `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }> }`
-  - ローカル変数の静的スコープ束縛とモジュール内パーツ宣言型を統合した二層の型環境。
+  `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }>, type_parameters: list<{ parameter_id: number, parameter_name: string }> }`
+  - ローカル変数の静的スコープ束縛とモジュール内パーツ宣言型を統合した型環境。`type_parameters` はスコープにある型引数
+    (型が `type` の関数の引数. [type-arguments.md](type-arguments.md))。
 - `core.type-env-lookup`: `type-env -> number -> type-result`（変数の型を検索）
 - `core.type-env-extend`:
   `type-env -> number -> type-ast -> type-env`（変数の型束縛を追加）
+- `core.type-env-extend-parameter`: 関数の引数を足す。型が `type` の引数は `type_parameters` にも足す
 - `core.part-type-lookup`:
   `part-type-env -> string -> type-result`（パーツ宣言型を検索）
 - `core.type-env-lookup-part`:
@@ -731,17 +736,16 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
   `core.type-assignable` 系は `env` 引数を取り, 片方だけが `reference` のときは展開して比べます。
   両方 `reference` ならハッシュが同じときだけ代入できます (名前的型付け)。
-- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`record` と, `core.list-append`・`core.list-concat`・
-  `core.list-get` の呼び出し (`core.type-check-against-builtin-call`) も期待型で検査します (`type-check-record-fields-against` など)。
+- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`record` と, `core.list-append`・`core.list-concat`
+  の呼び出し (`core.type-check-against-builtin-call`) も期待型で検査します (`type-check-record-fields-against` など)。
   空リストや `none` を期待型から決められるのはこのためです。
 - **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
   (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
   `core.type-check-match-arms-skipped` がその型で検査します。
-  `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
-  対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
-  (`core.match-arm-env`)。
+  アームのパターンは `core.type-check-pattern` が検査し, 束縛する変数の型を環境に足します (`core.match-arm-env`)。
+  網羅性は `core.check-union-exhaustiveness` がネストしたパターンも含めて調べます ([match-pattern.md](match-pattern.md))。
 - **組み込みのパーツ**: 型環境では組み込みのパーツの型を `builtin(name)` にし, その呼び出しを `core.type-check-builtin-call` が
-  名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と順番どおり一致させる)。
+  名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と一致させる. 順番は自由)。
 
 ---
 
@@ -773,7 +777,8 @@ core と wasm は同じプロジェクト `definy` のモジュールなので, 
   - `core.plus`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
   - `core.minus`: 左辺命令列 + 右辺命令列 + `i64.sub` (`0x7d`)
   - `core.multiply`: 左辺命令列 + 右辺命令列 + `i64.mul` (`0x7e`)
-  - `core.divide`: 左辺命令列 + 右辺命令列 + `i64.div_s` (`0x7f`)
+  - `core.divide`: 左辺と右辺をローカル変数 (`depth`, `depth + 1`) に置き, 右辺が 0 なら 0, -1 なら `0 - 左辺`, それ以外は `i64.div_s` (`0x7f`).
+    `core.remainder` は右辺が 0 なら左辺, それ以外は `i64.rem_s` (実行時エラーにしない. [builtin-parts.md](builtin-parts.md))
   - `core.less-than`: 左辺命令列 + 右辺命令列 + `i64.lt_s` (`0x53`)
   - (数値は箱に入っているので, 各辺のあとに `i64.load offset=8` で取り出し, 結果を箱に入れる)
 
@@ -949,12 +954,10 @@ validate-module: module-definition -> list<entry> -> boolean
   直和型のバリアント一覧から指定タグのペイロード型を線形探索。引数なしバリアント（`none`）は空レコード
   `{}` として統一的に扱い、タグが存在しない場合は `variant_not_found`
   エラーを返却。
-- `core.find-tag-in-arms`:
-  `list<{ tag: string, variable: optional<string>, body: expression }> -> string -> number -> boolean`
-  パターンマッチのアーム一覧に対象のタグ名が含まれるかを線形探索。
 - `core.check-union-exhaustiveness`:
-  `list<{ tag: string, payload: optional<type-ast> }> -> list<{ tag: string, variable: optional<string>, body: expression }> -> number -> optional<type-error>`
-  直和型の全バリアントがマッチアームに網羅されているかを再帰検証。欠落しているタグがあれば
+  `(variants, patterns: list<core.pattern>, env, index, return_type) -> type-result`
+  直和型の全バリアントがアームのパターンに網羅されているかを `core.patterns-cover-variant` で再帰検証
+  (ネストしたパターンも. [match-pattern.md](match-pattern.md))。欠落しているタグがあれば
   `non_exhaustive_match` エラーを検出。
 - `core.type-assignable-union-variants`:
   `list<{ tag: string, payload: optional<type-ast> }> -> list<{ tag: string, payload: optional<type-ast> }> -> number -> boolean`

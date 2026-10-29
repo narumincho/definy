@@ -29,6 +29,7 @@ function buildLayoutNode(
   return {
     ...buildExpressionLayoutNode(expr, idPrefix, currentPath, context),
     scopeVariables: new Map(context.scopeVariables ?? []),
+    typeParameters: context.typeParameters ?? [],
   };
 }
 

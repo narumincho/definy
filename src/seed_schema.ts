@@ -49,6 +49,8 @@ export function typeDeclarationToJsonSchema(declaration: unknown): JsonSchema {
   switch (tag) {
     case "type_number":
       return { type: "integer" };
+    case "type_float":
+      return { type: "number" };
     case "type_string":
       return PART_ID_OR_PLACEHOLDER;
     case "type_boolean":
@@ -275,6 +277,8 @@ export function conformsToTypeDeclaration(
   switch (tag) {
     case "type_number":
       return typeof value === "number" && Number.isInteger(value);
+    case "type_float":
+      return typeof value === "number";
     case "type_string":
       return (
         typeof value === "string" ||

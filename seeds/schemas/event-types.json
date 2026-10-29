@@ -247,6 +247,12 @@
         }
       },
       {
+        "tag": "float",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
         "tag": "string",
         "payload_type": {
           "#none": null
@@ -432,6 +438,56 @@
         }
       },
       {
+        "tag": "parameter",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "apply",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "part_hash",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "arguments",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "type",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
         "tag": "secret",
         "payload_type": {
           "#none": null
@@ -443,6 +499,12 @@
     "#type_union": [
       {
         "tag": "type_number",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "type_float",
         "payload_type": {
           "#none": null
         }
@@ -602,6 +664,27 @@
         "payload_type": {
           "#some": {
             "#type_number": null
+          }
+        }
+      },
+      {
+        "tag": "float",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "mantissa",
+                "value": {
+                  "#type_number": null
+                }
+              },
+              {
+                "key": "exponent",
+                "value": {
+                  "#type_number": null
+                }
+              }
+            ]
           }
         }
       },
@@ -875,36 +958,11 @@
                 "value": {
                   "#type_list": {
                     "item_type": {
-                      "#type_record": [
-                        {
-                          "key": "tag",
-                          "value": {
-                            "#type_string": null
-                          }
-                        },
-                        {
-                          "key": "variable_id",
-                          "value": {
-                            "#type_number": null
-                          }
-                        },
-                        {
-                          "key": "variable_name",
-                          "value": {
-                            "#type_string": null
-                          }
-                        },
-                        {
-                          "key": "body",
-                          "value": {
-                            "#part_reference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.expression"
-                              }
-                            }
-                          }
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.match-arm"
                         }
-                      ]
+                      }
                     }
                   }
                 }
@@ -1158,6 +1216,30 @@
       }
     ]
   },
+  "core.match-arm": {
+    "#type_record": [
+      {
+        "key": "pattern",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.pattern"
+            }
+          }
+        }
+      },
+      {
+        "key": "body",
+        "value": {
+          "#part_reference": {
+            "part_definition_event_hash": {
+              "$part": "core.expression"
+            }
+          }
+        }
+      }
+    ]
+  },
   "core.module-commit-part": {
     "#type_record": [
       {
@@ -1170,6 +1252,86 @@
         "key": "content_hash",
         "value": {
           "#type_string": null
+        }
+      }
+    ]
+  },
+  "core.pattern": {
+    "#type_union": [
+      {
+        "tag": "any",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "bind",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "variable_id",
+                "value": {
+                  "#type_number": null
+                }
+              },
+              {
+                "key": "variable_name",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "variant",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "tag",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "payload",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.pattern"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "string",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "number",
+        "payload_type": {
+          "#some": {
+            "#type_number": null
+          }
+        }
+      },
+      {
+        "tag": "boolean",
+        "payload_type": {
+          "#some": {
+            "#type_boolean": null
+          }
         }
       }
     ]

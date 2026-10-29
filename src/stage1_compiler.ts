@@ -130,7 +130,13 @@ function layoutLiteral(node: unknown): LaidOutLiteral {
   function layout(n: unknown): number {
     if (typeof n === "number") {
       const at = reserve(16);
-      view.setBigInt64(at + 8, BigInt(n), true);
+      if (Number.isInteger(n)) {
+        view.setBigInt64(at + 8, BigInt(n), true);
+      } else {
+        // 整数でない数 (NaN と ±Infinity を含む) は浮動小数の箱 (タグ 7) にする
+        buffer[at] = 7;
+        view.setFloat64(at + 8, n, true);
+      }
       return at;
     }
     if (typeof n === "boolean") {
@@ -205,6 +211,9 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   }
   if (tag === 1) {
     return mem[ptr + 8] !== 0;
+  }
+  if (tag === 7) {
+    return view.getFloat64(ptr + 8, true);
   }
   if (tag === 2) {
     const len = view.getUint32(ptr + 4, true);
@@ -306,6 +315,24 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
   ["string_slice", ["value", "start", "end"]],
   ["list_get", ["list", "index"]],
   ["list_append", ["list", "item"]],
+  ...[
+    "float_plus",
+    "float_minus",
+    "float_multiply",
+    "float_divide",
+    "float_less_than",
+    "float_less_than_or_equal",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [
+    name,
+    ["left", "right"],
+  ]),
+  ...[
+    "float_from_integer",
+    "float_floor",
+    "float_ceiling",
+    "float_truncate",
+    "float_square_root",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [name, ["value"]]),
 ]);
 
 /** 式 (`core.expression` の値) に未入力 (`hole`) があるか */
@@ -370,8 +397,8 @@ export function collectPartReferenceIds(
  * 式が (参照先をたどって) 参照するパーツを集める.
  * 末尾から取り出す LIFO の順序。stage1 を作ったときと同じ順序で, `wasm/stage1.wasm` の再生成でバイト一致させるために必要。
  * `resolve` は ID からパーツの式 (`core.expression` の値) を返す. 見つからない・式を持たないときは `undefined`.
- * 見つからない・式を持たない・型パーツの宣言式・未入力のあるパーツの ID は `unresolved` に入れる
- * (stage1 はその参照を unreachable にコンパイルする).
+ * 見つからない・式を持たない・未入力のあるパーツの ID は `unresolved` に入れる
+ * (stage1 はその参照を unreachable にコンパイルする). 型パーツは宣言式のまま入れるが, その先はたどらない.
  * コンパイラ組み込みのパーツ (`core.plus` など) も式 (`core.expression` の `builtin`) のまま入れる
  */
 export function collectReferencedParts(
@@ -393,12 +420,14 @@ export function collectReferencedParts(
     }
     seen.add(id);
     const partExpression = resolve(id);
-    if (
-      partExpression == null ||
-      isTypeDeclaration(partExpression) ||
-      containsHole(partExpression)
-    ) {
+    if (partExpression == null || containsHole(partExpression)) {
       unresolved.push(id);
+      continue;
+    }
+    // 型パーツ (式が型の宣言) は実行時には参照のままの値になる (`core.type-expression-construct`) ので,
+    // 宣言の中で参照するパーツはたどらない
+    if (isTypeDeclaration(partExpression)) {
+      parts.push({ id, expression: partExpression });
       continue;
     }
     queue = [...queue, ...collectPartReferenceIds(partExpression)];
@@ -428,8 +457,8 @@ export type CompiledValueInstance = {
    */
   readonly writeArgument: (literal: unknown) => number;
   /**
-   * 関数の値のポインタを, 引数の順に並べたポインタで呼び, 結果のポインタを返す.
-   * 関数でなければ例外を投げる
+   * 関数の値のポインタを, 引数を名前の順に並べたポインタで呼び, 結果のポインタを返す.
+   * 引数が 2 つ以上なら {@link argumentsByName} で並べる. 関数でなければ例外を投げる
    */
   readonly callClosure: (
     closurePointer: number,
@@ -521,10 +550,34 @@ export function instantiateCompiledValue(
   };
 }
 
+/**
+ * 引数名 → 値のポインタを, 実行時に関数へ渡す順 (引数名の UTF-8 のバイト列の辞書順) に並べる.
+ * definy の呼び出しは引数を名前で対応させ, 宣言の順とは関係なく名前の順で渡す (`core.call-argument-rank`)
+ */
+export function argumentsByName(
+  args: Readonly<Record<string, number>>,
+): ReadonlyArray<number> {
+  const encoder = new TextEncoder();
+  return Object.entries(args)
+    .map(([name, pointer]) => ({ bytes: encoder.encode(name), pointer }))
+    .sort((a, b) => compareBytes(a.bytes, b.bytes))
+    .map(({ pointer }) => pointer);
+}
+
+function compareBytes(a: Uint8Array, b: Uint8Array): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const diff = (a[i] ?? 0) - (b[i] ?? 0);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+  return a.length - b.length;
+}
+
 /** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
 export type CompiledFunctionInstance = CompiledValueInstance & {
-  /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
-  readonly call: (argumentPointers: ReadonlyArray<number>) => number;
+  /** 関数を引数名 → 値のポインタで呼び, 結果のポインタを返す */
+  readonly call: (args: Readonly<Record<string, number>>) => number;
 };
 
 /**
@@ -546,8 +599,7 @@ export function instantiateCompiledFunction(
   }
   return {
     ...instance,
-    call: (argumentPointers) =>
-      instance.callClosure(instance.root, argumentPointers),
+    call: (args) => instance.callClosure(instance.root, argumentsByName(args)),
   };
 }
 
@@ -564,10 +616,10 @@ export function createStage1Compiler(
 
       const instance = instantiateCompiledFunction(stage1Module);
       const { exports } = instance;
-      const resultPtr = instance.call([
-        instance.writeArgument(effectiveExpr),
-        instance.writeArgument(partsNode),
-      ]);
+      const resultPtr = instance.call({
+        expr: instance.writeArgument(effectiveExpr),
+        parts: instance.writeArgument(partsNode),
+      });
 
       const resultView = new DataView(exports.memory.buffer);
       const resultTag = resultView.getUint8(resultPtr);
