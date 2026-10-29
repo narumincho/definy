@@ -7,6 +7,7 @@ import {
   type JSX,
   type KeyboardEvent,
 } from "react";
+import { estimateTextWidth } from "./engine.ts";
 import {
   isSamePath,
   pathToString,
@@ -624,6 +625,13 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
   );
 }
 
+/** 編集中の文字列リテラルの入力欄のカーソル位置. 入力欄が作り直されたときに戻すため */
+let editingStringCaret: {
+  readonly path: string;
+  readonly start: number;
+  readonly end: number;
+} | null = null;
+
 function LeafNodeRenderer({
   node,
   isSelected,
@@ -672,7 +680,9 @@ function LeafNodeRenderer({
     setLocalString(node.label.replace(/^"|"$/g, ""));
   }, [node.label]);
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+  function handleKeyDown(
+    e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void {
     if (e.key === "Delete") {
       e.preventDefault();
       onClear?.(node.path);
@@ -695,6 +705,14 @@ function LeafNodeRenderer({
       }
     }
     // Escape / Enter はツリーの枠 (ExpressionTreeEditor) で受けてツリーにフォーカスを戻す
+  }
+
+  function rememberCaret(textarea: HTMLTextAreaElement): void {
+    editingStringCaret = {
+      path: pathToString(node.path),
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
   }
 
   let content: JSX.Element;
@@ -737,10 +755,59 @@ function LeafNodeRenderer({
         }}
       />
     );
-  } else if (
-    isEditing &&
-    (node.kind === "literalString" || node.kind === "parameterName")
-  ) {
+  } else if (isEditing && node.kind === "literalString") {
+    // 文字列リテラルは改行を含められる. Shift + Enter で改行し, Enter でツリーに戻る (useTreeKeyboard)
+    const lines = localString.split("\n");
+    content = (
+      <textarea
+        value={localString}
+        autoFocus
+        rows={lines.length}
+        cols={Math.max(6, ...lines.map((line) => estimateTextWidth(line, 1)))}
+        onFocus={(e) => {
+          // 改行の入力などで 1 行 ⇔ 複数行のレイアウトが変わると入力欄が作り直されるので, カーソルの位置を戻す
+          const caret = editingStringCaret;
+          if (caret !== null && caret.path === pathToString(node.path)) {
+            e.currentTarget.setSelectionRange(caret.start, caret.end);
+          } else {
+            e.currentTarget.select();
+          }
+        }}
+        onSelect={(e) => {
+          rememberCaret(e.currentTarget);
+        }}
+        onBlur={() => {
+          editingStringCaret = null;
+        }}
+        style={{
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
+          color: "inherit",
+          fontFamily: "inherit",
+          fontSize: "inherit",
+          lineHeight: "inherit",
+          resize: "none",
+          overflow: "hidden",
+          width: "auto",
+          minHeight: 0,
+          whiteSpace: "pre",
+          padding: 0,
+          margin: 0,
+        }}
+        onKeyDown={handleKeyDown}
+        onChange={(e) => {
+          rememberCaret(e.currentTarget);
+          setLocalString(e.target.value);
+          onChangeString?.(node.path, e.target.value);
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      />
+    );
+  } else if (isEditing && node.kind === "parameterName") {
     content = (
       <input
         type="text"
@@ -776,6 +843,9 @@ function LeafNodeRenderer({
   } else {
     content = <span>{node.label}</span>;
   }
+  // 改行を含む文字列リテラルは改行したまま複数行で出す
+  const isMultiline =
+    node.kind === "literalString" && node.label.includes("\n");
 
   return (
     <div
@@ -807,7 +877,11 @@ function LeafNodeRenderer({
           border: colors.border,
           cursor: "pointer",
           userSelect: "none",
-          whiteSpace: "nowrap",
+          // 文字列リテラルは空白・改行をそのまま見せる
+          whiteSpace: node.kind === "literalString" ? "pre" : "nowrap",
+          ...(isMultiline
+            ? { borderRadius: "var(--radius-md)", lineHeight: 1.5 }
+            : {}),
           ...(isLink
             ? { textDecoration: "underline", textUnderlineOffset: "0.15em" }
             : {}),

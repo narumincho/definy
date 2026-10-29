@@ -4,13 +4,32 @@ import { expressionToLayoutNode, type ScopeContext } from "./ast_to_layout.ts";
 
 export { expressionToLayoutNode, type ScopeContext };
 
+/** 改行を含む文字列は一番長い行の幅にする */
 export function estimateTextWidth(text: string, charWidth: number): number {
+  let max = 0;
   let count = 0;
   for (const ch of text) {
+    if (ch === "\n") {
+      max = Math.max(max, count);
+      count = 0;
+      continue;
+    }
     const code = ch.codePointAt(0) ?? 0;
     count += code > 255 ? 2 : 1;
   }
-  return count * charWidth;
+  return Math.max(max, count) * charWidth;
+}
+
+export function countLines(text: string): number {
+  return text.split("\n").length;
+}
+
+/** 改行を含む文字列リテラルを持つ式は 1 行に並べず, 子を縦に並べる */
+function containsMultilineLabel(node: LayoutNode): boolean {
+  if (node.children.length === 0) {
+    return node.kind === "literalString" && node.label.includes("\n");
+  }
+  return node.children.some(containsMultilineLabel);
 }
 
 export function computeLayout(
@@ -38,7 +57,7 @@ function layoutRecursive(
     return {
       ...node,
       computedWidth: Math.max(labelWidth, 20),
-      computedHeight: options.lineHeight,
+      computedHeight: options.lineHeight * countLines(node.label),
       layoutMode: "inline",
     };
   }
@@ -49,7 +68,9 @@ function layoutRecursive(
 
   const totalInlineWidth = estimateInlineWidth(node, options);
   const canFitInline =
-    totalInlineWidth <= availableWidth - 4.0 && node.kind !== "block";
+    totalInlineWidth <= availableWidth - 4.0 &&
+    node.kind !== "block" &&
+    !containsMultilineLabel(node);
 
   if (canFitInline) {
     const updatedChildren = node.children.map((child) =>

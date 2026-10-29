@@ -125,7 +125,12 @@ export function useTreeKeyboard({
 
       if (isTextInput(e.target)) {
         // 入力欄を抜けたらツリーにフォーカスを戻し, 続けてキーで移動できるようにする
-        if (e.key === "Escape" || e.key === "Enter") {
+        // 文字列リテラルの入力欄 (textarea) では Shift + Enter で改行する
+        if (
+          e.key === "Escape" ||
+          (e.key === "Enter" &&
+            !(e.shiftKey && e.target instanceof HTMLTextAreaElement))
+        ) {
           e.preventDefault();
           returnToTree();
         }

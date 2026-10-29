@@ -226,6 +226,13 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   (置換メニューは出さない). 変数は ID で参照しているので, 名前だけを変えれば参照する側の式は変えなくてよい.
   let の変数名は束縛の値とは別のパス `letBindingName` (式ではない) にしている.
   実装は [src/tree_layout/local_variable.ts](../src/tree_layout/local_variable.ts) の `renameVariableAt`
+- 文字列リテラルの改行 (#800): 文字列リテラルは空白・改行をそのまま見せる (`white-space: pre`).
+  改行を含むと複数行のバッジになり, それを含む式は 1 行に並べず子を縦に並べる
+  (`containsMultilineLabel`. 幅は一番長い行, 高さは行数分. [src/tree_layout/engine.ts](../src/tree_layout/engine.ts)).
+  入力欄は textarea で, Shift + Enter で改行し, Enter / Escape でツリーに戻る (`useTreeKeyboard`).
+  改行の入力で 1 行 ⇔ 複数行のレイアウトが変わると親の描画が変わって入力欄が作り直されるので,
+  カーソルの位置を覚えておき (`editingStringCaret`), 作り直した入力欄では全選択せずその位置に戻す.
+  `\r` は CSS で空白として扱われるので見た目には出ない
 - 関数のパーツの引数名の変更: 式の根の関数の引数名か, パーツの型の行の引数名を変えると, 型と式の根の関数の引数名を揃え,
   そのパーツを呼び出している式の引数名 (`f(x: ...)` の `x`) も合わせて変える. 呼び出しは引数を型の引数名で渡すので,
   直さないと呼び出し側が型エラーになるため.
