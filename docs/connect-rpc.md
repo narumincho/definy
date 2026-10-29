@@ -135,7 +135,7 @@ message GetContentResponse {
 
 - **クライアント側 (`src/auth.ts` の `submitProjectCommitEvent`, `src/content_store.ts`, `src/state/useEvents.ts`)**:
   - ブラウザから `fetch` で Connect-RPC エンドポイントを呼び出す。
-  - プロジェクトのコミットにはパーツの名前と中身 (`core.part-content`) の `content_hash` だけを入れ, 下の差分ハッシュ・ネゴシエーションで足りない中身だけを送る (#763)。
+  - プロジェクトのコミットにはパーツの名前と中身 (`core.part-content` になる定義の式. [part-definition.md](part-definition.md)) の `content_hash` だけを入れ, 下の差分ハッシュ・ネゴシエーションで足りない中身だけを送る (#763)。
   - コミットを読むときは `GetContent` (`contentHashes` でまとめて) でパーツの中身を読み, SHA-256 が content hash と合うものだけを使う。
 
 ## 4. 差分ハッシュ・ネゴシエーション方式（Git Tree/Blob モデル）

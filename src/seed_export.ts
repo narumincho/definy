@@ -12,9 +12,9 @@ import {
   type CommitPart,
   type ProjectCommitContent,
   type Visibility,
-  decodePartContent,
   type PartContent,
 } from "./event_content.ts";
+import { decodePartDefinition } from "./part_definition.ts";
 import {
   loadProjectSeeds,
   PROJECT_SEEDS_DIR,
@@ -264,7 +264,7 @@ async function hydrateCommitParts(
       const decoded =
         item === undefined
           ? undefined
-          : decodePartContent(
+          : decodePartDefinition(
               decodeCborItem(base64ToBytes(item.contentBytes))[0],
             );
       if (decoded === undefined) {

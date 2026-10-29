@@ -22,6 +22,7 @@ core.option: (T: type) -> type = (T) => union { none, some(T) }
 
 型の中では `core.option(T: number)` のように呼び出して使います。インラインで `union { none, some(number) }` と書く代わりに使えます。
 ユーザーも同じ形で型を返すパーツ (`pair: (A: type, B: type) -> type = (A, B) => { first: A, second: B }` など) を作れます。
+型パーツの中身は `core.define-type(...)` の定義の式で預ける ([part-definition.md](part-definition.md))。
 型パーツかどうかは `core.is-type-part-type` (TypeScript 側は `isTypePartType`) が決めます: 型が `type` か, `type` を返す関数。
 
 ## `core.type-ast`

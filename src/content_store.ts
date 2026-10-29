@@ -1,5 +1,6 @@
 /**
  * CAS (content-addressed storage) に預けたパーツの中身 (説明・公開/非公開・型・式. `core.part-content`.
+ * 預けるのは評価すると中身になる定義の式. docs/part-definition.md.
  * docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」).
  * コミットにはパーツの名前と中身の content hash だけを入れ, 中身は `UploadContent` / `GetContent` でやり取りする
  */
@@ -11,12 +12,11 @@ import {
   sha256EventHashIdSync,
   type DecodedPart,
 } from "./cbor.ts";
+import { DEFAULT_VISIBILITY, type PartContent } from "./event_content.ts";
 import {
-  DEFAULT_VISIBILITY,
-  decodePartContent,
-  encodePartContent,
-  type PartContent,
-} from "./event_content.ts";
+  decodePartDefinition,
+  partDefinitionExpression,
+} from "./part_definition.ts";
 
 /** 1 回の `GetContent` で読む content hash の数 */
 const GET_CONTENT_CHUNK_SIZE = 200;
@@ -28,9 +28,9 @@ export type ContentItem = {
   readonly contentBytes: string;
 };
 
-/** パーツの中身を CAS に預ける形にする */
+/** パーツの中身を CAS に預ける形 (定義の式の CBOR. docs/part-definition.md) にする */
 export function partContentItem(content: PartContent): ContentItem {
-  const bytes = encodeCborItem(encodePartContent(content));
+  const bytes = encodeCborItem(partDefinitionExpression(content));
   return {
     contentHash: sha256EventHashIdSync(bytes),
     contentBytes: bytesToBase64(bytes),
@@ -91,7 +91,7 @@ export function missingContentHashes(
 
 /**
  * `GetContent` でパーツの中身を読んでキャッシュに入れる. サーバーを信用せず, 中身の SHA-256 が content hash と
- * 一致し, `core.part-content` の形のものだけを使う. 読めたものが 1 つでもあれば `true`
+ * 一致し, 定義の式を評価して `core.part-content` の形になるものだけを使う. 読めたものが 1 つでもあれば `true`
  */
 export async function loadContents(
   hashes: ReadonlyArray<string>,
@@ -109,7 +109,7 @@ export async function loadContents(
       if (sha256EventHashIdSync(bytes) !== item.contentHash) {
         continue;
       }
-      const content = decodePartContent(decodeCborItem(bytes)[0]);
+      const content = decodePartDefinition(decodeCborItem(bytes)[0]);
       if (content === undefined) {
         continue;
       }

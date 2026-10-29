@@ -35,7 +35,7 @@ DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY="<public_key>" npm run export:seeds https://def
 
 1. Connect-RPC `POST {baseUrl}/definy.v1.EventService/GetEvents`（`{ eventType: "project_commit", limit: 500 }`）をページングして全件取得します。
 2. 各イベントの Ed25519 署名を検証し、`account_id` がシステムアカウントで中身が `project_commit` ([event.md](event.md)) で `main` ブランチのものを抽出します。プロジェクトごとにイベント時刻が最新のコミットを採用します。他アカウントのコミットは無視されます。
-3. 式を持たず content hash のみを持つパーツは、Connect-RPC `GetContent` で CAS から CBOR バイト列を取得して式を復元します（式を持つパーツの `content_hash` は seed に書き出しません）。
+3. 式を持たず content hash のみを持つパーツは、Connect-RPC `GetContent` で CAS から CBOR バイト列 (定義の式. [part-definition.md](part-definition.md)) を取得し, 評価して説明・型・式を復元します（式を持つパーツの `content_hash` は seed に書き出しません）。
 4. 書き出し後の全モジュール（新規追加されたパーツを含む）の「システムアカウント × モジュール名 × パーツ名」から導出したパーツ ID (URL-safe Base64 の文字列) の対応表を作成し、式や型定義の中でその文字列と一致する値を `{"$part": "module.name"}` に置き換えます。対応表にない ID はそのまま残します。
 5. システムアカウントのコミットが見つからないプロジェクトの seed ファイルは書き換えません。ビルトインのプロジェクト (`seeds/projects/*.json` にあるもの) 以外は `npm run build:seeds` が読まないため書き出しません。
 6. モジュールの seed はインデント 2、キー順序（トップレベル: `$schema`, `module_name`, `module_description`, `parts` / 各パーツ: `name`, `part_type`, `description`, `expression`）、末尾改行なしの形式で書き出します。

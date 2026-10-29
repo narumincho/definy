@@ -36,6 +36,7 @@ import {
   type PartContent,
 } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
+import { evaluatePartDefinition } from "../src/part_definition.ts";
 import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
@@ -74,18 +75,21 @@ type CommitPartRef = Omit<
 >;
 
 /**
- * パーツの中身の CBOR (Base64) を読む. 形が `core.part-content` でなければ `undefined`.
- * `trusted` (受け付けたコミットが参照している中身. 受け付けたときに確かめた) でなければ, 形を definy 製の
- * `core.value-conforms` で確かめる (docs/event.md)
+ * パーツの中身の CBOR (Base64) を読む. 中身は定義の式で, 評価して `core.part-content` の形でなければ `undefined`
+ * (docs/part-definition.md). `trusted` (受け付けたコミットが参照している中身. 受け付けたときに確かめた) でなければ,
+ * 評価した値の形を definy 製の `core.value-conforms` で確かめる (docs/event.md)
  */
 function decodePartContentBytes(
   contentBytes: string,
   trusted: boolean,
 ): PartContent | undefined {
   try {
-    const value = decodeCborItem(base64ToBytes(contentBytes))[0];
-    return trusted ||
-      conformsInDefiny(shapeCheckerModule, value, "core.part-content")
+    const value = evaluatePartDefinition(
+      decodeCborItem(base64ToBytes(contentBytes))[0],
+    );
+    return value !== undefined &&
+      (trusted ||
+        conformsInDefiny(shapeCheckerModule, value, "core.part-content"))
       ? partContentFromValue(value)
       : undefined;
   } catch {
@@ -411,7 +415,7 @@ export async function checkSubmittedProjectCommit(
     contents.has(part.contentHash)
       ? []
       : [
-          `${part.name}: the content ${part.contentHash} is not a core.part-content`,
+          `${part.name}: the content ${part.contentHash} is not a part definition that evaluates to a core.part-content`,
         ],
   );
   if (malformed.length > 0) {
