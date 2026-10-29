@@ -9984,6 +9984,4300 @@
           }
         }
       }
+    },
+    {
+      "name": "invalid-signature-test-signed-account",
+      "part_type": {
+        "#list": {
+          "item_type": {
+            "#number": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A correctly signed create_account event (CBOR SignedEvent) used to make invalid samples. Signed with the public sample key (src/invalid_signature_samples.ts)"
+        },
+        {
+          "language": "ja",
+          "text": "不正なサンプルを作る元の, 正しく署名した create_account のイベント (CBOR の SignedEvent). 秘密鍵が公開されているサンプルの鍵で署名した"
+        }
+      ],
+      "expression": {
+        "#list": [
+          {
+            "#number": 162
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 64
+          },
+          {
+            "#number": 81
+          },
+          {
+            "#number": 196
+          },
+          {
+            "#number": 208
+          },
+          {
+            "#number": 240
+          },
+          {
+            "#number": 209
+          },
+          {
+            "#number": 45
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 27
+          },
+          {
+            "#number": 31
+          },
+          {
+            "#number": 214
+          },
+          {
+            "#number": 17
+          },
+          {
+            "#number": 210
+          },
+          {
+            "#number": 7
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 212
+          },
+          {
+            "#number": 179
+          },
+          {
+            "#number": 233
+          },
+          {
+            "#number": 214
+          },
+          {
+            "#number": 46
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 79
+          },
+          {
+            "#number": 23
+          },
+          {
+            "#number": 4
+          },
+          {
+            "#number": 62
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 212
+          },
+          {
+            "#number": 211
+          },
+          {
+            "#number": 152
+          },
+          {
+            "#number": 154
+          },
+          {
+            "#number": 58
+          },
+          {
+            "#number": 176
+          },
+          {
+            "#number": 133
+          },
+          {
+            "#number": 213
+          },
+          {
+            "#number": 201
+          },
+          {
+            "#number": 45
+          },
+          {
+            "#number": 220
+          },
+          {
+            "#number": 255
+          },
+          {
+            "#number": 80
+          },
+          {
+            "#number": 213
+          },
+          {
+            "#number": 241
+          },
+          {
+            "#number": 249
+          },
+          {
+            "#number": 189
+          },
+          {
+            "#number": 179
+          },
+          {
+            "#number": 235
+          },
+          {
+            "#number": 20
+          },
+          {
+            "#number": 249
+          },
+          {
+            "#number": 44
+          },
+          {
+            "#number": 174
+          },
+          {
+            "#number": 41
+          },
+          {
+            "#number": 18
+          },
+          {
+            "#number": 156
+          },
+          {
+            "#number": 170
+          },
+          {
+            "#number": 237
+          },
+          {
+            "#number": 232
+          },
+          {
+            "#number": 136
+          },
+          {
+            "#number": 28
+          },
+          {
+            "#number": 13
+          },
+          {
+            "#number": 47
+          },
+          {
+            "#number": 126
+          },
+          {
+            "#number": 203
+          },
+          {
+            "#number": 197
+          },
+          {
+            "#number": 248
+          },
+          {
+            "#number": 235
+          },
+          {
+            "#number": 9
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 216
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 122
+          },
+          {
+            "#number": 163
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 140
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 25
+          },
+          {
+            "#number": 203
+          },
+          {
+            "#number": 200
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 230
+          },
+          {
+            "#number": 217
+          },
+          {
+            "#number": 223
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 206
+          },
+          {
+            "#number": 55
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 4
+          },
+          {
+            "#number": 255
+          },
+          {
+            "#number": 132
+          },
+          {
+            "#number": 75
+          },
+          {
+            "#number": 233
+          },
+          {
+            "#number": 240
+          },
+          {
+            "#number": 180
+          },
+          {
+            "#number": 68
+          },
+          {
+            "#number": 48
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 136
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 52
+          },
+          {
+            "#number": 14
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 2
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 193
+          },
+          {
+            "#number": 26
+          },
+          {
+            "#number": 92
+          },
+          {
+            "#number": 82
+          },
+          {
+            "#number": 123
+          },
+          {
+            "#number": 49
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 35
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 45
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 45
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid-signature-test-signed-commit",
+      "part_type": {
+        "#list": {
+          "item_type": {
+            "#number": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A correctly signed project_commit event (CBOR SignedEvent) with the message \"Signed commit (content will be tampered)\", used to make invalid samples"
+        },
+        {
+          "language": "ja",
+          "text": "不正なサンプルを作る元の, 正しく署名した project_commit のイベント (CBOR の SignedEvent). メッセージは \"Signed commit (content will be tampered)\""
+        }
+      ],
+      "expression": {
+        "#list": [
+          {
+            "#number": 162
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 64
+          },
+          {
+            "#number": 157
+          },
+          {
+            "#number": 223
+          },
+          {
+            "#number": 190
+          },
+          {
+            "#number": 168
+          },
+          {
+            "#number": 137
+          },
+          {
+            "#number": 251
+          },
+          {
+            "#number": 122
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 52
+          },
+          {
+            "#number": 52
+          },
+          {
+            "#number": 137
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 16
+          },
+          {
+            "#number": 193
+          },
+          {
+            "#number": 44
+          },
+          {
+            "#number": 81
+          },
+          {
+            "#number": 130
+          },
+          {
+            "#number": 75
+          },
+          {
+            "#number": 61
+          },
+          {
+            "#number": 72
+          },
+          {
+            "#number": 173
+          },
+          {
+            "#number": 188
+          },
+          {
+            "#number": 66
+          },
+          {
+            "#number": 78
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 76
+          },
+          {
+            "#number": 150
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 141
+          },
+          {
+            "#number": 84
+          },
+          {
+            "#number": 67
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 158
+          },
+          {
+            "#number": 154
+          },
+          {
+            "#number": 244
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 33
+          },
+          {
+            "#number": 102
+          },
+          {
+            "#number": 235
+          },
+          {
+            "#number": 140
+          },
+          {
+            "#number": 36
+          },
+          {
+            "#number": 4
+          },
+          {
+            "#number": 40
+          },
+          {
+            "#number": 23
+          },
+          {
+            "#number": 79
+          },
+          {
+            "#number": 203
+          },
+          {
+            "#number": 245
+          },
+          {
+            "#number": 5
+          },
+          {
+            "#number": 172
+          },
+          {
+            "#number": 177
+          },
+          {
+            "#number": 107
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 172
+          },
+          {
+            "#number": 240
+          },
+          {
+            "#number": 28
+          },
+          {
+            "#number": 222
+          },
+          {
+            "#number": 237
+          },
+          {
+            "#number": 199
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 173
+          },
+          {
+            "#number": 122
+          },
+          {
+            "#number": 190
+          },
+          {
+            "#number": 9
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 216
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 89
+          },
+          {
+            "#number": 2
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 163
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 140
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 25
+          },
+          {
+            "#number": 203
+          },
+          {
+            "#number": 200
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 230
+          },
+          {
+            "#number": 217
+          },
+          {
+            "#number": 223
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 206
+          },
+          {
+            "#number": 55
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 4
+          },
+          {
+            "#number": 255
+          },
+          {
+            "#number": 132
+          },
+          {
+            "#number": 75
+          },
+          {
+            "#number": 233
+          },
+          {
+            "#number": 240
+          },
+          {
+            "#number": 180
+          },
+          {
+            "#number": 68
+          },
+          {
+            "#number": 48
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 29
+          },
+          {
+            "#number": 136
+          },
+          {
+            "#number": 88
+          },
+          {
+            "#number": 52
+          },
+          {
+            "#number": 14
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 2
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 193
+          },
+          {
+            "#number": 26
+          },
+          {
+            "#number": 92
+          },
+          {
+            "#number": 82
+          },
+          {
+            "#number": 123
+          },
+          {
+            "#number": 49
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 35
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 167
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 102
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 130
+          },
+          {
+            "#number": 162
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 73
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 162
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 30
+          },
+          {
+            "#number": 228
+          },
+          {
+            "#number": 184
+          },
+          {
+            "#number": 141
+          },
+          {
+            "#number": 230
+          },
+          {
+            "#number": 173
+          },
+          {
+            "#number": 163
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 170
+          },
+          {
+            "#number": 231
+          },
+          {
+            "#number": 189
+          },
+          {
+            "#number": 178
+          },
+          {
+            "#number": 229
+          },
+          {
+            "#number": 144
+          },
+          {
+            "#number": 141
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 174
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 130
+          },
+          {
+            "#number": 181
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 179
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 151
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 171
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 40
+          },
+          {
+            "#number": 83
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 40
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 119
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 41
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 35
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 246
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 35
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 246
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 164
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 107
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 130
+          },
+          {
+            "#number": 162
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 24
+          },
+          {
+            "#number": 73
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 32
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 162
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 30
+          },
+          {
+            "#number": 228
+          },
+          {
+            "#number": 184
+          },
+          {
+            "#number": 141
+          },
+          {
+            "#number": 230
+          },
+          {
+            "#number": 173
+          },
+          {
+            "#number": 163
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 170
+          },
+          {
+            "#number": 231
+          },
+          {
+            "#number": 189
+          },
+          {
+            "#number": 178
+          },
+          {
+            "#number": 229
+          },
+          {
+            "#number": 144
+          },
+          {
+            "#number": 141
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 174
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 130
+          },
+          {
+            "#number": 181
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 179
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 151
+          },
+          {
+            "#number": 227
+          },
+          {
+            "#number": 131
+          },
+          {
+            "#number": 171
+          },
+          {
+            "#number": 106
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 121
+          },
+          {
+            "#number": 161
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 35
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 105
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 246
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 112
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 129
+          },
+          {
+            "#number": 162
+          },
+          {
+            "#number": 100
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 109
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 102
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 119
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 108
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 111
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 101
+          },
+          {
+            "#number": 110
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 97
+          },
+          {
+            "#number": 115
+          },
+          {
+            "#number": 104
+          },
+          {
+            "#number": 120
+          },
+          {
+            "#number": 43
+          },
+          {
+            "#number": 53
+          },
+          {
+            "#number": 90
+          },
+          {
+            "#number": 85
+          },
+          {
+            "#number": 71
+          },
+          {
+            "#number": 79
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 116
+          },
+          {
+            "#number": 81
+          },
+          {
+            "#number": 68
+          },
+          {
+            "#number": 89
+          },
+          {
+            "#number": 45
+          },
+          {
+            "#number": 103
+          },
+          {
+            "#number": 57
+          },
+          {
+            "#number": 54
+          },
+          {
+            "#number": 52
+          },
+          {
+            "#number": 74
+          },
+          {
+            "#number": 70
+          },
+          {
+            "#number": 95
+          },
+          {
+            "#number": 83
+          },
+          {
+            "#number": 69
+          },
+          {
+            "#number": 48
+          },
+          {
+            "#number": 48
+          },
+          {
+            "#number": 56
+          },
+          {
+            "#number": 90
+          },
+          {
+            "#number": 72
+          },
+          {
+            "#number": 73
+          },
+          {
+            "#number": 65
+          },
+          {
+            "#number": 122
+          },
+          {
+            "#number": 118
+          },
+          {
+            "#number": 48
+          },
+          {
+            "#number": 119
+          },
+          {
+            "#number": 114
+          },
+          {
+            "#number": 68
+          },
+          {
+            "#number": 67
+          },
+          {
+            "#number": 57
+          },
+          {
+            "#number": 50
+          },
+          {
+            "#number": 98
+          },
+          {
+            "#number": 99
+          },
+          {
+            "#number": 83
+          },
+          {
+            "#number": 117
+          },
+          {
+            "#number": 68
+          },
+          {
+            "#number": 77
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid-signature-test-events",
+      "part_type": {
+        "#list": {
+          "item_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Events with invalid signatures made by rewriting correctly signed events: the first signature byte inverted (255 - byte), the message rewritten after signing (Signed -> Forged), and account_id replaced with the development system account"
+        },
+        {
+          "language": "ja",
+          "text": "正しく署名したイベントを書き換えて作った, 署名が不正なイベント. 署名の 1 バイト目を反転 (255 - バイト) したもの, 署名後にメッセージを書き換えたもの (Signed → Forged), account_id を開発用のシステムアカウントにすり替えたもの"
+        }
+      ],
+      "expression": {
+        "#list": [
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.bytes-replace"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "bytes",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.invalid-signature-test-signed-account"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#number": 13
+                  }
+                },
+                {
+                  "name": "replacement",
+                  "value": {
+                    "#list": [
+                      {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.minus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#number": 255
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "std.byte-at-or-zero"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "bytes",
+                                      "value": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.invalid-signature-test-signed-account"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#number": 13
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.bytes-replace"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "bytes",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.invalid-signature-test-signed-commit"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#number": 354
+                  }
+                },
+                {
+                  "name": "replacement",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "std.string-to-utf8-bytes"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "#string": "Forged"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.bytes-replace"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "bytes",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.invalid-signature-test-signed-commit"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#number": 109
+                  }
+                },
+                {
+                  "name": "replacement",
+                  "value": {
+                    "#list": [
+                      {
+                        "#number": 185
+                      },
+                      {
+                        "#number": 31
+                      },
+                      {
+                        "#number": 71
+                      },
+                      {
+                        "#number": 16
+                      },
+                      {
+                        "#number": 34
+                      },
+                      {
+                        "#number": 30
+                      },
+                      {
+                        "#number": 26
+                      },
+                      {
+                        "#number": 125
+                      },
+                      {
+                        "#number": 33
+                      },
+                      {
+                        "#number": 144
+                      },
+                      {
+                        "#number": 166
+                      },
+                      {
+                        "#number": 68
+                      },
+                      {
+                        "#number": 105
+                      },
+                      {
+                        "#number": 207
+                      },
+                      {
+                        "#number": 58
+                      },
+                      {
+                        "#number": 35
+                      },
+                      {
+                        "#number": 202
+                      },
+                      {
+                        "#number": 203
+                      },
+                      {
+                        "#number": 166
+                      },
+                      {
+                        "#number": 5
+                      },
+                      {
+                        "#number": 138
+                      },
+                      {
+                        "#number": 127
+                      },
+                      {
+                        "#number": 62
+                      },
+                      {
+                        "#number": 101
+                      },
+                      {
+                        "#number": 46
+                      },
+                      {
+                        "#number": 11
+                      },
+                      {
+                        "#number": 223
+                      },
+                      {
+                        "#number": 13
+                      },
+                      {
+                        "#number": 174
+                      },
+                      {
+                        "#number": 181
+                      },
+                      {
+                        "#number": 19
+                      },
+                      {
+                        "#number": 108
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "submit-events-expect-rejected-from",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "base_url",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "events",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#list": {
+                      "item_type": {
+                        "#number": null
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "report",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "failures",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "wasi.io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Submits the events from index with EventService/SubmitEvent one by one and checks that each is rejected with 400 because its signature is invalid (Ed25519 signature verification failed). report is the result so far and failures the number not rejected"
+        },
+        {
+          "language": "ja",
+          "text": "events の index からを 1 つずつ EventService/SubmitEvent で送り, それぞれ署名が不正として 400 (Ed25519 signature verification failed) で拒否されるか確かめる. report はここまでの結果, failures は拒否されなかった数"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "base_url"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "events"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "report"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "failures"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "done",
+                      "payload": {
+                        "#some": {
+                          "#call": {
+                            "function": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.string-concat"
+                                }
+                              }
+                            },
+                            "arguments": [
+                              {
+                                "name": "left",
+                                "value": {
+                                  "#match": {
+                                    "target": {
+                                      "#call": {
+                                        "function": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "core.equal"
+                                            }
+                                          }
+                                        },
+                                        "arguments": [
+                                          {
+                                            "name": "left",
+                                            "value": {
+                                              "#variable": {
+                                                "variable_id": 4
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "name": "right",
+                                            "value": {
+                                              "#number": 0
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "arms": [
+                                      {
+                                        "pattern": {
+                                          "#boolean": true
+                                        },
+                                        "body": {
+                                          "#string": "OK: すべて署名が不正として拒否されました"
+                                        }
+                                      },
+                                      {
+                                        "pattern": {
+                                          "#boolean": false
+                                        },
+                                        "body": {
+                                          "#string": "NG: 署名が不正として拒否されなかったイベントがあります"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "name": "right",
+                                "value": {
+                                  "#variable": {
+                                    "variable_id": 3
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "type_part": {
+                        "#some": {
+                          "$part": "wasi.io"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 5,
+                          "variable_name": "event"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "outgoing_request",
+                      "payload": {
+                        "#some": {
+                          "#record": [
+                            {
+                              "key": "request",
+                              "value": {
+                                "#record": [
+                                  {
+                                    "key": "method",
+                                    "value": {
+                                      "#string": "POST"
+                                    }
+                                  },
+                                  {
+                                    "key": "url",
+                                    "value": {
+                                      "#call": {
+                                        "function": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "core.string-concat"
+                                            }
+                                          }
+                                        },
+                                        "arguments": [
+                                          {
+                                            "name": "left",
+                                            "value": {
+                                              "#variable": {
+                                                "variable_id": 0
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "name": "right",
+                                            "value": {
+                                              "#string": "/definy.v1.EventService/SubmitEvent"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "key": "headers",
+                                    "value": {
+                                      "#list": [
+                                        {
+                                          "#record": [
+                                            {
+                                              "key": "name",
+                                              "value": {
+                                                "#string": "content-type"
+                                              }
+                                            },
+                                            {
+                                              "key": "value",
+                                              "value": {
+                                                "#string": "application/json"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "key": "secret_headers",
+                                    "value": {
+                                      "#list": []
+                                    }
+                                  },
+                                  {
+                                    "key": "body",
+                                    "value": {
+                                      "#call": {
+                                        "function": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "std.string-to-utf8-bytes"
+                                            }
+                                          }
+                                        },
+                                        "arguments": [
+                                          {
+                                            "name": "text",
+                                            "value": {
+                                              "#call": {
+                                                "function": {
+                                                  "#part_reference": {
+                                                    "part_definition_event_hash": {
+                                                      "$part": "core.string-concat"
+                                                    }
+                                                  }
+                                                },
+                                                "arguments": [
+                                                  {
+                                                    "name": "left",
+                                                    "value": {
+                                                      "#call": {
+                                                        "function": {
+                                                          "#part_reference": {
+                                                            "part_definition_event_hash": {
+                                                              "$part": "core.string-concat"
+                                                            }
+                                                          }
+                                                        },
+                                                        "arguments": [
+                                                          {
+                                                            "name": "left",
+                                                            "value": {
+                                                              "#string": "{\"signedEventBytes\":\""
+                                                            }
+                                                          },
+                                                          {
+                                                            "name": "right",
+                                                            "value": {
+                                                              "#call": {
+                                                                "function": {
+                                                                  "#part_reference": {
+                                                                    "part_definition_event_hash": {
+                                                                      "$part": "std.bytes-to-base64"
+                                                                    }
+                                                                  }
+                                                                },
+                                                                "arguments": [
+                                                                  {
+                                                                    "name": "bytes",
+                                                                    "value": {
+                                                                      "#variable": {
+                                                                        "variable_id": 5
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "name": "right",
+                                                    "value": {
+                                                      "#string": "\"}"
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": "then",
+                              "value": {
+                                "#function": {
+                                  "parameters": [
+                                    {
+                                      "parameter_id": 6,
+                                      "parameter_name": "result"
+                                    }
+                                  ],
+                                  "body": {
+                                    "#match": {
+                                      "target": {
+                                        "#variable": {
+                                          "variable_id": 6
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "error",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 10,
+                                                  "variable_name": "message"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "definy.submit-events-expect-rejected-from"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "base_url",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "events",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "report",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.string-concat"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.string-concat"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 3
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#string": "\n"
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.string-concat"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#string": "送れませんでした: "
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 10
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "failures",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "ok",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 11,
+                                                  "variable_name": "response"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#match": {
+                                              "target": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.and"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.equal"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "#record_get": {
+                                                                  "record": {
+                                                                    "#variable": {
+                                                                      "variable_id": 11
+                                                                    }
+                                                                  },
+                                                                  "key": "status"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "#number": 400
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "std.string-contains"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "value",
+                                                              "value": {
+                                                                "#record_get": {
+                                                                  "record": {
+                                                                    "#variable": {
+                                                                      "variable_id": 11
+                                                                    }
+                                                                  },
+                                                                  "key": "text"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "pattern",
+                                                              "value": {
+                                                                "#string": "Ed25519 signature verification failed"
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "pattern": {
+                                                    "#boolean": true
+                                                  },
+                                                  "body": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.submit-events-expect-rejected-from"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "base_url",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "events",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.plus"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 1
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "report",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.string-concat"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 3
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#string": "\n"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#string": "署名が不正として拒否された: "
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#record_get": {
+                                                                              "record": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 11
+                                                                                }
+                                                                              },
+                                                                              "key": "text"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "failures",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.plus"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 0
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "pattern": {
+                                                    "#boolean": false
+                                                  },
+                                                  "body": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.submit-events-expect-rejected-from"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "base_url",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "events",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.plus"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 1
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "report",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.string-concat"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 3
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#string": "\n"
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#string": "署名が不正として拒否されなかった: "
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#record_get": {
+                                                                              "record": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 11
+                                                                                }
+                                                                              },
+                                                                              "key": "text"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "failures",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.plus"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 1
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "type_part": {
+                        "#some": {
+                          "$part": "wasi.io"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "submit-events-expect-rejected",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "base_url",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "events",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#list": {
+                      "item_type": {
+                        "#number": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#reference": {
+              "part_hash": {
+                "$part": "wasi.io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Submits signed events (CBOR SignedEvent) to the definy server at base_url (\"\" for the server running this) and checks that all are rejected because their signatures are invalid"
+        },
+        {
+          "language": "ja",
+          "text": "署名済みイベント (CBOR の SignedEvent) を base_url の definy サーバー (\"\" なら実行している definy) に送り, すべて署名が不正として拒否されるか確かめる"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "base_url"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "events"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.submit-events-expect-rejected-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "base_url",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "events",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "report",
+                  "value": {
+                    "#string": ""
+                  }
+                },
+                {
+                  "name": "failures",
+                  "value": {
+                    "#number": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "check-invalid-signatures-rejected",
+      "part_type": {
+        "#reference": {
+          "part_hash": {
+            "$part": "wasi.io"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Test: submits definy.invalid-signature-test-events to this definy server and checks that every event with an invalid signature is rejected. Run it from the run panel"
+        },
+        {
+          "language": "ja",
+          "text": "テスト: definy.invalid-signature-test-events をこの definy のサーバーに送り, 署名が不正なイベントがすべて拒否されるか確かめる. 実行パネルから実行する"
+        }
+      ],
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.submit-events-expect-rejected"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "base_url",
+              "value": {
+                "#string": ""
+              }
+            },
+            {
+              "name": "events",
+              "value": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.invalid-signature-test-events"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   ]
 }

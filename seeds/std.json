@@ -2554,6 +2554,2206 @@
           }
         }
       }
+    },
+    {
+      "name": "byte-at-or-zero",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#number": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The byte at index, or 0 when index is out of range"
+        },
+        {
+          "language": "ja",
+          "text": "index の位置のバイト. 範囲外なら 0"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "bytes"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 2,
+                          "variable_name": "byte"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "base64-digit",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The standard Base64 character for a 6-bit value (0-63)"
+        },
+        {
+          "language": "ja",
+          "text": "6 ビットの値 (0〜63) の標準 Base64 の文字"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.string-slice"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "value",
+                  "value": {
+                    "#string": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "end",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.plus"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 1
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bytes-to-base64-from",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Standard Base64 (with padding) of bytes from index to the end"
+        },
+        {
+          "language": "ja",
+          "text": "bytes の index から最後までの標準 Base64 (パディング付き)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "bytes"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 2,
+              "variable_name": "rest",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 1
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#string": ""
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 3,
+                          "variable_name": "b0",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "std.byte-at-or-zero"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "bytes",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 0
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "#let": {
+                              "variable_id": 4,
+                              "variable_name": "b1",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "std.byte-at-or-zero"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "bytes",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "body": {
+                                "#let": {
+                                  "variable_id": 5,
+                                  "variable_name": "b2",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "std.byte-at-or-zero"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "bytes",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.plus"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#number": 2
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "body": {
+                                    "#let": {
+                                      "variable_id": 6,
+                                      "variable_name": "c0",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "std.base64-digit"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.divide"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#number": 4
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "body": {
+                                        "#let": {
+                                          "variable_id": 7,
+                                          "variable_name": "c1",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "std.base64-digit"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.multiply"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.remainder"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 3
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#number": 4
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 16
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.divide"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 16
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "body": {
+                                            "#let": {
+                                              "variable_id": 8,
+                                              "variable_name": "c2",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "std.base64-digit"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "value",
+                                                      "value": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.plus"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.multiply"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "#call": {
+                                                                          "function": {
+                                                                            "#part_reference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.remainder"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 4
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "#number": 16
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "#number": 4
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.divide"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 5
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "#number": 64
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "body": {
+                                                "#let": {
+                                                  "variable_id": 9,
+                                                  "variable_name": "c3",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "std.base64-digit"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "value",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.remainder"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 5
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 64
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "body": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.equal"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 2
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "#number": 1
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": true
+                                                          },
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.string-concat"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 7
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#string": "=="
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": false
+                                                          },
+                                                          "body": {
+                                                            "#match": {
+                                                              "target": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.equal"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 2
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "#number": 2
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "arms": [
+                                                                {
+                                                                  "pattern": {
+                                                                    "#boolean": true
+                                                                  },
+                                                                  "body": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "core.string-concat"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "left",
+                                                                                  "value": {
+                                                                                    "#call": {
+                                                                                      "function": {
+                                                                                        "#part_reference": {
+                                                                                          "part_definition_event_hash": {
+                                                                                            "$part": "core.string-concat"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "arguments": [
+                                                                                        {
+                                                                                          "name": "left",
+                                                                                          "value": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 6
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "name": "right",
+                                                                                          "value": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 7
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "right",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 8
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#string": "="
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "pattern": {
+                                                                    "#boolean": false
+                                                                  },
+                                                                  "body": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "core.string-concat"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "left",
+                                                                                  "value": {
+                                                                                    "#call": {
+                                                                                      "function": {
+                                                                                        "#part_reference": {
+                                                                                          "part_definition_event_hash": {
+                                                                                            "$part": "core.string-concat"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "arguments": [
+                                                                                        {
+                                                                                          "name": "left",
+                                                                                          "value": {
+                                                                                            "#call": {
+                                                                                              "function": {
+                                                                                                "#part_reference": {
+                                                                                                  "part_definition_event_hash": {
+                                                                                                    "$part": "core.string-concat"
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "arguments": [
+                                                                                                {
+                                                                                                  "name": "left",
+                                                                                                  "value": {
+                                                                                                    "#variable": {
+                                                                                                      "variable_id": 6
+                                                                                                    }
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "name": "right",
+                                                                                                  "value": {
+                                                                                                    "#variable": {
+                                                                                                      "variable_id": 7
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "name": "right",
+                                                                                          "value": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 8
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "right",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 9
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "std.bytes-to-base64-from"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "bytes",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 0
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "index",
+                                                                                  "value": {
+                                                                                    "#call": {
+                                                                                      "function": {
+                                                                                        "#part_reference": {
+                                                                                          "part_definition_event_hash": {
+                                                                                            "$part": "core.plus"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "arguments": [
+                                                                                        {
+                                                                                          "name": "left",
+                                                                                          "value": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 1
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "name": "right",
+                                                                                          "value": {
+                                                                                            "#number": 3
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bytes-to-base64",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encodes bytes as standard Base64 (with padding)"
+        },
+        {
+          "language": "ja",
+          "text": "バイト列を標準 Base64 (パディング付き) にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "bytes"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.bytes-to-base64-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "bytes",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bytes-replace-from",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "replacement",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "result",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Appends bytes from index to the end to result, taking the bytes of replacement from start instead"
+        },
+        {
+          "language": "ja",
+          "text": "bytes の index から最後までを result の後ろに足す. start からは replacement のバイトに置き換える"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "bytes"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "replacement"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "result"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 4
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 5,
+                          "variable_name": "byte"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "std.bytes-replace-from"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "bytes",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "start",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "replacement",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "index",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 1
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "result",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-append"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "list",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "item",
+                                  "value": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-get"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "list",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "index",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.minus"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "none",
+                                              "payload": {
+                                                "#any": null
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#variable": {
+                                              "variable_id": 5
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "some",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 6,
+                                                  "variable_name": "replaced"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#match": {
+                                              "target": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.less-than"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "pattern": {
+                                                    "#boolean": true
+                                                  },
+                                                  "body": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "pattern": {
+                                                    "#boolean": false
+                                                  },
+                                                  "body": {
+                                                    "#variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bytes-replace",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#number": null
+              }
+            },
+            {
+              "name": "replacement",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "bytes with the bytes from start replaced by replacement (the length does not change)"
+        },
+        {
+          "language": "ja",
+          "text": "bytes の start からを replacement で置き換えたもの (長さは変わらない)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "bytes"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "replacement"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.bytes-replace-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "bytes",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "replacement",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 2
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "result",
+                  "value": {
+                    "#list": []
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-contains-from",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "pattern",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#boolean": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether pattern appears in value at index or later"
+        },
+        {
+          "language": "ja",
+          "text": "value の index 以降に pattern があるか"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "pattern"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 3,
+              "variable_name": "end",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.greater-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-length"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#boolean": false
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-slice"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#boolean": true
+                              },
+                              "body": {
+                                "#boolean": true
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#boolean": false
+                              },
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "std.string-contains-from"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "value",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "pattern",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-contains",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#string": null
+              }
+            },
+            {
+              "name": "pattern",
+              "type": {
+                "#string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#boolean": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether pattern appears in value"
+        },
+        {
+          "language": "ja",
+          "text": "value に pattern があるか"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "pattern"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.string-contains-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "value",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "pattern",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   ]
 }
