@@ -1,5 +1,10 @@
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import type { VisibilityTarget } from "../visibility.ts";
+import {
+  loadDefinitionEvaluator,
+  loadedDefinitionEvaluator,
+} from "../definition_evaluator_browser.ts";
+import { evaluateDefinition } from "../definition_evaluator.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ConnectionStatus,
@@ -26,6 +31,8 @@ import {
   loadContents,
   missingContentHashes,
   withCachedContents,
+  withEvaluatedDefinitions,
+  hasPendingDefinitions,
 } from "../content_store.ts";
 
 /** 署名の正しいプロジェクトのコミットのイベントと, その中身 */
@@ -265,6 +272,37 @@ function withModuleContents(
   return changed ? modules : commit.modules;
 }
 
+/**
+ * コミットのパーツのうち中身がその場で評価できない定義の式のものを, コミットの中で評価して埋める (docs/part-definition.md).
+ * 評価器をまだ読み込んでいなければそのまま
+ */
+function withCommitDefinitions(
+  decoded: DecodedCommitEvent,
+  external: (partId: string) => unknown,
+): DecodedCommitEvent {
+  const evaluator = loadedDefinitionEvaluator();
+  const parts = commitParts(decoded.commit);
+  const resolved = withEvaluatedDefinitions(
+    decoded.event.eventHash,
+    parts,
+    external,
+    evaluator === undefined
+      ? undefined
+      : (definition, resolve) =>
+          evaluateDefinition(evaluator, definition, resolve),
+  );
+  if (resolved === parts) {
+    return decoded;
+  }
+  let offset = 0;
+  const modules = decoded.commit.modules.map((module) => {
+    const moduleParts = resolved.slice(offset, offset + module.parts.length);
+    offset += module.parts.length;
+    return { ...module, parts: moduleParts };
+  });
+  return { event: decoded.event, commit: { ...decoded.commit, modules } };
+}
+
 /** 署名の正しいプロジェクトのコミットのうち, CAS からパーツの中身を読む必要があるものを読む. 読んだら `true` */
 async function loadCommitContents(
   records: ReadonlyArray<EventRecord>,
@@ -284,7 +322,12 @@ async function loadCommitContents(
     }
   }
   if (hashes.size === 0) return false;
-  return await loadContents([...hashes], postRpc);
+  const loaded = await loadContents([...hashes], postRpc);
+  // ユーザーが作った定義のパーツで定義したパーツがあれば, 評価器を読み込んでからコミットの中で評価する
+  if (hasPendingDefinitions()) {
+    await loadDefinitionEvaluator().catch(() => undefined);
+  }
+  return loaded;
 }
 
 export function useEvents(): EventsState {
@@ -455,17 +498,30 @@ export function useEvents(): EventsState {
   }, [validEvents]);
 
   // プロジェクトのコミットの中身は大きい (seed の core だけで数 MB) ので, デコードは 1 度だけにして使い回す
-  const decodedCommits = useMemo<ReadonlyArray<DecodedCommitEvent>>(
-    () =>
-      validEvents.flatMap((event) => {
-        if (event.eventType !== "project_commit") return [];
-        const decoded = decodeCommitEvent(event);
-        return decoded === null
-          ? []
-          : [resolveCommitContents(decoded, contentsVersion)];
-      }),
-    [validEvents, contentsVersion],
-  );
+  const decodedCommits = useMemo<ReadonlyArray<DecodedCommitEvent>>(() => {
+    const resolved = validEvents.flatMap((event) => {
+      if (event.eventType !== "project_commit") return [];
+      const decoded = decodeCommitEvent(event);
+      return decoded === null
+        ? []
+        : [resolveCommitContents(decoded, contentsVersion)];
+    });
+    if (!hasPendingDefinitions()) {
+      return resolved;
+    }
+    // 評価で参照するコミットの外のパーツの式 (新しいコミットのものを優先する)
+    const expressions = new Map<string, unknown>();
+    for (const { commit } of resolved) {
+      for (const part of commitParts(commit)) {
+        if (part.partIdHash != null && !expressions.has(part.partIdHash)) {
+          expressions.set(part.partIdHash, part.expression ?? undefined);
+        }
+      }
+    }
+    return resolved.map((decoded) =>
+      withCommitDefinitions(decoded, (id) => expressions.get(id)),
+    );
+  }, [validEvents, contentsVersion]);
 
   const [selectedBranches, setSelectedBranches] = useState<
     ReadonlyMap<string, string>

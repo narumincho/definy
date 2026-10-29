@@ -14,3 +14,4 @@ playwright-report/
 /wasm/branch_summarizer.wasm
 /wasm/visibility_checker.wasm
 /wasm/service.wasm
+/wasm/definition_evaluator.wasm

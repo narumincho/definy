@@ -429,6 +429,12 @@ export const VISIBILITY_CHECKER_WASM_PATH = "wasm/visibility_checker.wasm";
  */
 export const SERVICE_WASM_PATH = "wasm/service.wasm";
 
+/**
+ * seed の `core.eval-value` (definy 製の評価器) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
+ * ユーザーが作った定義のパーツを使う定義の式を, サーバーとブラウザが評価するのに使う (src/definition_evaluator.ts)
+ */
+export const DEFINITION_EVALUATOR_WASM_PATH = "wasm/definition_evaluator.wasm";
+
 /** seed の core の関数のパーツ `partName` を stage1 でコンパイルする */
 async function compileCorePart(partName: string): Promise<Uint8Array> {
   return compileSeedPart("core", partName);
@@ -460,7 +466,7 @@ export async function generateEventCheckerWasm(): Promise<Uint8Array> {
 /**
  * {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に,
  * `core.project-branches` を {@link BRANCH_SUMMARIZER_WASM_PATH} に, `core.check-reference-visibility` を {@link VISIBILITY_CHECKER_WASM_PATH} に,
- * `definy.handle-rpc` を {@link SERVICE_WASM_PATH} に書き出す
+ * `definy.handle-rpc` を {@link SERVICE_WASM_PATH} に, `core.eval-value` を {@link DEFINITION_EVALUATOR_WASM_PATH} に書き出す
  */
 export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
@@ -482,6 +488,10 @@ export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
     resolve(SERVICE_WASM_PATH),
     await compileSeedPart("definy", "handle-rpc"),
+  );
+  await writeFile(
+    resolve(DEFINITION_EVALUATOR_WASM_PATH),
+    await compileCorePart("eval-value"),
   );
 }
 
@@ -510,6 +520,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}`,
   );
 }

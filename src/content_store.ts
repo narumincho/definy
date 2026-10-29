@@ -15,7 +15,10 @@ import {
 import { DEFAULT_VISIBILITY, type PartContent } from "./event_content.ts";
 import {
   decodePartDefinition,
+  evaluatePartDefinition,
   partDefinitionExpression,
+  resolveDefinitionsInCommit,
+  type DefinitionEvaluator,
 } from "./part_definition.ts";
 
 /** 1 回の `GetContent` で読む content hash の数 */
@@ -57,6 +60,18 @@ export function toContentAddressedParts(parts: ReadonlyArray<DecodedPart>): {
       expression: part.expression ?? null,
     };
     const item = partContentItem(content);
+    // コミットの中で評価した定義の式のパーツは, 中身を変えていなければ定義の式 (content hash) のまま残す
+    const evaluated =
+      part.contentHash == null
+        ? undefined
+        : evaluatedContentByHash.get(part.contentHash);
+    if (
+      part.contentHash != null &&
+      evaluated !== undefined &&
+      evaluated.has(item.contentHash)
+    ) {
+      return { ...part, contentHash: part.contentHash };
+    }
     contents.set(item.contentHash, item);
     contentCache.set(item.contentHash, content);
     return { ...part, contentHash: item.contentHash };
@@ -66,6 +81,17 @@ export function toContentAddressedParts(parts: ReadonlyArray<DecodedPart>): {
 
 /** content hash → パーツの中身. 中身は変わらないので, 読んだものはページを開いている間ずっと使う */
 const contentCache = new Map<string, PartContent>();
+
+/**
+ * content hash → その場で評価できない定義の式 (ユーザーが作った定義のパーツの呼び出しなど).
+ * 中身はコミットで決まるので, コミットの中で評価する ({@link withEvaluatedDefinitions})
+ */
+const definitionCache = new Map<string, unknown>();
+
+/** その場で評価できない定義の式を読んだか (評価器を読み込むか決める) */
+export function hasPendingDefinitions(): boolean {
+  return definitionCache.size > 0;
+}
 
 /** 読んだパーツの中身 (無ければ `undefined`) */
 export function cachedContent(contentHash: string): PartContent | undefined {
@@ -81,7 +107,8 @@ export function missingContentHashes(
     if (
       part.unresolved === true &&
       part.contentHash != null &&
-      !contentCache.has(part.contentHash)
+      !contentCache.has(part.contentHash) &&
+      !definitionCache.has(part.contentHash)
     ) {
       hashes.add(part.contentHash);
     }
@@ -109,12 +136,16 @@ export async function loadContents(
       if (sha256EventHashIdSync(bytes) !== item.contentHash) {
         continue;
       }
-      const content = decodePartDefinition(decodeCborItem(bytes)[0]);
-      if (content === undefined) {
-        continue;
+      const definition = decodeCborItem(bytes)[0];
+      const content = decodePartDefinition(definition);
+      if (content !== undefined) {
+        contentCache.set(item.contentHash, content);
+        loaded = true;
+      } else if (evaluatePartDefinition(definition) === undefined) {
+        // その場で評価できない定義の式は, コミットの中で評価する ({@link withEvaluatedDefinitions})
+        definitionCache.set(item.contentHash, definition);
+        loaded = true;
       }
-      contentCache.set(item.contentHash, content);
-      loaded = true;
     }
   }
   return loaded;
@@ -137,5 +168,84 @@ export function withCachedContents(
     }
     const { unresolved: _, ...rest } = part;
     return { ...rest, ...contentCache.get(part.contentHash ?? "") };
+  });
+}
+
+/** `イベントハッシュ:content hash` → コミットの中で評価したパーツの中身 */
+const evaluatedContentCache = new Map<string, PartContent>();
+
+/**
+ * 定義の式の content hash → それをコミットの中で評価した中身を `core.define-part` の定義の式にしたときの content hash.
+ * 中身を変えずにコミットし直すときに, 元の定義の式を残すのに使う ({@link toContentAddressedParts})
+ */
+const evaluatedContentByHash = new Map<string, Set<string>>();
+
+/**
+ * コミット `eventHash` のパーツのうち, 中身がその場で評価できない定義の式のものを, コミットの中で評価して埋める
+ * (docs/part-definition.md). 評価で参照するパーツの式は, コミットのパーツならその中身, 無ければ `external` で引く.
+ * 評価器 (`evaluate`) が無いか, 埋めるものが無ければ同じ配列を返す
+ */
+export function withEvaluatedDefinitions(
+  eventHash: string,
+  parts: ReadonlyArray<DecodedPart>,
+  external: (partId: string) => unknown,
+  evaluate: DefinitionEvaluator | undefined,
+): ReadonlyArray<DecodedPart> {
+  const key = (part: DecodedPart) => `${eventHash}:${part.contentHash ?? ""}`;
+  const pending = parts.filter(
+    (part) =>
+      part.unresolved === true &&
+      part.contentHash != null &&
+      part.partIdHash != null &&
+      definitionCache.has(part.contentHash),
+  );
+  if (pending.length === 0) {
+    return parts;
+  }
+  if (
+    evaluate !== undefined &&
+    pending.some((part) => !evaluatedContentCache.has(key(part)))
+  ) {
+    const expressions = new Map(
+      parts.flatMap((part) =>
+        part.partIdHash != null && part.unresolved !== true
+          ? [[part.partIdHash, part.expression ?? undefined] as const]
+          : [],
+      ),
+    );
+    const contents = resolveDefinitionsInCommit({
+      definitions: new Map(
+        pending.map((part) => [
+          part.partIdHash ?? "",
+          definitionCache.get(part.contentHash ?? ""),
+        ]),
+      ),
+      external: (id) =>
+        expressions.has(id) ? expressions.get(id) : external(id),
+      evaluate,
+    });
+    for (const part of pending) {
+      const content = contents.get(part.partIdHash ?? "");
+      if (content !== undefined) {
+        evaluatedContentCache.set(key(part), content);
+        const hash = part.contentHash ?? "";
+        const expanded = evaluatedContentByHash.get(hash) ?? new Set<string>();
+        expanded.add(partContentItem(content).contentHash);
+        evaluatedContentByHash.set(hash, expanded);
+      }
+    }
+  }
+  if (!pending.some((part) => evaluatedContentCache.has(key(part)))) {
+    return parts;
+  }
+  return parts.map((part) => {
+    const content = pending.includes(part)
+      ? evaluatedContentCache.get(key(part))
+      : undefined;
+    if (content === undefined) {
+      return part;
+    }
+    const { unresolved: _, ...rest } = part;
+    return { ...rest, ...content };
   });
 }

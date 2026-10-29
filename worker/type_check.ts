@@ -9,6 +9,7 @@ import typeCheckerModule from "../wasm/type_checker.wasm?module";
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import visibilityCheckerModule from "../wasm/visibility_checker.wasm?module";
+import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
 import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
@@ -36,7 +37,14 @@ import {
   type PartContent,
 } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
-import { evaluatePartDefinition } from "../src/part_definition.ts";
+import {
+  evaluatePartDefinition,
+  resolveDefinitionsInCommit,
+} from "../src/part_definition.ts";
+import {
+  evaluateDefinition,
+  evaluatedPartReferenceIds,
+} from "../src/definition_evaluator.ts";
 import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -119,6 +127,132 @@ async function readPartContents(
   return result;
 }
 
+/** CAS からパーツの定義の式を読む (キーは content hash). 無いもの・CBOR として読めないものは入らない */
+async function readPartDefinitions(
+  hashes: ReadonlyArray<string>,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyMap<string, unknown>> {
+  const result = new Map<string, unknown>();
+  const unique = [...new Set(hashes)];
+  for (let i = 0; i < unique.length; i += CONTENT_CHUNK_SIZE) {
+    for (const item of await store.getContentItems(
+      unique.slice(i, i + CONTENT_CHUNK_SIZE),
+      env,
+    )) {
+      try {
+        result.set(
+          item.contentHash,
+          decodeCborItem(base64ToBytes(item.contentBytes))[0],
+        );
+      } catch {
+        // CBOR でないものは定義の式ではない
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * コミットのパーツの中身を, 定義の式をそのコミットの中で評価して求める (キーはパーツ ID. docs/part-definition.md).
+ * ユーザーが作った定義のパーツの呼び出しは definy 製の評価器 (`core.eval-value`) で評価し, 評価で参照する
+ * コミットの外のパーツの式は `externalContentHash` の中身を CAS から読む (その場で評価できる定義のものだけ).
+ * `evaluated` は評価器で評価したパーツ (定義の式を型検査する)
+ */
+async function commitContents(options: {
+  readonly parts: ReadonlyArray<CommitPartRef>;
+  /** content hash → 定義の式 */
+  readonly definitions: ReadonlyMap<string, unknown>;
+  readonly externalContentHash: (partId: string) => string | undefined;
+  readonly conforms: (part: CommitPartRef, value: unknown) => boolean;
+  readonly store: PartStoreReader;
+  readonly env: Env | undefined;
+}): Promise<{
+  readonly contents: ReadonlyMap<string, PartContent>;
+  readonly evaluated: ReadonlySet<string>;
+}> {
+  const byId = new Map(options.parts.map((part) => [part.partId, part]));
+  const definitions = new Map(
+    options.parts.flatMap((part) =>
+      options.definitions.has(part.contentHash)
+        ? [[part.partId, options.definitions.get(part.contentHash)] as const]
+        : [],
+    ),
+  );
+  const conforms = (id: string, value: unknown): boolean => {
+    const part = byId.get(id);
+    return part !== undefined && options.conforms(part, value);
+  };
+  const immediate = resolveDefinitionsInCommit({
+    definitions,
+    external: () => undefined,
+    evaluate: undefined,
+    conforms,
+  });
+  const pending = [...definitions].filter(
+    ([id, definition]) =>
+      !immediate.has(id) && evaluatePartDefinition(definition) === undefined,
+  );
+  if (pending.length === 0) {
+    return { contents: immediate, evaluated: new Set() };
+  }
+  // 評価で参照するコミットの外のパーツの式を, 参照をたどって読んでおく
+  const external = new Map<string, unknown>();
+  const seen = new Set<string>();
+  let frontier = pending.flatMap(([, definition]) =>
+    evaluatedPartReferenceIds(definition),
+  );
+  while (frontier.length > 0) {
+    const next: string[] = [];
+    const toRead = new Map<string, string>();
+    for (const id of frontier) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (definitions.has(id)) {
+        const expression = immediate.get(id)?.expression;
+        next.push(
+          ...evaluatedPartReferenceIds(
+            expression ?? definitions.get(id) ?? null,
+          ),
+        );
+        continue;
+      }
+      const hash = options.externalContentHash(id);
+      if (hash !== undefined) toRead.set(id, hash);
+    }
+    const read = await readPartDefinitions(
+      [...toRead.values()],
+      options.store,
+      options.env,
+    );
+    for (const [id, hash] of toRead) {
+      const value = evaluatePartDefinition(read.get(hash) ?? null);
+      const expression =
+        value === undefined
+          ? undefined
+          : partContentFromValue(value).expression;
+      if (expression != null) {
+        external.set(id, expression);
+        next.push(...evaluatedPartReferenceIds(expression));
+      }
+    }
+    frontier = next;
+  }
+  const contents = resolveDefinitionsInCommit({
+    definitions,
+    external: (id) => external.get(id),
+    evaluate: (definition, resolve) =>
+      evaluateDefinition(definitionEvaluatorModule, definition, resolve),
+    conforms,
+  });
+  return {
+    contents,
+    evaluated: new Set(
+      pending.map(([id]) => id).filter((id) => contents.has(id)),
+    ),
+  };
+}
+
 /**
  * content hash ごとの, 型環境に使う形のパーツの中身 (CAS に無いか形が違えば `null`).
  * 中身は変わらないので isolate の中で使い回す. 式は型パーツの宣言式とコンパイラ組み込みのもの (小さい) だけ持つ (メモリを節約する)
@@ -138,18 +272,66 @@ async function environmentContents(
       const content = read.get(hash);
       environmentContentCache.set(
         hash,
-        content === undefined
-          ? null
-          : isTypePartType(content.partType) ||
-              compilerBuiltinName(content.expression) !== undefined
-            ? { ...content, description: [] }
-            : { ...content, description: [], expression: null },
+        content === undefined ? null : environmentContent(content),
       );
     }
   }
   return new Map(
     hashes.map((hash) => [hash, environmentContentCache.get(hash) ?? null]),
   );
+}
+
+/** 型環境に入れる形にする (説明を除き, 式は型パーツの宣言式とコンパイラ組み込みのものだけ持つ) */
+function environmentContent(content: PartContent): PartContent {
+  return isTypePartType(content.partType) ||
+    compilerBuiltinName(content.expression) !== undefined
+    ? { ...content, description: [] }
+    : { ...content, description: [], expression: null };
+}
+
+/**
+ * イベントハッシュごとの, 受け付けたコミットのパーツのうち評価器で評価して求めた中身 (型環境の形. キーはパーツ ID).
+ * 中身はコミットで決まり, コミットは変わらないので isolate の中で使い回す
+ */
+const evaluatedEnvironmentCache = new Map<
+  string,
+  ReadonlyMap<string, PartContent>
+>();
+
+/** 受け付けたコミットの, その場で評価できない定義のパーツの中身をコミットの中で評価する */
+async function evaluatedEnvironmentContents(
+  commit: CachedCommit,
+  externalContentHash: (partId: string) => string | undefined,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyMap<string, PartContent>> {
+  const cached = evaluatedEnvironmentCache.get(commit.eventHash);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const { contents, evaluated } = await commitContents({
+    parts: commit.parts,
+    definitions: await readPartDefinitions(
+      commit.parts.map((part) => part.contentHash),
+      store,
+      env,
+    ),
+    externalContentHash,
+    // 受け付けたコミットなので, 形は確かめてある
+    conforms: () => true,
+    store,
+    env,
+  });
+  const result = new Map(
+    [...evaluated].flatMap((id) => {
+      const content = contents.get(id);
+      return content === undefined
+        ? []
+        : [[id, environmentContent(content)] as const];
+    }),
+  );
+  evaluatedEnvironmentCache.set(commit.eventHash, result);
+  return result;
 }
 
 /** パーツに中身を合わせる. 式が変わっていないかは中身の content hash で比べる */
@@ -347,10 +529,29 @@ async function loadLatestParts(
   const parts = new Map<string, CommitLatestPart>();
   const projectModuleIds = new Map<string, ReadonlyArray<string>>();
   const visibilityTargets = new Map<string, VisibilityTarget>();
+  const latestContentHashes = new Map(
+    [...latestCommits.values()].flatMap((commit) =>
+      commit.parts.map((part) => [part.partId, part.contentHash] as const),
+    ),
+  );
   for (const [projectName, commit] of latestCommits) {
     projectModuleIds.set(projectName, commit.moduleIds);
+    // その場で評価できない定義 (ユーザーが作った定義のパーツの呼び出し) はコミットの中で評価する
+    const evaluated = commit.parts.some(
+      (ref) => contents.get(ref.contentHash) == null,
+    )
+      ? await evaluatedEnvironmentContents(
+          commit,
+          (id) => latestContentHashes.get(id),
+          store,
+          env,
+        )
+      : new Map<string, PartContent>();
     for (const ref of commit.parts) {
-      const part = withContent(ref, contents.get(ref.contentHash) ?? null);
+      const part = withContent(
+        ref,
+        contents.get(ref.contentHash) ?? evaluated.get(ref.partId) ?? null,
+      );
       parts.set(part.partId, part);
       visibilityTargets.set(part.partId, { ...part, projectName });
     }
@@ -397,15 +598,26 @@ export async function checkSubmittedProjectCommit(
       cached.parts.map((part) => part.contentHash),
     ),
   );
-  const contents = await readPartContents(
+  const latest = await loadLatestParts(store, env);
+  const latestParts: ReadonlyMap<string, LatestPart> = latest.parts;
+  // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
+  const definitions = await readPartDefinitions(
     refs.map((part) => part.contentHash),
     store,
     env,
-    (hash) => accepted.has(hash),
   );
-  // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
+  const { contents, evaluated } = await commitContents({
+    parts: refs,
+    definitions,
+    externalContentHash: (id) => latest.parts.get(id)?.contentHash,
+    conforms: (part, value) =>
+      accepted.has(part.contentHash) ||
+      conformsInDefiny(shapeCheckerModule, value, "core.part-content"),
+    store,
+    env,
+  });
   const malformed = refs.flatMap((part) =>
-    contents.has(part.contentHash)
+    contents.has(part.partId)
       ? []
       : [
           `${part.name}: the content ${part.contentHash} is not a part definition that evaluates to a core.part-content`,
@@ -415,10 +627,8 @@ export async function checkSubmittedProjectCommit(
     return malformed;
   }
   const committed = refs.map((part) =>
-    withContent(part, contents.get(part.contentHash) ?? null),
+    withContent(part, contents.get(part.partId) ?? null),
   );
-  const latest = await loadLatestParts(store, env);
-  const latestParts: ReadonlyMap<string, LatestPart> = latest.parts;
   // 参照できない (非公開の) パーツへの参照は, 型を検査する前に拒否する (docs/visibility.md)
   const violations = checkReferenceVisibility(visibilityCheckerModule, {
     projectName: commit.projectName,
@@ -437,6 +647,13 @@ export async function checkSubmittedProjectCommit(
     ]),
     committed,
     latestParts,
+    // ユーザーが作った定義のパーツで定義したパーツは, 定義の式が core.part-content になるかも型検査する
+    definitionChecks: refs.flatMap((part) => {
+      const definition = definitions.get(part.contentHash);
+      return evaluated.has(part.partId) && definition !== undefined
+        ? [{ name: `${part.name} (definition)`, expression: definition }]
+        : [];
+    }),
   }).flatMap(({ name, outcome }) => {
     const message = outcomeErrorMessage(name, outcome);
     return message === null ? [] : [message];

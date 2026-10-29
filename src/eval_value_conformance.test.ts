@@ -12,58 +12,14 @@ import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
-import { literalExpression, variant, variantOf } from "./definy_value.ts";
+import { literalExpression, variant } from "./definy_value.ts";
+import { coreValueToValue } from "./definition_evaluator.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
-  type DefinyValue,
   evaluateCompiledWasm,
   stage1PartsValue,
 } from "./stage1_compiler.ts";
-
-/** `core.value` を, それが表す値 (stage1 でコンパイルして評価した結果と同じ形) にする */
-function coreValueToConformanceValue(value: unknown): unknown {
-  const tagged = variantOf(value);
-  if (tagged === undefined) {
-    throw new Error(`Not a core.value: ${JSON.stringify(value)}`);
-  }
-  const payload = tagged.payload as DefinyValue;
-  switch (tagged.tag) {
-    case "number":
-    case "float":
-    case "string":
-    case "boolean":
-      return payload;
-    case "list":
-      return (payload as ReadonlyArray<DefinyValue>).map(
-        coreValueToConformanceValue,
-      );
-    case "record":
-      return Object.fromEntries(
-        (
-          payload as ReadonlyArray<{
-            readonly key: string;
-            readonly value: DefinyValue;
-          }>
-        ).map((item) => [item.key, coreValueToConformanceValue(item.value)]),
-      );
-    case "variant": {
-      const inner = payload as {
-        readonly tag: string;
-        readonly payload: DefinyValue;
-      };
-      return variant(
-        inner.tag,
-        variantOf(inner.payload)?.tag === "unit"
-          ? null
-          : coreValueToConformanceValue(inner.payload),
-      );
-    }
-    case "unit":
-      return null;
-  }
-  throw new Error(`Unexpected core.value: ${JSON.stringify(value)}`);
-}
 
 const wasmBytes = readFileSync("wasm/stage1.wasm");
 const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
@@ -101,7 +57,7 @@ describe("eval conformance (core.eval-value)", () => {
       const rawValue = await evaluateCompiledWasm(
         compiler.compile(evalExpression, parts),
       );
-      expect(coreValueToConformanceValue(rawValue)).toEqual(testCase.expected);
+      expect(coreValueToValue(rawValue)).toEqual(testCase.expected);
     });
   }
 });
