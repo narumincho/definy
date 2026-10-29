@@ -1,4 +1,8 @@
-import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
+import {
+  InvalidSignedEventError,
+  sha256EventHashId,
+  verifySignedEvent,
+} from "./cbor.ts";
 import { checkSubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
@@ -15,8 +19,6 @@ import type {
   HttpProxyFetchRequest,
   HttpProxyFetchResponse,
   HttpProxyHeader,
-  SubmitEventRequest,
-  UploadContentRequest,
 } from "./types.ts";
 
 export type { Env } from "./types.ts";
@@ -320,6 +322,36 @@ async function handleRpc(
           contentsInOrder(hashes, await store.getContentItems(hashes, env)),
         readMissingContentHashes: (hashes) =>
           store.checkMissingHashes(hashes, env),
+        verifySignedEvent: async (signedEventBytes) => {
+          try {
+            const bytes = base64ToBytes(signedEventBytes);
+            const meta = await verifySignedEvent(bytes);
+            return {
+              eventHash: await sha256EventHashId(bytes),
+              referencedContentHashes: meta.referencedContentHashes,
+            };
+          } catch (e) {
+            return { invalid: e instanceof Error ? e.message : String(e) };
+          }
+        },
+        // イベントを受け付ける規則 (definy 製の core.check-event) と型チェッカー
+        checkEventRules: (signedEventBytes) =>
+          checkSubmittedEvent(signedEventBytes, store, env),
+        typeCheckCommit: (signedEventBytes) =>
+          checkSubmittedProjectCommit(signedEventBytes, store, env),
+        writeEvent: async (signedEventBytes) =>
+          (await store.submitEvent(signedEventBytes, env)).eventHash,
+        hashContents: (contentsBytes) =>
+          Promise.all(
+            contentsBytes.map(async (contentBytes) => {
+              try {
+                return await sha256EventHashId(base64ToBytes(contentBytes));
+              } catch {
+                return undefined;
+              }
+            }),
+          ),
+        writeContents: (items) => store.uploadContent(items, env),
       },
     );
     if (response !== null) {
@@ -327,38 +359,6 @@ async function handleRpc(
     }
   }
   switch (pathname) {
-    case "/definy.v1.EventService/SubmitEvent": {
-      const req = parseJsonBody<SubmitEventRequest>(body);
-      const rawEvent = req.signedEventBytes?.trim() ?? "";
-      if (!rawEvent) {
-        throw new ConnectError(
-          "invalid_argument",
-          "signedEventBytes is required",
-        );
-      }
-      // イベントを受け付ける規則 (definy 製の core.check-event) に合わないものは保存しない
-      const rejections = await checkSubmittedEvent(rawEvent, store, env);
-      if (rejections.length > 0) {
-        throw new ConnectError("invalid_argument", rejections.join("\n"));
-      }
-      // 型エラーのあるプロジェクトのコミットは保存しない
-      const typeErrors = await checkSubmittedProjectCommit(
-        rawEvent,
-        store,
-        env,
-      );
-      if (typeErrors.length > 0) {
-        throw new ConnectError("invalid_argument", typeErrors.join("\n"));
-      }
-      return jsonResponse(await store.submitEvent(rawEvent, env));
-    }
-
-    case "/definy.v1.EventService/UploadContent": {
-      const req = parseJsonBody<UploadContentRequest>(body);
-      const stored = await store.uploadContent(req.items ?? [], env);
-      return jsonResponse({ storedContentHashes: stored });
-    }
-
     case "/definy.v1.HttpProxyService/Fetch": {
       await requireAccount(
         request,

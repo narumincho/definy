@@ -151,6 +151,8 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    (`type_checker`, `event_checker`, `shape_checker`, `branch_summarizer`, `visibility_checker`, `service`)。
    (2026-10-27) RPC の処理そのものも definy で書けるようにした (`definy.handle-rpc`, [service.md](service.md))。
    処理はストアを読む要求を値で返し, ホストが読んで渡す。最初は `GetProjectBranches`。
+   (2026-10-29) 書き込みの RPC (`SubmitEvent`, `UploadContent`) も definy にした。署名の検証や保存は能力としてホストに頼み,
+   確かめる順番と返すものを definy が決める。
    サービス自身のデプロイ・運用ブートストラップ構想（現在は Cloudflare Workers が対象）は
    [deployment-bootstrapping.md](deployment-bootstrapping.md)
    を参照。IO を持つサービス全体の移行は言語 runtime の拡張後です。

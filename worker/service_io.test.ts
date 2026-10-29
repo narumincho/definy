@@ -41,6 +41,12 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readEventsPage: () => Promise.reject(new Error("not read")),
   readContents: () => Promise.reject(new Error("not read")),
   readMissingContentHashes: () => Promise.reject(new Error("not read")),
+  verifySignedEvent: () => Promise.reject(new Error("not verified")),
+  checkEventRules: () => Promise.reject(new Error("not checked")),
+  typeCheckCommit: () => Promise.reject(new Error("not checked")),
+  writeEvent: () => Promise.reject(new Error("not written")),
+  hashContents: () => Promise.reject(new Error("not hashed")),
+  writeContents: () => Promise.reject(new Error("not written")),
   ...overrides,
 });
 
@@ -103,13 +109,180 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "Unknown",
         () => {
           throw new Error("not read");
         },
         host(),
       ),
     ).toBeNull();
+  });
+
+  it("SubmitEvent は署名を確かめ, 規則・足りない中身・型チェッカーの順に見てから保存する", async () => {
+    const steps: Array<string> = [];
+    const submitHost = (
+      overrides: Partial<ServiceIoHost> = {},
+    ): ServiceIoHost =>
+      host({
+        verifySignedEvent: (bytes) => {
+          steps.push(`verify ${bytes}`);
+          return Promise.resolve(
+            bytes === "bad"
+              ? { invalid: "Ed25519 signature verification failed" }
+              : { eventHash: "e1", referencedContentHashes: ["c1", "c2"] },
+          );
+        },
+        checkEventRules: () => {
+          steps.push("rules");
+          return Promise.resolve([]);
+        },
+        readMissingContentHashes: (hashes) => {
+          steps.push(`missing ${hashes.join(",")}`);
+          return Promise.resolve([]);
+        },
+        typeCheckCommit: () => {
+          steps.push("type check");
+          return Promise.resolve([]);
+        },
+        writeEvent: (bytes) => {
+          steps.push(`write ${bytes}`);
+          return Promise.resolve("e1");
+        },
+        ...overrides,
+      });
+    const submit = (request: unknown, h: ServiceIoHost) =>
+      handleRpcInDefiny(service, "SubmitEvent", () => request, h);
+
+    expect(await submit({ signedEventBytes: " ok\n" }, submitHost())).toEqual({
+      status: 200,
+      body: { eventHash: "e1", status: "accepted", missingContentHashes: [] },
+    });
+    expect(steps).toEqual([
+      "verify ok",
+      "rules",
+      "missing c1,c2",
+      "type check",
+      "write ok",
+    ]);
+
+    steps.length = 0;
+    expect(
+      await submit(
+        { signedEventBytes: "ok" },
+        submitHost({ readMissingContentHashes: () => Promise.resolve(["c2"]) }),
+      ),
+    ).toEqual({
+      status: 200,
+      body: {
+        eventHash: "e1",
+        status: "missing_content",
+        missingContentHashes: ["c2"],
+      },
+    });
+    expect(steps).toEqual(["verify ok", "rules"]);
+
+    expect(
+      await submit(
+        { signedEventBytes: "ok" },
+        submitHost({
+          checkEventRules: () => Promise.resolve(["rule a", "rule b"]),
+        }),
+      ),
+    ).toEqual({
+      status: 400,
+      body: { code: "invalid_argument", message: "rule a\nrule b" },
+    });
+    expect(
+      await submit(
+        { signedEventBytes: "ok" },
+        submitHost({
+          typeCheckCommit: () => Promise.resolve(["app.x: type_mismatch"]),
+        }),
+      ),
+    ).toEqual({
+      status: 400,
+      body: { code: "invalid_argument", message: "app.x: type_mismatch" },
+    });
+    expect(await submit({ signedEventBytes: "bad" }, submitHost())).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "Ed25519 signature verification failed",
+      },
+    });
+    expect(await submit({ signedEventBytes: " " }, host())).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "signedEventBytes is required",
+      },
+    });
+  });
+
+  it("UploadContent は SHA-256 が content hash と一致するときだけ保存する", async () => {
+    const written: Array<unknown> = [];
+    const uploadHost = host({
+      hashContents: (contents) =>
+        Promise.resolve(
+          contents.map((bytes) =>
+            bytes === "not base64" ? undefined : `hash-of-${bytes}`,
+          ),
+        ),
+      writeContents: (items) => {
+        written.push(items);
+        return Promise.resolve(items.map((item) => item.contentHash));
+      },
+    });
+    const upload = (request: unknown) =>
+      handleRpcInDefiny(service, "UploadContent", () => request, uploadHost);
+    const item = (contentHash: string, contentBytes: string) => ({
+      contentHash,
+      contentBytes,
+    });
+
+    expect(
+      await upload({ items: [item("hash-of-a", "a"), item("hash-of-b", "b")] }),
+    ).toEqual({
+      status: 200,
+      body: { storedContentHashes: ["hash-of-a", "hash-of-b"] },
+    });
+    expect(written).toEqual([
+      [
+        { contentHash: "hash-of-a", contentBytes: "a" },
+        { contentHash: "hash-of-b", contentBytes: "b" },
+      ],
+    ]);
+    expect(await upload({})).toEqual({
+      status: 200,
+      body: { storedContentHashes: [] },
+    });
+
+    written.length = 0;
+    expect(
+      await upload({ items: [item("hash-of-a", "a"), item("x", "b")] }),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message:
+          "contentHash 'x' does not match SHA-256 of contentBytes ('hash-of-b')",
+      },
+    });
+    expect(await upload({ items: [item("y", "not base64")] })).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "contentBytes of 'y' is not Base64",
+      },
+    });
+    expect(await upload({ items: [{ contentHash: "z" }] })).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "items must be a list of {contentHash, contentBytes}",
+      },
+    });
+    expect(written).toEqual([]);
   });
 
   it("GetEvent は両端の空白を除いたハッシュのイベントを返し, 無ければ not_found, 空なら invalid_argument", async () => {
