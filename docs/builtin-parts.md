@@ -83,7 +83,7 @@ seed の 218 か所の呼び出しは, 範囲を確かめる `match` (`less-than
   以前の `add` などと同じ Wasm の命令列を出す. 引数の中の関数の番号 (`fn_base`) は `core.collect-functions` と同じく
   書いた順の引数の関数を数える (`core.call-argument-fn-base`) ので, 引数の順番が違ってもずれない.
   末尾位置の組み込みの呼び出しは末尾呼び出し (`return_call_indirect`) にしない (`core.compile-tail-instructions`)
-- 型検査: 型環境では組み込みのパーツの型を `core.type-ast` の `builtin(name)` にする (TypeScript 側の `moduleEntriesExpression`).
+- 型検査: 型環境では組み込みのパーツの型を `builtin(name)` (型の式でも `core.type-ast` でも同じ形) にする (TypeScript 側の `moduleEntriesExpression`).
   `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と (順番によらず) 一致するか
   (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
   期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.

@@ -10,7 +10,14 @@ core.list-map(T: number, U: boolean, f: (item) => core.less-than(left: item, rig
 // => [true, false]
 ```
 
-型引数は推論せず, 必ず書きます (Zig と同じ)。エディタでは型引数の位置で型の選択肢を先に出します (下の「エディタ」)。
+データ (コミットする式) には型引数を必ず書きます (Zig と同じ。型は実行時にも値なので, 呼び出しに入っていないと渡せない)。
+書く手間はエディタの推論で省きます (2026-10-30 にユーザーが決定):
+
+- 未入力の型引数の枠に, 他の引数の型から推論した型を表示する
+- 確定するときは, 推論した型を置換メニューの選択肢の 1 番目に置いておき, それを選ぶ
+- 確定するまでは未入力 (`hole`) のままなので, 型検査とコミットはできない
+
+推論は型チェッカーで他の引数の推論した型を聞き, 呼び出すパーツの引数の型の `type_parameter(T)` と照らし合わせて求める (エディタ側)。
 
 ## 型を返すパーツ (型引数を取る型)
 
@@ -87,14 +94,14 @@ core.type-result        // => {"#part_reference": {part_definition_event_hash: "
 
 - パーツの型の行 (型のツリーエディタ): 関数の型の中では, 型が `type` の引数を `Type parameter` の選択肢に出す
   (`typeParameters`, `src/tree_layout/ast_to_layout/control_and_types.ts`)。選ぶと型引数の参照 `type_parameter("T")`
-  (`type_ast_expression.ts` で `parameter("T")` と相互変換. [type-expression.md](type-expression.md)) になる
+  (型チェッカーの中では `parameter("T")`. [type-expression.md](type-expression.md)) になる
 - 型パーツの選択肢には型を返すパーツも出し, 選ぶと型引数が未入力の呼び出し `core.option(T: □)` になる。
   `apply` は型の式では `call` (`part_type.ts`)
 - 値の式のエディタで期待する型が `type` の位置 (型引数) では, 型の式の選択肢 (`number`, `List` など) を先に出す (`expectsType`)
 
 ## まだ無いもの
 
-- 型引数の推論 (Idris2 の暗黙の引数)。UI で期待する型から型引数を埋めるのも未実装
+- 型引数を書かずにコミットすること (Idris2 の暗黙の引数)。推論はエディタが表示するだけで, データには確定した型引数を書く
 - 型の位置で任意の関数を評価すること。型の式に書ける呼び出しは, 型を返すパーツ (宣言式が型を返す関数) の呼び出しだけ
 - 関数の型の中で同じ名前の型引数を入れ子に宣言したときの区別 (外側の型引数と同じとみなす)
 - コンパイラ組み込みのパーツ (`core.list-get` など) は型引数を取らず, 型チェッカーが名前で特別扱いしている

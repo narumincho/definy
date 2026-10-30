@@ -435,27 +435,30 @@ definy 製型チェッカーは stage1 でコンパイルして動かす (`src/s
 - `core.type-checker(latest, committed, module_id) -> { to_check, without_expression, check }`: サーバー・UI・seed の検査は
   これをコンパイルして使う (`createModuleCommitSession`)。`latest` は全モジュールの最新のパーツ, `committed` はモジュール
   `module_id` にコミットするパーツで, どちらも
-  `list<{ part_id, module_id, part_type: option<type-ast>, type_declaration: option<expression>, expression_key: option<string>, has_expression }>`。
+  `list<{ part_id, module_id, part_type: option<expression>, type_declaration: option<expression>, expression_key: option<string>, has_expression }>`。
+  `part_type` は型の式 ([type-expression.md](type-expression.md))
   - 型環境: `latest` から `module_id` のパーツを除き (`core.module-entries-in-module`), `committed` を足して
     `core.build-type-env` で作る。型の無いパーツは入れない (`core.module-entries-to-type-env-entries`)
-  - 型が変わったか (`core.module-entries-types-changed`): パーツの数が変わったか, 新しいパーツか宣言型の違うパーツ
-    (`core.option-type-equals`) があれば変わった
+  - 型が変わったか (`core.module-entries-types-changed`): パーツの数が変わったか, 新しいパーツか宣言型 (型の式) が
+    値として違うパーツ (`core.equal`) があれば変わった
   - 検査するパーツ (`core.module-commit-classify`): 型が変わっていなければ, `expression_key` が前のコミットと同じパーツを
     飛ばす (`none` は比べられないので飛ばさない)。式か型の無いパーツは `without_expression` に入れる
     (TypeScript 側がシステムアカウント以外なら拒否する)
-  - `check`: その型環境で `core.type-check-against` を呼ぶ関数 (`core.type-checker-in-env`)。TypeScript からは
+  - `check(expr, expected_type)`: その型環境で `core.type-check-against` を呼ぶ関数 (`core.type-checker-in-env`)。
+    `expected_type` も型の式で, `core.type-declaration-to-type-ast` で変換できなければ `invalid_type_declaration`。TypeScript からは
     `recordField` でレコードのフィールドのポインタを取り, `callClosure` で呼ぶ
   - コミットせずに型環境だけ欲しいとき (UI の裏の検査, パーツ詳細) は `committed` を空にし, `module_id` に
     どのモジュール ID とも一致しない `#` を渡す (`createTypeCheckSession`)
-- `core.build-type-env(entries) -> type-env`: `entries` は `list<{ part_definition_event_hash, part_type: type-ast, type_declaration: option<expression> }>`。
-  各パーツの宣言型を入れ, `type_declaration` が `some` (型パーツ) なら宣言している型も `{hash}#definition` で入れる
-  (`core.build-type-env-parts`)
-- `core.type-declaration-to-type-ast(expr) -> option<type-ast>`: 型パーツの宣言式 (`type_number`・`type_list`・`type_function`・
-  `type_record`・`type_union`・`part_reference`) を宣言している型にする。型の式でないか, 中に変換できないものがあれば `none`
+- `core.build-type-env(entries) -> type-env`: `entries` は `list<{ part_definition_event_hash, part_type: expression, type_declaration: option<expression> }>`。
+  各パーツの宣言型 (型の式) を `core.type-declaration-to-type-ast` で `core.type-ast` にして入れ (変換できないパーツは入れない),
+  `type_declaration` が `some` (型パーツ) なら宣言している型も `{hash}#definition` で入れる (`core.build-type-env-parts`)
+- `core.type-declaration-to-type-ast(expr) -> option<type-ast>`: 型の式 (`type_number`・`type_list`・`type_function`・
+  `type_record`・`type_union`・`part_reference`・`builtin` など) を型チェッカーの形にする。パーツの型も型パーツの宣言式も同じ変換。型の式でないか, 中に変換できないものがあれば `none`
   (`core.type-declaration-parameters-to-type-ast` などがリストの要素を変換する)
 
-TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型 (`core.type-ast` の値) と型パーツの宣言式
-(`core.expression` の値) を保存した形のまま渡すだけになった ([value-encoding.md](value-encoding.md))。
+TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パーツの宣言式 (どちらも `core.expression` の値) を
+保存した形のまま渡すだけになった ([value-encoding.md](value-encoding.md))。2026-10-30 までは宣言型だけ TypeScript が
+`core.type-ast` に変換して渡していた。
 
 書き方の注意: `option` を返す補助パーツで, 変換した要素を `let` などで受けてから `some` で包むと, `match` のアームの型
 (`union[none]` と `union[some(...)]`) が推論で揃わず型エラーになる。要素を変換したらそのまま再帰呼び出しに渡し,
@@ -890,7 +893,8 @@ part-definitions-to-type-env-entries: list<part-definition> -> number -> list<en
 validate-part-in-env: part-definition -> type-env -> boolean
 validate-parts-in-env: list<part-definition> -> type-env -> number -> boolean
 validate-module: module-definition -> list<entry> -> boolean
--- entry = { part_definition_event_hash: string, part_type: type-ast, type_declaration: option<expression> } (core.build-type-env の入力)
+-- entry = { part_definition_event_hash: string, part_type: expression, type_declaration: option<expression> } (core.build-type-env の入力. part_type は型の式)
+-- part-definition の part_type も型の式
 ```
 
 モジュール定義（`core.module-definition`）を受け取り、以下の手順でモジュール全体を自己一括検証します：

@@ -30,7 +30,10 @@ definy には演算子という概念は無いので, 演算は他と同じく�
 
 - `core.equal` は浮動小数も比べられ, IEEE 754 の比較 (`f64.eq`) なので NaN は NaN と (同じ値でも) 等しくない
 - 実行時エラーは無い: Wasm の f64 の演算は trap せず, 整数への変換は飽和する命令を使う。
-  `1.0 / 0.0` は Infinity, `0.0 / 0.0` は NaN (Elm と同じ IEEE 754 のまま)
+- 0 除算は Wasm の `f64.div` の通り: `1.0 / 0.0` は Infinity, `-1.0 / 0.0` は -Infinity, `0.0 / 0.0` は NaN
+  (IEEE 754. Elm も同じ)。整数の 0 除算 (結果は 0) と違い, 浮動小数は NaN・±Infinity で表せるのでそのままにする
+  (2026-10-30 にユーザーが決定)。stage1 と `core.eval-value` が同じ結果になることを
+  `conformance/eval_cases.json` の「float divide by zero is Infinity, not an error」などで確かめている
 - 型チェッカーはこれらを `core.builtin-function-type` の関数の型で検査する (引数と結果の型が決まっている組み込みは名前ごとの分岐を書かなくてよい)
 - 浮動小数を文字列にするパーツはまだ無い
 

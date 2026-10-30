@@ -30,19 +30,25 @@ definy の型は 1 つの形, 型の式 (`core.expression` の `type_*` など�
 
 ## どこでどの形を使うか
 
-- seeds/\*.json の `part_type`, CAS に預けるパーツの中身 (`core.part-content` の `part_type: option<core.expression>`),
-  定義の式 (`core.define-part(part_type: some(quote(number).expression), ...)`): 型の式
+- 型の式: seeds/\*.json の `part_type`, CAS に預けるパーツの中身 (`core.part-content` の `part_type: option<core.expression>`),
+  定義の式 (`core.define-part(part_type: some(quote(number).expression), ...)`), TypeScript の中 (`PartContent.partType`,
+  `PartSnapshot.partType`, 作業中の変更 `PartChange.partType`), 型チェッカーの入力 (`core.type-checker` / `core.build-type-env` /
+  `core.module-definition` のパーツの型, `check` の期待する型)
 - 型チェッカーの中 (`core.type-ast`): 型の式を `core.type-expression-to-type-ast` で変換した, 型を比べるための形。
-  型パーツの参照を `reference(パーツ ID)`, 型を返すパーツの呼び出しを `apply`, 型引数を `parameter(名前)` に正規化する
-- TypeScript の中 (`PartContent.partType`, `PartSnapshot.partType`): 型チェッカーの形。
-  CAS や seed を読むときに型の式から変換し (`expressionToPartType`), 書くときに型の式に戻す (`partTypeToExpression`)。
-  変換は [src/type_ast_expression.ts](../src/type_ast_expression.ts)。seed の全パーツの型が往復で変わらないことをテストしている
+  型パーツの参照を `reference(パーツ ID)`, 型を返すパーツの呼び出しを `apply`, 型引数を `parameter(名前)` に正規化する。
+  変換できない型の式 (未入力が残っているなど) のパーツは型環境に入れず, 期待する型なら `invalid_type_declaration` にする
+- 型チェッカーが返す型 (期待する型 `findExpectedType`, 型エラーの `expected` / `actual`) は `core.type-ast` のまま。
+  TypeScript で表示するときは型の式にして型のツリーで出す (`typeAstToExpression`,
+  [src/type_ast_expression.ts](../src/type_ast_expression.ts))
 
 `core.type-ast` は型チェッカーが比べたり代入したりするための形で, ユーザーが書く形ではない。
-型チェッカーの入力 (`core.build-type-env` の `part_type`) はまだ `core.type-ast` なので,
-TypeScript が変換してから渡している。型チェッカーが型の式を直接受け取るようにするのは残り。
+2026-10-30 までは TypeScript の中のパーツの型も `core.type-ast` で, CAS や seed を読み書きするたびに変換し,
+型チェッカーにも `core.type-ast` で渡していた (二重管理)。今はパーツの型を型の式だけで持つ。
+
+公開範囲の検査 (`core.check-reference-visibility`, [visibility.md](visibility.md)) も, パーツの型の中の参照を
+式と同じ `core.expression-part-references` で集める (型の式は `core.expression` なので)。
 
 ## まだ無いもの
 
-- 型チェッカーの入力 (`core.build-type-env`, `core.module-definition`) を型の式にすること
 - 値の位置の `type_parameter` が, 囲む関数の型の型引数かどうかの検査 (今は名前を見ずに型 `type` とする)
+- 型チェッカーが返す型を型の式にすること (今は `core.type-ast`)

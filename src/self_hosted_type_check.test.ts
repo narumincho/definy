@@ -898,6 +898,94 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("値を作れない型や, 構築子を通って自分を参照する型も書ける (2026-10-30 決定)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+    const variant = (tag: string, payload?: unknown) => ({
+      "#variant": {
+        tag,
+        payload:
+          payload === undefined ? { "#none": null } : { "#some": payload },
+        type_part: { "#some": "nat" },
+      },
+    });
+    // nat = union { zero, suc(nat) } (自然数). stream = { next: stream } は有限の値を作れない
+    const natDeclaration = {
+      "#type_union": [
+        { tag: "zero", payload_type: { "#none": null } },
+        { tag: "suc", payload_type: { "#some": reference("nat") } },
+      ],
+    };
+    const streamDeclaration = {
+      "#type_record": [{ key: "next", value: reference("stream") }],
+    };
+    const recursiveEnv: ReadonlyArray<PartTypeEntry> = [
+      ...env,
+      {
+        partId: "nat",
+        partType: { "#type_type": null },
+        typeDeclaration: natDeclaration,
+        builtin: undefined,
+      },
+      {
+        partId: "stream",
+        partType: { "#type_type": null },
+        typeDeclaration: streamDeclaration,
+        builtin: undefined,
+      },
+      {
+        partId: "two",
+        partType: reference("nat"),
+        builtin: undefined,
+      },
+    ];
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#type_type": null }, expression: natDeclaration },
+        { partType: { "#type_type": null }, expression: streamDeclaration },
+        {
+          partType: reference("nat"),
+          expression: variant("suc", variant("suc", variant("zero"))),
+        },
+        // 型が stream の関数は書ける (呼ぶと値を返さない)
+        {
+          partType: {
+            "#type_function": {
+              parameters: [{ name: "s", type: reference("stream") }],
+              return_type: reference("stream"),
+            },
+          },
+          expression: {
+            "#function": {
+              parameters: [{ parameter_id: 0, parameter_name: "s" }],
+              body: {
+                "#record_get": {
+                  record: { "#variable": { variable_id: 0 } },
+                  key: "next",
+                },
+              },
+            },
+          },
+        },
+        {
+          partType: reference("nat"),
+          expression: variant("suc", { "#number": 1 }),
+        },
+      ],
+      env: recursiveEnv,
+    });
+    expect(outcomes).toMatchObject([
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "type_error" },
+    ]);
+  }, 600_000);
+
   it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

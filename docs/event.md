@@ -45,7 +45,7 @@ core.module-commit-part = {
 core.part-content = {
   description: list<core.localized-text>,
   visibility: core.visibility,
-  part_type: option<core.type-ast>,
+  part_type: option<core.expression>,  // 型の式 (docs/type-expression.md)
   expression: option<core.expression>,
 }
 core.visibility = union { public, private }
