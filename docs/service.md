@@ -17,20 +17,20 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 処理は I/O をせず, 何を読みたいかを値で返す ([wasi-io.md](wasi-io.md) の `wasi.io` と同じ考え方)。ホスト
 (`handleRpcInDefiny`) が読んで `then` に渡し, `respond` が返るまで続ける。
 
-| タグ                          | ペイロード                                                                                          | ホストがすること                                                                          |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
-| `respond`                     | `definy.service-response` (`status`, `body: definy.json`)                                           | `body` を JSON にしてレスポンスにする                                                     |
-| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                      |
-| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                                      |
-| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                             |
-| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                               |
-| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                           |
-| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名を確かめ, `valid({event_hash, referenced_content_hashes})` か `invalid(理由)` |
-| `check_event_rules`           | `signed_event_bytes`, `then: (rejections: list<string>) -> ...`                                     | 受け付ける規則 (`core.check-event`) で検査した理由 (`checkSubmittedEvent`)                |
-| `type_check_commit`           | `signed_event_bytes`, `then: (errors: list<string>) -> ...`                                         | プロジェクトのコミットの型エラー (`checkSubmittedProjectCommit`)                          |
-| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                                  |
-| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                        |
-| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                             |
+| タグ                          | ペイロード                                                                                          | ホストがすること                                                                  |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| `respond`                     | `definy.service-response` (`status`, `body: definy.json`)                                           | `body` を JSON にしてレスポンスにする                                             |
+| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)              |
+| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                              |
+| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                     |
+| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                       |
+| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                   |
+| `read_account_created`        | `account_id`, `then: (created: boolean) -> ...`                                                     | そのアカウントの `create_account` を受け付けたか (`isAccountCreated`)             |
+| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
+| `type_check_commit`           | `signed_event_bytes`, `then: (errors: list<string>) -> ...`                                         | プロジェクトのコミットの型エラー (`checkSubmittedProjectCommit`)                  |
+| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                          |
+| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                |
+| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                     |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。
@@ -53,13 +53,20 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 
 - 書き込みの RPC (2026-10-29):
   - `SubmitEvent` (`definy.submit-event`): `signedEventBytes` の両端の空白を除き, 署名を確かめ (`verify_signed_event`),
-    規則 (`check_event_rules`), CAS に足りない中身 (`read_missing_content_hashes`. 足りなければ `missing_content` でそれを返す),
+    規則 (`core.check-event`), CAS に足りない中身 (`read_missing_content_hashes`. 足りなければ `missing_content` でそれを返す),
     型チェッカー (`type_check_commit`) の順に見てから保存する (`write_event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
+  - (2026-10-30) 規則 `core.check-event` は `definy.submit-verified-event` の中で呼ぶ。`verify_signed_event` は
+    `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
+    中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も
+    ここで確かめ, 違えば `invalid`。規則が使う事実はアカウントを作ったか (`read_account_created`) と, プロジェクトのコミットなら
+    受け付けたコミット (`read_commits`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
   - `UploadContent` (`definy.upload-content`): `items` を読み (`definy.json-content-items`), 中身の SHA-256 (`hash_contents`) が
     `contentHash` と違うものが 1 つでもあれば何も保存せずに `invalid_argument` にする (`definy.content-hash-mismatch`)。
     以前は Base64 でない中身や形の違う `items` が `internal` になっていたのを `invalid_argument` にした。
 
 ## 今後
 
-- 規則 (`core.check-event`) と型チェッカーの呼び出しも `definy.submit-event` の中で行う。今はホストが事実を集めて検査し, 理由だけを返している。
+- 型チェッカーの呼び出しも `definy.submit-event` の中で行う。今はホスト (`checkSubmittedProjectCommit`) が CAS からパーツの中身を読み,
+  定義の式を評価し, 公開/非公開と型を検査して理由だけを返している。`core.type-checker` を `service.wasm` の 1 つのインスタンスで呼ぶと,
+  線形メモリが解放されないこと (今はパーツ 32 個ごとにインスタンスを作り直す) と, trap したときに RPC ごと落ちることを先に考える。
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

@@ -1,28 +1,27 @@
 /**
- * `SubmitEvent` で受け取ったイベントを, definy 製の `core.check-event` の規則で検査する (docs/event.md「受け付ける規則」).
+ * `SubmitEvent` で受け取ったイベントを, 規則 (`core.check-event`. docs/event.md「受け付ける規則」) に渡せる形に読む.
  *
- * 規則は `npm run build:seeds` が seed の `core.check-event` を stage1 でコンパイルした `wasm/event_checker.wasm` を
- * `?module` で取り込んで使う. 型チェッカーと同じく, 本番で `core.check-event` を編集しても seed に書き戻して
- * デプロイするまでサーバーには反映されない. ここでは保存している事実 (アカウントを作ったか, 受け付けたコミット) を
- * ストアから集めて渡すだけで, 規則が使う状態は definy の `core.event-check-state-of` が求める.
- * 中身の形も definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめる
+ * 規則そのものは `definy.submit-event` (`wasm/service.wasm`) の中で呼ぶ (docs/service.md). ここでは署名を確かめ,
+ * 中身の形を definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめ, 規則が使う事実
+ * (アカウントを作ったか) をストアから読むだけ. 規則が使う状態は definy の `core.event-check-state-of` が求める
  */
-import eventCheckerModule from "../wasm/event_checker.wasm?module";
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
-import { base64ToBytes, decodeCborItem, toUint8Array } from "../src/cbor.ts";
 import {
-  checkEvent,
-  conformsInDefiny,
-  eventRejectionMessage,
-} from "../src/event_check.ts";
+  base64ToBytes,
+  decodeCborItem,
+  sha256EventHashId,
+  toUint8Array,
+} from "../src/cbor.ts";
+import { conformsInDefiny, contentForCheck } from "../src/event_check.ts";
+import type { EventContent } from "../src/event_content.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
-import { loadCommitSummaries, type PartStoreReader } from "./type_check.ts";
+import type { PartStoreReader } from "./type_check.ts";
 import type { Env } from "./types.ts";
 
 const EVENTS_PAGE_SIZE = 500;
 
 /** そのアカウントの `create_account` をすでに受け付けたか */
-async function isAccountCreated(
+export async function isAccountCreated(
   accountId: string,
   store: PartStoreReader,
   env: Env | undefined,
@@ -41,10 +40,10 @@ async function isAccountCreated(
   }
 }
 
-/** SignedEvent (Base64) の内側のイベントの `content` (CBOR から読んだまま). 読めなければ `undefined` */
-function rawEventContent(signedEventBase64: string): unknown {
+/** SignedEvent の内側のイベントの `content` (CBOR から読んだまま). 読めなければ `undefined` */
+function rawEventContent(bytes: Uint8Array): unknown {
   try {
-    const [signed] = decodeCborItem(base64ToBytes(signedEventBase64));
+    const [signed] = decodeCborItem(bytes);
     const eventBinary = (signed as { readonly event_binary?: unknown })
       .event_binary as { readonly value?: unknown } | undefined;
     const innerBytes = toUint8Array(eventBinary?.value);
@@ -62,38 +61,45 @@ function rawEventContent(signedEventBase64: string): unknown {
 export const MALFORMED_CONTENT_MESSAGE =
   "content must be a value of core.event-content";
 
+/** 署名を確かめて読んだイベント (`definy.verified-event`) か, 受け付けない理由 */
+export type VerifiedEvent =
+  | {
+      readonly eventHash: string;
+      readonly accountId: string;
+      /** 規則が見ない説明などを除いた中身 ({@link contentForCheck}) */
+      readonly content: EventContent;
+      readonly referencedContentHashes: ReadonlyArray<string>;
+    }
+  | { readonly invalid: string };
+
 /**
- * 受け取ったイベント (Base64) を検査し, 受け付けない理由を 1 つ 1 行で返す. 問題なければ空.
- * 中身の形は definy 製の `core.value-conforms` で, 規則は `core.check-event` で確かめる.
- * 署名や CBOR が不正なものは検査しない (`submitEvent` が拒否する)
+ * 受け取ったイベント (Base64) の Ed25519 署名を確かめ, 中身の形を definy 製の `core.value-conforms` で確かめて読む
+ * (`definy.service-io` の `verify_signed_event`)
  */
-export async function checkSubmittedEvent(
+export async function verifySubmittedEvent(
   signedEventBase64: string,
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<string>> {
-  const raw = rawEventContent(signedEventBase64);
-  if (raw === undefined) {
-    return [];
-  }
-  if (!conformsInDefiny(shapeCheckerModule, raw, "core.event-content")) {
-    return [MALFORMED_CONTENT_MESSAGE];
-  }
+): Promise<VerifiedEvent> {
+  let bytes: Uint8Array;
   let decoded: Awaited<ReturnType<typeof decodeVerifiedSignedEvent>>;
   try {
-    decoded = await decodeVerifiedSignedEvent(base64ToBytes(signedEventBase64));
-  } catch {
-    return [];
+    bytes = base64ToBytes(signedEventBase64);
+    decoded = await decodeVerifiedSignedEvent(bytes);
+  } catch (e) {
+    return { invalid: e instanceof Error ? e.message : String(e) };
   }
-  const accountId = decoded.meta.accountId;
-  const { content } = decoded;
-  return checkEvent(eventCheckerModule, content, {
-    accountId,
-    accountCreated: await isAccountCreated(accountId, store, env),
-    // 規則が使う状態 (ブランチの最新のコミットなど) は definy が求める
-    commits:
-      content.type === "project_commit"
-        ? await loadCommitSummaries(store, env)
-        : [],
-  }).map(eventRejectionMessage);
+  if (
+    !conformsInDefiny(
+      shapeCheckerModule,
+      rawEventContent(bytes),
+      "core.event-content",
+    )
+  ) {
+    return { invalid: MALFORMED_CONTENT_MESSAGE };
+  }
+  return {
+    eventHash: await sha256EventHashId(bytes),
+    accountId: decoded.meta.accountId,
+    content: contentForCheck(decoded.content),
+    referencedContentHashes: decoded.meta.referencedContentHashes,
+  };
 }

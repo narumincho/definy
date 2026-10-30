@@ -99,7 +99,7 @@ definy 製の `core.value-conforms(value: core.value, declaration: core.expressi
 
 - TypeScript は CBOR から読んだ値を `core.value` にし (`toCoreValue`), seeds/schemas/event-types.json の宣言を
   `{ id: 型パーツ名, declaration }` の一覧にして渡すだけ (`conformsInDefiny`, `src/event_check.ts`)。宣言の中の型パーツの参照も名前にする
-- 形が違えばメッセージ `content must be a value of core.event-content` で拒否する (`worker/event_check.ts`)。
+- 形が違えばメッセージ `content must be a value of core.event-content` で拒否する (`verifySubmittedEvent`, `worker/event_check.ts`)。
   パーツの中身は, 受け付けたコミットが参照していない (まだ確かめていない) ものだけを確かめる (`worker/type_check.ts`)。
   core の全パーツの中身 (約 260) を確かめると 0.25 秒 (TypeScript は 0.06 秒) かかるため
 - ブラウザと, 確かめた後に TypeScript の型にする `decodeEventContent` は今も TypeScript の `conformsToTypeDeclaration` を使う。
@@ -148,9 +148,10 @@ core.event-check-state = {
 - プロジェクトはプロジェクト名だけで決まり, ブランチを持つ ([project.md](project.md))。ブラウザは表示しているブランチから
   コミット先のブランチと親を決める (`commitTarget`, `src/branches.ts`. [branch.md](branch.md))
 - 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerProject`)。同じ秒の 2 つのコミットは先のものが最新のままになる
-- 規則は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` (コミットしない) で動く。
-  Worker は `?module` で取り込み (`worker/event_check.ts`), TypeScript 側は保存している事実 (アカウントを作ったか, 受け付けたコミットの一覧) を
-  ストアから集めて渡し, 返った理由を英語のメッセージにするだけ (`src/event_check.ts`)。拒否は Connect-RPC の `invalid_argument` (400)
+- 規則はサーバーの `definy.submit-event` (`wasm/service.wasm`. [service.md](service.md)) の中で呼ぶ (2026-10-30)。
+  ホストは署名と中身の形を確かめ (`verify_signed_event`. `worker/event_check.ts`), 規則が使う事実 (アカウントを作ったか `read_account_created`,
+  受け付けたコミットの一覧 `read_commits`) を読むだけ。理由の英語のメッセージも definy (`definy.event-rejection-message`) が作る。
+  拒否は Connect-RPC の `invalid_argument` (400)。`wasm/event_checker.wasm` (`core.check-event` だけをコンパイルしたもの) はテストで規則を試すのに使う
 - ブランチの最新のコミット・作成者・他のプロジェクトのモジュールなどの状態も definy (`core.event-check-state-of`) が求める
   (以前は TypeScript の `branchStateOf` が求めていた)。全コミットを毎回渡し, 各コミットについて最新かを調べるので O(コミット数²)
 - 規則は説明やパーツの中身の content hash を見ないので, それらを除いてから線形メモリに書く
