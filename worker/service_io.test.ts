@@ -1,6 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { CommitSummary } from "../src/event_check.ts";
+import type {
+  CommitModule,
+  CommitPart,
+  EventContent,
+} from "../src/event_content.ts";
 import {
   definyToJson,
   handleRpcInDefiny,
@@ -41,8 +46,8 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readEventsPage: () => Promise.reject(new Error("not read")),
   readContents: () => Promise.reject(new Error("not read")),
   readMissingContentHashes: () => Promise.reject(new Error("not read")),
+  readAccountCreated: () => Promise.reject(new Error("not read")),
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
-  checkEventRules: () => Promise.reject(new Error("not checked")),
   typeCheckCommit: () => Promise.reject(new Error("not checked")),
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
@@ -120,8 +125,13 @@ describe("handleRpcInDefiny", () => {
 
   it("SubmitEvent は署名を確かめ, 規則・足りない中身・型チェッカーの順に見てから保存する", async () => {
     const steps: Array<string> = [];
+    const createAccount: EventContent = {
+      type: "create_account",
+      accountName: "alice",
+    };
     const submitHost = (
       overrides: Partial<ServiceIoHost> = {},
+      content: EventContent = createAccount,
     ): ServiceIoHost =>
       host({
         verifySignedEvent: (bytes) => {
@@ -129,12 +139,21 @@ describe("handleRpcInDefiny", () => {
           return Promise.resolve(
             bytes === "bad"
               ? { invalid: "Ed25519 signature verification failed" }
-              : { eventHash: "e1", referencedContentHashes: ["c1", "c2"] },
+              : {
+                  eventHash: "e1",
+                  accountId: "alice",
+                  content,
+                  referencedContentHashes: ["c1", "c2"],
+                },
           );
         },
-        checkEventRules: () => {
-          steps.push("rules");
-          return Promise.resolve([]);
+        readAccountCreated: (accountId) => {
+          steps.push(`account ${accountId}`);
+          return Promise.resolve(false);
+        },
+        readCommits: () => {
+          steps.push("commits");
+          return Promise.resolve([commit("m1", "alice", "main", 100)]);
         },
         readMissingContentHashes: (hashes) => {
           steps.push(`missing ${hashes.join(",")}`);
@@ -159,7 +178,7 @@ describe("handleRpcInDefiny", () => {
     });
     expect(steps).toEqual([
       "verify ok",
-      "rules",
+      "account alice",
       "missing c1,c2",
       "type check",
       "write ok",
@@ -179,18 +198,19 @@ describe("handleRpcInDefiny", () => {
         missingContentHashes: ["c2"],
       },
     });
-    expect(steps).toEqual(["verify ok", "rules"]);
+    expect(steps).toEqual(["verify ok", "account alice"]);
 
     expect(
       await submit(
         { signedEventBytes: "ok" },
-        submitHost({
-          checkEventRules: () => Promise.resolve(["rule a", "rule b"]),
-        }),
+        submitHost({ readAccountCreated: () => Promise.resolve(true) }),
       ),
     ).toEqual({
       status: 400,
-      body: { code: "invalid_argument", message: "rule a\nrule b" },
+      body: {
+        code: "invalid_argument",
+        message: "the account has already been created",
+      },
     });
     expect(
       await submit(
@@ -215,6 +235,89 @@ describe("handleRpcInDefiny", () => {
       body: {
         code: "invalid_argument",
         message: "signedEventBytes is required",
+      },
+    });
+  });
+
+  it("SubmitEvent はプロジェクトのコミットなら受け付けたコミットも読んで規則 (core.check-event) で検査する", async () => {
+    const part = (name: string): CommitPart => ({
+      name,
+      description: [],
+      partType: null,
+      expression: null,
+      contentHash: "",
+    });
+    const projectCommit = (options: {
+      readonly parent: string | null;
+      readonly modules: ReadonlyArray<CommitModule>;
+    }): EventContent => ({
+      type: "project_commit",
+      commit: {
+        projectName: "app",
+        branch: "main",
+        projectDescription: [],
+        message: "",
+        parentCommitHash: options.parent,
+        mergedCommitHash: null,
+        modules: options.modules,
+      },
+    });
+    const reads: Array<string> = [];
+    const submitCommit = (content: EventContent) =>
+      handleRpcInDefiny(
+        service,
+        "SubmitEvent",
+        () => ({ signedEventBytes: "ok" }),
+        host({
+          verifySignedEvent: () =>
+            Promise.resolve({
+              eventHash: "e2",
+              accountId: "alice",
+              content,
+              referencedContentHashes: [],
+            }),
+          readAccountCreated: () => Promise.resolve(true),
+          readCommits: () => {
+            reads.push("commits");
+            return Promise.resolve([commit("m1", "alice", "main", 100)]);
+          },
+          readMissingContentHashes: () => Promise.resolve([]),
+          typeCheckCommit: () => Promise.resolve([]),
+          writeEvent: () => Promise.resolve("e2"),
+        }),
+      );
+
+    expect(
+      await submitCommit(
+        projectCommit({
+          parent: "m1",
+          modules: [{ name: "app", description: [], parts: [part("x")] }],
+        }),
+      ),
+    ).toEqual({
+      status: 200,
+      body: { eventHash: "e2", status: "accepted", missingContentHashes: [] },
+    });
+    expect(reads).toEqual(["commits"]);
+
+    expect(
+      await submitCommit(
+        projectCommit({
+          parent: null,
+          modules: [
+            { name: "app", description: [], parts: [part("x"), part("x")] },
+            { name: "core", description: [], parts: [part("y")] },
+          ],
+        }),
+      ),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: [
+          "parent_commit_hash must be the latest commit of the branch, or a commit of the project for a new branch (fetch the latest events and commit again)",
+          "the part name 'x' is duplicated",
+        ].join("\n"),
       },
     });
   });

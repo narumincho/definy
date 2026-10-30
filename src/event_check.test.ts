@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   checkEvent,
   conformsInDefiny,
-  eventRejectionMessage,
   type CommitSummary,
   type EventCheckFacts,
 } from "./event_check.ts";
@@ -315,17 +314,5 @@ describe("core.check-event", () => {
       false,
       false,
     ]);
-  });
-
-  it("理由をメッセージにする", () => {
-    expect(
-      eventRejectionMessage({ tag: "duplicate_part_name", payload: "a" }),
-    ).toBe("the part name 'a' is duplicated");
-    expect(
-      eventRejectionMessage({
-        tag: "module_in_other_project",
-        payload: "core",
-      }),
-    ).toBe("the module 'core' belongs to another project");
   });
 });
