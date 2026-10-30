@@ -19,6 +19,11 @@ export type PartChange = {
   readonly visibility?: Visibility;
   /** パーツを削除する (コミットでモジュールから外す). docs/ui.md「パーツの作成と削除」 */
   readonly deleted?: boolean;
+  /**
+   * エディタで書いた定義の式 (docs/part-definition.md). あればコミットではこれを中身として預け,
+   * `description` などはこれを評価したもの. 無ければコミットで `description` などから定義の式を作る
+   */
+  readonly definition?: unknown;
 };
 
 export type WorkingChanges = {

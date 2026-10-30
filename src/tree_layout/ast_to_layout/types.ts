@@ -7,6 +7,8 @@ export type ScopeContext = {
   readonly typeParameters?: ReadonlyArray<string>;
   /** パーツ ID → そのパーツ (関数) の引数名 (宣言の順). 呼び出しの引数をこの順に表示する */
   readonly callParameterNames?: ReadonlyMap<string, ReadonlyArray<string>>;
+  /** 未入力の位置 (`pathToString`) → 枠に薄く出す補足 (推論した型引数. type_argument_inference.ts) */
+  readonly holeHints?: ReadonlyMap<string, string>;
 };
 
 export type BuildLayoutNodeFn = (

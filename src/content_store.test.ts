@@ -12,6 +12,7 @@ import {
   hasPendingDefinitions,
   loadContents,
   missingContentHashes,
+  cachedDefinition,
   toContentAddressedParts,
   withEvaluatedDefinitions,
 } from "./content_store.ts";
@@ -147,5 +148,33 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
     expect(
       withEvaluatedDefinitions("other", [answer], external, evaluate),
     ).toEqual([answer]);
+  });
+});
+
+describe("エディタで書いた定義の式 (docs/part-definition.md)", () => {
+  it("定義の式があれば, それをそのまま中身として預ける", () => {
+    const definition = {
+      "#call": {
+        function: reference(defineNumberId),
+        arguments: [{ name: "value", value: { "#number": 7 } }],
+      },
+    };
+    const contentHash = sha256EventHashIdSync(encodeCborItem(definition));
+    const { parts, contents } = toContentAddressedParts([
+      {
+        name: "seven",
+        description: [],
+        partType: { "#number": null },
+        expression: { "#number": 7 },
+        partIdHash: null,
+        contentHash: null,
+        definition,
+      },
+    ]);
+    expect(parts[0]?.contentHash).toBe(contentHash);
+    expect(parts[0]).not.toHaveProperty("definition");
+    expect([...contents.keys()]).toEqual([contentHash]);
+    // その場で評価できない定義の式は, コミットの後にコミットの中で評価できるよう覚えておく
+    expect(cachedDefinition(contentHash)).toEqual(definition);
   });
 });

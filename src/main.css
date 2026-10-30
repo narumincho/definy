@@ -3371,6 +3371,44 @@ a.account-card {
   align-items: center;
 }
 
+/* 項目ごと / 定義の式 の表示の切り替え (docs/part-definition.md) */
+.def-view-switch {
+  display: inline-flex;
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.def-view-switch-button {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.def-view-switch-button:hover {
+  background: var(--overlay-2);
+}
+
+.def-view-switch-button[aria-checked="true"] {
+  background: var(--purple-bg-strong);
+  color: var(--purple-text);
+}
+
+.def-notice {
+  margin: 0.35rem 0 0;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  color: var(--yellow-text);
+  background: var(--yellow-bg);
+  border: 1px solid var(--yellow-border);
+  border-radius: var(--radius-sm);
+}
+
 .def-children {
   display: flex;
   flex-direction: column;
@@ -3985,4 +4023,12 @@ a.account-card {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* 未入力の型引数の枠に薄く出す推論した型 (docs/type-arguments.md「エディタ」) */
+.tree-hole-hint {
+  margin-left: 0.35rem;
+  color: var(--text-muted);
+  font-style: italic;
+  opacity: 0.8;
 }

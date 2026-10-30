@@ -839,7 +839,14 @@ function LeafNodeRenderer({
       />
     );
   } else {
-    content = <span>{node.label}</span>;
+    content = (
+      <>
+        <span>{node.label}</span>
+        {node.hint !== undefined && (
+          <span className="tree-hole-hint">{node.hint}</span>
+        )}
+      </>
+    );
   }
   // 改行を含む文字列リテラルは改行したまま複数行で出す
   const isMultiline =

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type JSX } from "react";
+import { useState, useCallback, useEffect, useMemo, type JSX } from "react";
 import { useParams, useRouter } from "@void/react";
 import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
 import {
@@ -16,13 +16,30 @@ import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
 import type { PartChange, PartSnapshot } from "../../src/types.ts";
-import { newPartSnapshot, partsReferencing } from "../../src/new_part.ts";
+import {
+  newPartSnapshot,
+  partsReferencing,
+  workingExpressionResolver,
+} from "../../src/new_part.ts";
 import {
   parameterRenames,
   renameCallArguments,
   renameCallersOf,
   renameRootParameters,
 } from "../../src/tree_layout/rename_arguments.ts";
+import type { DefinitionView } from "../../src/tree_layout/definition_rows.ts";
+import {
+  decodePartDefinition,
+  partDefinitionExpression,
+  partDefinitionType,
+} from "../../src/part_definition.ts";
+import { cachedDefinition } from "../../src/content_store.ts";
+import { evaluateDefinition } from "../../src/definition_evaluator.ts";
+import { loadDefinitionEvaluator } from "../../src/definition_evaluator_browser.ts";
+import {
+  isPartContent,
+  partContentFromValue,
+} from "../../src/event_content.ts";
 import {
   emptyUndoHistory,
   recordUndo,
@@ -96,6 +113,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     typeCheckMessage,
     setPageUndo,
     projectOfModule,
+    partsByIdHash,
   } = useDefiny();
   const router = useRouter();
   const isNewPart = !parts.some((p) => p.partId === part.partId);
@@ -112,6 +130,40 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
   const currentVisibility = change?.visibility ?? part.visibility;
+
+  // パーツの定義の式 (docs/part-definition.md). エディタで書いたもの, コミット済みのその場で評価できない定義の式
+  // (ユーザーが作った定義のパーツの呼び出しなど), 無ければ今の中身から作る `core.define-part(...)` の順
+  const committedDefinition =
+    change === undefined && part.contentHash !== null
+      ? cachedDefinition(part.contentHash)
+      : undefined;
+  const currentDefinition = useMemo(
+    () =>
+      change?.definition ??
+      committedDefinition ??
+      partDefinitionExpression({
+        description: currentDescription,
+        visibility: currentVisibility,
+        partType: currentPartType,
+        expression: currentExpression,
+      }),
+    [
+      change?.definition,
+      committedDefinition,
+      currentDescription,
+      currentVisibility,
+      currentPartType,
+      currentExpression,
+    ],
+  );
+  // core.define-part / core.define-type の呼び出しでない (その場で評価できない) 定義の式
+  const isCustomDefinition = useMemo(
+    () => decodePartDefinition(currentDefinition) === undefined,
+    [currentDefinition],
+  );
+  const [view, setView] = useState<DefinitionView>(() =>
+    isCustomDefinition ? "definition" : "fields",
+  );
 
   // 元に戻す (Undo) / やり直す (Redo). このパーツの作業中の変更 (無ければ undefined) を変える前ごとに積む.
   // 履歴はこのページを開いている間だけ持つ (別のパーツへ移ると消える)
@@ -180,10 +232,23 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         | "expression"
         | "deleted"
         | "visibility"
+        | "definition"
       >
     >,
     mergeKey: string | null,
   ): void => {
+    // 中身 (説明・型・式・公開/非公開) を項目ごとに変えたら, 書いた定義の式は使わない
+    // (コミットで core.define-part(...) の形になる. docs/part-definition.md)
+    const keepsDefinition =
+      fields.definition !== undefined ||
+      (fields.description === undefined &&
+        fields.partType === undefined &&
+        fields.expression === undefined &&
+        fields.visibility === undefined);
+    const definition = keepsDefinition
+      ? (fields.definition ?? change?.definition ?? committedDefinition)
+      : undefined;
+    const { definition: _, ...contentFields } = fields;
     const next: PartChange = {
       moduleDefinitionEventHash: part.moduleId,
       partDefinitionEventHash: part.partId,
@@ -195,7 +260,8 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         ? { visibility: change.visibility }
         : {}),
       ...(isDeleted ? { deleted: true } : {}),
-      ...fields,
+      ...contentFields,
+      ...(definition !== undefined ? { definition } : {}),
     };
     // 引数名を変えたら, このパーツ自身 (再帰呼び出し) と他のパーツの呼び出しの引数名も合わせて変える.
     // 他のパーツの変更は作業中の変更に入れるだけで, このページの Undo では戻さない
@@ -231,6 +297,126 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
       mergeKey,
     );
   };
+
+  /**
+   * 定義の式を変える. `core.define-part(...)` などその場で評価できるものは, 評価した中身を説明・型・式にも入れる.
+   * それ以外は評価器で評価してから入れる (下の useEffect)
+   */
+  const changeDefinition = (
+    definition: unknown,
+    mergeKey: string | null,
+  ): void => {
+    const content = decodePartDefinition(definition);
+    editPart(
+      content === undefined
+        ? { definition }
+        : {
+            definition,
+            description: content.description,
+            visibility: content.visibility ?? currentVisibility,
+            partType: content.partType,
+            expression: content.expression,
+          },
+      mergeKey,
+    );
+  };
+
+  // その場で評価できない定義の式は definy 製の評価器 (core.eval-value) で評価する. 参照するパーツの式は作業中の変更を優先する.
+  // 書いた定義の式なら, 評価した中身を作業中の変更の説明・型・式に入れる (Undo の履歴には積まない)
+  const [definitionEvaluation, setDefinitionEvaluation] = useState<{
+    readonly definition: unknown;
+    readonly ok: boolean;
+  } | null>(null);
+  useEffect(() => {
+    if (!isCustomDefinition) {
+      return;
+    }
+    let cancelled = false;
+    loadDefinitionEvaluator().then(
+      (evaluator) => {
+        if (cancelled) return;
+        const value = evaluateDefinition(
+          evaluator,
+          currentDefinition,
+          workingExpressionResolver(partsByIdHash, workingChanges),
+        );
+        const content =
+          value !== undefined && isPartContent(value)
+            ? partContentFromValue(value)
+            : undefined;
+        setDefinitionEvaluation({
+          definition: currentDefinition,
+          ok: content !== undefined,
+        });
+        if (
+          content !== undefined &&
+          change !== undefined &&
+          change.definition === currentDefinition
+        ) {
+          const next: PartChange = {
+            ...change,
+            description: content.description,
+            visibility: content.visibility ?? currentVisibility,
+            partType: content.partType,
+            expression: content.expression,
+          };
+          if (
+            JSON.stringify([
+              next.description,
+              next.visibility,
+              next.partType,
+              next.expression,
+            ]) !==
+            JSON.stringify([
+              change.description,
+              change.visibility,
+              change.partType,
+              change.expression,
+            ])
+          ) {
+            updateWorkingPart(part.partId, next);
+          }
+        }
+      },
+      (e: unknown) => {
+        console.error("failed to load the definition evaluator", e);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isCustomDefinition,
+    currentDefinition,
+    change,
+    partsByIdHash,
+    workingChanges,
+    part.partId,
+    updateWorkingPart,
+    currentVisibility,
+  ]);
+  const definitionEvaluated =
+    definitionEvaluation !== null &&
+    definitionEvaluation.definition === currentDefinition
+      ? definitionEvaluation.ok
+      : undefined;
+  const definitionNotice = !isCustomDefinition
+    ? null
+    : definitionEvaluated === false
+      ? label(
+          language,
+          "This definition expression cannot be evaluated to a core.part-content. Committing it will be rejected.",
+          "この定義の式は評価して core.part-content になりません。このままではコミットできません。",
+          "Ĉi tiu difina esprimo ne donas core.part-content.",
+        )
+      : view === "fields"
+        ? label(
+            language,
+            "This part is defined by a definition expression. Editing the fields replaces it with core.define-part(...).",
+            "このパーツは定義の式で定義されています。項目を編集すると core.define-part(...) の形に置き換わります。",
+            "Ĉi tiu parto estas difinita per difina esprimo.",
+          )
+        : null;
 
   const handleUndoKey = useCallback(
     (key: "undo" | "redo"): void => {
@@ -295,22 +481,32 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     readonly expression: unknown;
     readonly error: ExpressionTypeError | null;
   } | null>(null);
+  // ユーザーが作った定義のパーツで書いた定義の式は, core.part-content 型の式として検査する.
+  // core.define-part(...) などその場で評価できる定義の式は, 評価した型と式を検査する
+  // (型チェッカーは quote の中の関数の引数の型を推論できないため. エラーの式は定義の式の quote の中に出る)
+  const checksDefinition = view === "definition" && isCustomDefinition;
+  const checkedPartType = checksDefinition
+    ? partDefinitionType()
+    : currentPartType;
+  const checkedExpression = checksDefinition
+    ? currentDefinition
+    : currentExpression;
   const typeError =
-    typeCheckResult !== null && typeCheckResult.expression === currentExpression
+    typeCheckResult !== null && typeCheckResult.expression === checkedExpression
       ? typeCheckResult.error
       : null;
   useEffect(() => {
     let cancelled = false;
     const timer = setTimeout(() => {
       checkPartType({
-        partIdHash,
-        partType: currentPartType,
-        expression: currentExpression,
+        partIdHash: checksDefinition ? null : partIdHash,
+        partType: checkedPartType,
+        expression: checkedExpression,
       }).then(
         (outcome) => {
           if (cancelled) return;
           setTypeCheckResult({
-            expression: currentExpression,
+            expression: checkedExpression,
             error:
               outcome.kind === "type_error" || outcome.kind === "checker_failed"
                 ? {
@@ -324,7 +520,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         (e: unknown) => {
           if (!cancelled) {
             setTypeCheckResult({
-              expression: currentExpression,
+              expression: checkedExpression,
               error: {
                 expression: null,
                 message: e instanceof Error ? e.message : String(e),
@@ -342,8 +538,9 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     checkPartType,
     typeCheckMessage,
     partIdHash,
-    currentPartType,
-    currentExpression,
+    checksDefinition,
+    checkedPartType,
+    checkedExpression,
   ]);
 
   return (
@@ -458,6 +655,13 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         expression={currentExpression}
         editable={true}
         typeError={typeError}
+        view={view}
+        onViewChange={setView}
+        definition={currentDefinition}
+        onDefinitionChange={(next, mergeKey) => {
+          changeDefinition(next, mergeKey ?? null);
+        }}
+        definitionNotice={definitionNotice}
         onNameChange={(newName) => {
           editPart({ name: newName }, "name");
         }}

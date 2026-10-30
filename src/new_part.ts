@@ -286,6 +286,9 @@ export function overlayWorkingChanges(
       expression: change.expression,
       contentHash: null,
       partIdHash: null,
+      ...(change.definition !== undefined
+        ? { definition: change.definition }
+        : {}),
     });
   }
   return { partsList: [...partMap.values()], committedPartIds };
@@ -359,4 +362,30 @@ export function withNewParts(
     ],
     parts: [...parts, ...newParts],
   };
+}
+
+/**
+ * パーツ ID → パーツの式. 作業中の変更 (コミットしていない新しいパーツも) を優先する.
+ * エディタで書いた定義の式を評価するのに使う (docs/part-definition.md)
+ */
+export function workingExpressionResolver(
+  partsByIdHash: ReadonlyMap<
+    string,
+    Pick<PartSnapshot, "partId" | "expression">
+  >,
+  workingChanges: WorkingChanges,
+): (partIdHash: string) => unknown {
+  const working = new Map<string, unknown>();
+  for (const [partId, change] of workingChanges.parts) {
+    if (change.deleted !== true) {
+      const id = newPartSnapshot(partId, change).partIdHash;
+      if (id !== null) {
+        working.set(id, change.expression);
+      }
+    }
+  }
+  return (partIdHash) =>
+    working.has(partIdHash)
+      ? working.get(partIdHash)
+      : partsByIdHash.get(partIdHash)?.expression;
 }

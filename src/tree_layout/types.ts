@@ -65,6 +65,8 @@ export type LayoutNode = {
   readonly scopeVariables?: ReadonlyMap<number, string>;
   /** 式 1 つ分のノードにだけ付く, その位置から参照できる型引数 (関数の型の引数で型が type のもの) の名前 */
   readonly typeParameters?: ReadonlyArray<string>;
+  /** 未入力の枠に薄く出す補足 (推論した型引数. type_argument_inference.ts) */
+  readonly hint?: string;
 };
 
 export type LayoutOptions = {

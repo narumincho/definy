@@ -23,12 +23,18 @@ import {
 } from "./event_content.ts";
 
 let definitionPartIds:
-  { readonly definePart: string; readonly defineType: string } | undefined;
+  | {
+      readonly definePart: string;
+      readonly defineType: string;
+      readonly partContent: string;
+    }
+  | undefined;
 
-/** `core.define-part` と `core.define-type` のパーツ ID */
+/** `core.define-part` と `core.define-type`, 定義の式の型 `core.part-content` のパーツ ID */
 export function definitionPartIdsOf(): {
   readonly definePart: string;
   readonly defineType: string;
+  readonly partContent: string;
 } {
   if (definitionPartIds === undefined) {
     // cbor.ts は event_content.ts を読み込むので, モジュールを読み込むときではなく使うときに求める
@@ -36,12 +42,18 @@ export function definitionPartIdsOf(): {
     definitionPartIds = {
       definePart: deriveModulePartIdSync(core, "define-part"),
       defineType: deriveModulePartIdSync(core, "define-type"),
+      partContent: deriveModulePartIdSync(core, "part-content"),
     };
   }
   return definitionPartIds;
 }
 
 const NONE = { "#none": null };
+
+/** 定義の式の型 `core.part-content` (型チェッカーの形). エディタで定義の式を編集するときのパーツの型にする */
+export function partDefinitionType(): unknown {
+  return { "#reference": { part_hash: definitionPartIdsOf().partContent } };
+}
 
 function partReference(id: string): unknown {
   return { "#part_reference": { part_definition_event_hash: id } };
