@@ -1,4 +1,4 @@
-import type { LayoutNode, PathStep } from "../types.ts";
+import { pathToString, type LayoutNode, type PathStep } from "../types.ts";
 import { field, variantOf } from "../../definy_value.ts";
 import type { ScopeContext } from "./types.ts";
 import { formatFloatLiteral } from "../expression.ts";
@@ -84,8 +84,12 @@ export function tryBuildLiteralNode(
     // シークレットリテラル. 値は持たないので名前だけ出す (値・送ってよい宛先はパーツのページで設定する)
     case "secret":
       return leaf(`secret ${String(field(payload, "label") ?? "")}`, "keyword");
-    case "hole":
-      return leaf("□", "identifier");
+    case "hole": {
+      const hint = context.holeHints?.get(pathToString(currentPath));
+      return hint === undefined
+        ? leaf("□", "identifier")
+        : { ...leaf("□", "identifier"), hint };
+    }
     // 関数の型の型引数 (`T`) の参照 (docs/type-expression.md)
     case "type_parameter":
       return leaf(String(payload), "identifier");

@@ -419,6 +419,11 @@ export type DecodedPart = {
   /** 中身を CAS からまだ読んでいない (`description` などは空) */
   readonly unresolved?: true;
   readonly partIdHash?: string | null;
+  /**
+   * エディタで書いた定義の式 (docs/part-definition.md). あればコミットではこれを中身として預ける
+   * (`description` などはこれを評価したもの). 無ければ `description` などから `core.define-part(...)` を作る
+   */
+  readonly definition?: unknown;
 };
 
 /** プロジェクトのコミットのモジュール */

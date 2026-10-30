@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import type { PartSnapshot } from "../types.ts";
-import type { LayoutNode, PathStep } from "./types.ts";
+import { pathToString, type LayoutNode, type PathStep } from "./types.ts";
+import {
+  INFERRED_TYPE_ARGUMENT,
+  inferredTypeArgumentOption,
+} from "./type_argument_inference.ts";
 import type { ExpectedType } from "./type_inference.ts";
 import { findExpressionNode } from "./selection.ts";
 import {
@@ -59,6 +63,11 @@ export type UseSelectorMenuParams = {
   readonly expectedVariants: ExpectedVariants;
   readonly setSelectedPath: (path: ReadonlyArray<PathStep> | null) => void;
   readonly setInlineEdit: (inline: boolean) => void;
+  /**
+   * 未入力の型引数の位置 (`pathToString`) → 推論した型の表記. その位置では推論した型で確定する選択肢を先頭に出す
+   * (type_argument_inference.ts)
+   */
+  readonly inferredTypeArguments?: ReadonlyMap<string, string>;
 };
 
 export type SelectorMenuState = {
@@ -95,6 +104,7 @@ export function useSelectorMenu({
   expectedVariants,
   setSelectedPath,
   setInlineEdit,
+  inferredTypeArguments,
 }: UseSelectorMenuParams): SelectorMenuState {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuOpenCount, setMenuOpenCount] = useState(0);
@@ -142,8 +152,13 @@ export function useSelectorMenu({
       if (mode === "type") {
         return [...options, ...clipboardSelectorOptions()];
       }
-      // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す
+      const inferred = inferredTypeArguments?.get(pathToString(path));
+      // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す.
+      // 推論した型引数はいちばん先に出し, そのまま決定すれば確定する
       return [
+        ...(inferred === undefined
+          ? []
+          : [inferredTypeArgumentOption(inferred)]),
         ...goToDefinitionOption(expression, path),
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
@@ -156,6 +171,7 @@ export function useSelectorMenu({
     [
       expectsType,
       expression,
+      inferredTypeArguments,
       layoutRoot,
       mode,
       partOptions,
@@ -261,10 +277,18 @@ export function useSelectorMenu({
     selectorOptions,
   ]);
 
-  const highlight = useMemo(
-    () => resolveHighlight(chosenIndex, filteredOptions, currentOptionValue),
-    [chosenIndex, currentOptionValue, filteredOptions],
-  );
+  // 未入力の型引数の位置では, 推論した型の選択肢 (先頭) を最初から選んでおき, そのまま決定すれば確定する
+  const highlight = useMemo(() => {
+    const resolved = resolveHighlight(
+      chosenIndex,
+      filteredOptions,
+      currentOptionValue,
+    );
+    return resolved.kind === "none" &&
+      filteredOptions[0]?.value === INFERRED_TYPE_ARGUMENT
+      ? { kind: "chosen" as const, index: 0 }
+      : resolved;
+  }, [chosenIndex, currentOptionValue, filteredOptions]);
 
   const effectiveHighlightIndex = useMemo(
     () => highlightIndex(highlight),

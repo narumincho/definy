@@ -386,7 +386,27 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる.
   式のツリーの期待型の推論にもその型を使う
 - ツリーでは `type_number` などは `number` のように型の名前で出す
 
-### ツリーに表示する組み込みの式
+### 定義の式の表示と編集
+
+パーツ詳細の見出しの右の切り替えで, 中身を「項目ごと」(doc / type / value) と「定義の式」(def) のどちらで表示するか選べる
+(定義の式は [part-definition.md](part-definition.md))。
+
+- 定義の式の行は, 定義の式を `core.part-content` 型の式として式のツリーエディタで編集する
+  (`PartDefinitionTree` の `view="definition"`, `partDefinitionType()`)。期待する型が分かるので, 根の選択肢には
+  `core.define-part` / `core.define-type` やユーザーが作った定義のパーツが出る
+- `core.define-part(...)` / `core.define-type(...)` の呼び出しはその場で評価し, 説明・型・式・公開/非公開にも入れる
+- それ以外 (ユーザーが作った定義のパーツの呼び出し) は, ブラウザの評価器 (`wasm/definition_evaluator.wasm`) で評価して入れる。
+  参照するパーツの式は作業中の変更 (新しいパーツも) を優先する (`workingExpressionResolver`)。
+  評価できなければ「この定義の式は評価して core.part-content になりません」と出す
+- 書いた定義の式は作業中の変更 (`PartChange.definition`) に入れ, コミットではそのまま CAS に預ける
+  (`toContentAddressedParts`)。項目ごとの表示で説明・型・式・公開/非公開を変えると定義の式は捨て,
+  コミットで `core.define-part(...)` の形になる (名前を変えても定義の式は残る)
+- その場で評価できない定義の式で定義したパーツは, 最初から定義の式で表示する。項目ごとの表示ではその旨を出す
+- 型エラー: ユーザーが作った定義のパーツの呼び出しは `core.part-content` 型の式として検査する。
+  `core.define-part(...)` などは評価した型と式を検査し, エラーは定義の式の quote の中の同じ式に出す
+  (型チェッカーは quote の中の関数の引数の型を推論できないため, 定義の式のまま検査すると関数でエラーになる)
+
+### ツリーに表示する組み込みの式### ツリーに表示する組み込みの式
 
 `type_list` / `type_code` (`Code<T>` の型) / `quote` (quote 式, [quote.md](quote.md)) は, 子の式をフィールド (quote はペイロードそのもの) に持つ式として `path.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
 `quote` の中は外の変数を使えないので, 中の式にはスコープの変数を渡さない.

@@ -33,7 +33,12 @@ export type ContentItem = {
 
 /** パーツの中身を CAS に預ける形 (定義の式の CBOR. docs/part-definition.md) にする */
 export function partContentItem(content: PartContent): ContentItem {
-  const bytes = encodeCborItem(partDefinitionExpression(content));
+  return definitionContentItem(partDefinitionExpression(content));
+}
+
+/** 定義の式を CAS に預ける形 (CBOR) にする */
+export function definitionContentItem(definition: unknown): ContentItem {
+  const bytes = encodeCborItem(definition);
   return {
     contentHash: sha256EventHashIdSync(bytes),
     contentBytes: bytesToBase64(bytes),
@@ -59,6 +64,18 @@ export function toContentAddressedParts(parts: ReadonlyArray<DecodedPart>): {
       partType: part.partType ?? null,
       expression: part.expression ?? null,
     };
+    // エディタで書いた定義の式はそのまま預ける
+    if (part.definition !== undefined) {
+      const definitionItem = definitionContentItem(part.definition);
+      contents.set(definitionItem.contentHash, definitionItem);
+      if (decodePartDefinition(part.definition) !== undefined) {
+        contentCache.set(definitionItem.contentHash, content);
+      } else {
+        definitionCache.set(definitionItem.contentHash, part.definition);
+      }
+      const { definition: _, ...rest } = part;
+      return { ...rest, contentHash: definitionItem.contentHash };
+    }
     const item = partContentItem(content);
     // コミットの中で評価した定義の式のパーツは, 中身を変えていなければ定義の式 (content hash) のまま残す
     const evaluated =
@@ -91,6 +108,14 @@ const definitionCache = new Map<string, unknown>();
 /** その場で評価できない定義の式を読んだか (評価器を読み込むか決める) */
 export function hasPendingDefinitions(): boolean {
   return definitionCache.size > 0;
+}
+
+/**
+ * content hash の中身の定義の式のうち, その場で評価できないもの (ユーザーが作った定義のパーツの呼び出しなど).
+ * `core.define-part(...)` などその場で評価できる定義や, 読んでいないものは `undefined`
+ */
+export function cachedDefinition(contentHash: string): unknown {
+  return definitionCache.get(contentHash);
 }
 
 /** 読んだパーツの中身 (無ければ `undefined`) */

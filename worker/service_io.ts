@@ -4,9 +4,10 @@
  * `definy.handle-rpc` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
  * ストアを読む要求 (`read_commits` / `read_events`) や書き込みの要求 (`write_event` / `write_contents`) をホスト (ここ) が
- * 行って結果を `then` に渡す. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
+ * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
 import { variant, variantOf } from "../src/definy_value.ts";
+import { encodeEventContent, type EventContent } from "../src/event_content.ts";
 import {
   commitSummaryLiteral,
   type CommitSummary,
@@ -39,18 +40,21 @@ export type ServiceIoHost = {
   readonly readMissingContentHashes: (
     contentHashes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<string>>;
-  /** 署名済みイベント (Base64) の Ed25519 署名を確かめる. 不正なら理由 */
+  /** そのアカウントの `create_account` を受け付けたか */
+  readonly readAccountCreated: (accountId: string) => Promise<boolean>;
+  /**
+   * 署名済みイベント (Base64) の Ed25519 署名を確かめて読む. 不正なら理由 (中身が `core.event-content` の形でないときも).
+   * `content` は規則 (`core.check-event`) に渡す中身 (`contentForCheck`)
+   */
   readonly verifySignedEvent: (signedEventBytes: string) => Promise<
     | {
         readonly eventHash: string;
+        readonly accountId: string;
+        readonly content: EventContent;
         readonly referencedContentHashes: ReadonlyArray<string>;
       }
     | { readonly invalid: string }
   >;
-  /** 受け付ける規則 (`core.check-event`) で検査し, 受け付けない理由を返す (受け付けるなら空) */
-  readonly checkEventRules: (
-    signedEventBytes: string,
-  ) => Promise<ReadonlyArray<string>>;
   /** プロジェクトのコミットなら型チェッカーで検査し, 型エラーを返す (無ければ空) */
   readonly typeCheckCommit: (
     signedEventBytes: string,
@@ -199,24 +203,32 @@ export async function handleRpcInDefiny(
               ? variant("invalid", result.invalid)
               : variant("valid", {
                   event_hash: result.eventHash,
+                  account_id: result.accountId,
+                  content: encodeEventContent(result.content),
                   referenced_content_hashes: result.referencedContentHashes,
                 }),
           ),
         ]);
         break;
       }
-      case "check_event_rules":
+      case "read_account_created": {
+        const created = await host.readAccountCreated(
+          String(instance.read(instance.recordField(payload, "account_id"))),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(created),
+        ]);
+        break;
+      }
       case "type_check_commit":
       case "write_event": {
         const signedEventBytes = String(
           instance.read(instance.recordField(payload, "signed_event_bytes")),
         );
         const result =
-          tag === "check_event_rules"
-            ? await host.checkEventRules(signedEventBytes)
-            : tag === "type_check_commit"
-              ? await host.typeCheckCommit(signedEventBytes)
-              : await host.writeEvent(signedEventBytes);
+          tag === "type_check_commit"
+            ? await host.typeCheckCommit(signedEventBytes)
+            : await host.writeEvent(signedEventBytes);
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(result),
         ]);

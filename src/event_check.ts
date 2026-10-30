@@ -1,9 +1,9 @@
 /**
- * 署名を確かめた後のイベントを受け付けるかを, definy 製の `core.check-event` で決める (docs/event.md「受け付ける規則」).
+ * 署名を確かめた後のイベントを受け付けるかを決める definy 製の `core.check-event` まわり (docs/event.md「受け付ける規則」).
  *
- * `core.check-event` は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` を使う
- * (Cloudflare Workers は実行時に Wasm をコンパイルできない). TypeScript 側は, 保存している事実
- * (アカウントを作ったか, 受け付けたプロジェクトのコミット) を渡し, 返った理由をメッセージにするだけ.
+ * サーバーは `definy.submit-event` (`wasm/service.wasm`) の中で `core.check-event` を呼び, 理由のメッセージも
+ * definy (`definy.event-rejection-message`) が作る (docs/service.md). ここの {@link checkEvent} は
+ * `core.check-event` だけをコンパイルした `wasm/event_checker.wasm` で規則を試すためのもの (テスト).
  * 規則が使う状態 (ブランチの最新のコミットと作成者など. docs/branch.md) は definy が求める.
  *
  * イベントの中身の形も, definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめられる ({@link conformsInDefiny})
@@ -73,7 +73,7 @@ export function compileSeedFunction(options: {
 /**
  * 規則が見ない説明・メッセージ・パーツの中身の content hash を除いたイベントの中身 (線形メモリに書く量を減らす)
  */
-function contentForCheck(content: EventContent): EventContent {
+export function contentForCheck(content: EventContent): EventContent {
   if (content.type !== "project_commit") {
     return content;
   }
@@ -139,41 +139,6 @@ export function checkEvent(
     }
     return { tag: tagged.tag, payload: tagged.payload };
   });
-}
-
-/** 受け付けない理由のメッセージ (英語. Connect-RPC のエラーメッセージにする) */
-export function eventRejectionMessage(rejection: EventRejection): string {
-  switch (rejection.tag) {
-    case "account_already_created":
-      return "the account has already been created";
-    case "account_not_created":
-      return "the account has not been created (submit create_account first)";
-    case "empty_account_name":
-      return "the account name is empty";
-    case "empty_project_name":
-      return "the project name is empty";
-    case "empty_branch_name":
-      return "the branch name is empty";
-    case "first_branch_must_be_main":
-      return "the first commit of a project must be on the main branch";
-    case "not_branch_creator":
-      return "only the account that created the branch can commit to it (create a new branch instead)";
-    case "merged_commit_not_in_project":
-      return "merged_commit_hash must be a commit of the same project";
-    case "parent_commit_mismatch":
-      return "parent_commit_hash must be the latest commit of the branch, or a commit of the project for a new branch (fetch the latest events and commit again)";
-    case "empty_module_name":
-      return "a module name is empty";
-    case "duplicate_module_name":
-      return `the module name '${String(rejection.payload)}' is duplicated`;
-    case "module_in_other_project":
-      return `the module '${String(rejection.payload)}' belongs to another project`;
-    case "empty_part_name":
-      return "a part name is empty";
-    case "duplicate_part_name":
-      return `the part name '${String(rejection.payload)}' is duplicated`;
-  }
-  return `rejected: ${rejection.tag}`;
 }
 
 /** CBOR から読んだ値を `core.value` の値にする (`core.value-conforms` に渡す) */

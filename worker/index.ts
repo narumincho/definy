@@ -1,9 +1,5 @@
-import {
-  InvalidSignedEventError,
-  sha256EventHashId,
-  verifySignedEvent,
-} from "./cbor.ts";
-import { checkSubmittedEvent } from "./event_check.ts";
+import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
+import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   checkSubmittedProjectCommit,
@@ -322,21 +318,11 @@ async function handleRpc(
           contentsInOrder(hashes, await store.getContentItems(hashes, env)),
         readMissingContentHashes: (hashes) =>
           store.checkMissingHashes(hashes, env),
-        verifySignedEvent: async (signedEventBytes) => {
-          try {
-            const bytes = base64ToBytes(signedEventBytes);
-            const meta = await verifySignedEvent(bytes);
-            return {
-              eventHash: await sha256EventHashId(bytes),
-              referencedContentHashes: meta.referencedContentHashes,
-            };
-          } catch (e) {
-            return { invalid: e instanceof Error ? e.message : String(e) };
-          }
-        },
-        // イベントを受け付ける規則 (definy 製の core.check-event) と型チェッカー
-        checkEventRules: (signedEventBytes) =>
-          checkSubmittedEvent(signedEventBytes, store, env),
+        readAccountCreated: (accountId) =>
+          isAccountCreated(accountId, store, env),
+        // 署名と中身の形を確かめる. 規則 (core.check-event) は definy.submit-event の中で呼ぶ
+        verifySignedEvent: verifySubmittedEvent,
+        // 型チェッカー
         typeCheckCommit: (signedEventBytes) =>
           checkSubmittedProjectCommit(signedEventBytes, store, env),
         writeEvent: async (signedEventBytes) =>

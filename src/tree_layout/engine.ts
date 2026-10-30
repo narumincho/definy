@@ -50,7 +50,10 @@ function layoutRecursive(
   depth: number,
 ): LayoutNode {
   const labelWidth =
-    estimateTextWidth(node.label, options.charWidth) +
+    estimateTextWidth(
+      node.hint === undefined ? node.label : `${node.label} ${node.hint}`,
+      options.charWidth,
+    ) +
     options.chipPaddingX * 2.0;
 
   if (node.children.length === 0) {
@@ -217,6 +220,7 @@ function sameNodeFields(a: LayoutNode, b: LayoutNode): boolean {
   return (
     a.id === b.id &&
     a.label === b.label &&
+    a.hint === b.hint &&
     a.kind === b.kind &&
     a.layoutMode === b.layoutMode &&
     a.computedWidth === b.computedWidth &&
