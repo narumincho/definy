@@ -75,6 +75,14 @@ import {
 const NO_EXPECTED_VARIANTS = expectedVariantsFromTypeAst(null);
 import { type DefinyValue } from "../stage1_compiler.ts";
 import { callParameterNamesOf } from "./part_type.ts";
+import {
+  inferredTypeExpression,
+  inferTypeArguments,
+  INFERRED_TYPE_ARGUMENT,
+  typeArgumentHoles,
+  typeAstText,
+} from "./type_argument_inference.ts";
+import { updateExpressionAtPath } from "./path.ts";
 import { isVariant } from "../definy_value.ts";
 
 /** 式にマウスを置いてからホバーの表示を出すまでの時間 */
@@ -173,6 +181,30 @@ export function ExpressionTreeEditor({
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  // 未入力の型引数の推論した型 (値のパス → core.type-ast). 式が変わったら推論し直す (下の useEffect)
+  const [inferredTypeArguments, setInferredTypeArguments] = useState<{
+    readonly expression: unknown;
+    readonly types: ReadonlyMap<string, DefinyValue>;
+  } | null>(null);
+  const currentInferredTypeArguments = useMemo(
+    () =>
+      inferredTypeArguments !== null &&
+      inferredTypeArguments.expression === expression
+        ? inferredTypeArguments.types
+        : new Map<string, DefinyValue>(),
+    [inferredTypeArguments, expression],
+  );
+  const holeHints = useMemo(
+    () =>
+      new Map(
+        [...currentInferredTypeArguments].map(([path, type]) => [
+          path,
+          typeAstText(type, partNames),
+        ]),
+      ),
+    [currentInferredTypeArguments, partNames],
+  );
+
   // 呼び出しの引数はデータ上の順番によらず, 呼び出すパーツの引数の宣言の順に表示する
   const callParameterNames = useMemo(
     () => callParameterNamesOf(partsByIdHash),
@@ -185,6 +217,7 @@ export function ExpressionTreeEditor({
     const rawTree = expressionToLayoutNode(expression, "root", {
       partNames,
       callParameterNames,
+      holeHints,
     });
     const root = reuseUnchangedNodes(
       previousLayoutRoot.current,
@@ -192,7 +225,7 @@ export function ExpressionTreeEditor({
     );
     previousLayoutRoot.current = root;
     return root;
-  }, [expression, partNames, callParameterNames, maxWidth]);
+  }, [expression, partNames, callParameterNames, holeHints, maxWidth]);
 
   // 関数の引数の型. 関数型の変数を置換メニューで選んだときに, その引数名で呼び出しにする
   const parameterTypes = useMemo(
@@ -219,6 +252,59 @@ export function ExpressionTreeEditor({
 
   // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
   const nodeIndex = useMemo(() => collectNodeIndex(layoutRoot), [layoutRoot]);
+
+  // 未入力の型引数を, ほかの引数の推論された型から推論する (docs/type-arguments.md「エディタ」).
+  // 編集が少し止まってから型チェッカーに聞く
+  useEffect(() => {
+    if (mode === "type" || partType == null) {
+      return;
+    }
+    // 調べる位置は式の全ノードのパス (推論した型を枠に出すとツリーが変わるので, 表示中のツリーは使わない)
+    const holes = typeArgumentHoles(
+      expression,
+      collectNodeIndex(expressionToLayoutNode(expression)).map(
+        (entry) => entry.path,
+      ),
+      (id) => partsByIdHash.get(id)?.partType,
+    );
+    if (holes.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      inferTypeArguments(
+        expression,
+        holes,
+        async (probed, path) => {
+          const type = await findExpressionTypeAt(
+            findExpectedType,
+            partType,
+            probed,
+            path,
+          );
+          return type?.kind === "inferred" ? type.type : null;
+        },
+        (path) =>
+          findExpectedType({
+            partType,
+            expression: probeExpressionAt(expression, path),
+          }),
+      ).then(
+        (types) => {
+          if (!cancelled) {
+            setInferredTypeArguments({ expression, types });
+          }
+        },
+        (e: unknown) => {
+          console.error("failed to infer the type arguments", e);
+        },
+      );
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [expression, mode, partType, partsByIdHash, findExpectedType]);
 
   const toggleCollapse = useCallback((id: string) => {
     setCollapsedIds((prev) => {
@@ -324,6 +410,7 @@ export function ExpressionTreeEditor({
     expectedVariants,
     setSelectedPath,
     setInlineEdit,
+    inferredTypeArguments: holeHints,
   });
 
   const hoverTarget = useMemo(
@@ -719,6 +806,24 @@ export function ExpressionTreeEditor({
         }
         return;
       }
+      // 推論した型引数で確定する
+      if (optionValue === INFERRED_TYPE_ARGUMENT) {
+        const type = currentInferredTypeArguments.get(
+          pathToString(selectedPath),
+        );
+        if (type !== undefined) {
+          onChange(
+            updateExpressionAtPath(expression, selectedPath, () =>
+              inferredTypeExpression(
+                type,
+                findExpressionNode(layoutRoot, selectedPath)?.scopeVariables,
+              ),
+            ),
+          );
+        }
+        keyboard.returnToTree();
+        return;
+      }
       if (isListAction(optionValue) || isLetAction(optionValue)) {
         const result = isListAction(optionValue)
           ? applyListAction(expression, selectedPath, optionValue)
@@ -767,9 +872,11 @@ export function ExpressionTreeEditor({
     },
     [
       clipboardTextAt,
+      currentInferredTypeArguments,
       cutAt,
       expression,
       goToDefinition,
+      layoutRoot,
       keyboard,
       menu.currentOptionValue,
       onChange,

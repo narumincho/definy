@@ -6,17 +6,24 @@ import {
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 import { navKeyFromEvent, type NavKey } from "./keyboard.ts";
-import { nextRow, type DefinitionRow } from "./definition_rows.ts";
+import {
+  definitionRowsOf,
+  nextRow,
+  type DefinitionRow,
+  type DefinitionView,
+} from "./definition_rows.ts";
 import {
   expressionToPartType,
   partTypeToExpression,
   syncPartTypeParameterNames,
 } from "./part_type.ts";
+import { partDefinitionType } from "../part_definition.ts";
 
 /** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
 const INNER_TREE_IDS = {
   type: "part-def-type-tree",
   value: "part-def-value-tree",
+  definition: "part-def-definition-tree",
 } as const;
 
 function rowElementId(row: DefinitionRow): string {
@@ -44,8 +51,20 @@ export type PartDefinitionTreeProps = {
   ) => void;
   /** 型を変えたとき. `null` は型指定なし */
   readonly onPartTypeChange?: (partType: unknown) => void;
-  /** 式の型エラー. エラーのある式の横に警告を出す */
+  /** 式の型エラー (定義の式で表示しているときは定義の式の型エラー). エラーのある式の横に警告を出す */
   readonly typeError?: ExpressionTypeError | null;
+  /** 項目ごと (説明・型・式) に表示するか, 定義の式で表示するか (docs/part-definition.md). 省くと項目ごと */
+  readonly view?: DefinitionView;
+  readonly onViewChange?: (view: DefinitionView) => void;
+  /** パーツの定義の式 (評価すると `core.part-content` になる式) */
+  readonly definition?: unknown;
+  /** 定義の式を変えたとき. `mergeKey` は `onExpressionChange` と同じ */
+  readonly onDefinitionChange?: (
+    definition: unknown,
+    mergeKey?: string,
+  ) => void;
+  /** 定義の式の評価についての注意 (評価できない, など). 定義の式の行の下に出す */
+  readonly definitionNotice?: string | null;
 };
 
 export function PartDefinitionTree({
@@ -60,6 +79,11 @@ export function PartDefinitionTree({
   onExpressionChange,
   onPartTypeChange,
   typeError = null,
+  view = "fields",
+  onViewChange,
+  definition,
+  onDefinitionChange,
+  definitionNotice = null,
 }: PartDefinitionTreeProps): JSX.Element {
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
@@ -69,6 +93,8 @@ export function PartDefinitionTree({
     () => partTypeToExpression(partType),
     [partType],
   );
+  const rows = definitionRowsOf(view);
+  const definitionPartType = useMemo(() => partDefinitionType(), []);
 
   function selectRow(row: DefinitionRow): void {
     setSelectedRow(row);
@@ -85,7 +111,9 @@ export function PartDefinitionTree({
 
   /** 型・式のツリーへフォーカスを移す (ツリー側でルートが選ばれる) */
   function enterInnerTree(row: DefinitionRow): boolean {
-    if (row !== "type" && row !== "value") return false;
+    if (row !== "type" && row !== "value" && row !== "definition") {
+      return false;
+    }
     const treeId = INNER_TREE_IDS[row];
     document.getElementById(treeId)?.focus();
     return true;
@@ -136,7 +164,7 @@ export function PartDefinitionTree({
     ) {
       return;
     }
-    const next = nextRow(selectedRow, navKey);
+    const next = nextRow(selectedRow, navKey, rows);
     if (next !== null) {
       selectRow(next);
     }
@@ -146,7 +174,7 @@ export function PartDefinitionTree({
   function exitInnerTree(row: DefinitionRow): (key: NavKey) => void {
     return (key) => {
       returnToRow(
-        key === "up" || key === "down" ? (nextRow(row, key) ?? row) : row,
+        key === "up" || key === "down" ? (nextRow(row, key, rows) ?? row) : row,
       );
     };
   }
@@ -209,6 +237,46 @@ export function PartDefinitionTree({
             {name}
           </span>
         )}
+        {onViewChange !== undefined && (
+          <div
+            className="def-view-switch"
+            role="radiogroup"
+            aria-label={label(language, "Show as", "表示", "Montri kiel")}
+          >
+            {(
+              [
+                ["fields", label(language, "Fields", "項目ごと", "Kampoj")],
+                [
+                  "definition",
+                  label(
+                    language,
+                    "Definition expression",
+                    "定義の式",
+                    "Difina esprimo",
+                  ),
+                ],
+              ] as const
+            ).map(([value, text]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={view === value}
+                className="def-view-switch-button"
+                data-view={value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (view !== value) {
+                    setSelectedRow(null);
+                    onViewChange(value);
+                  }
+                }}
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 2. Indented Children Rows */}
@@ -237,136 +305,183 @@ export function PartDefinitionTree({
           </span>
         </div>
 
-        {/* Documentation / Description row */}
-        <div
-          className="def-row"
-          id={rowElementId("description")}
-          role="treeitem"
-          data-state={selectedRow === "description" ? "selected" : ""}
-          onClick={() => {
-            setSelectedRow("description");
-          }}
-        >
-          <span className="def-label">doc</span>
-          {editable ? (
-            <textarea
-              className="def-input def-description-input"
-              value={description}
-              onFocus={() => {
+        {view === "definition" && (
+          <div
+            className="def-row def-row-tree"
+            id={rowElementId("definition")}
+            role="treeitem"
+            data-state={selectedRow === "definition" ? "selected" : ""}
+            onClick={() => {
+              setSelectedRow("definition");
+            }}
+          >
+            <span className="def-label">def</span>
+            <div className="def-value">
+              <ExpressionTreeEditor
+                expression={definition}
+                moduleName={moduleName}
+                partType={definitionPartType}
+                {...(onDefinitionChange !== undefined
+                  ? { onChange: onDefinitionChange }
+                  : {})}
+                {...(editable !== undefined ? { editable } : {})}
+                containerId={INNER_TREE_IDS.definition}
+                onExit={exitInnerTree("definition")}
+                typeError={typeError}
+              />
+              {definitionNotice !== null && (
+                <p className="def-notice" role="status">
+                  {definitionNotice}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {view === "fields" && definitionNotice !== null && (
+          <p className="def-notice" role="status">
+            {definitionNotice}
+          </p>
+        )}
+
+        {view === "fields" && (
+          <>
+            {/* Documentation / Description row */}
+            <div
+              className="def-row"
+              id={rowElementId("description")}
+              role="treeitem"
+              data-state={selectedRow === "description" ? "selected" : ""}
+              onClick={() => {
                 setSelectedRow("description");
               }}
-              placeholder={label(
-                language,
-                "Description for this part...",
-                "このパーツの説明...",
-                "Priskribo de la parto...",
+            >
+              <span className="def-label">doc</span>
+              {editable ? (
+                <textarea
+                  className="def-input def-description-input"
+                  value={description}
+                  onFocus={() => {
+                    setSelectedRow("description");
+                  }}
+                  placeholder={label(
+                    language,
+                    "Description for this part...",
+                    "このパーツの説明...",
+                    "Priskribo de la parto...",
+                  )}
+                  rows={1}
+                  onChange={(e) => {
+                    onDescriptionChange?.(e.target.value);
+                  }}
+                />
+              ) : (
+                <span className="def-value" style={{ paddingTop: "0.25rem" }}>
+                  {description ||
+                    label(
+                      language,
+                      "(No description)",
+                      "(説明なし)",
+                      "(Neniu priskribo)",
+                    )}
+                </span>
               )}
-              rows={1}
-              onChange={(e) => {
-                onDescriptionChange?.(e.target.value);
-              }}
-            />
-          ) : (
-            <span className="def-value" style={{ paddingTop: "0.25rem" }}>
-              {description ||
-                label(
-                  language,
-                  "(No description)",
-                  "(説明なし)",
-                  "(Neniu priskribo)",
-                )}
-            </span>
-          )}
-        </div>
+            </div>
 
-        {/* Type row */}
-        <div
-          className="def-row def-row-tree"
-          id={rowElementId("type")}
-          role="treeitem"
-          data-state={selectedRow === "type" ? "selected" : ""}
-          onClick={() => {
-            setSelectedRow("type");
-          }}
-        >
-          <span className="def-label">type</span>
-          <div className="def-value">
-            <ExpressionTreeEditor
-              mode="type"
-              expression={typeExpression}
-              moduleName={moduleName}
-              {...(onPartTypeChange
-                ? {
-                    onChange: (next) => {
-                      onPartTypeChange(expressionToPartType(next));
-                    },
-                  }
-                : {})}
-              {...(editable !== undefined ? { editable } : {})}
-              containerId={INNER_TREE_IDS.type}
-              onExit={exitInnerTree("type")}
-            />
-          </div>
-          {editable && onPartTypeChange && partType != null && (
-            <button
-              type="button"
-              className="def-row-action"
-              title={label(
-                language,
-                "Clear (no type)",
-                "型指定をなくす",
-                "Forigi tipon",
-              )}
-              aria-label={label(
-                language,
-                "Clear (no type)",
-                "型指定をなくす",
-                "Forigi tipon",
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPartTypeChange(null);
+            {/* Type row */}
+            <div
+              className="def-row def-row-tree"
+              id={rowElementId("type")}
+              role="treeitem"
+              data-state={selectedRow === "type" ? "selected" : ""}
+              onClick={() => {
+                setSelectedRow("type");
               }}
             >
-              ×
-            </button>
-          )}
-        </div>
+              <span className="def-label">type</span>
+              <div className="def-value">
+                <ExpressionTreeEditor
+                  mode="type"
+                  expression={typeExpression}
+                  moduleName={moduleName}
+                  {...(onPartTypeChange
+                    ? {
+                        onChange: (next) => {
+                          onPartTypeChange(expressionToPartType(next));
+                        },
+                      }
+                    : {})}
+                  {...(editable !== undefined ? { editable } : {})}
+                  containerId={INNER_TREE_IDS.type}
+                  onExit={exitInnerTree("type")}
+                />
+              </div>
+              {editable && onPartTypeChange && partType != null && (
+                <button
+                  type="button"
+                  className="def-row-action"
+                  title={label(
+                    language,
+                    "Clear (no type)",
+                    "型指定をなくす",
+                    "Forigi tipon",
+                  )}
+                  aria-label={label(
+                    language,
+                    "Clear (no type)",
+                    "型指定をなくす",
+                    "Forigi tipon",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPartTypeChange(null);
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
 
-        {/* Value (Expression Tree) row */}
-        <div
-          className="def-row def-row-tree"
-          id={rowElementId("value")}
-          role="treeitem"
-          data-state={selectedRow === "value" ? "selected" : ""}
-          onClick={() => {
-            setSelectedRow("value");
-          }}
-        >
-          <span className="def-label">value</span>
-          <div className="def-value">
-            <ExpressionTreeEditor
-              expression={expression}
-              moduleName={moduleName}
-              {...(partType !== undefined ? { partType } : {})}
-              {...(onExpressionChange !== undefined
-                ? {
-                    onChange: (next: unknown, mergeKey?: string) => {
-                      onExpressionChange(
-                        next,
-                        syncPartTypeParameterNames(partType, expression, next),
-                        mergeKey,
-                      );
-                    },
-                  }
-                : {})}
-              {...(editable !== undefined ? { editable } : {})}
-              containerId={INNER_TREE_IDS.value}
-              onExit={exitInnerTree("value")}
-              typeError={typeError}
-            />
-          </div>
-        </div>
+            {/* Value (Expression Tree) row */}
+            <div
+              className="def-row def-row-tree"
+              id={rowElementId("value")}
+              role="treeitem"
+              data-state={selectedRow === "value" ? "selected" : ""}
+              onClick={() => {
+                setSelectedRow("value");
+              }}
+            >
+              <span className="def-label">value</span>
+              <div className="def-value">
+                <ExpressionTreeEditor
+                  expression={expression}
+                  moduleName={moduleName}
+                  {...(partType !== undefined ? { partType } : {})}
+                  {...(onExpressionChange !== undefined
+                    ? {
+                        onChange: (next: unknown, mergeKey?: string) => {
+                          onExpressionChange(
+                            next,
+                            syncPartTypeParameterNames(
+                              partType,
+                              expression,
+                              next,
+                            ),
+                            mergeKey,
+                          );
+                        },
+                      }
+                    : {})}
+                  {...(editable !== undefined ? { editable } : {})}
+                  containerId={INNER_TREE_IDS.value}
+                  onExit={exitInnerTree("value")}
+                  typeError={typeError}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

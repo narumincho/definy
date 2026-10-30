@@ -13,6 +13,10 @@ import {
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
+import {
+  deriveModuleIdBytesSync,
+  deriveModulePartIdSync,
+} from "../src/cbor.ts";
 
 /** イベントを `SubmitEvent` で出す. プロジェクトのコミットなら先にパーツの中身を `UploadContent` で送る */
 async function submitEvent(
@@ -432,6 +436,169 @@ test.describe("definy UI E2E", () => {
       page
         .locator(".part-card", { hasText: "secret" })
         .locator(".private-badge"),
+    ).toBeVisible();
+  });
+
+  test("edits the definition expression of a part with a user-made definition part and commits it", async ({
+    page,
+    request,
+  }) => {
+    const suffix = Date.now().toString().slice(-6);
+    const credentials = await generateAccountCredentials(`def_${suffix}`);
+    const submit = async (
+      signed: SignedEventResult | SignedProjectCommitResult,
+    ): Promise<void> => {
+      const res = await submitEvent(request, signed);
+      expect(res.ok(), await res.text()).toBe(true);
+    };
+    await submit(await createSignedAccountEvent(credentials));
+    const moduleName = `def_${suffix}`;
+    const core = deriveModuleIdBytesSync("core");
+    const tagged = (tag: string, payload?: unknown, typePart?: string) => ({
+      "#variant": {
+        tag,
+        payload:
+          payload === undefined ? { "#none": null } : { "#some": payload },
+        type_part:
+          typePart === undefined ? { "#none": null } : { "#some": typePart },
+      },
+    });
+    // define-number(value) = core.define-part(description: [], visibility: public,
+    //   part_type: some(quote(number).expression), expression: some(number(value)))
+    await submit(
+      await createSignedSingleModuleCommitEvent({
+        credentials,
+        moduleName,
+        moduleDescription: [],
+        message: "Create",
+        parts: [
+          {
+            name: "define-number",
+            description: [],
+            partType: {
+              "#function": {
+                parameters: [{ name: "value", type: { "#number": null } }],
+                return_type: {
+                  "#reference": {
+                    part_hash: deriveModulePartIdSync(core, "part-content"),
+                  },
+                },
+              },
+            },
+            expression: {
+              "#function": {
+                parameters: [{ parameter_id: 0, parameter_name: "value" }],
+                body: {
+                  "#call": {
+                    function: {
+                      "#part_reference": {
+                        part_definition_event_hash: deriveModulePartIdSync(
+                          core,
+                          "define-part",
+                        ),
+                      },
+                    },
+                    arguments: [
+                      { name: "description", value: { "#list": [] } },
+                      { name: "visibility", value: tagged("public") },
+                      {
+                        name: "part_type",
+                        value: tagged("some", {
+                          "#record_get": {
+                            record: { "#quote": { "#type_number": null } },
+                            key: "expression",
+                          },
+                        }),
+                      },
+                      {
+                        name: "expression",
+                        value: tagged(
+                          "some",
+                          tagged(
+                            "number",
+                            { "#variable": { variable_id: 0 } },
+                            deriveModulePartIdSync(core, "expression"),
+                          ),
+                        ),
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          {
+            name: "answer",
+            description: [],
+            partType: { "#number": null },
+            expression: { "#number": 1 },
+          },
+        ],
+      }),
+    );
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, credentials);
+
+    // 定義の式で表示すると core.define-part(...) の呼び出しになっている
+    await page.goto(`/part/${moduleName}.answer`);
+    await page
+      .locator(".def-view-switch-button[data-view=definition]")
+      .click({ timeout: 15000 });
+    const definitionTree = page.locator("#part-def-definition-tree");
+    const definePart = definitionTree.locator(".tree-badge", {
+      hasText: /^core\.define-part$/,
+    });
+    await expect(definePart).toBeVisible();
+
+    // 定義のパーツを自分で作った define-number に置き換えて, value: に 42 を書く
+    await definePart.click();
+    await page.locator(".dropdown-search-input").fill("define-number");
+    await page
+      .locator(".dropdown-option", { hasText: `${moduleName}.define-number` })
+      .first()
+      .click();
+    await definitionTree.locator(".tree-badge", { hasText: /^□$/ }).click();
+    await page.locator(".dropdown-search-input").fill("number");
+    await page
+      .locator(".dropdown-option", { hasText: /^number\s*0/ })
+      .first()
+      .click();
+    await definitionTree.locator(".tree-badge", { hasText: /^0$/ }).click();
+    await definitionTree
+      .locator(".tree-badge input[type=number]")
+      .pressSequentially("42");
+    await page.keyboard.press("Escape");
+
+    // definy 製の評価器で評価した中身が, 項目ごとの表示の型と式になる
+    await page.locator(".def-view-switch-button[data-view=fields]").click();
+    await expect(page.locator(".def-notice")).toBeVisible();
+    await expect(
+      page.locator("#part-def-value-tree .tree-badge", { hasText: /^42$/ }),
+    ).toBeVisible({ timeout: 15000 });
+
+    // コミットすると定義の式のまま預けられ, 読み直すと定義の式で表示する
+    await page.goto("/parts?changes=only");
+    await page.locator("#commit-message-input").fill("Use define-number");
+    await page
+      .locator("button[type='submit']", { hasText: /Sign & Commit/ })
+      .click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.goto(`/part/${moduleName}.answer`);
+    await expect(
+      page.locator(".def-view-switch-button[data-view=definition]"),
+    ).toHaveAttribute("aria-checked", "true", { timeout: 15000 });
+    await expect(
+      page.locator("#part-def-definition-tree .tree-badge", {
+        hasText: `${moduleName}.define-number`,
+      }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.locator("#part-def-definition-tree .tree-badge", {
+        hasText: /^42$/,
+      }),
     ).toBeVisible();
   });
 
@@ -995,6 +1162,39 @@ test.describe("definy UI E2E", () => {
     await expect(
       valueTree.locator(".tree-badge", { hasText: /^item:$/ }),
     ).toHaveCount(3);
+  });
+
+  test("expression tree editor shows the inferred type argument in an empty slot and fixes it with Enter", async ({
+    page,
+  }) => {
+    await page.goto("/part/core.list-map");
+    const valueTree = page.locator("#part-def-value-tree");
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // core.list-map-inner(T: T, ...) の型引数 T を消して未入力にする
+    const typeArgument = valueTree
+      .locator(".tree-capsule", {
+        has: page.locator(".tree-badge", { hasText: /^T:$/ }),
+      })
+      .last()
+      .locator(".tree-badge", { hasText: /^T$/ });
+    await typeArgument.click();
+    await page.locator(".dropdown-search-input").fill("");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Escape");
+    // xs: List<T> の xs の型から T と推論して, 未入力の枠に薄く出す
+    const hint = valueTree.locator(".tree-hole-hint", { hasText: /^T$/ });
+    await expect(hint).toBeVisible({ timeout: 15000 });
+
+    // 置換メニューの先頭が推論した型で, そのまま Enter で確定する
+    await hint.click();
+    await expect(page.locator(".dropdown-option").first()).toContainText(
+      "inferred",
+    );
+    await page.keyboard.press("Enter");
+    await expect(hint).toHaveCount(0);
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(0);
   });
 
   test("selecting a part at a function-typed argument wraps it in a lambda", async ({
