@@ -19,9 +19,9 @@ import {
   variableExpression,
 } from "./expression.ts";
 import {
-  expressionToPartType,
-  partTypeToExpression,
-} from "../part_type_expression.ts";
+  expressionToTypeAst,
+  typeAstToExpression,
+} from "../type_ast_expression.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import { pathToString, type PathStep } from "./types.ts";
 import type { SelectorOption } from "./selector_options.ts";
@@ -46,13 +46,11 @@ export type TypeArgumentHole = {
 type FunctionParameter = { readonly name: string; readonly type: unknown };
 
 /**
- * パーツの型を型チェッカーの形 (`core.type-ast`) にそろえる. 型の式 (`type_function` など) でも受け取る
+ * パーツの型 (型の式) を型チェッカーの形 (`core.type-ast`) にする
  * (推論した型は型チェッカーが返す `core.type-ast` なので, 照らし合わせる側もそろえる)
  */
 function toTypeAst(partType: unknown): unknown {
-  return variantOf(partType)?.tag.startsWith("type_") === true
-    ? expressionToPartType(partType)
-    : partType;
+  return expressionToTypeAst(partType);
 }
 
 function functionParametersOf(
@@ -362,5 +360,5 @@ export function inferredTypeExpression(
     }
     return expression;
   };
-  return replace(partTypeToExpression(type));
+  return replace(typeAstToExpression(type));
 }

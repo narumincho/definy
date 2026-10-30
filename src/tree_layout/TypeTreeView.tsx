@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type JSX } from "react";
 import { computeLayout, expressionToLayoutNode } from "./engine.ts";
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
-import { partTypeToExpression } from "./part_type.ts";
+import { typeAstToExpression } from "./part_type.ts";
 import { useDefiny } from "../state.tsx";
 
 export type TypeTreeViewProps = {
@@ -27,7 +27,7 @@ export function TypeTreeView({
     () =>
       computeLayout(
         // 式のツリーと data-node-id が重ならないよう, ID の先頭を変える
-        expressionToLayoutNode(partTypeToExpression(type), "type-view", {
+        expressionToLayoutNode(typeAstToExpression(type), "type-view", {
           partNames,
         }),
         { maxWidth },

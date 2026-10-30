@@ -20,7 +20,7 @@ describe("working_changes_storage", () => {
             partDefinitionEventHash: "part-hash",
             name: "test",
             description: [{ language: "en", text: "Test description" }],
-            partType: { "#number": null },
+            partType: { "#type_number": null },
             expression: {
               "#call": {
                 function: {
@@ -54,7 +54,7 @@ describe("working_changes_storage", () => {
               partDefinitionEventHash: "part-hash",
               name: "calc",
               description: [{ language: "en", text: "Calc part" }],
-              partType: { "#number": null },
+              partType: { "#type_number": null },
               expression: {
                 "#part_reference": { part_definition_event_hash: partId },
               },
@@ -86,7 +86,7 @@ describe("working_changes_storage", () => {
 
     const decodedCommit = extractProjectCommit(signedEventBytes)?.modules[0];
     expect(withCachedContents(decodedCommit?.parts ?? [])[0]).toMatchObject({
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: {
         "#part_reference": { part_definition_event_hash: partId },
       },

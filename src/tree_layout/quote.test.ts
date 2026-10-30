@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { applySelection } from "./mutation.ts";
-import { expressionToPartType, partTypeToExpression } from "./part_type.ts";
+import { expressionToTypeAst, typeAstToExpression } from "./part_type.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
 
@@ -41,13 +41,13 @@ describe("quote 式と Code<T> 型のツリーエディタ", () => {
     const partType = {
       "#code": { "#list": { item_type: { "#number": null } } },
     };
-    const expression = partTypeToExpression(partType);
+    const expression = typeAstToExpression(partType);
     expect(expression).toEqual({
       "#type_code": {
         value_type: { "#type_list": { item_type: { "#type_number": null } } },
       },
     });
-    expect(expressionToPartType(expression)).toEqual(partType);
+    expect(expressionToTypeAst(expression)).toEqual(partType);
     expect(getOptionValueForExpression(expression)).toBe("expr:type:code");
   });
 });
@@ -78,10 +78,10 @@ describe("シークレットリテラルのツリーエディタ", () => {
   });
 
   it("Secret 型は type_secret の式と往復する", () => {
-    expect(partTypeToExpression({ "#secret": null })).toEqual({
+    expect(typeAstToExpression({ "#secret": null })).toEqual({
       "#type_secret": null,
     });
-    expect(expressionToPartType({ "#type_secret": null })).toEqual({
+    expect(expressionToTypeAst({ "#type_secret": null })).toEqual({
       "#secret": null,
     });
   });

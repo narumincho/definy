@@ -170,9 +170,9 @@ describe("self-hosted type check (stage1)", () => {
         {
           expression,
           partType: {
-            "#function": {
-              parameters: [{ name: "n", type: { "#number": null } }],
-              return_type: { "#number": null },
+            "#type_function": {
+              parameters: [{ name: "n", type: { "#type_number": null } }],
+              return_type: { "#type_number": null },
             },
           },
         },
@@ -203,7 +203,7 @@ describe("self-hosted type check (stage1)", () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const numberPart = (expression: unknown): PartToCheck => ({
       expression,
-      partType: { "#number": null },
+      partType: { "#type_number": null },
     });
     const outcomes = checkParts({
       typeChecker,
@@ -225,9 +225,12 @@ describe("self-hosted type check (stage1)", () => {
         // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める. 範囲外があるので option を返す
         {
           partType: {
-            "#union": [
+            "#type_union": [
               { tag: "none", payload_type: { "#none": null } },
-              { tag: "some", payload_type: { "#some": { "#number": null } } },
+              {
+                tag: "some",
+                payload_type: { "#some": { "#type_number": null } },
+              },
             ],
           },
           expression: await coreCall("list-get", {
@@ -256,12 +259,12 @@ describe("self-hosted type check (stage1)", () => {
   it("呼び出しの引数とラムダ式の引数は名前で対応させ, 順番は自由", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const functionType = {
-      "#function": {
+      "#type_function": {
         parameters: [
-          { name: "a", type: { "#number": null } },
-          { name: "b", type: { "#string": null } },
+          { name: "a", type: { "#type_number": null } },
+          { name: "b", type: { "#type_string": null } },
         ],
-        return_type: { "#number": null },
+        return_type: { "#type_number": null },
       },
     };
     const lambda = (names: ReadonlyArray<string>, body: unknown) => ({
@@ -293,7 +296,7 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 宣言と違う順番で引数を渡す
         {
-          partType: { "#boolean": null },
+          partType: { "#type_boolean": null },
           expression: await coreCall("list-contains-string", {
             index: { "#number": 0 },
             target: { "#string": "a" },
@@ -302,7 +305,7 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 足りない引数
         {
-          partType: { "#boolean": null },
+          partType: { "#type_boolean": null },
           expression: await coreCall("list-contains-string", {
             index: { "#number": 0 },
             list: { "#list": [{ "#string": "a" }] },
@@ -328,9 +331,9 @@ describe("self-hosted type check (stage1)", () => {
     const outcomes = checkParts({
       typeChecker,
       parts: [
-        { partType: { "#float": null }, expression: float(15, -1) },
+        { partType: { "#type_float": null }, expression: float(15, -1) },
         {
-          partType: { "#float": null },
+          partType: { "#type_float": null },
           expression: await coreCall("float-plus", {
             left: float(1, -1),
             right: float(2, -1),
@@ -338,19 +341,19 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 整数は浮動小数として使えない
         {
-          partType: { "#float": null },
+          partType: { "#type_float": null },
           expression: await coreCall("float-plus", {
             left: { "#number": 1 },
             right: float(2, -1),
           }),
         },
-        { partType: { "#number": null }, expression: float(1, 0) },
+        { partType: { "#type_number": null }, expression: float(1, 0) },
         {
-          partType: { "#number": null },
+          partType: { "#type_number": null },
           expression: await coreCall("float-floor", { value: float(15, -1) }),
         },
         {
-          partType: { "#boolean": null },
+          partType: { "#type_boolean": null },
           expression: await coreCall("equal", {
             left: float(1, 0),
             right: await coreCall("float-from-integer", {
@@ -373,7 +376,7 @@ describe("self-hosted type check (stage1)", () => {
 
   it("type・Code<T>・型引数の参照も型の式で, 値の位置では型が type", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
-    const typeType = { "#type": null };
+    const typeType = { "#type_type": null };
     const outcomes = checkParts({
       typeChecker,
       parts: [
@@ -389,7 +392,10 @@ describe("self-hosted type check (stage1)", () => {
           partType: typeType,
           expression: { "#type_code": { value_type: { "#number": 1 } } },
         },
-        { partType: { "#number": null }, expression: { "#type_type": null } },
+        {
+          partType: { "#type_number": null },
+          expression: { "#type_type": null },
+        },
       ],
       env,
     });
@@ -404,19 +410,24 @@ describe("self-hosted type check (stage1)", () => {
   it("型引数は普通の引数で, 後ろの引数の型と戻り値の型に入る (Zig / Idris2 と同じ)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const optionId = await deriveModulePartId(coreModuleId, "option");
-    const typeType = { "#type": null };
-    const parameter = (name: string) => ({ "#parameter": name });
+    const typeType = { "#type_type": null };
+    const parameter = (name: string) => ({ "#type_parameter": name });
     const apply = (
       partHash: string,
       args: Readonly<Record<string, unknown>>,
     ) => ({
-      "#apply": {
-        part_hash: partHash,
-        arguments: Object.entries(args).map(([name, type]) => ({ name, type })),
+      "#call": {
+        function: {
+          "#part_reference": { part_definition_event_hash: partHash },
+        },
+        arguments: Object.entries(args).map(([name, value]) => ({
+          name,
+          value,
+        })),
       },
     });
     const listOf = (itemType: unknown) => ({
-      "#list": { item_type: itemType },
+      "#type_list": { item_type: itemType },
     });
     const variantOf = (tag: string, payload?: unknown) => ({
       "#variant": {
@@ -449,7 +460,7 @@ describe("self-hosted type check (stage1)", () => {
       {
         partId: pairId,
         partType: {
-          "#function": {
+          "#type_function": {
             parameters: [
               { name: "A", type: typeType },
               { name: "B", type: typeType },
@@ -475,7 +486,7 @@ describe("self-hosted type check (stage1)", () => {
     ];
     // (T: type, x: T) -> T
     const identityType = {
-      "#function": {
+      "#type_function": {
         parameters: [
           { name: "T", type: typeType },
           { name: "x", type: parameter("T") },
@@ -497,14 +508,14 @@ describe("self-hosted type check (stage1)", () => {
       parts: [
         // list-map(T: number, U: boolean, ...) は List<boolean>
         {
-          partType: listOf({ "#boolean": null }),
+          partType: listOf({ "#type_boolean": null }),
           expression: await mapLessThanTwo(
             { "#type_number": null },
             { "#type_boolean": null },
           ),
         },
         {
-          partType: listOf({ "#number": null }),
+          partType: listOf({ "#type_number": null }),
           expression: await mapLessThanTwo(
             { "#type_number": null },
             { "#type_boolean": null },
@@ -512,7 +523,7 @@ describe("self-hosted type check (stage1)", () => {
         },
         // xs は List<T> なので T: string なら [1, 2] は渡せない
         {
-          partType: listOf({ "#boolean": null }),
+          partType: listOf({ "#type_boolean": null }),
           expression: await mapLessThanTwo(
             { "#type_string": null },
             { "#type_boolean": null },
@@ -520,7 +531,7 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 型引数には型を書く
         {
-          partType: listOf({ "#boolean": null }),
+          partType: listOf({ "#type_boolean": null }),
           expression: await mapLessThanTwo(
             { "#number": 1 },
             { "#type_boolean": null },
@@ -528,15 +539,15 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 型引数を取る型パーツ core.option
         {
-          partType: apply(optionId, { T: { "#number": null } }),
+          partType: apply(optionId, { T: { "#type_number": null } }),
           expression: variantOf("some", { "#number": 1 }),
         },
         {
-          partType: apply(optionId, { T: { "#number": null } }),
+          partType: apply(optionId, { T: { "#type_number": null } }),
           expression: variantOf("none"),
         },
         {
-          partType: apply(optionId, { T: { "#number": null } }),
+          partType: apply(optionId, { T: { "#type_number": null } }),
           expression: variantOf("some", { "#string": "a" }),
         },
         // 型引数を取る関数. 本体では T は T とだけ等しい
@@ -547,7 +558,7 @@ describe("self-hosted type check (stage1)", () => {
         { partType: identityType, expression: identity({ "#number": 1 }) },
         // 型の式の中で型パーツを呼ぶ: List<option(T: number)>
         {
-          partType: { "#type": null },
+          partType: { "#type_type": null },
           expression: {
             "#type_list": {
               item_type: {
@@ -578,9 +589,10 @@ describe("self-hosted type check (stage1)", () => {
     ]);
     expect(outcomes[1]).toMatchObject({
       tag: "type_mismatch",
+      // 型エラーの型は型チェッカーの形 (core.type-ast)
       detail: {
-        expected: listOf({ "#number": null }),
-        actual: listOf({ "#boolean": null }),
+        expected: { "#list": { item_type: { "#number": null } } },
+        actual: { "#list": { item_type: { "#boolean": null } } },
       },
     });
     const pairOutcomes = checkParts({
@@ -588,8 +600,8 @@ describe("self-hosted type check (stage1)", () => {
       parts: [
         {
           partType: apply(pairId, {
-            A: { "#number": null },
-            B: { "#string": null },
+            A: { "#type_number": null },
+            B: { "#type_string": null },
           }),
           expression: {
             "#record": [
@@ -600,8 +612,8 @@ describe("self-hosted type check (stage1)", () => {
         },
         {
           partType: apply(pairId, {
-            B: { "#string": null },
-            A: { "#number": null },
+            B: { "#type_string": null },
+            A: { "#type_number": null },
           }),
           expression: {
             "#record": [
@@ -622,19 +634,19 @@ describe("self-hosted type check (stage1)", () => {
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const mapperType = {
-      "#function": {
+      "#type_function": {
         parameters: [
           {
             name: "f",
             type: {
-              "#function": {
-                parameters: [{ name: "item", type: { "#number": null } }],
-                return_type: { "#number": null },
+              "#type_function": {
+                parameters: [{ name: "item", type: { "#type_number": null } }],
+                return_type: { "#type_number": null },
               },
             },
           },
         ],
-        return_type: { "#list": { item_type: { "#number": null } } },
+        return_type: { "#type_list": { item_type: { "#type_number": null } } },
       },
     };
     const mapWith = async (f: unknown): Promise<PartToCheck> => ({
@@ -677,7 +689,7 @@ describe("self-hosted type check (stage1)", () => {
         }),
         // 関数のパーツを呼ばずに値にする
         {
-          partType: { "#number": null },
+          partType: { "#type_number": null },
           expression: {
             "#let": {
               variable_id: 0,
@@ -707,7 +719,7 @@ describe("self-hosted type check (stage1)", () => {
     const stringMatch = (
       arms: ReadonlyArray<readonly [string, unknown]>,
     ): PartToCheck => ({
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: {
         "#match": {
           target: { "#string": "plus" },
@@ -763,7 +775,7 @@ describe("self-hosted type check (stage1)", () => {
       target: unknown,
       arms: ReadonlyArray<readonly [unknown, unknown]>,
     ): PartToCheck => ({
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: {
         "#match": {
           target,
@@ -832,25 +844,25 @@ describe("self-hosted type check (stage1)", () => {
       ...env,
       {
         partId: "cycleA",
-        partType: { "#type": null },
+        partType: { "#type_type": null },
         typeDeclaration: reference("cycleB"),
         builtin: undefined,
       },
       {
         partId: "cycleB",
-        partType: { "#type": null },
+        partType: { "#type_type": null },
         typeDeclaration: reference("cycleA"),
         builtin: undefined,
       },
       {
         partId: "aliasOfNumber",
-        partType: { "#type": null },
+        partType: { "#type_type": null },
         typeDeclaration: reference("numberType"),
         builtin: undefined,
       },
       {
         partId: "numberType",
-        partType: { "#type": null },
+        partType: { "#type_type": null },
         typeDeclaration: { "#type_number": null },
         builtin: undefined,
       },
@@ -858,14 +870,21 @@ describe("self-hosted type check (stage1)", () => {
     const outcomes = checkParts({
       typeChecker,
       parts: [
-        { partType: { "#type": null }, expression: reference("cycleB") },
+        { partType: { "#type_type": null }, expression: reference("cycleB") },
         {
-          partType: { "#reference": { part_hash: "cycleA" } },
+          partType: {
+            "#part_reference": { part_definition_event_hash: "cycleA" },
+          },
           expression: { "#number": 1 },
         },
-        { partType: { "#type": null }, expression: reference("numberType") },
         {
-          partType: { "#reference": { part_hash: "aliasOfNumber" } },
+          partType: { "#type_type": null },
+          expression: reference("numberType"),
+        },
+        {
+          partType: {
+            "#part_reference": { part_definition_event_hash: "aliasOfNumber" },
+          },
           expression: { "#number": 1 },
         },
       ],
@@ -879,6 +898,94 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("値を作れない型や, 構築子を通って自分を参照する型も書ける (2026-10-30 決定)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+    const variant = (tag: string, payload?: unknown) => ({
+      "#variant": {
+        tag,
+        payload:
+          payload === undefined ? { "#none": null } : { "#some": payload },
+        type_part: { "#some": "nat" },
+      },
+    });
+    // nat = union { zero, suc(nat) } (自然数). stream = { next: stream } は有限の値を作れない
+    const natDeclaration = {
+      "#type_union": [
+        { tag: "zero", payload_type: { "#none": null } },
+        { tag: "suc", payload_type: { "#some": reference("nat") } },
+      ],
+    };
+    const streamDeclaration = {
+      "#type_record": [{ key: "next", value: reference("stream") }],
+    };
+    const recursiveEnv: ReadonlyArray<PartTypeEntry> = [
+      ...env,
+      {
+        partId: "nat",
+        partType: { "#type_type": null },
+        typeDeclaration: natDeclaration,
+        builtin: undefined,
+      },
+      {
+        partId: "stream",
+        partType: { "#type_type": null },
+        typeDeclaration: streamDeclaration,
+        builtin: undefined,
+      },
+      {
+        partId: "two",
+        partType: reference("nat"),
+        builtin: undefined,
+      },
+    ];
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: { "#type_type": null }, expression: natDeclaration },
+        { partType: { "#type_type": null }, expression: streamDeclaration },
+        {
+          partType: reference("nat"),
+          expression: variant("suc", variant("suc", variant("zero"))),
+        },
+        // 型が stream の関数は書ける (呼ぶと値を返さない)
+        {
+          partType: {
+            "#type_function": {
+              parameters: [{ name: "s", type: reference("stream") }],
+              return_type: reference("stream"),
+            },
+          },
+          expression: {
+            "#function": {
+              parameters: [{ parameter_id: 0, parameter_name: "s" }],
+              body: {
+                "#record_get": {
+                  record: { "#variable": { variable_id: 0 } },
+                  key: "next",
+                },
+              },
+            },
+          },
+        },
+        {
+          partType: reference("nat"),
+          expression: variant("suc", { "#number": 1 }),
+        },
+      ],
+      env: recursiveEnv,
+    });
+    expect(outcomes).toMatchObject([
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "ok" },
+      { kind: "type_error" },
+    ]);
+  }, 600_000);
+
   it("quote 式の型は Code<中の式の型> で, 中の式は外の変数を使えない", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);
@@ -887,9 +994,9 @@ describe("self-hosted type check (stage1)", () => {
     )?.id;
     const quote = (expression: unknown): unknown => ({ "#quote": expression });
     const incrementType = {
-      "#function": {
-        parameters: [{ name: "n", type: { "#number": null } }],
-        return_type: { "#number": null },
+      "#type_function": {
+        parameters: [{ name: "n", type: { "#type_number": null } }],
+        return_type: { "#type_number": null },
       },
     };
     const increment = {
@@ -905,18 +1012,23 @@ describe("self-hosted type check (stage1)", () => {
       typeChecker,
       parts: [
         {
-          partType: { "#code": { "#number": null } },
+          partType: { "#type_code": { value_type: { "#type_number": null } } },
           expression: quote({ "#number": 1 }),
         },
         {
-          partType: { "#code": { "#number": null } },
+          partType: { "#type_code": { value_type: { "#type_number": null } } },
           expression: quote({ "#string": "x" }),
         },
-        { partType: { "#code": incrementType }, expression: quote(increment) },
+        {
+          partType: { "#type_code": { value_type: incrementType } },
+          expression: quote(increment),
+        },
         // Code<T> の値は core.code のレコードなので expression を取り出せる
         // (ラムダ式は期待する型が無いと推論できないので, ここでは数の式)
         {
-          partType: { "#reference": { part_hash: coreExpressionId } },
+          partType: {
+            "#part_reference": { part_definition_event_hash: coreExpressionId },
+          },
           expression: {
             "#record_get": {
               record: quote({ "#number": 1 }),
@@ -927,9 +1039,11 @@ describe("self-hosted type check (stage1)", () => {
         // quote の中から外の変数は使えない
         {
           partType: {
-            "#function": {
-              parameters: [{ name: "x", type: { "#number": null } }],
-              return_type: { "#code": { "#number": null } },
+            "#type_function": {
+              parameters: [{ name: "x", type: { "#type_number": null } }],
+              return_type: {
+                "#type_code": { value_type: { "#type_number": null } },
+              },
             },
           },
           expression: {
@@ -941,7 +1055,7 @@ describe("self-hosted type check (stage1)", () => {
         },
         // 期待する型が無い位置 (let) でも推論できる
         {
-          partType: { "#code": { "#string": null } },
+          partType: { "#type_code": { value_type: { "#type_string": null } } },
           expression: {
             "#let": {
               variable_id: 0,
@@ -982,16 +1096,19 @@ describe("self-hosted type check (stage1)", () => {
     const outcomes = checkParts({
       typeChecker,
       parts: [
-        { partType: { "#secret": null }, expression: secret },
+        { partType: { "#type_secret": null }, expression: secret },
         // 文字列として使えない
-        { partType: { "#string": null }, expression: secret },
+        { partType: { "#type_string": null }, expression: secret },
         // 中身 (id) は読めない
         {
-          partType: { "#string": null },
+          partType: { "#type_string": null },
           expression: { "#record_get": { record: secret, key: "id" } },
         },
         // 文字列はシークレットにならない
-        { partType: { "#secret": null }, expression: { "#string": "token" } },
+        {
+          partType: { "#type_secret": null },
+          expression: { "#string": "token" },
+        },
       ],
       env,
     });
@@ -1010,9 +1127,9 @@ describe("self-hosted type check (stage1)", () => {
     const session = createTypeCheckSession({ typeChecker, env });
     const stdAbs = parts.find((part) => part.name === "std.abs");
     const numberFunction = {
-      "#function": {
-        parameters: [{ name: "n", type: { "#number": null } }],
-        return_type: { "#number": null },
+      "#type_function": {
+        parameters: [{ name: "n", type: { "#type_number": null } }],
+        return_type: { "#type_number": null },
       },
     };
     const inBody = (body: unknown): unknown => ({
@@ -1061,7 +1178,7 @@ describe("self-hosted type check (stage1)", () => {
           left: EXPECTED_TYPE_PROBE,
           right: { "#hole": { probe: false } },
         }),
-        { "#string": null },
+        { "#type_string": null },
       ),
     ).toBe("string");
     // 関数の本体はパーツの型の戻り値の型
@@ -1079,7 +1196,7 @@ describe("self-hosted type check (stage1)", () => {
           left: EXPECTED_TYPE_PROBE,
           right: { "#number": 1 },
         }),
-        partType: { "#boolean": null },
+        partType: { "#type_boolean": null },
       }),
     ).toBeNull();
   }, 600_000);
@@ -1090,9 +1207,9 @@ describe("self-hosted type check (stage1)", () => {
     const session = createTypeCheckSession({ typeChecker, env });
     const stdAbs = parts.find((part) => part.name === "std.abs");
     const partType = {
-      "#function": {
-        parameters: [{ name: "n", type: { "#number": null } }],
-        return_type: { "#number": null },
+      "#type_function": {
+        parameters: [{ name: "n", type: { "#type_number": null } }],
+        return_type: { "#type_number": null },
       },
     };
     const absReference = {
@@ -1207,7 +1324,7 @@ describe("self-hosted type check (stage1)", () => {
           },
           right: { "#hole": { probe: false } },
         }),
-        partType: { "#boolean": null },
+        partType: { "#type_boolean": null },
       }),
     ).toMatchObject({ "#union": [{ tag: "some" }] });
     // 型パーツにないタグや合わない値は型エラー
@@ -1217,7 +1334,11 @@ describe("self-hosted type check (stage1)", () => {
         parts: [
           {
             expression,
-            partType: { "#reference": { part_hash: optionNumber?.id } },
+            partType: {
+              "#part_reference": {
+                part_definition_event_hash: optionNumber?.id,
+              },
+            },
           },
         ],
         env,
@@ -1234,7 +1355,7 @@ describe("self-hosted type check (stage1)", () => {
               left: variant("other", null, optionNumber?.id),
               right: variant("none", null, optionNumber?.id),
             }),
-            partType: { "#boolean": null },
+            partType: { "#type_boolean": null },
           },
         ],
         env,
@@ -1249,7 +1370,7 @@ describe("self-hosted type check (stage1)", () => {
               left: variant("some", { "#string": "x" }, optionNumber?.id),
               right: variant("none", null, optionNumber?.id),
             }),
-            partType: { "#boolean": null },
+            partType: { "#type_boolean": null },
           },
         ],
         env,
@@ -1288,14 +1409,18 @@ describe("self-hosted type check (stage1)", () => {
         ["functionBody", { kind: "matchArmPattern", index: 0 }],
       ),
       partType: {
-        "#function": {
+        "#type_function": {
           parameters: [
             {
               name: "e",
-              type: { "#reference": { part_hash: expressionPart?.id } },
+              type: {
+                "#part_reference": {
+                  part_definition_event_hash: expressionPart?.id,
+                },
+              },
             },
           ],
-          return_type: { "#number": null },
+          return_type: { "#type_number": null },
         },
       },
     });

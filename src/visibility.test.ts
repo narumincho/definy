@@ -27,7 +27,7 @@ function committed(
     moduleName,
     visibility: "public",
     moduleVisibility: "public",
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     expression,
     ...overrides,
   };
@@ -153,14 +153,18 @@ describe("checkReferenceVisibility", () => {
             },
             {
               partType: {
-                "#function": {
+                "#type_function": {
                   parameters: [
                     {
                       name: "x",
-                      type: { "#reference": { part_hash: "internal.helper" } },
+                      type: {
+                        "#part_reference": {
+                          part_definition_event_hash: "internal.helper",
+                        },
+                      },
                     },
                   ],
-                  return_type: { "#number": null },
+                  return_type: { "#type_number": null },
                 },
               },
             },
@@ -178,7 +182,7 @@ describe("checkReferenceVisibility", () => {
                 },
               ],
             },
-            { partType: { "#type": null } },
+            { partType: { "#type_type": null } },
           ),
           committed("app", "quoted", {
             "#quote": reference("internal.helper"),

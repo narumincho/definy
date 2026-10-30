@@ -10,6 +10,7 @@ import {
 import { collectNodeIndex } from "./selection.ts";
 import { expressionToLayoutNode } from "./engine.ts";
 import type { PathStep } from "./types.ts";
+import { typeAstToExpression } from "../type_ast_expression.ts";
 
 const T = { "#parameter": "T" };
 const U = { "#parameter": "U" };
@@ -59,7 +60,9 @@ const call = {
 const paths = collectNodeIndex(expressionToLayoutNode(call)).map(
   (entry) => entry.path,
 );
-const partTypeOf = (id: string) => (id === "map" ? listMapType : undefined);
+// パーツの型は型の式で持つ (推論に使う型は型チェッカーの形 core.type-ast にそろえる)
+const partTypeOf = (id: string) =>
+  id === "map" ? typeAstToExpression(listMapType) : undefined;
 const argument = (index: number): ReadonlyArray<PathStep> => [
   { kind: "callArgument", index },
 ];

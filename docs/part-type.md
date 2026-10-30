@@ -10,11 +10,12 @@ definy では「型も式である」という思想に基づき、パーツの�
 
 ## 対応する型と式
 
-パーツの型は型パーツの宣言と同じ型の式 (`core.expression` の `type_*` などの値) で書き, seed と CAS にもその形で置く
-([type-expression.md](type-expression.md))。TypeScript の中 (`partType`) と型チェッカーは `core.type-ast` の値で扱い,
-[src/part_type_expression.ts](../src/part_type_expression.ts) で相互変換する。
+パーツの型は型パーツの宣言と同じ型の式 (`core.expression` の `type_*` などの値) で書き, seed・CAS・TypeScript の中 (`partType`)・
+型チェッカーの入力のどこでもその形で扱う ([type-expression.md](type-expression.md))。型チェッカーは中で `core.type-ast` に変換して比べ,
+返す型 (期待する型・型エラーの型) も `core.type-ast` の値。TypeScript でそれを表示するときは
+[src/type_ast_expression.ts](../src/type_ast_expression.ts) で型の式にする。
 
-| `partType` (`core.type-ast`)                                     | 型の式 (seed, CAS)                                                              | 説明                                                                                       |
+| 型チェッカーの中 (`core.type-ast`)                               | 型の式 (`partType`, seed, CAS)                                                  | 説明                                                                                       |
 | :--------------------------------------------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |
 | `{"#number": null}` / `{"#string": null}` / `{"#boolean": null}` | `{"#type_number": null}` / `{"#type_string": null}` / `{"#type_boolean": null}` | 64 ビット数値型・文字列型・真偽値型                                                        |
 | `{"#secret": null}`                                              | `{"#type_secret": null}`                                                        | シークレット ([secret.md](secret.md))                                                      |
@@ -94,6 +95,19 @@ seed を編集したらこのテストを通すこと.
 型パーツの宣言がそのような循環 (`A = B`, `B = A`) なら, 型チェッカーは `invalid_type_declaration` にする (`core.type-reference-cycle`)。
 以前は循環した型の値を検査すると型チェッカーが展開を繰り返し, 約 9 秒走ってから `unreachable` で落ちていた。
 `core.expression` のように型の構築子を通る再帰はそのまま書ける。
+
+### 値を作れない型と自分を参照する型 (2026-10-30 決定)
+
+型の構築子を通って自分 (や互い) を参照する型は, 値を作れるかどうかによらず書ける。ユーザーが 2026-10-30 に決めた。
+
+```text
+nat = union { zero, suc(nat) }      // 自然数. suc(suc(zero)) のように値を作って使う
+stream = { next: stream }           // 有限の値は作れないが, 型としては書ける (受け取る関数も書ける)
+```
+
+- 型が正しいかだけを見て, 値が作れるか (型が空でないか) は検査しない。Idris2 などの全域性検査はしない
+- 型を `A = B`, `B = A` のように参照だけで回すものは型ではない (中身が決まらない) ので, 引き続き `invalid_type_declaration`
+- `src/self_hosted_type_check.test.ts` の「値を作れない型や, 構築子を通って自分を参照する型も書ける」で確かめている
 
 ### 型検査で見つかった seed の誤り (修正済み)
 

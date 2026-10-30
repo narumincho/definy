@@ -174,15 +174,15 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
     part(
       "define-number",
       {
-        "#function": {
+        "#type_function": {
           parameters: [
             {
               name: "description",
               type: {
-                "#list": {
+                "#type_list": {
                   item_type: {
-                    "#reference": {
-                      part_hash: await deriveModulePartId(
+                    "#part_reference": {
+                      part_definition_event_hash: await deriveModulePartId(
                         await deriveModuleIdBytes("core"),
                         "localized-text",
                       ),
@@ -191,11 +191,11 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
                 },
               },
             },
-            { name: "value", type: { "#number": null } },
+            { name: "value", type: { "#type_number": null } },
           ],
           return_type: {
-            "#reference": {
-              part_hash: await deriveModulePartId(
+            "#part_reference": {
+              part_definition_event_hash: await deriveModulePartId(
                 await deriveModuleIdBytes("core"),
                 "part-content",
               ),
@@ -256,7 +256,7 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
     );
     const double = part(
       "double",
-      { "#number": null },
+      { "#type_number": null },
       await coreCall("plus", {
         left: await partReference("", "app", "answer"),
         right: await partReference("", "app", "answer"),
@@ -274,7 +274,7 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
       await submitCommit(store, env, user, "other", [
         part(
           "half",
-          { "#number": null },
+          { "#type_number": null },
           await coreCall("divide", {
             left: await partReference("", "app", "answer"),
             right: { "#number": 2 },
@@ -287,7 +287,7 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
         await submitCommit(store, env, user, "other2", [
           part(
             "wrong",
-            { "#string": null },
+            { "#type_string": null },
             await partReference("", "app", "answer"),
           ),
         ])
@@ -342,10 +342,10 @@ describe("SubmitEvent の型検査", () => {
       "definy",
     );
     const result = await submitCommit(store, env, user, "app", [
-      part("answer", { "#number": null }, { "#number": 42 }),
+      part("answer", { "#type_number": null }, { "#number": 42 }),
       part(
         "contains",
-        { "#boolean": null },
+        { "#type_boolean": null },
         {
           "#call": {
             function: await partReference(
@@ -374,14 +374,14 @@ describe("SubmitEvent の型検査", () => {
     // lib プロジェクト: 公開の open と非公開の secret. 同じモジュールからは secret を参照できる
     expect(
       await submitCommit(store, env, user, "lib", [
-        part("open", { "#number": null }, { "#number": 1 }),
+        part("open", { "#type_number": null }, { "#number": 1 }),
         {
-          ...part("secret", { "#number": null }, { "#number": 2 }),
+          ...part("secret", { "#type_number": null }, { "#number": 2 }),
           visibility: "private",
         },
         part(
           "uses-secret",
-          { "#number": null },
+          { "#type_number": null },
           await partReference(user.accountId, "lib", "secret"),
         ),
       ]),
@@ -393,7 +393,7 @@ describe("SubmitEvent の型検査", () => {
         env,
         user,
         "hidden",
-        [part("value", { "#number": null }, { "#number": 3 })],
+        [part("value", { "#type_number": null }, { "#number": 3 })],
         "hidden",
         "private",
       ),
@@ -405,7 +405,7 @@ describe("SubmitEvent の型検査", () => {
       await app([
         part(
           "a",
-          { "#number": null },
+          { "#type_number": null },
           await partReference(user.accountId, "lib", "open"),
         ),
       ]),
@@ -413,7 +413,7 @@ describe("SubmitEvent の型検査", () => {
     const privatePart = await app([
       part(
         "a",
-        { "#number": null },
+        { "#type_number": null },
         await partReference(user.accountId, "lib", "secret"),
       ),
     ]);
@@ -424,7 +424,7 @@ describe("SubmitEvent の型検査", () => {
     const privateModule = await app([
       part(
         "a",
-        { "#number": null },
+        { "#type_number": null },
         await partReference(user.accountId, "hidden", "value"),
       ),
     ]);
@@ -436,8 +436,8 @@ describe("SubmitEvent の型検査", () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
     const result = await submitCommit(store, env, user, "app", [
-      part("ok", { "#number": null }, { "#number": 1 }),
-      part("bad", { "#number": null }, { "#string": "not a number" }),
+      part("ok", { "#type_number": null }, { "#number": 1 }),
+      part("bad", { "#type_number": null }, { "#string": "not a number" }),
     ]);
     expect(result.status).toBe(400);
     expect(result.message).toContain(
@@ -459,10 +459,10 @@ describe("SubmitEvent の型検査", () => {
   it("パーツの型を変えると, それを参照する (式を変えていない) パーツも検査する", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
-    const base = part("base", { "#number": null }, { "#number": 1 });
+    const base = part("base", { "#type_number": null }, { "#number": 1 });
     const double = part(
       "double",
-      { "#number": null },
+      { "#type_number": null },
       {
         "#call": {
           function: await resolvePartPlaceholders({
@@ -484,7 +484,7 @@ describe("SubmitEvent の型検査", () => {
       (await submitCommit(store, env, user, "app", [base, double])).status,
     ).toBe(200);
     const result = await submitCommit(store, env, user, "app", [
-      part("base", { "#string": null }, { "#string": "one" }),
+      part("base", { "#type_string": null }, { "#string": "one" }),
       double,
     ]);
     expect(result.status).toBe(400);

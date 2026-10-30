@@ -34,8 +34,8 @@ describe("コンパイラを作り直す", () => {
       checkParts({
         typeChecker,
         parts: [
-          { partType: { "#number": null }, expression: { "#number": 1 } },
-          { partType: { "#string": null }, expression: { "#number": 1 } },
+          { partType: { "#type_number": null }, expression: { "#number": 1 } },
+          { partType: { "#type_string": null }, expression: { "#number": 1 } },
         ],
         env: [],
       }).map((outcome) => outcome.kind),

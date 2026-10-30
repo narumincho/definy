@@ -3,8 +3,7 @@
  * (docs/value-encoding.md).
  *
  * パーツの式と宣言型 (どちらも `core.expression` の値. 型は型の式) はこの形のまま保存し,
- * 式は stage1 や型チェッカーにもそのまま渡す. 宣言型だけは型チェッカーの形 (`core.type-ast`) にして渡す
- * (src/part_type_expression.ts).
+ * stage1 や型チェッカーにもそのまま渡す.
  *
  * - 数値・文字列・真偽値: JSON / CBOR の整数・文字列・真偽値
  * - リスト: 配列

@@ -9,7 +9,7 @@
 core.define-part: (
   description: List<core.localized-text>,
   visibility: core.visibility,
-  part_type: option<core.type-ast>,
+  part_type: option<core.expression>,  // 型の式
   expression: option<core.expression>,
 ) -> core.part-content
   = (description, visibility, part_type, expression) => { description, visibility, part_type, expression }

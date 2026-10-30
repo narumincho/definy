@@ -24,7 +24,7 @@ import {
   variantOf,
   variantPayload,
 } from "./definy_value.ts";
-import { expressionToPartType } from "./tree_layout/part_type.ts";
+import { expressionToTypeAst } from "./tree_layout/part_type.ts";
 import {
   floatExpressionFromNumber,
   partReferenceExpression,
@@ -138,7 +138,7 @@ export function resolveRunValueType(
       if (typeof partId !== "string") {
         return null;
       }
-      current = expressionToPartType(resolvePart(partId));
+      current = expressionToTypeAst(resolvePart(partId));
       continue;
     }
     if (tagged?.tag === "apply") {
@@ -165,7 +165,7 @@ export function resolveRunValueType(
           ) ?? null,
         ]),
       );
-      current = expressionToPartType(
+      current = expressionToTypeAst(
         substituteVariables(field(declaration, "body"), argumentTypes),
       );
       continue;

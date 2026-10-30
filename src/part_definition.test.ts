@@ -58,7 +58,7 @@ describe("パーツの定義の式", () => {
     const typePart: PartContent = {
       description: [{ language: "ja", text: "色" }],
       visibility: "private",
-      partType: { "#type": null },
+      partType: { "#type_type": null },
       expression: {
         "#type_union": [
           { tag: "red", payload_type: { "#none": null } },
@@ -69,7 +69,7 @@ describe("パーツの定義の式", () => {
     const valuePart: PartContent = {
       description: [],
       visibility: "public",
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: { "#number": 42 },
     };
     const emptyPart: PartContent = {

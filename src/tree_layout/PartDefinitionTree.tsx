@@ -12,11 +12,8 @@ import {
   type DefinitionRow,
   type DefinitionView,
 } from "./definition_rows.ts";
-import {
-  expressionToPartType,
-  partTypeToExpression,
-  syncPartTypeParameterNames,
-} from "./part_type.ts";
+import { syncPartTypeParameterNames } from "./part_type.ts";
+import { isVariant } from "../definy_value.ts";
 import { partDefinitionType } from "../part_definition.ts";
 
 /** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
@@ -88,11 +85,6 @@ export function PartDefinitionTree({
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
-  // 型は型の式にして式のツリーエディタで編集する (part_type.ts)
-  const typeExpression = useMemo(
-    () => partTypeToExpression(partType),
-    [partType],
-  );
   const rows = definitionRowsOf(view);
   const definitionPartType = useMemo(() => partDefinitionType(), []);
 
@@ -402,12 +394,15 @@ export function PartDefinitionTree({
               <div className="def-value">
                 <ExpressionTreeEditor
                   mode="type"
-                  expression={typeExpression}
+                  expression={partType ?? null}
                   moduleName={moduleName}
                   {...(onPartTypeChange
                     ? {
                         onChange: (next) => {
-                          onPartTypeChange(expressionToPartType(next));
+                          // パーツの型は型の式のまま持つ. 根が未入力なら型指定なし
+                          onPartTypeChange(
+                            isVariant(next, "hole") ? null : next,
+                          );
                         },
                       }
                     : {})}

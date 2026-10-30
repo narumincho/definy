@@ -22,7 +22,7 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
 
 ## 型
 
-- 型は `Secret` (`core.type-ast` の `secret`, パーツの型の JSON は `{"#secret": null}`, 型パーツの宣言の中では `{"#type_secret": null}`)
+- 型は `Secret` (型の式は `{"#type_secret": null}`, 型チェッカーの中の `core.type-ast` では `secret`)
 - 文字列とは別の型なので, 文字列連結や `done` のメッセージには使えない。値 (`{ id, label }` のレコード) のフィールドも読めない
 - 使えるのは `wasi.outgoing-request` の `secret_headers` (`{ name, prefix, secret }`) だけ。ホストが送信の直前に
   `prefix ++ 値` のヘッダーを足す ([wasi-io.md](wasi-io.md))
