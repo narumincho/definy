@@ -36,7 +36,7 @@ definy の型は 1 つの形, 型の式 (`core.expression` の `type_*` など�
   型パーツの参照を `reference(パーツ ID)`, 型を返すパーツの呼び出しを `apply`, 型引数を `parameter(名前)` に正規化する
 - TypeScript の中 (`PartContent.partType`, `PartSnapshot.partType`): 型チェッカーの形。
   CAS や seed を読むときに型の式から変換し (`expressionToPartType`), 書くときに型の式に戻す (`partTypeToExpression`)。
-  変換は [src/part_type_expression.ts](../src/part_type_expression.ts)。seed の全パーツの型が往復で変わらないことをテストしている
+  変換は [src/type_ast_expression.ts](../src/type_ast_expression.ts)。seed の全パーツの型が往復で変わらないことをテストしている
 
 `core.type-ast` は型チェッカーが比べたり代入したりするための形で, ユーザーが書く形ではない。
 型チェッカーの入力 (`core.build-type-env` の `part_type`) はまだ `core.type-ast` なので,

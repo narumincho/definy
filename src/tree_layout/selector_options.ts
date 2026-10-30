@@ -105,19 +105,42 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   },
 ];
 
-/** 型 (`core.type-ast` の値) の大まかな型. 関数の型は戻り値の型 */
+/**
+ * 型の式のタグの短い名前. `type_number` → `number`, 型パーツの参照は `reference`, 型を返すパーツの呼び出しは `apply`
+ * (型チェッカーの `core.type-ast` と同じ名前)
+ */
+function typeExpressionTagName(tag: string): string {
+  if (tag.startsWith("type_")) {
+    return tag.slice("type_".length);
+  }
+  switch (tag) {
+    case "part_reference":
+      return "reference";
+    case "call":
+      return "apply";
+  }
+  return tag;
+}
+
+/** パーツの型 (型の式) の大まかな型. 関数の型は戻り値の型 */
 function partReturnType(partType: unknown): ExpectedType {
   const tagged = variantOf(partType);
-  switch (tagged?.tag) {
+  const name =
+    tagged === undefined ? undefined : typeExpressionTagName(tagged.tag);
+  switch (name) {
     case "number":
     case "string":
     case "boolean":
     case "list":
-      return tagged.tag;
+      return name;
     case "function": {
-      const ret = variantOf(field(tagged.payload, "return_type"))?.tag;
-      return ret === "number" || ret === "string" || ret === "boolean"
-        ? ret
+      const ret = variantOf(field(tagged?.payload, "return_type"))?.tag;
+      const retName =
+        ret === undefined ? undefined : typeExpressionTagName(ret);
+      return retName === "number" ||
+        retName === "string" ||
+        retName === "boolean"
+        ? retName
         : "any";
     }
   }
@@ -201,7 +224,7 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   },
 ];
 
-/** 型のパーツ (partType が `type`) の選択肢. 型の行で `reference({ part_hash: ID })` として参照する */
+/** 型のパーツ (partType が `type_type`) の選択肢. 型の行で `part_reference` として参照する */
 export function typePartSelectorOptions(
   parts: ReadonlyArray<PartSnapshot>,
 ): ReadonlyArray<SelectorOption> {
@@ -209,10 +232,10 @@ export function typePartSelectorOptions(
   return partSelectorOptions(
     parts.filter(
       (p) =>
-        isVariant(p.partType, "type") ||
+        isVariant(p.partType, "type_type") ||
         isVariant(
-          field(variantPayload(p.partType, "function"), "return_type"),
-          "type",
+          field(variantPayload(p.partType, "type_function"), "return_type"),
+          "type_type",
         ),
     ),
   ).map((option) => ({ ...option, detail: undefined, category: "Type part" }));
@@ -224,11 +247,12 @@ export function partTypeText(partType: unknown): string | undefined {
   if (tagged === undefined) {
     return undefined;
   }
-  if (tagged.tag === "function") {
+  const name = typeExpressionTagName(tagged.tag);
+  if (name === "function") {
     const ret = partTypeText(field(tagged.payload, "return_type"));
     return ret === undefined ? "function" : `function → ${ret}`;
   }
-  return tagged.tag;
+  return name;
 }
 
 /** パーツの選択肢. value は `ref:part:<パーツ ID の Base64URL>` */

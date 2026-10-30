@@ -35,7 +35,7 @@ export function parameterRenames(
 
 function parameterNames(type: unknown): ReadonlyArray<string> | undefined {
   const parameters = (
-    variantPayload(type, "function") as
+    variantPayload(type, "type_function") as
       | { readonly parameters?: ReadonlyArray<{ readonly name?: unknown }> }
       | undefined
   )?.parameters;

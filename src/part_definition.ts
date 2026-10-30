@@ -112,9 +112,9 @@ function quotedExpression(expression: unknown): unknown {
 /** 型の式 `type` */
 const TYPE_TYPE = { "#type_type": null };
 
-/** パーツの型 (型チェッカーの形) が `type` (型パーツ) か */
+/** パーツの型 (型の式) が `type` (型パーツ) か */
 function isTypeType(partType: unknown): boolean {
-  return variantOf(partType)?.tag === "type";
+  return variantOf(partType)?.tag === "type_type";
 }
 
 /**

@@ -35,7 +35,6 @@ import {
   variantOf,
   variantPayload,
 } from "./definy_value.ts";
-import { partTypeToExpression } from "./part_type_expression.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -49,16 +48,16 @@ export type SelfHostedCoreParts = {
 /** 型環境に入れるパーツ (パーツ参照の型を解決するために使う) */
 export type PartTypeEntry = {
   readonly partId: string;
-  /** パーツの宣言型 (`core.type-ast` の値) */
+  /** パーツの宣言型 (型の式. `core.expression` の値) */
   readonly partType: unknown;
   /**
-   * 型パーツ (`partType` が `core.type-ast` の `type`) の宣言式. `core.type-resolve` が
+   * 型パーツ (`partType` が `type_type`) の宣言式. `core.type-resolve` が
    * `reference` 型を中身の型に展開するために使う
    */
   readonly typeDeclaration?: unknown;
   /**
    * コンパイラ組み込みのパーツ (`core.plus` など) なら組み込みの名前 ({@link compilerBuiltinName}).
-   * 型環境ではパーツの型を `core.type-ast` の `builtin` にし, 型チェッカーが呼び出しを名前で検査する
+   * 型環境ではパーツの型を `builtin(名前)` にし, 型チェッカーが呼び出しを名前で検査する
    */
   readonly builtin?: string | undefined;
 };
@@ -87,14 +86,14 @@ export type SelfHostedTypeCheckOutcome =
   /** 型チェッカーの実行に失敗した (Wasm の実行時エラーなど) */
   | { readonly kind: "checker_failed"; readonly message: string };
 
-/** 型パーツ (宣言型が `core.type-ast` の `type`) か */
+/** 型パーツ (宣言型が型の式 `type_type`) か */
 export function isTypePartType(partType: unknown): boolean {
   // 型引数を取る型 (`core.option: (T: type) -> type`) も型パーツ (`core.is-type-part-type`)
   return (
-    isVariant(partType, "type") ||
+    isVariant(partType, "type_type") ||
     isVariant(
-      field(variantPayload(partType, "function"), "return_type"),
-      "type",
+      field(variantPayload(partType, "type_function"), "return_type"),
+      "type_type",
     )
   );
 }
@@ -142,10 +141,7 @@ function partCheckArguments(
   if (!allowHoles && containsHole(part.expression)) {
     throw new UnsupportedPartError("Expression has an unfilled hole");
   }
-  return {
-    expression: part.expression,
-    expectedType: partTypeToExpression(part.partType),
-  };
+  return { expression: part.expression, expectedType: part.partType };
 }
 
 /** `core.type-checker` に渡すパーツ */
@@ -179,7 +175,7 @@ const REPLACED_MODULE = "#replaced";
 /**
  * `core.type-checker` に渡すパーツの一覧
  * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
- * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする.
+ * パーツの型は型の式のまま渡す (型チェッカーが `core.type-ast` にし, できなければ型環境に入れない).
  * コンパイラ組み込みのパーツの型は `builtin` (名前) にする
  */
 function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
@@ -190,7 +186,7 @@ function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
       entry.builtin === undefined
         ? entry.partType == null
           ? none()
-          : some(partTypeToExpression(entry.partType))
+          : some(entry.partType)
         : some(variant("builtin", entry.builtin)),
     type_declaration:
       entry.typeDeclaration == null ? none() : some(entry.typeDeclaration),
@@ -725,8 +721,8 @@ export function checkModuleCommitParts(options: {
       })),
     ];
   }
-  const partContentType = variant("reference", {
-    part_hash: deriveModulePartIdSync(
+  const partContentType = variant("part_reference", {
+    part_definition_event_hash: deriveModulePartIdSync(
       deriveModuleIdBytesSync("core"),
       "part-content",
     ),

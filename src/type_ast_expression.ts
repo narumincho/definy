@@ -1,12 +1,13 @@
 /**
- * パーツの型の 2 つの形の相互変換 (docs/type-expression.md).
+ * 型チェッカーの形 (`core.type-ast`) と型の式 (`core.expression` の `type_number`, `type_list` ...) の相互変換
+ * (docs/type-expression.md).
  *
- * パーツの型は, 型パーツの宣言と同じ型の式 (`core.expression` の `type_number`, `type_list` ...) で書き,
- * その形で seed と CAS (`core.part-content` の `part_type`) に置く. TypeScript の中と definy 製の型チェッカーは,
- * 読むときに型チェッカーの形 (`partType`, `core.type-ast` の値) にして使う.
- * 型のツリーエディタ (ExpressionTreeEditor の mode="type") も型の式をそのまま編集する.
+ * パーツの型は seed・CAS・TypeScript の中 (`partType`) のどこでも型の式で持ち, 型チェッカーにもそのまま渡す.
+ * `core.type-ast` は型チェッカーが比べるための形で, 型チェッカーが返す型 (期待する型・推論した型・型エラーの型) だけがこの形.
+ * それを型のツリーで表示するとき (`typeAstToExpression`) と, 型パーツの宣言をたどって型チェッカーの返した型と
+ * 比べるとき (`expressionToTypeAst`, `core.type-expression-to-type-ast` と同じ変換) に使う.
  *
- * | partType (`core.type-ast`)                     | 型の式                                                     |
+ * | `core.type-ast`                                                    | 型の式                                                     |
  * | ---------------------------------------------- | ---------------------------------------------------------- |
  * | `number` / `string` / `boolean` / `secret`     | `type_number` / `type_string` / `type_boolean` / `type_secret` |
  * | `type`                                         | `type_type`                                                |
@@ -54,7 +55,7 @@ function mapOption(
   return inner === undefined ? none() : some(convert(inner));
 }
 
-export function partTypeToExpression(partType: unknown): unknown {
+export function typeAstToExpression(partType: unknown): unknown {
   if (partType === null || partType === undefined) {
     return null;
   }
@@ -70,26 +71,26 @@ export function partTypeToExpression(partType: unknown): unknown {
   switch (tag) {
     case "list":
       return variant("type_list", {
-        item_type: partTypeToExpression(field(payload, "item_type")),
+        item_type: typeAstToExpression(field(payload, "item_type")),
       });
     case "code":
       return variant("type_code", {
-        value_type: partTypeToExpression(payload),
+        value_type: typeAstToExpression(payload),
       });
     case "function":
       return variant("type_function", {
         parameters: arrayOf(field(payload, "parameters")).map((p) => ({
           name: String(field(p, "name") ?? ""),
-          type: partTypeToExpression(field(p, "type")),
+          type: typeAstToExpression(field(p, "type")),
         })),
-        return_type: partTypeToExpression(field(payload, "return_type")),
+        return_type: typeAstToExpression(field(payload, "return_type")),
       });
     case "record":
       return variant(
         "type_record",
         arrayOf(payload).map((f) => ({
           key: String(field(f, "key") ?? ""),
-          value: partTypeToExpression(field(f, "field_type")),
+          value: typeAstToExpression(field(f, "field_type")),
         })),
       );
     case "union":
@@ -99,7 +100,7 @@ export function partTypeToExpression(partType: unknown): unknown {
           tag: String(field(v, "tag") ?? ""),
           payload_type: mapOption(
             field(v, "payload_type"),
-            partTypeToExpression,
+            typeAstToExpression,
           ),
         })),
       );
@@ -116,7 +117,7 @@ export function partTypeToExpression(partType: unknown): unknown {
         }),
         arguments: arrayOf(field(payload, "arguments")).map((a) => ({
           name: String(field(a, "name") ?? ""),
-          value: partTypeToExpression(field(a, "type")),
+          value: typeAstToExpression(field(a, "type")),
         })),
       });
     case "builtin":
@@ -125,7 +126,7 @@ export function partTypeToExpression(partType: unknown): unknown {
   return variant("unknown_part_type", partType);
 }
 
-export function expressionToPartType(expression: unknown): unknown {
+export function expressionToTypeAst(expression: unknown): unknown {
   const tagged = variantOf(expression);
   if (tagged === undefined || tagged.tag === "hole") {
     return null;
@@ -140,27 +141,24 @@ export function expressionToPartType(expression: unknown): unknown {
       return payload;
     case "type_list":
       return variant("list", {
-        item_type: expressionToPartType(field(payload, "item_type")),
+        item_type: expressionToTypeAst(field(payload, "item_type")),
       });
     case "type_code":
-      return variant(
-        "code",
-        expressionToPartType(field(payload, "value_type")),
-      );
+      return variant("code", expressionToTypeAst(field(payload, "value_type")));
     case "type_function":
       return variant("function", {
         parameters: arrayOf(field(payload, "parameters")).map((p) => ({
           name: String(field(p, "name") ?? ""),
-          type: expressionToPartType(field(p, "type")),
+          type: expressionToTypeAst(field(p, "type")),
         })),
-        return_type: expressionToPartType(field(payload, "return_type")),
+        return_type: expressionToTypeAst(field(payload, "return_type")),
       });
     case "type_record":
       return variant(
         "record",
         arrayOf(payload).map((f) => ({
           key: String(field(f, "key") ?? ""),
-          field_type: expressionToPartType(field(f, "value")),
+          field_type: expressionToTypeAst(field(f, "value")),
         })),
       );
     case "type_union":
@@ -170,7 +168,7 @@ export function expressionToPartType(expression: unknown): unknown {
           tag: String(field(v, "tag") ?? ""),
           payload_type: mapOption(
             field(v, "payload_type"),
-            expressionToPartType,
+            expressionToTypeAst,
           ),
         })),
       );
@@ -192,7 +190,7 @@ export function expressionToPartType(expression: unknown): unknown {
         part_hash: field(callee, "part_definition_event_hash"),
         arguments: arrayOf(field(payload, "arguments")).map((a) => ({
           name: String(field(a, "name") ?? ""),
-          type: expressionToPartType(field(a, "value")),
+          type: expressionToTypeAst(field(a, "value")),
         })),
       });
     }

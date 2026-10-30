@@ -67,7 +67,7 @@ it("コミットにはパーツの中身の content hash だけを入れ, サー
   const answer = (value: number): DecodedPart => ({
     name: "answer",
     description: [],
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     expression: { "#number": value },
   });
 
@@ -90,7 +90,7 @@ it("コミットにはパーツの中身の content hash だけを入れ, サー
   const stored = partContentItem({
     description: [{ language: "en", text: "stored" }],
     visibility: "public",
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     expression: { "#number": 7 },
   });
   await fetchFn("/definy.v1.EventService/UploadContent", {
@@ -117,7 +117,7 @@ it("コミットにはパーツの中身の content hash だけを入れ, サー
   expect(cachedContent(stored.contentHash)).toEqual({
     description: [{ language: "en", text: "stored" }],
     visibility: "public",
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     expression: { "#number": 7 },
   });
   expect(missingContentHashes([unresolved])).toEqual([]);
@@ -164,7 +164,7 @@ it("CAS に預けた定義の式を評価した中身が core.part-content の�
       {
         name: "bad",
         description: [],
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: { "#not_an_expression": 1 },
       },
     ],

@@ -81,7 +81,7 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
               {
                 name: "answer",
                 description: [],
-                partType: { "#number": null },
+                partType: { "#type_number": null },
                 expression: { "#number": value },
               },
             ],
@@ -183,7 +183,7 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
             {
               name: "answer",
               description: [],
-              partType: { "#number": null },
+              partType: { "#type_number": null },
               expression: { "#number": 1 },
             },
           ],

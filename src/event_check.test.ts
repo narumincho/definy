@@ -263,7 +263,7 @@ describe("core.check-event", () => {
         encodePartContent({
           description: [{ language: "en", text: "x" }],
           visibility: "private",
-          partType: { "#number": null },
+          partType: { "#type_number": null },
           expression: {
             "#call": {
               function: { "#variable": { variable_id: 0 } },

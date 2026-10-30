@@ -11,7 +11,7 @@ import {
 const part = (name: string, value: number): MergePart => ({
   name,
   description: [],
-  partType: { "#number": null },
+  partType: { "#type_number": null },
   expression: { "#number": value },
 });
 

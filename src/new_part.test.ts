@@ -21,7 +21,7 @@ function committedPart(
     name,
     description: [],
     visibility: "public",
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     contentHash: null,
     partIdHash: `id-${moduleName}.${name}`,
     expression,
@@ -35,7 +35,7 @@ function change(name: string, fields: Partial<PartChange> = {}): PartChange {
     partDefinitionEventHash: `app.${name}`,
     name,
     description: [],
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     expression: { "#number": 2 },
     ...fields,
   };
@@ -106,12 +106,12 @@ describe("newPartChange", () => {
       name: "add",
       description: [],
       partType: {
-        "#function": {
+        "#type_function": {
           parameters: [
-            { name: "x", type: { "#number": null } },
-            { name: "y", type: { "#number": null } },
+            { name: "x", type: { "#type_number": null } },
+            { name: "y", type: { "#type_number": null } },
           ],
-          return_type: { "#number": null },
+          return_type: { "#type_number": null },
         },
       },
       expression: {
@@ -133,7 +133,7 @@ describe("newPartChange", () => {
       expression: { "#hole": { probe: false } },
     });
     expect(newPartChange({ ...base, kind: "type" })).toMatchObject({
-      partType: { "#type": null },
+      partType: { "#type_type": null },
     });
   });
 });

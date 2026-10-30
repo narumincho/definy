@@ -120,16 +120,16 @@ describe("applySelection", () => {
 describe("関数型の変数を選ぶ", () => {
   const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(7));
   const itemToNumber = {
-    "#function": {
-      parameters: [{ name: "item", type: { "#number": null } }],
-      return_type: { "#number": null },
+    "#type_function": {
+      parameters: [{ name: "item", type: { "#type_number": null } }],
+      return_type: { "#type_number": null },
     },
   };
   // (f: (item: number) -> number) => map(g: (x) => □, xs: □)
   const partType = {
-    "#function": {
+    "#type_function": {
       parameters: [{ name: "f", type: itemToNumber }],
-      return_type: { "#number": null },
+      return_type: { "#type_number": null },
     },
   };
   const expression = {
@@ -160,19 +160,19 @@ describe("関数型の変数を選ぶ", () => {
   const types = functionParameterTypes(expression, partType, (hash) =>
     hash === mapHash
       ? {
-          "#function": {
+          "#type_function": {
             parameters: [
               {
                 name: "g",
                 type: {
-                  "#function": {
+                  "#type_function": {
                     parameters: [{ name: "x", type: itemToNumber }],
-                    return_type: { "#number": null },
+                    return_type: { "#type_number": null },
                   },
                 },
               },
             ],
-            return_type: { "#number": null },
+            return_type: { "#type_number": null },
           },
         }
       : undefined,
@@ -215,7 +215,7 @@ describe("関数型の変数を選ぶ", () => {
         [],
         "ref:local:3",
         () => undefined,
-        () => variableParameters({ "#number": null }),
+        () => variableParameters({ "#type_number": null }),
       ),
     ).toEqual({ "#variable": { variable_id: 3 } });
   });
@@ -226,14 +226,14 @@ describe("partParameters", () => {
     expect(
       partParameters({
         partType: {
-          "#function": {
-            parameters: [{ name: "x", type: { "#number": null } }],
-            return_type: { "#number": null },
+          "#type_function": {
+            parameters: [{ name: "x", type: { "#type_number": null } }],
+            return_type: { "#type_number": null },
           },
         },
         expression: null,
       }),
-    ).toEqual([{ name: "x", type: { "#number": null } }]);
+    ).toEqual([{ name: "x", type: { "#type_number": null } }]);
   });
 
   it("型の無いコンパイラ組み込みのパーツは組み込みの引数名", () => {
@@ -245,7 +245,7 @@ describe("partParameters", () => {
     ).toEqual([{ name: "list" }, { name: "index" }]);
     expect(
       partParameters({
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: { "#number": 1 },
       }),
     ).toBeUndefined();
@@ -358,9 +358,9 @@ describe("関数の型を期待する位置で選ぶとラムダ式で包む", (
   const hole = { "#hole": { probe: false } };
   // (item: number) -> string
   const expected = {
-    "#function": {
-      parameters: [{ name: "item", type: { "#number": null } }],
-      return_type: { "#string": null },
+    "#type_function": {
+      parameters: [{ name: "item", type: { "#type_number": null } }],
+      return_type: { "#type_string": null },
     },
   };
   // (n) => m(f: □) の f は (item: number) -> string を期待する
@@ -489,9 +489,9 @@ describe("関数型の引数を持つパーツの呼び出し", () => {
   it("関数型の引数は本体を未入力にしたラムダ式にする", () => {
     const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(5));
     const itemToNumber = {
-      "#function": {
-        parameters: [{ name: "item", type: { "#number": null } }],
-        return_type: { "#number": null },
+      "#type_function": {
+        parameters: [{ name: "item", type: { "#type_number": null } }],
+        return_type: { "#type_number": null },
       },
     };
     const expr = {
@@ -504,7 +504,10 @@ describe("関数型の引数を持つパーツの呼び出し", () => {
       getExpressionAtPath(
         applySelection(expr, ["functionBody"], `ref:part:${mapHash}`, () => [
           { name: "f", type: itemToNumber },
-          { name: "xs", type: { "#list": { item_type: { "#number": null } } } },
+          {
+            name: "xs",
+            type: { "#type_list": { item_type: { "#type_number": null } } },
+          },
         ]),
         ["functionBody"],
       ),

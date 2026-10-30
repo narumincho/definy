@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, type JSX, type KeyboardEvent } from "react";
+import { useState, useRef, type JSX, type KeyboardEvent } from "react";
 import {
   ExpressionTreeEditor,
   type ExpressionTypeError,
@@ -7,11 +7,8 @@ import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 import { navKeyFromEvent, type NavKey } from "./keyboard.ts";
 import { nextRow, type DefinitionRow } from "./definition_rows.ts";
-import {
-  expressionToPartType,
-  partTypeToExpression,
-  syncPartTypeParameterNames,
-} from "./part_type.ts";
+import { syncPartTypeParameterNames } from "./part_type.ts";
+import { isVariant } from "../definy_value.ts";
 
 /** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
 const INNER_TREE_IDS = {
@@ -64,11 +61,6 @@ export function PartDefinitionTree({
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
-  // 型は型の式にして式のツリーエディタで編集する (part_type.ts)
-  const typeExpression = useMemo(
-    () => partTypeToExpression(partType),
-    [partType],
-  );
 
   function selectRow(row: DefinitionRow): void {
     setSelectedRow(row);
@@ -293,12 +285,13 @@ export function PartDefinitionTree({
           <div className="def-value">
             <ExpressionTreeEditor
               mode="type"
-              expression={typeExpression}
+              expression={partType ?? null}
               moduleName={moduleName}
               {...(onPartTypeChange
                 ? {
                     onChange: (next) => {
-                      onPartTypeChange(expressionToPartType(next));
+                      // パーツの型は型の式のまま持つ. 根が未入力なら型指定なし
+                      onPartTypeChange(isVariant(next, "hole") ? null : next);
                     },
                   }
                 : {})}

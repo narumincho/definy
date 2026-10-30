@@ -1,13 +1,14 @@
 /**
- * パーツの型のツリーエディタまわりの補助. 型と型の式の相互変換は src/part_type_expression.ts
+ * パーツの型のツリーエディタまわりの補助. パーツの型は型の式 (`type_function` など) で持つ.
+ * 型チェッカーの形 (`core.type-ast`) との変換は src/type_ast_expression.ts
  */
 import { field, variant, variantPayload } from "../definy_value.ts";
 import type { PartSnapshot } from "../types.ts";
 
 export {
-  expressionToPartType,
-  partTypeToExpression,
-} from "../part_type_expression.ts";
+  expressionToTypeAst,
+  typeAstToExpression,
+} from "../type_ast_expression.ts";
 
 /** 式の根が関数なら, その引数名の一覧 */
 function rootParameterNames(
@@ -34,7 +35,7 @@ export function syncPartTypeParameterNames(
 ): unknown {
   const beforeNames = rootParameterNames(before);
   const afterNames = rootParameterNames(after);
-  const fn = variantPayload(partType, "function") as
+  const fn = variantPayload(partType, "type_function") as
     | {
         readonly parameters?: ReadonlyArray<Readonly<Record<string, unknown>>>;
       }
@@ -48,7 +49,7 @@ export function syncPartTypeParameterNames(
   ) {
     return undefined;
   }
-  return variant("function", {
+  return variant("type_function", {
     ...fn,
     parameters: fn.parameters.map((parameter, i) =>
       beforeNames[i] !== afterNames[i] && typeof afterNames[i] === "string"
@@ -68,7 +69,7 @@ export function callParameterNamesOf(
   const result = new Map<string, ReadonlyArray<string>>();
   for (const [id, part] of partsByIdHash) {
     const parameters = field(
-      variantPayload(part.partType, "function"),
+      variantPayload(part.partType, "type_function"),
       "parameters",
     );
     if (Array.isArray(parameters)) {

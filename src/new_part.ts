@@ -135,19 +135,19 @@ export function newPartChange(input: NewPartInput): PartChange {
     case "value":
       return { ...base, partType: null, expression: hole() };
     case "type":
-      return { ...base, partType: variant("type", null), expression: hole() };
+      return { ...base, partType: variant("type_type"), expression: hole() };
     case "function": {
       const names = input.parameterNames
         .map((p) => p.trim())
         .filter((p) => p !== "");
       return {
         ...base,
-        partType: variant("function", {
+        partType: variant("type_function", {
           parameters: names.map((name) => ({
             name,
-            type: variant("number", null),
+            type: variant("type_number"),
           })),
-          return_type: variant("number", null),
+          return_type: variant("type_number"),
         }),
         expression: variant("function", {
           parameters: names.map((name, index) => ({

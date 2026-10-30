@@ -77,7 +77,11 @@ export function partParameters(part: {
     : BUILTIN_PARAMETERS.get(builtin)?.map((name) => ({ name }));
 }
 
-/** 関数の型 (`core.type-ast` の `function({ parameters, return_type })`) の中身. 関数の型でなければ `undefined` */
+/**
+ * 関数の型の中身 `{ parameters, return_type }`. 関数の型でなければ `undefined`.
+ * パーツの型 (型の式 `type_function`) と, 型チェッカーが返す型 (`core.type-ast` の `function`) のどちらも受け取る.
+ * 2 つは同じ形 (`parameters: [{ name, type }]`) で, 引数の型も同じ形のまま返す
+ */
 function functionTypeOf(type: unknown):
   | {
       readonly parameters?: ReadonlyArray<{
@@ -87,7 +91,8 @@ function functionTypeOf(type: unknown):
       readonly return_type?: unknown;
     }
   | undefined {
-  return variantPayload(type, "function") as
+  return (variantPayload(type, "type_function") ??
+    variantPayload(type, "function")) as
     | {
         readonly parameters?: ReadonlyArray<{
           readonly name?: unknown;
@@ -99,7 +104,7 @@ function functionTypeOf(type: unknown):
 }
 
 /**
- * 関数 (`function`) の引数の変数 ID → 引数の型 (`core.type-ast` の値). 型は書いた位置で決まるものだけ求める:
+ * 関数 (`function`) の引数の変数 ID → 引数の型 (型の式). 型は書いた位置で決まるものだけ求める:
  * パーツの式の直下の関数はパーツの型 (`partType`), 呼び出しの引数に書いた関数は呼び出すパーツ・関数型の引数の
  * その引数の型. `partTypeOf` はパーツ ID (Base64URL) からパーツの型を返す
  */

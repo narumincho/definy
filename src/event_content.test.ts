@@ -93,7 +93,7 @@ describe("core.event-content", () => {
     const content: PartContent = {
       description: [{ language: "ja", text: "答え" }],
       visibility: "private",
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: { "#number": 42 },
     };
     const encoded = encodePartContent(content);

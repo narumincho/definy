@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  expressionToPartType,
-  partTypeToExpression,
+  expressionToTypeAst,
+  typeAstToExpression,
   syncPartTypeParameterNames,
 } from "./part_type.ts";
 
@@ -20,7 +20,7 @@ describe("partType と型の式の相互変換", () => {
       for (const part of seed.parts) {
         // seed のパーツの型は型の式
         const expression = part.part_type ?? null;
-        expect(partTypeToExpression(expressionToPartType(expression))).toEqual(
+        expect(typeAstToExpression(expressionToTypeAst(expression))).toEqual(
           expression,
         );
       }
@@ -29,7 +29,7 @@ describe("partType と型の式の相互変換", () => {
 
   it("関数の型を式にする", () => {
     expect(
-      partTypeToExpression({
+      typeAstToExpression({
         "#function": {
           parameters: [
             {
@@ -69,7 +69,7 @@ describe("partType と型の式の相互変換", () => {
         },
       },
     };
-    const expression = partTypeToExpression(partType);
+    const expression = typeAstToExpression(partType);
     expect(expression).toEqual({
       "#type_function": {
         parameters: [
@@ -86,21 +86,19 @@ describe("partType と型の式の相互変換", () => {
         },
       },
     });
-    expect(expressionToPartType(expression)).toEqual(partType);
+    expect(expressionToTypeAst(expression)).toEqual(partType);
   });
 
   it("組み込みの関数の型 (型チェッカーが返す) も往復できる", () => {
     const builtin = { "#builtin": "less_than" };
-    expect(partTypeToExpression(builtin)).toEqual({ "#builtin": "less_than" });
-    expect(expressionToPartType(partTypeToExpression(builtin))).toEqual(
-      builtin,
-    );
+    expect(typeAstToExpression(builtin)).toEqual({ "#builtin": "less_than" });
+    expect(expressionToTypeAst(typeAstToExpression(builtin))).toEqual(builtin);
   });
 
   it("未入力は型指定なしに戻す", () => {
-    expect(expressionToPartType({ "#hole": { probe: false } })).toBeNull();
+    expect(expressionToTypeAst({ "#hole": { probe: false } })).toBeNull();
     expect(
-      expressionToPartType({
+      expressionToTypeAst({
         "#type_list": { item_type: { "#hole": { probe: false } } },
       }),
     ).toEqual({ "#list": { item_type: null } });
@@ -118,12 +116,12 @@ describe("syncPartTypeParameterNames", () => {
     },
   });
   const partType = {
-    "#function": {
+    "#type_function": {
       parameters: [
-        { name: "a", type: { "#number": null } },
-        { name: "b", type: { "#string": null } },
+        { name: "a", type: { "#type_number": null } },
+        { name: "b", type: { "#type_string": null } },
       ],
-      return_type: { "#number": null },
+      return_type: { "#type_number": null },
     },
   };
 
@@ -131,12 +129,12 @@ describe("syncPartTypeParameterNames", () => {
     expect(
       syncPartTypeParameterNames(partType, fn(["a", "b"]), fn(["a", "text"])),
     ).toEqual({
-      "#function": {
+      "#type_function": {
         parameters: [
-          { name: "a", type: { "#number": null } },
-          { name: "text", type: { "#string": null } },
+          { name: "a", type: { "#type_number": null } },
+          { name: "text", type: { "#type_string": null } },
         ],
-        return_type: { "#number": null },
+        return_type: { "#type_number": null },
       },
     });
   });
@@ -147,7 +145,7 @@ describe("syncPartTypeParameterNames", () => {
     ).toBeUndefined();
     expect(
       syncPartTypeParameterNames(
-        { "#number": null },
+        { "#type_number": null },
         { "#number": 1 },
         { "#number": 2 },
       ),

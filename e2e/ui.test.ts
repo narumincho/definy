@@ -394,7 +394,7 @@ test.describe("definy UI E2E", () => {
         parts: ["secret", "open"].map((name) => ({
           name,
           description: [],
-          partType: { "#number": null },
+          partType: { "#type_number": null },
           expression: { "#number": 1 },
         })),
       }),
@@ -472,7 +472,7 @@ test.describe("definy UI E2E", () => {
             parts: Object.entries(values).map(([name, value]) => ({
               name,
               description: [],
-              partType: { "#number": null },
+              partType: { "#type_number": null },
               expression: { "#number": value },
             })),
           },
@@ -562,7 +562,7 @@ test.describe("definy UI E2E", () => {
           {
             name: "one",
             description: [],
-            partType: { "#number": null },
+            partType: { "#type_number": null },
             expression: { "#number": 1 },
           },
         ],
@@ -738,7 +738,7 @@ test.describe("definy UI E2E", () => {
       const part = {
         moduleDefinitionEventHash: "sample",
         description: [],
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: { "#number": 1 },
       };
       localStorage.setItem(
@@ -1782,7 +1782,7 @@ test.describe("definy UI E2E", () => {
             partDefinitionEventHash: "sample.e2e-part",
             name: "e2e-part",
             description: [{ language: "en", text: "Part created in E2E test" }],
-            partType: { "#number": null },
+            partType: { "#type_number": null },
             expression: { "#number": 999 },
           },
         },
@@ -1863,7 +1863,7 @@ test.describe("definy UI E2E", () => {
               partDefinitionEventHash: "sample.e2e-part",
               name: "e2e-part",
               description: [],
-              partType: { "#number": null },
+              partType: { "#type_number": null },
               expression: { "#number": 1000 },
             },
           },

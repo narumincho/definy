@@ -57,7 +57,7 @@ function parseVariantOptionValue(value: string): {
 function typePartVariants(
   part: Pick<PartSnapshot, "partType" | "expression">,
 ): ReadonlyArray<PatternVariant> | null {
-  if (!isVariant(part.partType, "type")) {
+  if (!isVariant(part.partType, "type_type")) {
     return null;
   }
   return typeUnionDeclarationVariants(part.expression);

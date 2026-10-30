@@ -8,9 +8,9 @@ import {
 import type { PartSnapshot } from "../types.ts";
 
 const fnType = (...names: ReadonlyArray<string>) => ({
-  "#function": {
-    parameters: names.map((name) => ({ name, type: { "#number": null } })),
-    return_type: { "#number": null },
+  "#type_function": {
+    parameters: names.map((name) => ({ name, type: { "#type_number": null } })),
+    return_type: { "#type_number": null },
   },
 });
 
@@ -40,7 +40,9 @@ describe("parameterRenames", () => {
 
   it("引数の数が変わった・関数でないときは変更なし", () => {
     expect(parameterRenames(fnType("a"), fnType("a", "b")).size).toBe(0);
-    expect(parameterRenames({ "#number": null }, fnType("a")).size).toBe(0);
+    expect(parameterRenames({ "#type_number": null }, fnType("a")).size).toBe(
+      0,
+    );
   });
 });
 
@@ -93,7 +95,7 @@ describe("renameCallersOf", () => {
     name: partId,
     description: [],
     visibility: "public",
-    partType: { "#number": null },
+    partType: { "#type_number": null },
     contentHash: null,
     partIdHash: partId,
     expression,
@@ -118,7 +120,7 @@ describe("renameCallersOf", () => {
       partDefinitionEventHash: "edited",
       name: "edited2",
       description: [],
-      partType: { "#number": null },
+      partType: { "#type_number": null },
       expression: call("target", [{ name: "a", value: { "#number": 2 } }]),
     };
     const changes = renameCallersOf(
@@ -134,7 +136,7 @@ describe("renameCallersOf", () => {
         partDefinitionEventHash: "caller",
         name: "caller",
         description: [],
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: call("target", [{ name: "x", value: { "#number": 1 } }]),
       },
       {

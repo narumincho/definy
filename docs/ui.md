@@ -376,7 +376,7 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる.
 (`ExpressionTreeEditor` の `mode="type"`).
 
 - パーツの型 (`partType`, `core.type-ast` の値) と型の式 (`core.expression` の `type_*` の値. seed や CAS の形) の相互変換は
-  [src/part_type_expression.ts](../src/part_type_expression.ts). seed の全パーツの型が往復で変わらないことをテストしている
+  [src/type_ast_expression.ts](../src/type_ast_expression.ts). seed の全パーツの型が往復で変わらないことをテストしている
   - 対応は [part-type.md](part-type.md) の表 (`number` ↔ `type_number`, `list` ↔ `type_list`, `reference` ↔ `part_reference` など)
   - 未入力 (`hole`) は `null` に戻す
 - 型のメニューの候補は number / string / boolean / type / list / function / record / union と,

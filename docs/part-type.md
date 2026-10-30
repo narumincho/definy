@@ -12,7 +12,7 @@ definy では「型も式である」という思想に基づき、パーツの�
 
 パーツの型は型パーツの宣言と同じ型の式 (`core.expression` の `type_*` などの値) で書き, seed と CAS にもその形で置く
 ([type-expression.md](type-expression.md))。TypeScript の中 (`partType`) と型チェッカーは `core.type-ast` の値で扱い,
-[src/part_type_expression.ts](../src/part_type_expression.ts) で相互変換する。
+[src/type_ast_expression.ts](../src/type_ast_expression.ts) で相互変換する。
 
 | `partType` (`core.type-ast`)                                     | 型の式 (seed, CAS)                                                              | 説明                                                                                       |
 | :--------------------------------------------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |

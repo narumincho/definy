@@ -153,7 +153,7 @@ describe("exportSeeds", () => {
             {
               name: "malicious-part",
               description: [{ language: "en", text: "Malicious" }],
-              partType: { "#number": null },
+              partType: { "#type_number": null },
               expression: { "#number": 999 },
             },
           ],
@@ -220,7 +220,7 @@ describe("exportSeeds", () => {
         description: [
           { language: "en", text: "New part referencing core.eval-ast" },
         ],
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: {
           "#call": {
             function: {
@@ -349,7 +349,7 @@ describe("exportSeeds", () => {
       const { contentHash, contentBytes } = partContentItem({
         description: [{ language: "en", text: "Hydrated from CAS" }],
         visibility: "public",
-        partType: { "#number": null },
+        partType: { "#type_number": null },
         expression: { "#number": 42 },
       });
 
@@ -382,7 +382,7 @@ describe("exportSeeds", () => {
           {
             name: "cas-part",
             description: [],
-            partType: { "#number": null },
+            partType: { "#type_number": null },
             contentHash,
             unresolved: true,
           },

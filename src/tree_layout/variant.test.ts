@@ -24,7 +24,7 @@ function typePart(
     moduleName: "sample",
     name,
     description: {},
-    partType: { "#type": null },
+    partType: { "#type_type": null },
     contentHash: null,
     partIdHash,
     expression: {
