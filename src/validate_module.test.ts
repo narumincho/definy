@@ -29,6 +29,7 @@ const stdAbsId = (await resolvePartPlaceholders({
 
 type TestPart = {
   readonly id: string;
+  /** パーツの型 (型の式) */
   readonly partType: unknown;
   readonly expression: unknown;
 };
@@ -84,7 +85,7 @@ async function validateModule(
 
 const callAbs: TestPart = {
   id: "use-abs",
-  partType: { "#number": null },
+  partType: { "#type_number": null },
   expression: {
     "#call": {
       function: stdAbs,
@@ -93,9 +94,9 @@ const callAbs: TestPart = {
   },
 };
 const stdAbsType = {
-  "#function": {
-    parameters: [{ name: "x", type: { "#number": null } }],
-    return_type: { "#number": null },
+  "#type_function": {
+    parameters: [{ name: "x", type: { "#type_number": null } }],
+    return_type: { "#type_number": null },
   },
 };
 
@@ -132,14 +133,16 @@ describe("core.validate-module", () => {
   it("モジュールの型パーツの宣言した型で検査する", async () => {
     const point: TestPart = {
       id: "point",
-      partType: { "#type": null },
+      partType: { "#type_type": null },
       expression: {
         "#type_record": [{ key: "x", value: { "#type_number": null } }],
       },
     };
     const origin = (value: unknown): TestPart => ({
       id: "origin",
-      partType: { "#reference": { part_hash: "point" } },
+      partType: {
+        "#part_reference": { part_definition_event_hash: "point" },
+      },
       expression: { "#record": [{ key: "x", value }] },
     });
     expect(await validateModule([point, origin({ "#number": 0 })], [])).toBe(

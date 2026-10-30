@@ -1924,7 +1924,7 @@
           ]
         },
         "part_type": {
-          "$ref": "#/definitions/core.type-ast"
+          "$ref": "#/definitions/core.expression"
         },
         "expression": {
           "$ref": "#/definitions/core.expression"

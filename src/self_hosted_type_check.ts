@@ -35,6 +35,7 @@ import {
   variantOf,
   variantPayload,
 } from "./definy_value.ts";
+import { partTypeToExpression } from "./part_type_expression.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -141,7 +142,10 @@ function partCheckArguments(
   if (!allowHoles && containsHole(part.expression)) {
     throw new UnsupportedPartError("Expression has an unfilled hole");
   }
-  return { expression: part.expression, expectedType: part.partType };
+  return {
+    expression: part.expression,
+    expectedType: partTypeToExpression(part.partType),
+  };
 }
 
 /** `core.type-checker` に渡すパーツ */
@@ -186,7 +190,7 @@ function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
       entry.builtin === undefined
         ? entry.partType == null
           ? none()
-          : some(entry.partType)
+          : some(partTypeToExpression(entry.partType))
         : some(variant("builtin", entry.builtin)),
     type_declaration:
       entry.typeDeclaration == null ? none() : some(entry.typeDeclaration),
