@@ -27,7 +27,8 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 | `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                   |
 | `read_account_created`        | `account_id`, `then: (created: boolean) -> ...`                                                     | そのアカウントの `create_account` を受け付けたか (`isAccountCreated`)             |
 | `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
-| `type_check_commit`           | `signed_event_bytes`, `then: (errors: list<string>) -> ...`                                         | プロジェクトのコミットの型エラー (`checkSubmittedProjectCommit`)                  |
+| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-input>) -> ...`                     | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)       |
+| `type_check_parts`            | `latest`, `committed`, `module_id`, `checks`, `then: (errors: list<string>) -> ...`                 | 型チェッカーの別のインスタンスでパーツを検査し, 型エラーを返す (`typeCheckParts`) |
 | `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                          |
 | `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                |
 | `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                     |
@@ -54,7 +55,7 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 - 書き込みの RPC (2026-10-29):
   - `SubmitEvent` (`definy.submit-event`): `signedEventBytes` の両端の空白を除き, 署名を確かめ (`verify_signed_event`),
     規則 (`core.check-event`), CAS に足りない中身 (`read_missing_content_hashes`. 足りなければ `missing_content` でそれを返す),
-    型チェッカー (`type_check_commit`) の順に見てから保存する (`write_event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
+    型検査 (`definy.check-commit`. 下を参照) の順に見てから保存する (`write_event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
   - (2026-10-30) 規則 `core.check-event` は `definy.submit-verified-event` の中で呼ぶ。`verify_signed_event` は
     `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
     中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も
@@ -64,9 +65,42 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
     `contentHash` と違うものが 1 つでもあれば何も保存せずに `invalid_argument` にする (`definy.content-hash-mismatch`)。
     以前は Base64 でない中身や形の違う `items` が `internal` になっていたのを `invalid_argument` にした。
 
+## 型検査 (`definy.check-commit`, 2026-10-31)
+
+`SubmitEvent` のプロジェクトのコミットの型検査も, 何をどの順に確かめて何を返すかは definy が決める。
+
+1. `read_commit_check_input` でホスト (`readCommitCheckInput`, `worker/type_check.ts`) が読むもの (`definy.commit-check-input`):
+   コミットのパーツ (`definy.commit-check-part`. ID, `モジュール名.パーツ名`, モジュール, content hash, 中身),
+   参照できるパーツ (`core.visibility-target`), 各プロジェクトの `main` の最新のパーツ (`core.type-checker` の `latest` の形),
+   今の `main` のこのプロジェクトのモジュールの ID。プロジェクトのコミットでなければ `none`。
+   - パーツの中身は, CAS の定義の式をコミットの中で評価したもの ([part-definition.md](part-definition.md))。評価できないか
+     `core.part-content` の形でなければ `none`。ユーザーが作った定義のパーツで定義したパーツは `definition_check` に定義の式を入れる
+   - ストアと CAS を読むこと, 定義の式の評価, パーツ ID (SHA-256) を求めること, 受け付けたコミットの中身のキャッシュはホストのまま
+2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
+   - 中身が `core.part-content` にならないパーツ (`definy.commit-check-malformed`)
+   - 参照できないパーツへの参照 (`core.check-reference-visibility`, メッセージは `definy.visibility-violation-message`)
+   - 型: 型環境と何を検査するか (`to_check` / `without_expression`) は service.wasm の中で `core.type-checker` が決める。
+     コミットのモジュールと今のプロジェクトのモジュールのパーツはまとめて置き換えるモジュール (`#replaced`) のものにする
+     (`definy.commit-check-latest-entries` / `definy.commit-check-entries`)。式か型の無いパーツは
+     コンパイラ組み込み (`definy.commit-check-part-builtin`) でなければ `part 'app.x': not supported: part has no expression or type`。
+     検査するもの (`definy.commit-check-requests`: 定義の式, その後に `to_check` のパーツ) は `type_check_parts` でホストに頼む
+3. `type_check_parts` はホスト (`typeCheckParts` → `checkPartsInModuleCommit`, `src/self_hosted_type_check.ts`) が
+   型チェッカー (`wasm/type_checker.wasm`) の別のインスタンスで, definy が渡した型環境で 1 つずつ検査し, 型エラーのメッセージを返す
+
+### 型チェッカーをホストに頼む理由 (メモリ)
+
+stage1 の出力は線形メモリを解放しない (確保はヒープの先頭をずらすだけ)。2026-10-31 に測ったところ,
+型チェッカーの 1 つのインスタンスで seed の全パーツ (543 個) を検査すると 1 パーツ約 1.5MB ずつ増えて 640MB になった
+(Workers の上限は 128MB)。そのため各パーツの検査は, 32 個ごとに作り直す別のインスタンスで行う。
+
+service.wasm の 1 つのインスタンスで残りを行うと, 小さいコミットは 6MB ほどで済むが, core 全体 (460 パーツ) のコミットでは
+入力の書き込みで 16MB, 全体で 64〜128MB になる (以前の TypeScript からの呼び出しでも, 公開/非公開の検査の
+インスタンスだけで 48MB だった)。core 全体を UI からコミットするには, 使い終わったメモリを回収する仕組み
+(stage1 のランタイムで, ある呼び出しの間に確保した領域を結果だけ残して戻すなど) が先に要る。
+
 ## 今後
 
-- 型チェッカーの呼び出しも `definy.submit-event` の中で行う。今はホスト (`checkSubmittedProjectCommit`) が CAS からパーツの中身を読み,
-  定義の式を評価し, 公開/非公開と型を検査して理由だけを返している。`core.type-checker` を `service.wasm` の 1 つのインスタンスで呼ぶと,
-  線形メモリが解放されないこと (今はパーツ 32 個ごとにインスタンスを作り直す) と, trap したときに RPC ごと落ちることを先に考える。
+- 型チェッカーの各パーツの検査も service.wasm の中で行う (上のメモリの回収が要る)。trap したときに RPC ごと落ちることも考える
+  (今は `core.type-checker` の計画が trap すると `SubmitEvent` が `internal` になる)
+- 定義の式の評価とパーツ ID の導出も definy にする
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

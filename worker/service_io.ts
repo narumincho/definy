@@ -6,7 +6,14 @@
  * ストアを読む要求 (`read_commits` / `read_events`) や書き込みの要求 (`write_event` / `write_contents`) をホスト (ここ) が
  * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
-import { variant, variantOf } from "../src/definy_value.ts";
+import {
+  field,
+  none,
+  optionValue,
+  some,
+  variant,
+  variantOf,
+} from "../src/definy_value.ts";
 import { encodeEventContent, type EventContent } from "../src/event_content.ts";
 import {
   commitSummaryLiteral,
@@ -55,9 +62,14 @@ export type ServiceIoHost = {
       }
     | { readonly invalid: string }
   >;
-  /** プロジェクトのコミットなら型チェッカーで検査し, 型エラーを返す (無ければ空) */
-  readonly typeCheckCommit: (
-    signedEventBytes: string,
+  /**
+   * プロジェクトのコミットなら, 型検査に使うもの (`definy.commit-check-input` の値) を読む.
+   * プロジェクトのコミットでなければ `null`
+   */
+  readonly readCommitCheckInput: (signedEventBytes: string) => Promise<unknown>;
+  /** `definy.check-commit` が決めた型環境でパーツを型チェッカーで検査し, 型エラーを返す (無ければ空) */
+  readonly typeCheckParts: (
+    request: TypeCheckPartsRequest,
   ) => Promise<ReadonlyArray<string>>;
   /** イベントを保存し, イベントハッシュを返す */
   readonly writeEvent: (signedEventBytes: string) => Promise<string>;
@@ -69,6 +81,22 @@ export type ServiceIoHost = {
   readonly writeContents: (
     items: ReadonlyArray<ContentItem>,
   ) => Promise<ReadonlyArray<string>>;
+};
+
+/** `type_check_parts` の要求 */
+export type TypeCheckPartsRequest = {
+  /** `core.type-checker` の `latest` (definy の値) */
+  readonly latest: unknown;
+  /** `core.type-checker` の `committed` (definy の値) */
+  readonly committed: unknown;
+  readonly moduleId: string;
+  /** 検査するパーツ (`definy.type-check-request`) */
+  readonly checks: ReadonlyArray<{
+    readonly name: string;
+    readonly expression: unknown;
+    readonly partType: unknown;
+    readonly builtin: boolean;
+  }>;
 };
 
 /** `definy.service-response` */
@@ -220,17 +248,45 @@ export async function handleRpcInDefiny(
         ]);
         break;
       }
-      case "type_check_commit":
-      case "write_event": {
-        const signedEventBytes = String(
-          instance.read(instance.recordField(payload, "signed_event_bytes")),
+      case "read_commit_check_input": {
+        const input = await host.readCommitCheckInput(
+          String(
+            instance.read(instance.recordField(payload, "signed_event_bytes")),
+          ),
         );
-        const result =
-          tag === "type_check_commit"
-            ? await host.typeCheckCommit(signedEventBytes)
-            : await host.writeEvent(signedEventBytes);
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(result),
+          instance.writeArgument(input === null ? none() : some(input)),
+        ]);
+        break;
+      }
+      case "type_check_parts": {
+        const read = (key: string) =>
+          instance.read(instance.recordField(payload, key));
+        const checks = read("checks");
+        const errors = await host.typeCheckParts({
+          latest: read("latest"),
+          committed: read("committed"),
+          moduleId: String(read("module_id")),
+          checks: (Array.isArray(checks) ? checks : []).map((check) => ({
+            name: String(field(check, "name")),
+            expression: optionValue(field(check, "expression")) ?? null,
+            partType: optionValue(field(check, "part_type")) ?? null,
+            builtin: field(check, "builtin") === true,
+          })),
+        });
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(errors),
+        ]);
+        break;
+      }
+      case "write_event": {
+        const eventHash = await host.writeEvent(
+          String(
+            instance.read(instance.recordField(payload, "signed_event_bytes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(eventHash),
         ]);
         break;
       }

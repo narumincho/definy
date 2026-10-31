@@ -1,5 +1,7 @@
 /**
- * `SubmitEvent` で受け取ったプロジェクトのコミットを definy 製の型チェッカーで検査する.
+ * `SubmitEvent` で受け取ったプロジェクトのコミットの型検査で, definy の `definy.check-commit` (docs/service.md) が使う能力.
+ * 何をどの順に確かめるかは definy が決め, ここはストアと CAS を読んで検査の入力を作ることと,
+ * 型チェッカーを service.wasm とは別のインスタンスで動かすことだけをする.
  *
  * 型チェッカーは `npm run build:seeds` が seed の `core.type-check-against` を stage1 でコンパイルした
  * `wasm/type_checker.wasm` を `?module` で取り込んで使う (Cloudflare Workers は実行時に Wasm をコンパイルできない).
@@ -8,7 +10,6 @@
 import typeCheckerModule from "../wasm/type_checker.wasm?module";
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
-import visibilityCheckerModule from "../wasm/visibility_checker.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
 import {
   base64ToBytes,
@@ -16,21 +17,22 @@ import {
   decodeCborItem,
 } from "../src/cbor.ts";
 import {
-  checkModuleCommitParts,
+  checkPartsInModuleCommit,
   isTypePartType,
-  outcomeErrorMessage,
+  latestPartsToModuleEntries,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
+import { none, some, variant } from "../src/definy_value.ts";
 import { summarizeBranches } from "../src/branches.ts";
 import { compilerBuiltinName } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
-  checkReferenceVisibility,
-  visibilityViolationMessage,
+  visibilityTargetValues,
   type VisibilityTarget,
 } from "../src/visibility.ts";
 import {
   DEFAULT_VISIBILITY,
+  encodePartContent,
   partContentFromValue,
   MAIN_BRANCH,
   type CommitModule,
@@ -560,12 +562,13 @@ async function loadLatestParts(
 }
 
 /**
- * `SubmitEvent` で受け取ったイベント (Base64) がプロジェクトのコミットなら型チェッカーで検査し,
- * 型エラーなどの理由を 1 パーツ 1 行で返す. 問題なければ空.
- * プロジェクトのコミット以外・署名や形式が不正なもの (`submitEvent` が拒否する)・CAS に足りない内容があるもの
- * (式を読めないので検査できない. `submitEvent` が `missing_content` を返し, 内容を送ってから出し直してもらう) は検査しない
+ * `SubmitEvent` で受け取ったイベント (Base64) がプロジェクトのコミットなら, definy の `definy.check-commit` が検査に使うもの
+ * (`definy.commit-check-input` の値) を読む (`read_commit_check_input`. docs/service.md).
+ * コミットのパーツの中身は, 定義の式をそのコミットの中で評価して求める (評価できなければ `content` は `none`).
+ * プロジェクトのコミット以外・署名や形式が不正なもの・CAS に足りない内容があるもの
+ * (式を読めないので検査できない. `definy.submit-event` が先に `missing_content` を返す) は `null`
  */
-export async function checkSubmittedProjectCommit(
+export async function readCommitCheckInput(
   signedEventBase64: string,
   store: PartStoreReader & {
     readonly checkMissingHashes: (
@@ -574,22 +577,22 @@ export async function checkSubmittedProjectCommit(
     ) => Promise<ReadonlyArray<string>>;
   },
   env: Env | undefined,
-): Promise<ReadonlyArray<string>> {
+): Promise<unknown> {
   let decoded: Awaited<ReturnType<typeof decodeVerifiedSignedEvent>>;
   try {
     decoded = await decodeVerifiedSignedEvent(base64ToBytes(signedEventBase64));
   } catch {
-    return [];
+    return null;
   }
   if (decoded.content.type !== "project_commit") {
-    return [];
+    return null;
   }
   const { commit } = decoded.content;
   if (
     (await store.checkMissingHashes(decoded.meta.referencedContentHashes, env))
       .length > 0
   ) {
-    return [];
+    return null;
   }
   const refs = await commitParts(commit.modules);
   // 受け付けたコミットが参照している中身は, そのときに形を確かめてある
@@ -599,7 +602,6 @@ export async function checkSubmittedProjectCommit(
     ),
   );
   const latest = await loadLatestParts(store, env);
-  const latestParts: ReadonlyMap<string, LatestPart> = latest.parts;
   // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
   const definitions = await readPartDefinitions(
     refs.map((part) => part.contentHash),
@@ -616,46 +618,50 @@ export async function checkSubmittedProjectCommit(
     store,
     env,
   });
-  const malformed = refs.flatMap((part) =>
-    contents.has(part.partId)
-      ? []
-      : [
-          `${part.name}: the content ${part.contentHash} is not a part definition that evaluates to a core.part-content`,
-        ],
-  );
-  if (malformed.length > 0) {
-    return malformed;
-  }
-  const committed = refs.map((part) =>
-    withContent(part, contents.get(part.partId) ?? null),
-  );
-  // 参照できない (非公開の) パーツへの参照は, 型を検査する前に拒否する (docs/visibility.md)
-  const violations = checkReferenceVisibility(visibilityCheckerModule, {
-    projectName: commit.projectName,
-    committed,
-    environment: latest.visibilityTargets,
-  });
-  if (violations.length > 0) {
-    return violations.map(visibilityViolationMessage);
-  }
-  return checkModuleCommitParts({
-    typeChecker: typeCheckerModule,
-    // プロジェクトの今の (main の) モジュールも, コミットのモジュールで置き換える (無くなったモジュールのパーツは型環境から外れる)
-    replacedModuleIds: new Set([
-      ...committed.map((part) => part.moduleId),
-      ...(latest.projectModuleIds.get(commit.projectName) ?? []),
-    ]),
-    committed,
-    latestParts,
-    // ユーザーが作った定義のパーツで定義したパーツは, 定義の式が core.part-content になるかも型検査する
-    definitionChecks: refs.flatMap((part) => {
+  return {
+    project_name: commit.projectName,
+    parts: refs.map((part) => {
+      const content = contents.get(part.partId);
       const definition = definitions.get(part.contentHash);
-      return evaluated.has(part.partId) && definition !== undefined
-        ? [{ name: `${part.name} (definition)`, expression: definition }]
-        : [];
+      return {
+        id: part.partId,
+        name: part.name,
+        module_name: part.moduleName,
+        module_id: part.moduleId,
+        module_visibility: variant(part.moduleVisibility),
+        content_hash: part.contentHash,
+        content:
+          content === undefined ? none() : some(encodePartContent(content)),
+        // ユーザーが作った定義のパーツで定義したパーツは, 定義の式が core.part-content になるかも型検査する
+        definition_check:
+          evaluated.has(part.partId) && definition !== undefined
+            ? some(definition)
+            : none(),
+      };
     }),
-  }).flatMap(({ name, outcome }) => {
-    const message = outcomeErrorMessage(name, outcome);
-    return message === null ? [] : [message];
+    environment: visibilityTargetValues(latest.visibilityTargets),
+    latest: latestPartsToModuleEntries(latest.parts.values()),
+    project_module_ids: latest.projectModuleIds.get(commit.projectName) ?? [],
+  };
+}
+
+/**
+ * `definy.check-commit` が決めた型環境でパーツを型チェッカーで検査し, 型エラーのメッセージを返す (`type_check_parts`).
+ * 型チェッカーのインスタンスは service.wasm とは別にする (線形メモリが解放されないので, 何個か検査するごとに作り直す)
+ */
+export function typeCheckParts(request: {
+  readonly latest: unknown;
+  readonly committed: unknown;
+  readonly moduleId: string;
+  readonly checks: ReadonlyArray<{
+    readonly name: string;
+    readonly expression: unknown;
+    readonly partType: unknown;
+    readonly builtin: boolean;
+  }>;
+}): ReadonlyArray<string> {
+  return checkPartsInModuleCommit({
+    typeChecker: typeCheckerModule,
+    ...request,
   });
 }

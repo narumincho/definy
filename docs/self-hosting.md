@@ -70,8 +70,8 @@ definy サービス全体のブートストラップが完了したことを意�
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
 - イベントの中身の形は core の型パーツ `core.event-content` (`core.project-commit` など) が決め, 署名の検証のときに
   その宣言で形を確かめます ([event.md](event.md))。
-- Connect-RPC の `SubmitEvent` は、`checkSubmittedProjectCommit` (`worker/type_check.ts`)
-  でコミットの全モジュールのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
+- Connect-RPC の `SubmitEvent` は、`definy.check-commit` ([service.md](service.md)) と, ホストの
+  `readCommitCheckInput` / `typeCheckParts` (`worker/type_check.ts`) でコミットの全モジュールのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
   seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
   コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
   パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),

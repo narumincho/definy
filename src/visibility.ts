@@ -3,8 +3,8 @@
  *
  * 非公開のモジュールのパーツは同じプロジェクトのパーツからだけ, 非公開のパーツは同じモジュールのパーツからだけ参照できる.
  * イベントは誰でも読めるので, 読み取りを隠すものではなく参照できるかの決まり.
- * サーバー (`checkSubmittedProjectCommit`) と UI のコミット前の検査 (`checkCommitTypes`) が, 同じ definy 製の
- * `core.check-reference-visibility` (`npm run build:seeds` がコンパイルした `wasm/visibility_checker.wasm`) で確かめる
+ * サーバー (`definy.check-commit-input` が service.wasm の中で呼ぶ) と UI のコミット前の検査 (`checkCommitTypes`.
+ * `npm run build:seeds` がコンパイルした `wasm/visibility_checker.wasm`) が, 同じ definy 製の `core.check-reference-visibility` で確かめる
  */
 import { none, some, variant, variantOf } from "./definy_value.ts";
 import type { Visibility } from "./event_content.ts";
@@ -97,16 +97,7 @@ export function checkReferenceVisibility(
           expression: optionValue(part.expression),
         })),
       ),
-      environment: instance.writeArgument(
-        Array.from(environment, ([id, target]) => ({
-          id,
-          name: target.name,
-          module_name: target.moduleName,
-          project_name: target.projectName,
-          visibility: variant(target.visibility),
-          module_visibility: variant(target.moduleVisibility),
-        })),
-      ),
+      environment: instance.writeArgument(visibilityTargetValues(environment)),
     }),
   );
   if (!Array.isArray(result)) {
@@ -136,6 +127,20 @@ export function checkReferenceVisibility(
 
 function optionValue(value: unknown): unknown {
   return value === null || value === undefined ? none() : some(value);
+}
+
+/** 参照されるパーツを definy の値 (`core.visibility-target` のリスト) にする (キーはパーツ ID) */
+export function visibilityTargetValues(
+  environment: ReadonlyMap<string, VisibilityTarget>,
+): ReadonlyArray<unknown> {
+  return Array.from(environment, ([id, target]) => ({
+    id,
+    name: target.name,
+    module_name: target.moduleName,
+    project_name: target.projectName,
+    visibility: variant(target.visibility),
+    module_visibility: variant(target.moduleVisibility),
+  }));
 }
 
 /** 拒否の理由の 1 行 (サーバーの `SubmitEvent` のメッセージ. UI もそのまま出す) */

@@ -1,16 +1,20 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { CommitSummary } from "../src/event_check.ts";
-import type {
-  CommitModule,
-  CommitPart,
-  EventContent,
+import { none, some, variant } from "../src/definy_value.ts";
+import {
+  encodePartContent,
+  type CommitModule,
+  type CommitPart,
+  type EventContent,
+  type PartContent,
 } from "../src/event_content.ts";
 import {
   definyToJson,
   handleRpcInDefiny,
   jsonToDefiny,
   type ServiceIoHost,
+  type TypeCheckPartsRequest,
 } from "./service_io.ts";
 import type { EventItem } from "./types.ts";
 
@@ -28,6 +32,41 @@ const commit = (
   branch,
   timeMs,
   moduleNames: ["app"],
+});
+
+/** `definy.commit-check-part` (中身が `null` なら core.part-content に評価できなかったもの) */
+const checkPart = (
+  name: string,
+  content: PartContent | null,
+  contentHash = `hash-${name}`,
+): unknown => ({
+  id: `id-${name}`,
+  name: `app.${name}`,
+  module_name: "app",
+  module_id: "module-app",
+  module_visibility: variant("public"),
+  content_hash: contentHash,
+  content: content === null ? none() : some(encodePartContent(content)),
+  definition_check: none(),
+});
+
+/** `definy.commit-check-input` */
+const checkInput = (input: {
+  readonly parts: ReadonlyArray<unknown>;
+  readonly environment?: ReadonlyArray<unknown>;
+}): unknown => ({
+  project_name: "app",
+  parts: input.parts,
+  environment: input.environment ?? [],
+  latest: [],
+  project_module_ids: [],
+});
+
+const content = (partType: unknown, expression: unknown): PartContent => ({
+  description: [],
+  visibility: "public",
+  partType,
+  expression,
 });
 
 const event = (eventHash: string, timeMs?: number): EventItem => ({
@@ -48,7 +87,8 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readMissingContentHashes: () => Promise.reject(new Error("not read")),
   readAccountCreated: () => Promise.reject(new Error("not read")),
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
-  typeCheckCommit: () => Promise.reject(new Error("not checked")),
+  readCommitCheckInput: () => Promise.reject(new Error("not read")),
+  typeCheckParts: () => Promise.reject(new Error("not checked")),
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
@@ -159,9 +199,9 @@ describe("handleRpcInDefiny", () => {
           steps.push(`missing ${hashes.join(",")}`);
           return Promise.resolve([]);
         },
-        typeCheckCommit: () => {
+        readCommitCheckInput: () => {
           steps.push("type check");
-          return Promise.resolve([]);
+          return Promise.resolve(null);
         },
         writeEvent: (bytes) => {
           steps.push(`write ${bytes}`);
@@ -216,12 +256,19 @@ describe("handleRpcInDefiny", () => {
       await submit(
         { signedEventBytes: "ok" },
         submitHost({
-          typeCheckCommit: () => Promise.resolve(["app.x: type_mismatch"]),
+          readCommitCheckInput: () =>
+            Promise.resolve(
+              checkInput({ parts: [checkPart("x", null, "c1")] }),
+            ),
         }),
       ),
     ).toEqual({
       status: 400,
-      body: { code: "invalid_argument", message: "app.x: type_mismatch" },
+      body: {
+        code: "invalid_argument",
+        message:
+          "app.x: the content c1 is not a part definition that evaluates to a core.part-content",
+      },
     });
     expect(await submit({ signedEventBytes: "bad" }, submitHost())).toEqual({
       status: 400,
@@ -282,7 +329,7 @@ describe("handleRpcInDefiny", () => {
             return Promise.resolve([commit("m1", "alice", "main", 100)]);
           },
           readMissingContentHashes: () => Promise.resolve([]),
-          typeCheckCommit: () => Promise.resolve([]),
+          readCommitCheckInput: () => Promise.resolve(null),
           writeEvent: () => Promise.resolve("e2"),
         }),
       );
@@ -319,6 +366,142 @@ describe("handleRpcInDefiny", () => {
           "the part name 'x' is duplicated",
         ].join("\n"),
       },
+    });
+  });
+
+  it("SubmitEvent の型検査は definy.check-commit が何をどの順に検査するか決め, 各パーツの検査だけをホストに頼む", async () => {
+    const requests: Array<TypeCheckPartsRequest> = [];
+    const submitWith = (input: unknown, typeErrors: ReadonlyArray<string>) =>
+      handleRpcInDefiny(
+        service,
+        "SubmitEvent",
+        () => ({ signedEventBytes: "ok" }),
+        host({
+          verifySignedEvent: () =>
+            Promise.resolve({
+              eventHash: "e3",
+              accountId: "alice",
+              content: { type: "create_account", accountName: "alice" },
+              referencedContentHashes: [],
+            }),
+          readAccountCreated: () => Promise.resolve(false),
+          readMissingContentHashes: () => Promise.resolve([]),
+          readCommitCheckInput: () => Promise.resolve(input),
+          typeCheckParts: (request) => {
+            requests.push(request);
+            return Promise.resolve(typeErrors);
+          },
+          writeEvent: () => Promise.resolve("e3"),
+        }),
+      );
+    const number = { "#type_number": null };
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+
+    // 式の無いパーツ (組み込みは除く) を先に, 型チェッカーの結果をその後に並べる
+    expect(
+      await submitWith(
+        checkInput({
+          parts: [
+            checkPart("x", content(number, { "#number": 1 })),
+            checkPart("y", content(number, null)),
+            checkPart("plus", content(null, { "#builtin": "plus" })),
+          ],
+        }),
+        ["part 'app.x': type error: type_mismatch"],
+      ),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: [
+          "part 'app.y': not supported: part has no expression or type",
+          "part 'app.x': type error: type_mismatch",
+        ].join("\n"),
+      },
+    });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.moduleId).toBe("#replaced");
+    expect(requests[0]?.checks).toEqual([
+      {
+        name: "app.x",
+        expression: { "#number": 1 },
+        partType: number,
+        builtin: false,
+      },
+      {
+        name: "app.plus",
+        expression: { "#builtin": "plus" },
+        partType: null,
+        builtin: true,
+      },
+    ]);
+    expect(requests[0]?.committed).toEqual([
+      {
+        part_id: "id-x",
+        module_id: "#replaced",
+        part_type: some(number),
+        type_declaration: none(),
+        expression_key: some("hash-x"),
+        has_expression: true,
+      },
+      {
+        part_id: "id-y",
+        module_id: "#replaced",
+        part_type: some(number),
+        type_declaration: none(),
+        expression_key: some("hash-y"),
+        has_expression: false,
+      },
+      {
+        part_id: "id-plus",
+        module_id: "#replaced",
+        part_type: some({ "#builtin": "plus" }),
+        type_declaration: none(),
+        expression_key: some("hash-plus"),
+        has_expression: true,
+      },
+    ]);
+
+    // 参照できないパーツへの参照は, 型を検査する前に拒否する
+    requests.length = 0;
+    expect(
+      await submitWith(
+        checkInput({
+          parts: [checkPart("x", content(number, reference("id-secret")))],
+          environment: [
+            {
+              id: "id-secret",
+              name: "lib.secret",
+              module_name: "lib",
+              project_name: "lib",
+              visibility: variant("private"),
+              module_visibility: variant("public"),
+            },
+          ],
+        }),
+        [],
+      ),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "part 'app.x': cannot reference the private part 'lib.secret'",
+      },
+    });
+    expect(requests).toEqual([]);
+
+    expect(
+      await submitWith(
+        checkInput({
+          parts: [checkPart("x", content(number, { "#number": 1 }))],
+        }),
+        [],
+      ),
+    ).toEqual({
+      status: 200,
+      body: { eventHash: "e3", status: "accepted", missingContentHashes: [] },
     });
   });
 

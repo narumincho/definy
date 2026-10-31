@@ -327,15 +327,30 @@ function createModuleCommitSession(options: {
   readonly latest: ReadonlyArray<ModuleEntry>;
   readonly committed: ReadonlyArray<ModuleEntry>;
   readonly moduleId: string;
-}): {
+}): ModuleCommitSession {
+  return createModuleCommitSessionFromValues({
+    typeChecker: options.typeChecker,
+    latest: moduleEntriesExpression(options.latest),
+    committed: moduleEntriesExpression(options.committed),
+    moduleId: options.moduleId,
+  });
+}
+
+type ModuleCommitSession = {
   /** 検査するパーツ (型が 1 つも変わらなければ, 式が変わったパーツと新しいパーツ) の ID */
   readonly toCheck: () => ReadonlyArray<string>;
   /** 式か型の無いパーツの ID */
   readonly withoutExpression: () => ReadonlyArray<string>;
-} & TypeCheckSession {
-  const latest = moduleEntriesExpression(options.latest);
-  const committed = moduleEntriesExpression(options.committed);
-  const moduleId = options.moduleId;
+} & TypeCheckSession;
+
+/** {@link createModuleCommitSession} の `latest` / `committed` を definy の値 (`core.type-checker` の引数の形) で渡すもの */
+function createModuleCommitSessionFromValues(options: {
+  readonly typeChecker: WebAssembly.Module;
+  readonly latest: unknown;
+  readonly committed: unknown;
+  readonly moduleId: string;
+}): ModuleCommitSession {
+  const { latest, committed, moduleId } = options;
   // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
   // その環境で検査する関数 (`core.type-checker` が返すレコードの `check`) を使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
@@ -608,6 +623,45 @@ export function typeEnvFromParts(
           },
         ]
       : [];
+  });
+}
+
+/** パーツを `core.type-checker` の `latest` に渡す definy の値にする (サーバーの `definy.check-commit` に渡す) */
+export function latestPartsToModuleEntries(
+  parts: Iterable<LatestPart>,
+): unknown {
+  return moduleEntriesExpression([...parts].map(latestPartToModuleEntry));
+}
+
+/**
+ * definy の `definy.check-commit` が決めた型環境 (`core.type-checker` の `latest` / `committed` / `module_id`) で,
+ * パーツを 1 つずつ検査して型エラーのメッセージを返す (`type_check_parts`. docs/service.md).
+ * 線形メモリは解放されないので, 検査は {@link CALLS_PER_INSTANCE} 個ごとに型チェッカーのインスタンスを作り直す.
+ * 型チェッカーが扱えないコンパイラ組み込みのパーツ (`builtin`) は受け入れる
+ */
+export function checkPartsInModuleCommit(options: {
+  readonly typeChecker: WebAssembly.Module;
+  readonly latest: unknown;
+  readonly committed: unknown;
+  readonly moduleId: string;
+  readonly checks: ReadonlyArray<{
+    readonly name: string;
+    readonly expression: unknown;
+    readonly partType: unknown;
+    readonly builtin: boolean;
+  }>;
+}): ReadonlyArray<string> {
+  const session = createModuleCommitSessionFromValues(options);
+  return options.checks.flatMap((check) => {
+    const outcome = session.check({
+      expression: check.expression,
+      partType: check.partType,
+    });
+    const message =
+      outcome.kind === "unsupported" && check.builtin
+        ? null
+        : outcomeErrorMessage(check.name, outcome);
+    return message === null ? [] : [message];
   });
 }
 

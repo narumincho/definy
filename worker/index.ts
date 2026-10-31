@@ -2,7 +2,8 @@ import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
-  checkSubmittedProjectCommit,
+  readCommitCheckInput,
+  typeCheckParts,
   loadCommitSummaries,
 } from "./type_check.ts";
 import { handleRpcInDefiny } from "./service_io.ts";
@@ -323,8 +324,9 @@ async function handleRpc(
         // 署名と中身の形を確かめる. 規則 (core.check-event) は definy.submit-event の中で呼ぶ
         verifySignedEvent: verifySubmittedEvent,
         // 型チェッカー
-        typeCheckCommit: (signedEventBytes) =>
-          checkSubmittedProjectCommit(signedEventBytes, store, env),
+        readCommitCheckInput: (signedEventBytes) =>
+          readCommitCheckInput(signedEventBytes, store, env),
+        typeCheckParts: (request) => Promise.resolve(typeCheckParts(request)),
         writeEvent: async (signedEventBytes) =>
           (await store.submitEvent(signedEventBytes, env)).eventHash,
         hashContents: (contentsBytes) =>
