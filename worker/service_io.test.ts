@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { CommitSummary } from "../src/event_check.ts";
 import { none, some, variant } from "../src/definy_value.ts";
 import {
-  encodePartContent,
   type CommitModule,
   type CommitPart,
   type EventContent,
@@ -15,6 +14,7 @@ import {
   jsonToDefiny,
   type ServiceIoHost,
 } from "./service_io.ts";
+import { partDefinitionExpression } from "../src/part_definition.ts";
 import type { EventItem } from "./types.ts";
 
 const service = new WebAssembly.Module(await readFile("wasm/service.wasm"));
@@ -45,11 +45,11 @@ const checkPart = (
   module_id: "module-app",
   module_visibility: variant("public"),
   content_hash: contentHash,
-  content: content === null ? none() : some(encodePartContent(content)),
-  definition_check: none(),
+  definition:
+    content === null ? none() : some(partDefinitionExpression(content)),
 });
 
-/** `definy.commit-check-input` */
+/** `definy.commit-check-source` */
 const checkInput = (input: {
   readonly parts: ReadonlyArray<unknown>;
   readonly environment?: ReadonlyArray<unknown>;
@@ -87,6 +87,10 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readAccountCreated: () => Promise.reject(new Error("not read")),
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
+  readPartDefinitions: () => Promise.reject(new Error("not read")),
+  decodePartContents: () => {
+    throw new Error("not decoded");
+  },
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
@@ -472,6 +476,72 @@ describe("handleRpcInDefiny", () => {
       status: 200,
       body: { eventHash: "e3", status: "accepted", missingContentHashes: [] },
     });
+  });
+
+  it("SubmitEvent はパーツの定義の式を definy がその場で読むか, 評価器 (core.eval-value) で評価して読む", async () => {
+    const decoded: Array<ReadonlyArray<unknown>> = [];
+    const submitWith = (parts: ReadonlyArray<unknown>) =>
+      handleRpcInDefiny(
+        service,
+        "SubmitEvent",
+        () => ({ signedEventBytes: "ok" }),
+        host({
+          verifySignedEvent: () =>
+            Promise.resolve({
+              eventHash: "e4",
+              accountId: "alice",
+              content: { type: "create_account", accountName: "alice" },
+              referencedContentHashes: [],
+            }),
+          readAccountCreated: () => Promise.resolve(false),
+          readMissingContentHashes: () => Promise.resolve([]),
+          readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
+          decodePartContents: (values) => {
+            decoded.push(values);
+            return values.map(() => undefined);
+          },
+          writeEvent: () => Promise.resolve("e4"),
+        }),
+      );
+    // core.define-part / core.define-type の呼び出しは評価器を使わずに読む (decodePartContents を呼ばない)
+    expect(
+      await submitWith([
+        checkPart("color", {
+          description: [{ language: "en", text: "A color" }],
+          visibility: "private",
+          partType: { "#type_type": null },
+          expression: {
+            "#type_union": [
+              { tag: "red", payload_type: { "#none": null } },
+              { tag: "green", payload_type: { "#none": null } },
+            ],
+          },
+        }),
+        checkPart("x", content({ "#type_number": null }, { "#number": 1 })),
+      ]),
+    ).toEqual({
+      status: 200,
+      body: { eventHash: "e4", status: "accepted", missingContentHashes: [] },
+    });
+    expect(decoded).toEqual([]);
+
+    // それ以外は評価器で評価し, 値をホストに core.part-content にしてもらう
+    expect(
+      await submitWith([
+        {
+          ...(checkPart("y", null) as object),
+          definition: some({ "#number": 1 }),
+        },
+      ]),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message:
+          "app.y: the content hash-y is not a part definition that evaluates to a core.part-content",
+      },
+    });
+    expect(decoded).toEqual([[{ "#number": 1 }]]);
   });
 
   it("UploadContent は SHA-256 が content hash と一致するときだけ保存する", async () => {
