@@ -6,12 +6,7 @@
  * ストアを読む要求 (`read_commits` / `read_events`) や書き込みの要求 (`write_event` / `write_contents`) をホスト (ここ) が
  * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
-import {
-  none,
-  some,
-  variant,
-  variantOf,
-} from "../src/definy_value.ts";
+import { none, some, variant, variantOf } from "../src/definy_value.ts";
 import { encodeEventContent, type EventContent } from "../src/event_content.ts";
 import {
   commitSummaryLiteral,
