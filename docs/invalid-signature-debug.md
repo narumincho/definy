@@ -53,5 +53,5 @@
   別の理由 (アカウントが作成済みなど) の拒否は NG にする。`base_url` が `""` なら実行しているページと同じサーバー
 - テスト: `worker/invalid_signature_test_part.test.ts` で, seed を入れた Worker に対して実行し, 3 件とも OK になること,
   書き換える前のイベントは NG になること, `std.bytes-to-base64` が標準 Base64 と一致することを確かめる
-- ビット演算の組み込み (`core.bit-and` など) は definy 製のコンパイラがまだ扱わない ([builtin-parts.md](builtin-parts.md)) ので, Base64 は割り算と余りで書いた
+- Base64 は (書いたときにはビット演算の組み込みがコンパイルできなかったので) 割り算と余りで書いた。今はビット演算も使える ([builtin-parts.md](builtin-parts.md))
 - 正しく署名したイベントのバイト列を変えたら, 書き換える位置 (署名の 1 バイト目, メッセージ, `account_id`) も合わせて変える

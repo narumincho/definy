@@ -1,20 +1,14 @@
 /**
- * `SubmitEvent` で受け取ったプロジェクトのコミットの型検査で, definy の `definy.check-commit` (docs/service.md) が使う能力.
- * 何をどの順に確かめるかは definy が決め, ここはストアと CAS を読んで検査の入力を作ることと,
- * 型チェッカーを service.wasm とは別のインスタンスで動かすことだけをする.
- *
- * 型チェッカーは `npm run build:seeds` が seed の `core.type-check-against` を stage1 でコンパイルした
- * `wasm/type_checker.wasm` を `?module` で取り込んで使う (Cloudflare Workers は実行時に Wasm をコンパイルできない).
- * そのため本番で `core` の型チェッカーを編集しても, seed に書き戻してデプロイするまでサーバーの検査には反映されない
+ * `SubmitEvent` で受け取ったプロジェクトのコミットの検査で, definy の `definy.check-commit` (docs/service.md) が使う能力.
+ * 何をどの順に確かめるか, 定義の式の評価, 型検査は definy (`wasm/service.wasm`) が行い, ここはストアと CAS を読んで
+ * 検査の入力を作ることと, 評価した値 (`core.value`) を `core.part-content` にすることだけをする.
+ * 型環境 (各プロジェクトの main の最新のコミット) の中身を求めるのはまだここ (`commitContents`)
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  decodeCborItem,
-} from "../src/cbor.ts";
+import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
+import { base64ToBytes, decodeCborItem } from "../src/cbor.ts";
 import {
   isTypePartType,
   latestPartsToModuleEntries,
@@ -42,11 +36,12 @@ import {
   resolveDefinitionsInCommit,
 } from "../src/part_definition.ts";
 import {
+  coreValueToValue,
   evaluateDefinition,
   evaluatedPartReferenceIds,
 } from "../src/definition_evaluator.ts";
 import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { derivePartIds } from "../src/part_ids.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
 
 /** 型検査でストアから読むもの */
@@ -127,11 +122,15 @@ async function readPartContents(
   return result;
 }
 
-/** CAS からパーツの定義の式を読む (キーは content hash). 無いもの・CBOR として読めないものは入らない */
+/**
+ * CAS からパーツの定義の式を読む (キーは content hash). 無いもの・CBOR として読めないものは入らない.
+ * `trusted` を渡すと, それが偽の中身は `core.expression` の形か definy 製の `core.value-conforms` で確かめ, 違えば入れない
+ */
 async function readPartDefinitions(
   hashes: ReadonlyArray<string>,
   store: PartStoreReader,
   env: Env | undefined,
+  trusted?: (hash: string) => boolean,
 ): Promise<ReadonlyMap<string, unknown>> {
   const result = new Map<string, unknown>();
   const unique = [...new Set(hashes)];
@@ -141,10 +140,14 @@ async function readPartDefinitions(
       env,
     )) {
       try {
-        result.set(
-          item.contentHash,
-          decodeCborItem(base64ToBytes(item.contentBytes))[0],
-        );
+        const definition = decodeCborItem(base64ToBytes(item.contentBytes))[0];
+        if (
+          trusted === undefined ||
+          trusted(item.contentHash) ||
+          conformsInDefiny(shapeCheckerModule, definition, "core.expression")
+        ) {
+          result.set(item.contentHash, definition);
+        }
       } catch {
         // CBOR でないものは定義の式ではない
       }
@@ -349,33 +352,30 @@ function withContent(
 }
 
 /**
- * プロジェクトのコミットのモジュールのパーツ (中身は読まない).
+ * プロジェクトのコミットの全モジュールのパーツ (中身は読まない).
+ * ID は definy 製の `core.module-part-ids` で求める (src/part_ids.ts).
  * `name` は型エラーのメッセージに使うので `モジュール名.パーツ名` にする
  */
-async function moduleParts(
-  module: CommitModule,
-): Promise<ReadonlyArray<CommitPartRef>> {
-  const moduleIdBytes = await deriveModuleIdBytes(module.name);
-  const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
-  const parts = [];
-  for (const part of module.parts) {
-    parts.push({
-      partId: await deriveModulePartId(moduleIdBytes, part.name),
-      moduleId,
+function commitParts(
+  modules: ReadonlyArray<CommitModule>,
+): ReadonlyArray<CommitPartRef> {
+  const ids = derivePartIds(
+    partIdDeriverModule,
+    modules.map((module) => ({
+      moduleName: module.name,
+      partNames: module.parts.map((part) => part.name),
+    })),
+  );
+  return modules.flatMap((module, i) =>
+    module.parts.map((part, j) => ({
+      partId: ids[i]!.partIds[j]!,
+      moduleId: ids[i]!.moduleId,
       name: `${module.name}.${part.name}`,
       moduleName: module.name,
       moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
       contentHash: part.contentHash ?? "",
-    });
-  }
-  return parts;
-}
-
-/** コミットの全モジュールのパーツ */
-async function commitParts(
-  modules: ReadonlyArray<CommitModule>,
-): Promise<ReadonlyArray<CommitPartRef>> {
-  return (await Promise.all(modules.map(moduleParts))).flat();
+    })),
+  );
 }
 
 type CachedCommit = {
@@ -417,14 +417,16 @@ async function decodeCommit(item: {
       accountId: decoded.meta.accountId,
       projectName: commit.projectName,
       moduleNames: commit.modules.map((module) => module.name),
-      moduleIds: await Promise.all(
-        commit.modules.map(async (module) =>
-          bytesToUrlSafeBase64NoPad(await deriveModuleIdBytes(module.name)),
-        ),
-      ),
+      moduleIds: derivePartIds(
+        partIdDeriverModule,
+        commit.modules.map((module) => ({
+          moduleName: module.name,
+          partNames: [],
+        })),
+      ).map((ids) => ids.moduleId),
       branch: commit.branch,
       timeMs: decoded.meta.timeMs,
-      parts: await commitParts(commit.modules),
+      parts: commitParts(commit.modules),
     };
   }
   commitCache.set(item.eventHash, result);
@@ -592,34 +594,25 @@ export async function readCommitCheckInput(
   ) {
     return null;
   }
-  const refs = await commitParts(commit.modules);
+  const refs = commitParts(commit.modules);
+  const latest = await loadLatestParts(store, env);
   // 受け付けたコミットが参照している中身は, そのときに形を確かめてある
   const accepted = new Set(
     (await loadCommits(store, env)).flatMap((cached) =>
       cached.parts.map((part) => part.contentHash),
     ),
   );
-  const latest = await loadLatestParts(store, env);
-  // CAS に預けた中身は (イベントの形の検査を通らないので) ここで `core.part-content` の形か確かめる
+  // 定義の式の評価と, 中身が core.part-content になるかは definy (definy.resolve-commit-contents) が見る.
+  // CAS に預けた式は (イベントの形の検査を通らないので) ここで core.expression の形か確かめる
   const definitions = await readPartDefinitions(
     refs.map((part) => part.contentHash),
     store,
     env,
+    (hash) => accepted.has(hash),
   );
-  const { contents, evaluated } = await commitContents({
-    parts: refs,
-    definitions,
-    externalContentHash: (id) => latest.parts.get(id)?.contentHash,
-    conforms: (part, value) =>
-      accepted.has(part.contentHash) ||
-      conformsInDefiny(shapeCheckerModule, value, "core.part-content"),
-    store,
-    env,
-  });
   return {
     project_name: commit.projectName,
     parts: refs.map((part) => {
-      const content = contents.get(part.partId);
       const definition = definitions.get(part.contentHash);
       return {
         id: part.partId,
@@ -628,17 +621,51 @@ export async function readCommitCheckInput(
         module_id: part.moduleId,
         module_visibility: variant(part.moduleVisibility),
         content_hash: part.contentHash,
-        content:
-          content === undefined ? none() : some(encodePartContent(content)),
-        // ユーザーが作った定義のパーツで定義したパーツは, 定義の式が core.part-content になるかも型検査する
-        definition_check:
-          evaluated.has(part.partId) && definition !== undefined
-            ? some(definition)
-            : none(),
+        definition: definition === undefined ? none() : some(definition),
       };
     }),
     environment: visibilityTargetValues(latest.visibilityTargets),
     latest: latestPartsToModuleEntries(latest.parts.values()),
     project_module_ids: latest.projectModuleIds.get(commit.projectName) ?? [],
   };
+}
+
+/**
+ * コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式を CAS から読む (`read_part_definitions`).
+ * 評価器が参照するパーツの式を definy が求めるのに使う. 無いパーツは `undefined`
+ */
+export async function readExternalPartDefinitions(
+  partIds: ReadonlyArray<string>,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<ReadonlyArray<unknown>> {
+  const latest = await loadLatestParts(store, env);
+  const hashes = partIds.map((id) => latest.parts.get(id)?.contentHash);
+  const definitions = await readPartDefinitions(
+    hashes.filter((hash) => hash !== undefined),
+    store,
+    env,
+  );
+  return hashes.map((hash) =>
+    hash === undefined ? undefined : definitions.get(hash),
+  );
+}
+
+/**
+ * 評価器 (`core.eval-value`) で評価した定義の値 (`core.value`) を, 形を definy 製の `core.value-conforms` で確かめて
+ * `core.part-content` の値にする (`decode_part_contents`). 形が違えば `undefined`
+ */
+export function decodeEvaluatedPartContents(
+  values: ReadonlyArray<unknown>,
+): ReadonlyArray<unknown> {
+  return values.map((coreValue) => {
+    try {
+      const value = coreValueToValue(coreValue);
+      return conformsInDefiny(shapeCheckerModule, value, "core.part-content")
+        ? encodePartContent(partContentFromValue(value))
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  });
 }

@@ -2272,7 +2272,7 @@
             {
               "name": "left",
               "value": {
-                "#number": -9223372036854775808
+                "#number": -9223372036854776000
               }
             },
             {
@@ -2284,7 +2284,7 @@
           ]
         }
       },
-      "expected": -9223372036854775808
+      "expected": -9223372036854776000
     },
     {
       "name": "divide negative truncates",
@@ -2330,7 +2330,7 @@
             {
               "name": "left",
               "value": {
-                "#number": -9223372036854775808
+                "#number": -9223372036854776000
               }
             },
             {
@@ -4066,7 +4066,7 @@
           ]
         }
       },
-      "expected": 9223372036854775807
+      "expected": 9223372036854776000
     },
     {
       "name": "float square root",
@@ -4758,6 +4758,238 @@
           }
         }
       }
+    },
+    {
+      "name": "bit and",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.bit-and"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 12
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 10
+              }
+            }
+          ]
+        }
+      },
+      "expected": 8
+    },
+    {
+      "name": "bit or",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.bit-or"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 12
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 10
+              }
+            }
+          ]
+        }
+      },
+      "expected": 14
+    },
+    {
+      "name": "bit xor",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.bit-xor"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 12
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 10
+              }
+            }
+          ]
+        }
+      },
+      "expected": 6
+    },
+    {
+      "name": "bit and of a negative number uses two's complement",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.bit-and"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -1
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 4294967295
+              }
+            }
+          ]
+        }
+      },
+      "expected": 4294967295
+    },
+    {
+      "name": "shift left",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.shift-left"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 3
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 4
+              }
+            }
+          ]
+        }
+      },
+      "expected": 48
+    },
+    {
+      "name": "shift left uses the shift amount modulo 64",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.shift-left"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 1
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 65
+              }
+            }
+          ]
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "shift right is arithmetic",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.shift-right"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": -16
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": -4
+    },
+    {
+      "name": "shift right",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.shift-right"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "#number": 4294967295
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "#number": 28
+              }
+            }
+          ]
+        }
+      },
+      "expected": 15
     }
   ]
 }
