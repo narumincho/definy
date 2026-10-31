@@ -13,6 +13,10 @@ import {
   renameMatchArmVariable,
 } from "./match_pattern.ts";
 import type { PathStep } from "./types.ts";
+import {
+  renameTypeFunctionParameter,
+  typeFunctionParameterNameIndex,
+} from "./function_parameters.ts";
 import { field, variantPayload } from "../definy_value.ts";
 import {
   armBindsVariable,
@@ -41,7 +45,8 @@ export function isVariableNamePath(path: ReadonlyArray<PathStep>): boolean {
   return (
     functionParameterIndex(path) !== null ||
     letBindingNameIndex(path) !== null ||
-    matchArmVariableIndex(path) !== null
+    matchArmVariableIndex(path) !== null ||
+    typeFunctionParameterNameIndex(path) !== null
   );
 }
 
@@ -83,6 +88,9 @@ export function renameVariableAt(
   }
   if (matchArmVariableIndex(path) !== null) {
     return renameMatchArmVariable(expr, path, name);
+  }
+  if (typeFunctionParameterNameIndex(path) !== null) {
+    return renameTypeFunctionParameter(expr, path, name);
   }
   return expr;
 }

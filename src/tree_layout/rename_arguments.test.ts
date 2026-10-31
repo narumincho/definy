@@ -4,6 +4,9 @@ import {
   renameCallArguments,
   renameCallersOf,
   renameRootParameters,
+  syncCallArguments,
+  syncCallersOf,
+  syncRootParameters,
 } from "./rename_arguments.ts";
 import type { PartSnapshot } from "../types.ts";
 
@@ -170,5 +173,108 @@ describe("renameRootParameters", () => {
     expect(renameRootParameters(expression, new Map([["z", "x"]]))).toBe(
       expression,
     );
+  });
+});
+
+const hole = { "#hole": { probe: false } };
+
+describe("syncCallArguments", () => {
+  it("対象のパーツの呼び出しの引数を名前の一覧に合わせる. 無い引数は未入力で足す", () => {
+    const expression = call("other", [
+      {
+        name: "a",
+        value: call("target", [
+          { name: "a", value: { "#number": 1 } },
+          { name: "b", value: { "#number": 2 } },
+        ]),
+      },
+    ]);
+    expect(syncCallArguments(expression, "target", ["b", "c"])).toEqual(
+      call("other", [
+        {
+          name: "a",
+          value: call("target", [
+            { name: "b", value: { "#number": 2 } },
+            { name: "c", value: hole },
+          ]),
+        },
+      ]),
+    );
+  });
+
+  it("合っていれば同じ値を返す", () => {
+    const expression = call("target", [{ name: "a", value: { "#number": 1 } }]);
+    expect(syncCallArguments(expression, "target", ["a"])).toBe(expression);
+  });
+});
+
+describe("syncCallersOf", () => {
+  it("コミットしていない新しいパーツの呼び出しも合わせる", () => {
+    const newPart = {
+      moduleDefinitionEventHash: "m",
+      partDefinitionEventHash: "",
+      name: "caller",
+      description: [],
+      partType: { "#type_number": null },
+      expression: call("target", [{ name: "a", value: { "#number": 1 } }]),
+    };
+    const changes = syncCallersOf(
+      [],
+      { parts: new Map([["sample.caller", newPart]]) },
+      "target",
+      ["a", "b"],
+      "target",
+    );
+    expect(changes).toEqual([
+      {
+        ...newPart,
+        partDefinitionEventHash: "sample.caller",
+        expression: call("target", [
+          { name: "a", value: { "#number": 1 } },
+          { name: "b", value: hole },
+        ]),
+      },
+    ]);
+  });
+});
+
+describe("syncRootParameters", () => {
+  const expression = {
+    "#function": {
+      parameters: [
+        { parameter_id: 0, parameter_name: "a" },
+        { parameter_id: 1, parameter_name: "b" },
+      ],
+      body: { "#variable": { variable_id: 1 } },
+    },
+  };
+
+  it("型の引数を足した・消したら, 式の根の関数の引数も揃える. 同じ名前の引数は変数 ID を引き継ぐ", () => {
+    expect(
+      syncRootParameters(expression, fnType("a", "b"), fnType("a", "b", "c")),
+    ).toEqual({
+      "#function": {
+        parameters: [
+          { parameter_id: 0, parameter_name: "a" },
+          { parameter_id: 1, parameter_name: "b" },
+          { parameter_id: 2, parameter_name: "c" },
+        ],
+        body: { "#variable": { variable_id: 1 } },
+      },
+    });
+    expect(
+      syncRootParameters(expression, fnType("a", "b"), fnType("b")),
+    ).toEqual({
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "b" }],
+        body: { "#variable": { variable_id: 1 } },
+      },
+    });
+  });
+
+  it("引数の数が変わらなければ同じ値を返す", () => {
+    expect(
+      syncRootParameters(expression, fnType("a", "b"), fnType("a", "x")),
+    ).toBe(expression);
   });
 });

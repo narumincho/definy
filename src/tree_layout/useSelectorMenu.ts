@@ -31,6 +31,7 @@ import { goToDefinitionOption } from "./go_to_definition.ts";
 import { isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
 import { letBindingSelectorOptions } from "./let_bindings.ts";
+import { functionParameterSelectorOptions } from "./function_parameters.ts";
 import { clipboardSelectorOptions } from "./clipboard.ts";
 import {
   typePartVariantOptions,
@@ -150,7 +151,11 @@ export function useSelectorMenu({
       });
       // コピー・切り取り・貼り付けは, 式を置き換える選択肢より後に出す
       if (mode === "type") {
-        return [...options, ...clipboardSelectorOptions()];
+        return [
+          ...functionParameterSelectorOptions(expression, path),
+          ...options,
+          ...clipboardSelectorOptions(),
+        ];
       }
       const inferred = inferredTypeArguments?.get(pathToString(path));
       // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す.
@@ -162,6 +167,7 @@ export function useSelectorMenu({
         ...goToDefinitionOption(expression, path),
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
+        ...functionParameterSelectorOptions(expression, path),
         // 型引数の位置では型の式 (`number`, `List` など) を先に出す
         ...(expectsType ? TYPE_EXPRESSION_SELECTOR_OPTIONS : []),
         ...options,
