@@ -36,6 +36,11 @@ import {
   variantOf,
   variantPayload,
 } from "./definy_value.ts";
+import {
+  fillHoleTypeArguments,
+  inferHoleTypeArguments,
+  type HoleProbeResult,
+} from "./type_argument_holes.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -288,6 +293,11 @@ export type TypeCheckSession = {
    * それより先に別の型エラーが見つかったときは `null`
    */
   readonly findExpectedType: (part: PartToCheck) => DefinyValue | null;
+  /**
+   * 未確定 (未入力のまま) の型引数を型チェッカーが推論した型で埋めた式. 実行・コンパイルの前に使う.
+   * 型引数でない未入力か, 推論できない型引数があれば `null` (docs/type-arguments.md「未確定の型引数」)
+   */
+  readonly fillTypeArguments: (part: PartToCheck) => unknown;
 };
 
 /**
@@ -412,10 +422,30 @@ function createModuleCommitSessionFromValues(options: {
       return { kind: "checker_failed", message: errorMessage(e) };
     }
   };
+  /** 未入力を probe にした式を検査し, その位置が型引数なら推論した型を返す */
+  const probeHole =
+    (part: PartToCheck) =>
+    (probed: unknown): HoleProbeResult => {
+      const outcome = run({ ...part, expression: probed }, true);
+      const inferred =
+        outcome.kind === "type_error" && outcome.tag === "hole_expected_type"
+          ? optionValue(field(outcome.detail, "inferred_type_argument"))
+          : undefined;
+      return inferred == null
+        ? { kind: "other" }
+        : { kind: "type_argument", type: inferred };
+    };
   return {
     toCheck: () => readIds("to_check"),
     withoutExpression: () => readIds("without_expression"),
-    check: (part) => run(part, false),
+    // 未入力は, 全て推論できる型引数 (未確定の型引数) のときだけ受け付ける
+    check: (part) =>
+      containsHole(part.expression) &&
+      inferHoleTypeArguments(part.expression, probeHole(part)) === null
+        ? run(part, false)
+        : run(part, true),
+    fillTypeArguments: (part) =>
+      fillHoleTypeArguments(part.expression, probeHole(part)),
     findExpectedType: (part) => {
       const outcome = run(part, true);
       if (

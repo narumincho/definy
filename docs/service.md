@@ -98,7 +98,10 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
     `located` は外し, 型は `definy.type-ast-text` で `List<number>`, `(value: number) -> number`, `{ a: number }`,
     `A | B(number)` などにする。パーツの参照は ID の先頭 8 文字, 組み込みの型は `builtin plus(left, right)`
     (引数名は `definy.builtin-parameters-text`. `BUILTIN_PARAMETERS` から作った), 文字列はダブルクォートで囲む (エスケープはしない)
-- 未入力 (`hole`) は `core.type-check-against` が期待する型として受け入れるので, 先に `core.expression-contains-hole` で見る
+- 未入力 (`hole`) は `core.type-check-against` が期待する型として受け入れるので, 先に `core.expression-contains-hole` で見る。
+  未入力が全て推論できる型引数 (未確定の型引数. [type-arguments.md](type-arguments.md)) なら受け付ける
+  (`definy.holes-are-inferred-type-arguments`: `core.expression-probe-hole` で i 番目の未入力を probe にして検査し,
+  `hole_expected_type` の `inferred_type_argument` が `some` か見る。数は `core.expression-hole-count`)
 - 数の表記は `std.number-to-string`, 文字列をつなぐのは `std.string-join` を使う
 - 型チェッカーが trap すると (スタック不足など) `SubmitEvent` ごと `internal` になる (以前はそのパーツだけ `type checker failed`)
 - core 全体 (と wasm) のシステムアカウントのコミットの `SubmitEvent` (`worker/type_check.test.ts` の組み込みのテスト) は 2.1 秒 → 2.7 秒

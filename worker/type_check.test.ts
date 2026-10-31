@@ -368,6 +368,63 @@ describe("SubmitEvent の型検査", () => {
     expect(result).toEqual({ status: 200, message: "" });
   });
 
+  it("未入力は全て推論できる型引数 (未確定の型引数) のときだけ受け付ける (docs/type-arguments.md)", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    const system = await importAccountCredentials(
+      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
+      "definy",
+    );
+    const hole = { "#hole": { probe: false } };
+    const listOf = (itemType: unknown) => ({
+      "#type_list": { item_type: itemType },
+    });
+    // core.list-map(T: □, U: □, f: (item) => item, xs: [1, 2])
+    const mapIdentity = async (f: unknown) => ({
+      "#call": {
+        function: await partReference(system.accountId, "core", "list-map"),
+        arguments: [
+          { name: "T", value: hole },
+          { name: "U", value: hole },
+          { name: "f", value: f },
+          {
+            name: "xs",
+            value: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+          },
+        ],
+      },
+    });
+    const identity = {
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: { "#variable": { variable_id: 1 } },
+      },
+    };
+    expect(
+      await submitCommit(store, env, user, "app", [
+        part(
+          "mapped",
+          listOf({ "#type_number": null }),
+          await mapIdentity(identity),
+        ),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    // 型引数でない位置 (f) の未入力は受け付けない
+    expect(
+      await submitCommit(store, env, user, "app2", [
+        part(
+          "mapped",
+          listOf({ "#type_number": null }),
+          await mapIdentity(hole),
+        ),
+      ]),
+    ).toEqual({
+      status: 400,
+      message:
+        "part 'app2.mapped': not supported: Expression has an unfilled hole",
+    });
+  });
+
   it("非公開のパーツ・他のプロジェクトの非公開のモジュールのパーツへの参照は拒否する (docs/visibility.md)", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");

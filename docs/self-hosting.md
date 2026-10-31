@@ -468,6 +468,9 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パ�
   そうでなければ `ok(期待する型)` (未入力はどの型にもなれる)
 - `core.type-check-unlocated` (推論): `probe` なら `error(hole_expected_type { expected: none })`,
   そうでなければ `error(unfilled_hole)`
+- 型引数の位置 (`core.type-call-type-arguments`) の未入力は推論する。`probe` なら
+  `error(hole_expected_type { expected: some(type), inferred_type_argument: 推論した型 })`。
+  ほかの位置の `hole_expected_type` の `inferred_type_argument` は `none` ([type-arguments.md](type-arguments.md) の「未確定の型引数」)
 - 型チェッカーは最初に見つけたエラーを返すので, probe より先に別の型エラーや推論する位置の未入力があると期待する型は分からない
 - 推論する位置の式 `t` の型を聞きたいときは `[t, probe]` のリストにする. リストは最初の要素の型を推論し,
   残りの要素ではその型を期待するので, probe の期待する型が `t` の型になる (match の対象の型, `probeMatchTargetType`).

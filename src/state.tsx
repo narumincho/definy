@@ -137,6 +137,13 @@ export type DefinyContextValue = {
     readonly expression: unknown;
   }) => Promise<DefinyValue | null>;
   /**
+   * 未確定の型引数を型チェッカーが推論した型で埋めた式 (実行の前に使う). 推論できない未入力があれば `null`
+   */
+  readonly fillTypeArguments: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<unknown>;
+  /**
    * 型エラーの理由を 1 行にする (型の中のパーツ参照はパーツ名にする). 問題なければ `null`.
    * `partName` が `null` ならパーツ名を付けない
    */
@@ -238,6 +245,7 @@ export function DefinyProvider({
       partTypeCheckResults: typeCheck.partTypeCheckResults,
       checkPartType: typeCheck.checkPartType,
       findExpectedType: typeCheck.findExpectedType,
+      fillTypeArguments: typeCheck.fillTypeArguments,
       typeCheckMessage: typeCheck.typeCheckMessage,
       sidebarOpen: ui.sidebarOpen,
       sidebarView: ui.sidebarView,
@@ -305,6 +313,7 @@ export function DefinyProvider({
       typeCheck.partTypeCheckResults,
       typeCheck.checkPartType,
       typeCheck.findExpectedType,
+      typeCheck.fillTypeArguments,
       typeCheck.typeCheckMessage,
     ],
   );

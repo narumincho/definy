@@ -19622,16 +19622,154 @@
                                               "function": {
                                                 "#part_reference": {
                                                   "part_definition_event_hash": {
-                                                    "$part": "core.expression-contains-hole"
+                                                    "$part": "core.and"
                                                   }
                                                 }
                                               },
                                               "arguments": [
                                                 {
-                                                  "name": "expr",
+                                                  "name": "left",
                                                   "value": {
-                                                    "#variable": {
-                                                      "variable_id": 5
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.expression-contains-hole"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "expr",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.not"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "value",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.holes-are-inferred-type-arguments"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "expr",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 5
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "expected_type",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "check",
+                                                                  "value": {
+                                                                    "#function": {
+                                                                      "parameters": [
+                                                                        {
+                                                                          "parameter_id": 9,
+                                                                          "parameter_name": "expr"
+                                                                        },
+                                                                        {
+                                                                          "parameter_id": 10,
+                                                                          "parameter_name": "expected_type"
+                                                                        }
+                                                                      ],
+                                                                      "body": {
+                                                                        "#call": {
+                                                                          "function": {
+                                                                            "#variable": {
+                                                                              "variable_id": 1
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "expr",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 9
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "expected_type",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 10
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "index",
+                                                                  "value": {
+                                                                    "#number": 0
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "count",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.expression-hole-count"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "expr",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 5
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
                                                     }
                                                   }
                                                 }
@@ -20101,6 +20239,562 @@
                   "value": {
                     "#variable": {
                       "variable_id": 0
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-error-unlocated",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "error",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.type-error"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.type-error"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The type error without located"
+        },
+        {
+          "language": "ja",
+          "text": "located を外した型エラー"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "error"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "located",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "located"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.type-error-unlocated"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "error",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "key": "error"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#any": null
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "holes-are-inferred-type-arguments",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "expr",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.expression"
+                  }
+                }
+              }
+            },
+            {
+              "name": "expected_type",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.expression"
+                  }
+                }
+              }
+            },
+            {
+              "name": "check",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "expr",
+                      "type": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "name": "expected_type",
+                      "type": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "count",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_boolean": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether every hole from index (of count) is a type argument the type checker infers (inferred_type_argument of a probe). docs/type-arguments.md"
+        },
+        {
+          "language": "ja",
+          "text": "index 以降 (全部で count 個) の未入力が全て型チェッカーが推論する型引数か (probe の inferred_type_argument)。docs/type-arguments.md"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "expr"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "expected_type"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "check"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "count"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 4
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#boolean": false
+                  },
+                  "body": {
+                    "#boolean": true
+                  }
+                },
+                {
+                  "pattern": {
+                    "#boolean": true
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.expression-probe-hole"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "key": "expression"
+                                }
+                              }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "ok",
+                              "payload": {
+                                "#any": null
+                              }
+                            }
+                          },
+                          "body": {
+                            "#boolean": false
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "error",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 5,
+                                  "variable_name": "error"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.type-error-unlocated"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "error",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "hole_expected_type",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 6,
+                                          "variable_name": "detail"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#match": {
+                                      "target": {
+                                        "#record_get": {
+                                          "record": {
+                                            "#variable": {
+                                              "variable_id": 6
+                                            }
+                                          },
+                                          "key": "inferred_type_argument"
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "some",
+                                              "payload": {
+                                                "#any": null
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "definy.holes-are-inferred-type-arguments"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "expr",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "expected_type",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "check",
+                                                  "value": {
+                                                    "#function": {
+                                                      "parameters": [
+                                                        {
+                                                          "parameter_id": 7,
+                                                          "parameter_name": "expr"
+                                                        },
+                                                        {
+                                                          "parameter_id": 8,
+                                                          "parameter_name": "expected_type"
+                                                        }
+                                                      ],
+                                                      "body": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "expr",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 7
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "expected_type",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 8
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "count",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "none",
+                                              "payload": {
+                                                "#any": null
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#boolean": false
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#any": null
+                                  },
+                                  "body": {
+                                    "#boolean": false
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }
