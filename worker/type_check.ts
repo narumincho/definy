@@ -647,7 +647,7 @@ export async function readCommitCheckInput(
 
 /**
  * `definy.check-commit` が決めた型環境でパーツを型チェッカーで検査し, 型エラーのメッセージを返す (`type_check_parts`).
- * 型チェッカーのインスタンスは service.wasm とは別にする (線形メモリが解放されないので, 何個か検査するごとに作り直す)
+ * 型チェッカーのインスタンスは service.wasm とは別にする
  */
 export function typeCheckParts(request: {
   readonly latest: unknown;

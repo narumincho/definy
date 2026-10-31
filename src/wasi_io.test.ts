@@ -77,6 +77,32 @@ function jsonResponse(body: unknown): WasiHttpResult {
 }
 
 /** multipart の本文から name のパートの中身を取り出す */
+/**
+ * アップロードした worker.js (`import wasmModule from "./app.wasm"`) を, app.wasm のモジュールを渡して Node.js で動かす
+ */
+async function runUploadedWorker(
+  workerScript: Uint8Array,
+  appWasm: Uint8Array,
+  request: Request,
+): Promise<Response> {
+  const globalKey = "__definyTestAppWasm";
+  (globalThis as Record<string, unknown>)[globalKey] = new WebAssembly.Module(
+    appWasm as unknown as BufferSource,
+  );
+  const source = new TextDecoder()
+    .decode(workerScript)
+    .replace(
+      'import wasmModule from "./app.wasm";',
+      `const wasmModule = globalThis.${globalKey};`,
+    );
+  const worker = (await import(
+    `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
+  )) as {
+    readonly default: { readonly fetch: (r: Request) => Promise<Response> };
+  };
+  return await worker.default.fetch(request);
+}
+
 function multipartPart(body: Uint8Array, name: string): Uint8Array {
   const text = new TextDecoder("latin1").decode(body);
   const header = text.indexOf(`name="${name}"`);
@@ -163,9 +189,20 @@ describe("wasi.io", () => {
       handler.recordField(stream, "initialState"),
     ]);
     const chunk = handler.read(
-      handler.recordField(handler.variant(step).payload ?? 0, "chunk"),
+      handler.recordField(handler.variant(step).payload!, "chunk"),
     ) as ReadonlyArray<number>;
     expect(new TextDecoder().decode(new Uint8Array(chunk))).toBe(
+      "Hello from definy! https://definy-hello.example/",
+    );
+
+    // アップロードした worker.js が app.wasm を動かしてレスポンスを返す
+    const response = await runUploadedWorker(
+      multipartPart(body, "worker.js"),
+      multipartPart(body, "app.wasm"),
+      new Request("https://definy-hello.example/"),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe(
       "Hello from definy! https://definy-hello.example/",
     );
   }, 120_000);

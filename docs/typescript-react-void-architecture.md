@@ -22,15 +22,15 @@
 
 ### アーキテクチャ概要
 
-[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された スタンドアロンな Wasm バイナリ (2026-10-21 時点で 85,610 バイト) です。外部環境への import は一切ありません (`Imports: []`)。
+[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された スタンドアロンな Wasm バイナリ (2026-10-31 時点で 66,742 バイト. Wasm GC を使う) です。外部環境への import は一切ありません (`Imports: []`)。
 
 ```
 definy AST (JSON / Object)
        │
-       ▼ [writeLiteral via linear memory]
+       ▼ [writeLiteral via exported runtime functions (Wasm GC)]
  stage1.wasm (definy 製コンパイラ)
        │
-       ▼ [alloc + function closure call via table]
+       ▼ [function closure call via table]
  出力 Wasm バイナリ (Uint8Array, \0asm)
        │
        ▼ [WebAssembly.instantiate]
@@ -40,19 +40,19 @@ definy AST (JSON / Object)
  評価結果 Value (Number, String, List, Record, Variant...)
 ```
 
-### 線形メモリ ABI マーシャリング ([src/stage1_compiler.ts](../src/stage1_compiler.ts))
+### Wasm GC の値のやりとり ([src/stage1_compiler.ts](../src/stage1_compiler.ts))
 
-`stage1.wasm` は以下のエクスポートを持ちます：
+stage1 とその出力は Wasm GC のモジュールで, 値は GC のヒープの struct です ([wasm-gc.md](wasm-gc.md))。エクスポートは：
 
-- `evaluate()`: コンパイラ関数のクロージャ（Tag `5`）を指すポインタを返す
+- `evaluate()`: 式の値 (コンパイラならコンパイラ関数のクロージャ, タグ `5`) を返す
 - `table`: クロージャ関数テーブル (`funcref`)
-- `memory`: 線形メモリ（`WebAssembly.Memory`）
-- `alloc(size: number) -> number`: 8 バイト境界でメモリをバンプアロケートする関数
+- `memory`: 文字列を渡すための置き場 (値は置かない)
+- 値を作って読むランタイム関数 (`box_number`, `string_from_memory`, `values_new`, `value_tag`, `values_get` など)
 
 TypeScript 側の [src/stage1_compiler.ts](../src/stage1_compiler.ts) では：
 
-1. `writeLiteral` により、AST 式（Tag 0=Number, 1=Boolean, 2=String, 3=List, 4=Record, 6=Variant）の箱を 8 バイトアラインで Wasm メモリに配置。
-2. クロージャの `tableIndex` と `envPtr` を読み取り、引数ポインタ配列 `[exprPtr, partsPtr]` を渡して `table.get(tableIndex)(envPtr, argsPtr)` を呼び出し。
+1. `writeLiteral` により、AST 式（Tag 0=Number, 1=Boolean, 2=String, 3=List, 4=Record, 6=Variant）をランタイム関数で Wasm の値にする。
+2. クロージャの関数表の番号 (`closure_index`) と捕捉した変数 (`values_of`) を読み、引数の配列 `[expr, parts]` を作って `table.get(番号)(捕捉した変数, 引数)` を呼び出し。
 3. 返却された Tag 3（List of Number: `0..=255`）から `Uint8Array` の Wasm バイナリを取り出す。
 4. 取り出したバイナリを `WebAssembly.instantiate` して `evaluate()` を呼ぶことで、ネイティブ実行結果を即座に取得。
 
@@ -196,7 +196,7 @@ export default defineConfig({
 `definy` の自己記述コンパイラ [wasm/stage1.wasm](../wasm/stage1.wasm) は、外部環境からの import が一切ありません (`Imports: []`)。
 
 - **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate) など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
-- **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
+- **メモリ管理**: 値は Wasm GC の struct / array で, 使わなくなった値はランタイムの GC が回収します ([wasm-gc.md](wasm-gc.md))。
 - **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
 - **再生成とサーバー側コンパイル**: `wasm/stage1.wasm` は `npm run build:stage1` で再生成できます ([self-hosting.md](self-hosting.md))。デプロイ (`definy.deploy-to-cloudflare-workers`) もブラウザで definy 製のコンパイラを動かして行います ([cloudflare-workers.md](cloudflare-workers.md))。
 

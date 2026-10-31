@@ -154,7 +154,7 @@ core.event-check-state = {
   拒否は Connect-RPC の `invalid_argument` (400)。`wasm/event_checker.wasm` (`core.check-event` だけをコンパイルしたもの) はテストで規則を試すのに使う
 - ブランチの最新のコミット・作成者・他のプロジェクトのモジュールなどの状態も definy (`core.event-check-state-of`) が求める
   (以前は TypeScript の `branchStateOf` が求めていた)。全コミットを毎回渡し, 各コミットについて最新かを調べるので O(コミット数²)
-- 規則は説明やパーツの中身の content hash を見ないので, それらを除いてから線形メモリに書く
+- 規則は説明やパーツの中身の content hash を見ないので, それらを除いてから Wasm に書き込む
 - 型検査 (`definy.check-commit`. [service.md](service.md)) はこの規則に通ってから行う
 - 型チェッカーと同じく, 本番で `core.check-event` を編集しても seed に書き戻してデプロイするまでサーバーには反映されない
 

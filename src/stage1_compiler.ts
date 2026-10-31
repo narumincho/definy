@@ -1,9 +1,18 @@
 /**
  * definy の自己記述コンパイラ (`stage1.wasm`) をブラウザ / Worker / Node.js の
  * WebAssembly ランタイム上で直接実行し、definy の式から Wasm バイナリを動的に生成するパイプライン。
+ *
+ * stage1 の出力は Wasm GC のモジュールで, 値は GC のヒープの struct / array (docs/self-hosting.md「値の表現」).
+ * JavaScript からは中を覗けない参照 ({@link ValueRef}) なので, モジュールがエクスポートするランタイム関数
+ * (`box_number`, `values_get` など) で値を作って読む
  */
 
 import { variant, variantOf, variantPayload } from "./definy_value.ts";
+
+declare const valueRefBrand: unique symbol;
+
+/** stage1 でコンパイルした Wasm の中の definy の値への参照 (GC のヒープの struct) */
+export type ValueRef = { readonly [valueRefBrand]: true };
 
 export type DefinyValue =
   | number
@@ -15,7 +24,6 @@ export type DefinyValue =
   | {
       readonly __closure: true;
       readonly tableIdx: number;
-      readonly envPtr: number;
     }
   | null;
 
@@ -30,230 +38,202 @@ export type Stage1CompilerInstance = {
   ) => Uint8Array;
 };
 
+/** 値の配列 (`core.wasm-type-values`) への参照 */
+type ValuesRef = { readonly [valueRefBrand]: "values" };
+
+/** stage1 でコンパイルした Wasm のエクスポート (`core.wasm-runtime-exports`) */
 export type WasmExports = {
-  readonly evaluate: () => number;
+  readonly evaluate: () => ValueRef;
   readonly table: WebAssembly.Table;
+  /** 文字列を渡すための置き場. 値は GC のヒープにある */
   readonly memory: WebAssembly.Memory;
-  readonly alloc: (size: number) => number;
+  readonly string_from_memory: (length: number) => ValueRef;
+  readonly string_to_memory: (value: ValueRef) => number;
+  readonly box_number: (value: bigint) => ValueRef;
+  readonly box_bool: (value: number) => ValueRef;
+  readonly float_new: (value: number) => ValueRef;
+  readonly value_tag: (value: ValueRef) => number;
+  readonly number_value: (value: ValueRef) => bigint;
+  readonly float_value: (value: ValueRef) => number;
+  readonly bool_value: (value: ValueRef) => number;
+  readonly values_of: (value: ValueRef) => ValuesRef | null;
+  readonly values_length: (values: ValuesRef) => number;
+  readonly values_get: (values: ValuesRef, index: number) => ValueRef | null;
+  readonly values_new: (length: number) => ValuesRef;
+  readonly values_set: (
+    values: ValuesRef,
+    index: number,
+    value: ValueRef | null,
+  ) => void;
+  readonly list_new: (values: ValuesRef) => ValueRef;
+  readonly record_new: (values: ValuesRef) => ValueRef;
+  readonly variant_new: (tag: ValueRef, payload: ValueRef | null) => ValueRef;
+  readonly variant_tag: (value: ValueRef) => ValueRef;
+  readonly variant_payload: (value: ValueRef) => ValueRef | null;
+  readonly closure_index: (value: ValueRef) => number;
 };
 
-/** 先頭 0 からの相対アドレスで書いた値 (`writeLiteral` が `alloc` した位置に合わせて写す) */
-type LaidOutLiteral = {
-  readonly bytes: Uint8Array;
-  /** ポインタを書いた位置. 写すときに先頭のアドレスを足す */
-  readonly pointerFields: Uint32Array;
-  readonly root: number;
-};
-
-/** 同じオブジェクトの値 (型環境や型の宣言の一覧など) を何度も書くときに, 並べ直さずに済ませる */
-const laidOutCache = new WeakMap<object, LaidOutLiteral>();
+/** 値の種類のタグ (`core.wasm-runtime-value-tag`) */
+const TAG = {
+  number: 0,
+  boolean: 1,
+  string: 2,
+  list: 3,
+  record: 4,
+  closure: 5,
+  variant: 6,
+  float: 7,
+} as const;
 
 /**
- * definy の値 (docs/value-encoding.md の JSON の形) を, definy の値の形 (タグ付きの箱, 8 バイト境界) で線形メモリに書き込み, ポインタを返す.
- * 1 度だけ走査して JavaScript 側のバッファに先頭 0 からの相対アドレスで書き, `alloc` した位置に合わせて
- * ポインタを直してからまとめて写す (型環境のような大きな値を書くので速さが要る).
- * 値は書き換えられないので, 同じ文字列は 1 つの箱を共有する. オブジェクトの値は並べた結果を覚えておく
+ * 書き込んだオブジェクトの値 (型環境や型の宣言の一覧など) の参照. 値は書き換えられず,
+ * Wasm GC の型はモジュールをまたいで同じ構造なら同じ型なので, 別のインスタンスにもそのまま渡せる
  */
-function writeLiteral(exports: WasmExports, node: unknown): number {
-  const laidOut =
-    node !== null && typeof node === "object"
-      ? (laidOutCache.get(node) ?? cacheLayout(node))
-      : layoutLiteral(node);
-  const base = exports.alloc(laidOut.bytes.length);
-  const memory = new Uint8Array(exports.memory.buffer);
-  memory.set(laidOut.bytes, base);
-  const view = new DataView(exports.memory.buffer);
-  for (const at of laidOut.pointerFields) {
-    view.setUint32(base + at, view.getUint32(base + at, true) + base, true);
+const writtenCache = new WeakMap<object, ValueRef>();
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+/** 文字列を `memory` の 0 番地から書いて, その文字列の値を作る */
+function writeString(exports: WasmExports, value: string): ValueRef {
+  // UTF-8 は 1 文字 (UTF-16 の 1 単位) 3 バイトまで
+  const maxBytes = value.length * 3;
+  const memory = exports.memory;
+  if (memory.buffer.byteLength < maxBytes) {
+    memory.grow(Math.ceil((maxBytes - memory.buffer.byteLength) / 65536));
   }
-  return laidOut.root + base;
+  const { written } = encoder.encodeInto(
+    value,
+    new Uint8Array(memory.buffer, 0, maxBytes),
+  );
+  return exports.string_from_memory(written);
 }
 
-function cacheLayout(node: object): LaidOutLiteral {
-  const laidOut = layoutLiteral(node);
-  laidOutCache.set(node, laidOut);
-  return laidOut;
+function readString(exports: WasmExports, value: ValueRef): string {
+  const length = exports.string_to_memory(value);
+  return decoder.decode(new Uint8Array(exports.memory.buffer, 0, length));
 }
 
-function layoutLiteral(node: unknown): LaidOutLiteral {
-  let buffer = new Uint8Array(4096);
-  let view = new DataView(buffer.buffer);
-  let length = 0;
-  const pointerFields: Array<number> = [];
-  const encoder = new TextEncoder();
-  /** 書いた文字列の箱の相対アドレス */
-  const strings = new Map<string, number>();
-
-  /** `size` バイト (8 バイト境界に揃える) を確保し, その相対アドレスを返す */
-  function reserve(size: number): number {
-    const at = length;
-    length += Math.ceil(size / 8) * 8;
-    if (length > buffer.length) {
-      let nextSize = buffer.length * 2;
-      while (nextSize < length) nextSize *= 2;
-      const next = new Uint8Array(nextSize);
-      next.set(buffer);
-      buffer = next;
-      view = new DataView(buffer.buffer);
-    }
-    return at;
-  }
-
-  function setPointer(at: number, pointer: number): void {
-    view.setUint32(at, pointer, true);
-    pointerFields.push(at);
-  }
-
-  function writeString(value: string): number {
+/**
+ * definy の値 (docs/value-encoding.md の JSON の形) を Wasm の値にする.
+ * 同じ文字列は 1 つの値を共有し, オブジェクトの値は作った参照を覚えておく (値は書き換えられない)
+ */
+function writeLiteral(exports: WasmExports, node: unknown): ValueRef {
+  const strings = new Map<string, ValueRef>();
+  const string = (value: string): ValueRef => {
     const written = strings.get(value);
     if (written !== undefined) {
       return written;
     }
-    let at: number;
-    if (isAscii(value)) {
-      at = reserve(8 + value.length);
-      for (let i = 0; i < value.length; i++) {
-        buffer[at + 8 + i] = value.charCodeAt(i);
-      }
-      view.setUint32(at + 4, value.length, true);
-    } else {
-      const bytes = encoder.encode(value);
-      at = reserve(8 + bytes.length);
-      view.setUint32(at + 4, bytes.length, true);
-      buffer.set(bytes, at + 8);
-    }
-    buffer[at] = 2;
-    strings.set(value, at);
-    return at;
-  }
-
-  function layout(n: unknown): number {
+    const ref = writeString(exports, value);
+    strings.set(value, ref);
+    return ref;
+  };
+  const values = (items: ReadonlyArray<ValueRef | null>): ValuesRef => {
+    const array = exports.values_new(items.length);
+    items.forEach((item, i) => {
+      exports.values_set(array, i, item);
+    });
+    return array;
+  };
+  const write = (n: unknown): ValueRef => {
     if (typeof n === "number") {
-      const at = reserve(16);
-      if (Number.isInteger(n)) {
-        view.setBigInt64(at + 8, BigInt(n), true);
-      } else {
-        // 整数でない数 (NaN と ±Infinity を含む) は浮動小数の箱 (タグ 7) にする
-        buffer[at] = 7;
-        view.setFloat64(at + 8, n, true);
-      }
-      return at;
+      // 整数でない数 (NaN と ±Infinity を含む) は浮動小数 (タグ 7) にする
+      return Number.isInteger(n)
+        ? exports.box_number(BigInt(n))
+        : exports.float_new(n);
     }
     if (typeof n === "boolean") {
-      const at = reserve(9);
-      buffer[at] = 1;
-      buffer[at + 8] = n ? 1 : 0;
-      return at;
+      return exports.box_bool(n ? 1 : 0);
     }
     if (typeof n === "string") {
-      return writeString(n);
-    }
-    if (Array.isArray(n)) {
-      const itemPtrs = n.map((item) => layout(item));
-      const at = reserve(8 + 4 * itemPtrs.length);
-      buffer[at] = 3;
-      view.setUint32(at + 4, itemPtrs.length, true);
-      itemPtrs.forEach((ptr, i) => {
-        setPointer(at + 8 + 4 * i, ptr);
-      });
-      return at;
+      return string(n);
     }
     if (!n || typeof n !== "object") {
       throw new Error(`Invalid definy value for layout: ${JSON.stringify(n)}`);
     }
-    const tagged = variantOf(n);
-    if (tagged !== undefined) {
-      const tagPtr = writeString(tagged.tag);
-      const payloadPtr =
-        tagged.payload === null ? null : layout(tagged.payload);
-      const at = reserve(12);
-      buffer[at] = 6;
-      setPointer(at + 4, tagPtr);
-      if (payloadPtr !== null) {
-        setPointer(at + 8, payloadPtr);
-      }
-      return at;
+    const cached = writtenCache.get(n);
+    if (cached !== undefined) {
+      return cached;
     }
-    const fieldPairs = Object.entries(n as Record<string, unknown>).map(
-      ([key, value]) => [writeString(key), layout(value)] as const,
-    );
-    const at = reserve(8 + 8 * fieldPairs.length);
-    buffer[at] = 4;
-    view.setUint32(at + 4, fieldPairs.length, true);
-    fieldPairs.forEach(([keyPtr, valuePtr], i) => {
-      setPointer(at + 8 + 8 * i, keyPtr);
-      setPointer(at + 12 + 8 * i, valuePtr);
-    });
-    return at;
-  }
-
-  const root = layout(node);
-  return {
-    bytes: buffer.subarray(0, length),
-    pointerFields: Uint32Array.from(pointerFields),
-    root,
+    let ref: ValueRef;
+    if (Array.isArray(n)) {
+      ref = exports.list_new(values(n.map(write)));
+    } else {
+      const tagged = variantOf(n);
+      if (tagged !== undefined) {
+        ref = exports.variant_new(
+          string(tagged.tag),
+          tagged.payload === null ? null : write(tagged.payload),
+        );
+      } else {
+        ref = exports.record_new(
+          values(
+            Object.entries(n as Record<string, unknown>).flatMap(
+              ([key, value]) => [string(key), write(value)],
+            ),
+          ),
+        );
+      }
+    }
+    writtenCache.set(n, ref);
+    return ref;
   };
+  return write(node);
 }
 
-function isAscii(value: string): boolean {
-  for (let i = 0; i < value.length; i++) {
-    if (value.charCodeAt(i) >= 128) return false;
+function valuesOf(exports: WasmExports, value: ValueRef): Array<ValueRef> {
+  const array = exports.values_of(value);
+  if (array === null) {
+    return [];
   }
-  return true;
+  const length = exports.values_length(array);
+  const items: Array<ValueRef> = [];
+  for (let i = 0; i < length; i++) {
+    items.push(exports.values_get(array, i) as ValueRef);
+  }
+  return items;
 }
 
-export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
-  if (ptr < 0 || ptr >= mem.length) return null;
-  const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
-  const tag = mem[ptr];
-  if (tag === 0) {
-    return Number(view.getBigInt64(ptr + 8, true));
+/** Wasm の値を JavaScript の値 (docs/value-encoding.md の JSON の形) として読む */
+export function readDefinyValue(
+  exports: WasmExports,
+  value: ValueRef | null,
+): DefinyValue {
+  if (value === null) {
+    return null;
   }
-  if (tag === 1) {
-    return mem[ptr + 8] !== 0;
-  }
-  if (tag === 7) {
-    return view.getFloat64(ptr + 8, true);
-  }
-  if (tag === 2) {
-    const len = view.getUint32(ptr + 4, true);
-    return new TextDecoder().decode(mem.subarray(ptr + 8, ptr + 8 + len));
-  }
-  if (tag === 3) {
-    const count = view.getUint32(ptr + 4, true);
-    return Array.from({ length: count }, (_, i) => {
-      const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
-      return readDefinyValue(mem, elemPtr);
-    });
-  }
-  if (tag === 4) {
-    const count = view.getUint32(ptr + 4, true);
-    const obj: Record<string, DefinyValue> = {};
-    for (let i = 0; i < count; i++) {
-      const itemBase = ptr + 8 + i * 8;
-      const keyPtr = view.getUint32(itemBase, true);
-      const valPtr = view.getUint32(itemBase + 4, true);
-      const keyStr = readDefinyValue(mem, keyPtr);
-      if (typeof keyStr === "string") {
-        obj[keyStr] = readDefinyValue(mem, valPtr);
+  switch (exports.value_tag(value)) {
+    case TAG.number:
+      return Number(exports.number_value(value));
+    case TAG.boolean:
+      return exports.bool_value(value) !== 0;
+    case TAG.float:
+      return exports.float_value(value);
+    case TAG.string:
+      return readString(exports, value);
+    case TAG.list:
+      return valuesOf(exports, value).map((item) =>
+        readDefinyValue(exports, item),
+      );
+    case TAG.record: {
+      const items = valuesOf(exports, value);
+      const obj: Record<string, DefinyValue> = {};
+      for (let i = 0; i + 1 < items.length; i += 2) {
+        obj[readString(exports, items[i] as ValueRef)] = readDefinyValue(
+          exports,
+          items[i + 1] ?? null,
+        );
       }
+      return obj;
     }
-    return obj;
-  }
-  if (tag === 5) {
-    return {
-      __closure: true,
-      tableIdx: view.getUint32(ptr + 4, true),
-      envPtr: view.getInt32(ptr + 8, true),
-    };
-  }
-  if (tag === 6) {
-    const tagPtr = view.getUint32(ptr + 4, true);
-    const payloadPtr = view.getUint32(ptr + 8, true);
-    const tagName = readDefinyValue(mem, tagPtr);
-    const payloadVal =
-      payloadPtr !== 0 ? readDefinyValue(mem, payloadPtr) : null;
-    return variant(String(tagName), payloadVal) as DefinyValue;
+    case TAG.closure:
+      return { __closure: true, tableIdx: exports.closure_index(value) };
+    case TAG.variant:
+      return variant(
+        readString(exports, exports.variant_tag(value)),
+        readDefinyValue(exports, exports.variant_payload(value)),
+      ) as DefinyValue;
   }
   return null;
 }
@@ -449,41 +429,41 @@ export function stage1PartsValue(
 /** stage1 でコンパイルした式の Wasm のインスタンスと, `evaluate()` の結果の値 */
 export type CompiledValueInstance = {
   readonly exports: WasmExports;
-  /** `evaluate()` が返した値のポインタ */
-  readonly root: number;
+  /** `evaluate()` が返した値 */
+  readonly root: ValueRef;
   /**
-   * definy の値 (docs/value-encoding.md の JSON の形) を
-   * 線形メモリに書き込み, その値のポインタを返す. 同じ値を何度も渡すときは 1 度だけ書けばよい
+   * definy の値 (docs/value-encoding.md の JSON の形) を Wasm の値にする.
+   * 同じオブジェクトの値を何度も渡すときは, 2 回目から作った値を使い回す
    */
-  readonly writeArgument: (literal: unknown) => number;
+  readonly writeArgument: (literal: unknown) => ValueRef;
   /**
-   * 関数の値のポインタを, 引数を名前の順に並べたポインタで呼び, 結果のポインタを返す.
+   * 関数の値を, 引数を名前の順に並べた値で呼び, 結果の値を返す.
    * 引数が 2 つ以上なら {@link argumentsByName} で並べる. 関数でなければ例外を投げる
    */
   readonly callClosure: (
-    closurePointer: number,
-    argumentPointers: ReadonlyArray<number>,
-  ) => number;
+    closure: ValueRef,
+    argumentValues: ReadonlyArray<ValueRef>,
+  ) => ValueRef;
   /**
-   * レコードの値のポインタから, フィールド `key` の値のポインタを返す (関数の値のフィールドを
+   * レコードの値から, フィールド `key` の値を返す (関数の値のフィールドを
    * `callClosure` で呼ぶときなど). レコードでないかフィールドが無ければ例外を投げる
    */
-  readonly recordField: (recordPointer: number, key: string) => number;
+  readonly recordField: (record: ValueRef, key: string) => ValueRef;
   /**
-   * タグ付きの値 (Variant) のポインタから, タグとペイロードのポインタ (無ければ `null`) を返す.
+   * タグ付きの値 (Variant) から, タグとペイロード (無ければ `null`) を返す.
    * タグ付きの値でなければ例外を投げる
    */
-  readonly variant: (pointer: number) => {
+  readonly variant: (value: ValueRef) => {
     readonly tag: string;
-    readonly payload: number | null;
+    readonly payload: ValueRef | null;
   };
-  /** 結果のポインタを JavaScript の値として読む */
-  readonly read: (pointer: number) => DefinyValue;
+  /** 値を JavaScript の値として読む */
+  readonly read: (value: ValueRef) => DefinyValue;
 };
 
 /**
- * stage1 でコンパイルした式の Wasm を新しいインスタンスで評価し, 値をポインタのまま扱えるようにする.
- * 線形メモリは解放しないので, 呼び出しが多いときや Wasm が trap したときは作り直す
+ * stage1 でコンパイルした式の Wasm を新しいインスタンスで評価し, 値を参照のまま扱えるようにする.
+ * 使わなくなった値は GC が回収するので, 1 つのインスタンスを何度呼んでもよい
  */
 export function instantiateCompiledValue(
   module: WebAssembly.Module,
@@ -492,25 +472,22 @@ export function instantiateCompiledValue(
   const exports = instance.exports as unknown as WasmExports;
 
   const callClosure = (
-    closurePtr: number,
-    argumentPointers: ReadonlyArray<number>,
-  ): number => {
-    const view = new DataView(exports.memory.buffer);
-    const tag = view.getUint8(closurePtr);
-    if (tag !== 5) {
+    closure: ValueRef,
+    argumentValues: ReadonlyArray<ValueRef>,
+  ): ValueRef => {
+    const tag = exports.value_tag(closure);
+    if (tag !== TAG.closure) {
       throw new Error(`the value is not a function closure (tag: ${tag})`);
     }
-    const fn = exports.table.get(view.getUint32(closurePtr + 4, true)) as (
-      env: number,
-      args: number,
-    ) => number;
-    const envPtr = view.getInt32(closurePtr + 8, true);
-    const argsPtr = exports.alloc(Math.max(4 * argumentPointers.length, 8));
-    const argsView = new DataView(exports.memory.buffer);
-    argumentPointers.forEach((ptr, i) => {
-      argsView.setUint32(argsPtr + 4 * i, ptr, true);
+    const fn = exports.table.get(exports.closure_index(closure)) as (
+      env: ValuesRef | null,
+      args: ValuesRef | null,
+    ) => ValueRef;
+    const args = exports.values_new(argumentValues.length);
+    argumentValues.forEach((value, i) => {
+      exports.values_set(args, i, value);
     });
-    return fn(envPtr, argsPtr);
+    return fn(exports.values_of(closure), args);
   };
 
   return {
@@ -518,50 +495,44 @@ export function instantiateCompiledValue(
     root: exports.evaluate(),
     writeArgument: (literal) => writeLiteral(exports, literal),
     callClosure,
-    recordField: (recordPtr, key) => {
-      const mem = new Uint8Array(exports.memory.buffer);
-      const view = new DataView(exports.memory.buffer);
-      if (mem[recordPtr] !== 4) {
-        throw new Error(`the value is not a record (tag: ${mem[recordPtr]})`);
+    recordField: (record, key) => {
+      const tag = exports.value_tag(record);
+      if (tag !== TAG.record) {
+        throw new Error(`the value is not a record (tag: ${tag})`);
       }
-      const count = view.getUint32(recordPtr + 4, true);
-      for (let i = 0; i < count; i++) {
-        const itemBase = recordPtr + 8 + i * 8;
-        if (readDefinyValue(mem, view.getUint32(itemBase, true)) === key) {
-          return view.getUint32(itemBase + 4, true);
+      const items = valuesOf(exports, record);
+      for (let i = 0; i + 1 < items.length; i += 2) {
+        if (readString(exports, items[i] as ValueRef) === key) {
+          return items[i + 1] as ValueRef;
         }
       }
       throw new Error(`the record has no field '${key}'`);
     },
-    variant: (pointer) => {
-      const mem = new Uint8Array(exports.memory.buffer);
-      const view = new DataView(exports.memory.buffer);
-      if (mem[pointer] !== 6) {
-        throw new Error(`the value is not a variant (tag: ${mem[pointer]})`);
+    variant: (value) => {
+      const tag = exports.value_tag(value);
+      if (tag !== TAG.variant) {
+        throw new Error(`the value is not a variant (tag: ${tag})`);
       }
-      const payload = view.getUint32(pointer + 8, true);
       return {
-        tag: String(readDefinyValue(mem, view.getUint32(pointer + 4, true))),
-        payload: payload === 0 ? null : payload,
+        tag: readString(exports, exports.variant_tag(value)),
+        payload: exports.variant_payload(value),
       };
     },
-    read: (pointer) =>
-      readDefinyValue(new Uint8Array(exports.memory.buffer), pointer),
+    read: (value) => readDefinyValue(exports, value),
   };
 }
 
 /**
- * 引数名 → 値のポインタを, 実行時に関数へ渡す順 (引数名の UTF-8 のバイト列の辞書順) に並べる.
+ * 引数名 → 値を, 実行時に関数へ渡す順 (引数名の UTF-8 のバイト列の辞書順) に並べる.
  * definy の呼び出しは引数を名前で対応させ, 宣言の順とは関係なく名前の順で渡す (`core.call-argument-rank`)
  */
 export function argumentsByName(
-  args: Readonly<Record<string, number>>,
-): ReadonlyArray<number> {
-  const encoder = new TextEncoder();
+  args: Readonly<Record<string, ValueRef>>,
+): ReadonlyArray<ValueRef> {
   return Object.entries(args)
-    .map(([name, pointer]) => ({ bytes: encoder.encode(name), pointer }))
+    .map(([name, value]) => ({ bytes: encoder.encode(name), value }))
     .sort((a, b) => compareBytes(a.bytes, b.bytes))
-    .map(({ pointer }) => pointer);
+    .map(({ value }) => value);
 }
 
 function compareBytes(a: Uint8Array, b: Uint8Array): number {
@@ -576,23 +547,20 @@ function compareBytes(a: Uint8Array, b: Uint8Array): number {
 
 /** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
 export type CompiledFunctionInstance = CompiledValueInstance & {
-  /** 関数を引数名 → 値のポインタで呼び, 結果のポインタを返す */
-  readonly call: (args: Readonly<Record<string, number>>) => number;
+  /** 関数を引数名 → 値で呼び, 結果の値を返す */
+  readonly call: (args: Readonly<Record<string, ValueRef>>) => ValueRef;
 };
 
 /**
  * stage1 でコンパイルした「関数を返す式」の Wasm を新しいインスタンスで評価し, 返った関数を呼べるようにする.
- * 型チェッカーのように 1 度コンパイルして何度も呼ぶものに使う.
- * 線形メモリは解放しないので, 呼び出しが多いときや Wasm が trap したときは作り直す
+ * 型チェッカーのように 1 度コンパイルして何度も呼ぶものに使う
  */
 export function instantiateCompiledFunction(
   module: WebAssembly.Module,
 ): CompiledFunctionInstance {
   const instance = instantiateCompiledValue(module);
-  const tag = new DataView(instance.exports.memory.buffer).getUint8(
-    instance.root,
-  );
-  if (tag !== 5) {
+  const tag = instance.exports.value_tag(instance.root);
+  if (tag !== TAG.closure) {
     throw new Error(
       `compiled wasm evaluate() did not return a function closure (tag: ${tag})`,
     );
@@ -601,6 +569,25 @@ export function instantiateCompiledFunction(
     ...instance,
     call: (args) => instance.callClosure(instance.root, argumentsByName(args)),
   };
+}
+
+/** 数値のリストの値をバイト列として読む (stage1 の出力の Wasm) */
+function readByteList(exports: WasmExports, list: ValueRef): Uint8Array {
+  const tag = exports.value_tag(list);
+  if (tag !== TAG.list) {
+    throw new Error(`stage1.wasm did not return a list of bytes (tag: ${tag})`);
+  }
+  const array = exports.values_of(list);
+  if (array === null) {
+    return new Uint8Array(0);
+  }
+  const bytes = new Uint8Array(exports.values_length(array));
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = Number(
+      exports.number_value(exports.values_get(array, i) as ValueRef),
+    );
+  }
+  return bytes;
 }
 
 export function createStage1Compiler(
@@ -615,27 +602,11 @@ export function createStage1Compiler(
       const partsNode = stage1PartsValue(referencedParts);
 
       const instance = instantiateCompiledFunction(stage1Module);
-      const { exports } = instance;
-      const resultPtr = instance.call({
+      const result = instance.call({
         expr: instance.writeArgument(effectiveExpr),
         parts: instance.writeArgument(partsNode),
       });
-
-      const resultView = new DataView(exports.memory.buffer);
-      const resultTag = resultView.getUint8(resultPtr);
-      if (resultTag !== 3) {
-        throw new Error(
-          `stage1.wasm did not return a list of bytes (tag: ${resultTag})`,
-        );
-      }
-      const resultCount = resultView.getUint32(resultPtr + 4, true);
-      const emittedWasm = new Uint8Array(resultCount);
-      for (let i = 0; i < resultCount; i++) {
-        const itemPtr = resultView.getUint32(resultPtr + 8 + i * 4, true);
-        const byteVal = Number(resultView.getBigInt64(itemPtr + 8, true));
-        emittedWasm[i] = byteVal;
-      }
-      return emittedWasm;
+      return readByteList(instance.exports, result);
     },
   };
 }
@@ -646,12 +617,6 @@ export async function evaluateCompiledWasm(
   const module = await WebAssembly.compile(
     wasmBytes as unknown as BufferSource,
   );
-  const instance = await WebAssembly.instantiate(module, {});
-  const exports = instance.exports as {
-    readonly evaluate: () => number;
-    readonly memory: WebAssembly.Memory;
-  };
-  const valPtr = exports.evaluate();
-  const mem = new Uint8Array(exports.memory.buffer);
-  return readDefinyValue(mem, valPtr);
+  const instance = instantiateCompiledValue(module);
+  return instance.read(instance.root);
 }

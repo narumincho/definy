@@ -134,7 +134,7 @@ describe("runValueExpression", () => {
   it("式で書けない値を含むときは null", () => {
     expect(
       runValueExpression(
-        [1, { __closure: true, tableIdx: 0, envPtr: 0 }] as never,
+        [1, { __closure: true, tableIdx: 0 }] as never,
         noType,
       ),
     ).toBeNull();

@@ -38,7 +38,7 @@ npx vitest run src/stage1_conformance.test.ts
 stage1 (`core.compile-to-wasm`) は次の 2 つを引数に取ります。
 
 1. **式**: `core.expression` の値。パーツに保存した式をそのまま渡します ([value-encoding.md](value-encoding.md))。
-   `writeLiteral` (`src/stage1_compiler.ts`) が JSON の値を線形メモリに書くだけで, 式の構造は変換しません。
+   `writeLiteral` (`src/stage1_compiler.ts`) が JSON の値を Wasm の値にするだけで, 式の構造は変換しません。
    - 未入力 (`hole`) を含む式は `compile()` が `SelfHostedAstConversionError` にします (`assertCompilable`)。
 2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `part_reference` を
    参照先までたどって集めます (`collectReferencedParts`)。`id` は `part_reference` のパーツ ID の文字列と同じです。
@@ -60,7 +60,7 @@ stage1 (`core.compile-to-wasm`) は次の 2 つを引数に取ります。
 
 ## 文字列の意味論
 
-文字列は UTF-8 のバイト列として扱います（Wasm の線形メモリ上の表現に合わせた仕様）。
+文字列は UTF-8 のバイト列として扱います（Wasm の値の表現 ([wasm-gc.md](wasm-gc.md)) に合わせた仕様）。
 
 - `StringLength` は UTF-8 のバイト数を返す（`"こんにちは"` は 15）。
 - `StringSlice` の `start` / `end` は UTF-8 のバイト位置。範囲外の値は `0..=長さ` に丸め、`end < start` のときは空文字列になる。
