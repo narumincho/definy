@@ -567,9 +567,10 @@ describe("SubmitEvent の型検査", () => {
       return await Promise.all(
         seed.parts.map(async (seedPart) =>
           part(
-            // 組み込みかどうかは式 ({"#builtin": "bit_and"}) で決まり, 名前によらない.
+            // 組み込みかどうかは式 ({"#builtin": "not_equal"}) で決まり, 名前によらない.
             // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
-            seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
+            // (core.not-equal は seed のどのパーツも呼んでいない)
+            seedPart.name === "not-equal" ? "not-equal-renamed" : seedPart.name,
             await resolveSeedPartType(seedPart.part_type),
             await resolvePartPlaceholders(seedPart.expression ?? null),
           ),
@@ -577,8 +578,10 @@ describe("SubmitEvent の型検査", () => {
       );
     };
     const parts = await seedParts("core");
-    expect(parts.find((p) => p.name === "bitwise-and")?.expression).toEqual({
-      "#builtin": "bit_and",
+    expect(
+      parts.find((p) => p.name === "not-equal-renamed")?.expression,
+    ).toEqual({
+      "#builtin": "not_equal",
     });
     // core は seed の definy プロジェクトのモジュール
     expect(

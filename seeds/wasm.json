@@ -1632,6 +1632,101 @@
       }
     },
     {
+      "name": "i64-and",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.and (0x83)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.and のオペコード (0x83)"
+        }
+      ],
+      "expression": {
+        "#number": 131
+      }
+    },
+    {
+      "name": "i64-or",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.or (0x84)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.or のオペコード (0x84)"
+        }
+      ],
+      "expression": {
+        "#number": 132
+      }
+    },
+    {
+      "name": "i64-xor",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.xor (0x85)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.xor のオペコード (0x85)"
+        }
+      ],
+      "expression": {
+        "#number": 133
+      }
+    },
+    {
+      "name": "i64-shl",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.shl (0x86)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.shl のオペコード (0x86)"
+        }
+      ],
+      "expression": {
+        "#number": 134
+      }
+    },
+    {
+      "name": "i64-shr-s",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction i64.shr_s (0x87)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 i64.shr_s のオペコード (0x87)"
+        }
+      ],
+      "expression": {
+        "#number": 135
+      }
+    },
+    {
       "name": "i64-extend-i32-u",
       "part_type": {
         "#type_number": null

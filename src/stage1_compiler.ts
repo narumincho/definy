@@ -285,6 +285,11 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
     "or",
     "string_concat",
     "list_concat",
+    "bit_and",
+    "bit_or",
+    "bit_xor",
+    "shift_left",
+    "shift_right",
   ].map((name): readonly [string, ReadonlyArray<string>] => [
     name,
     ["left", "right"],

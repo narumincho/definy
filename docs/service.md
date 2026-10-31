@@ -75,8 +75,8 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
    参照できるパーツ (`core.visibility-target`), 各プロジェクトの `main` の最新のパーツ (`core.type-checker` の `latest` の形),
    今の `main` のこのプロジェクトのモジュールの ID。プロジェクトのコミットでなければ `none`。
    - 定義の式は CAS に無いか CBOR でないか `core.expression` の形でなければ `none` (受け付けたコミットの中身は形を確かめない)
-   - ストアと CAS を読むこと, パーツ ID (SHA-256) を求めること, 型環境 (`latest`) の中身を求めること
-     (main の最新のコミットの定義の評価を含む) と受け付けたコミットの中身のキャッシュはホストのまま
+   - ストアと CAS を読むこと, 型環境 (`latest`) の中身を求めること
+     (main の最新のコミットの定義の評価を含む) と受け付けたコミットの中身のキャッシュはホストのまま。パーツ ID は definy で求める (下の「パーツ ID の導出」)
    - 定義の式を評価してパーツの中身にするのは definy (下の「定義の式の評価」)
 2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
    - 中身が `core.part-content` にならないパーツ (`definy.commit-check-malformed`)
@@ -128,8 +128,25 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 - 型チェッカーが trap すると (スタック不足など) `SubmitEvent` ごと `internal` になる (以前はそのパーツだけ `type checker failed`)
 - core 全体 (と wasm) のシステムアカウントのコミットの `SubmitEvent` (`worker/type_check.test.ts` の組み込みのテスト) は 2.1 秒 → 2.7 秒
 
+## パーツ ID の導出 (`core.module-part-ids`, 2026-10-31)
+
+サーバーがコミットのパーツの ID (とモジュール ID) を求めるのも definy 製の関数にした。以前は TypeScript (`worker/cbor.ts` の
+`deriveModuleIdBytes` / `deriveModulePartId`. Web Crypto の SHA-256) だった。
+
+- 導出のしかたは変えていない: モジュール ID は `"definy:module:" + モジュール名` の UTF-8 に SHA-256 を 2 回 (`core.module-id-bytes`),
+  パーツ ID は `モジュール ID の 32 バイト + ":part:" + パーツ名` に SHA-256 を 2 回かけて Base64URL (パディング無し) にしたもの (`core.part-id`)
+- SHA-256 は `core.sha256` (FIPS 180-4)。32 ビットのワードを 64 ビットの数で持ち, 足し算のたびに `core.uint32` (下位 32 ビット) にする。
+  回転は `core.rotate-right-32`。ビット演算の組み込み ([builtin-parts.md](builtin-parts.md)) を使う。Base64URL は `core.bytes-to-base64url`
+- `npm run build:seeds` が `core.module-part-ids(module_name, part_names) -> {module_id, part_ids}` を `wasm/part_id_deriver.wasm` にコンパイルし,
+  `worker/type_check.ts` (コミットのパーツの一覧) が `src/part_ids.ts` の `derivePartIds` で呼ぶ。
+  ID は名前だけで決まるので, 求めた ID は isolate の中で使い回し, 新しい名前の分だけ definy で求める (コミットはどれも同じ名前のパーツが多い)。
+  seed の全パーツ (674) を初めて求めると 180ms ほど (1 パーツ 0.3ms. SHA-256 を 2 回)。2 回目からは使い回すので 0.1ms
+- `src/part_ids.test.ts` で `core.sha256` を `node:crypto` と, パーツ ID を TypeScript の導出と比べている
+- ブラウザ (`src/new_part.ts` など) と seed を作るスクリプト (`scripts/generate_seed_bundle.ts`) はまだ TypeScript の導出を使う。
+  seed のスクリプトは stage1 でパーツをコンパイルする前にパーツ ID が要る (`$part` の名前参照を ID にする) ので TypeScript のままにする
+
 ## 今後
 
-- 型環境 (main の最新のコミット) の定義の式の評価とパーツ ID の導出も definy にする
+- 型環境 (main の最新のコミット) の定義の式の評価も definy にする
 - `core.value` を型の付いた値 (`core.expression` など) にする関数を definy で書き, `decode_part_contents` をなくす
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

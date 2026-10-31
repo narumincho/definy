@@ -39,11 +39,24 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 | `string_slice`                                                                                                                                                                      | `core.string-slice`           | `value`, `start`, `end` |
 | `list_get`                                                                                                                                                                          | `core.list-get`               | `list`, `index`         |
 | `list_append`                                                                                                                                                                       | `core.list-append`            | `list`, `item`          |
+| `bit_and` `bit_or` `bit_xor` `shift_left` `shift_right`                                                                                                                             | `core.bit-and` など           | `left`, `right`         |
 
 浮動小数の組み込み (`float_plus` など) は [float.md](float.md)。
 
-`bit_and` などのビット演算はまだ definy 製のコンパイラ・型チェッカー・評価器が扱わない
-(型検査では引数名が合わないエラー, コンパイルすると unreachable, 評価すると `unit`).
+### ビット演算 (2026-10-31)
+
+`core.bit-and` `core.bit-or` `core.bit-xor` `core.shift-left` `core.shift-right` は `(left: number, right: number) -> number`。
+SHA-256 を definy で書く (パーツ ID の導出. [service.md](service.md)) ために, コンパイラ・型チェッカー・評価器が扱うようにした
+(以前はパーツだけあり, コンパイルすると unreachable, 評価すると `unit` だった)。
+
+- 数は 64 ビットの 2 の補数として扱う (`bit-and(left: -1, right: 255)` は `255`)
+- `shift-left` は 64 ビットで折り返す。`shift-right` は算術右シフト (符号を保つ. Wasm の `i64.shr_s`)。
+  シフトする数は 64 で割った余りを使う (Wasm と同じ. `shift-left(left: 1, right: 65)` は `2`)。どれも実行時エラーにならない
+- コンパイラ (`core.compile-builtin-call`) は `plus` と同じく 2 つの数を取り出して `i64.and` `i64.or` `i64.xor` `i64.shl` `i64.shr_s`
+  (`wasm.i64-and` など) を出す。評価器 (`core.eval-builtin-call`) はそれぞれのパーツを呼ぶ (stage1 がコンパイルするので Wasm の命令になる)。
+  型チェッカーは `core.builtin-function-type` の型で検査する
+- コンパイラ自身はビット演算を使わないので, ブートストラップは `npm run build:stage1 -- --bootstrap` 1 回でよかった (68248 bytes)
+- `conformance/eval_cases.json` の「bit and」「shift right is arithmetic」などで stage1 と `core.eval-value` の両方で確かめる
 
 ## 実行時エラーにしない
 
