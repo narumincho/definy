@@ -143,6 +143,11 @@ export type DefinyContextValue = {
     readonly partType: unknown;
     readonly expression: unknown;
   }) => Promise<unknown>;
+  /** 式の probe の未入力が型引数の位置なら, 型チェッカーが推論した型引数. 分からなければ `null` */
+  readonly findInferredTypeArgument: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<DefinyValue | null>;
   /**
    * 型エラーの理由を 1 行にする (型の中のパーツ参照はパーツ名にする). 問題なければ `null`.
    * `partName` が `null` ならパーツ名を付けない
@@ -246,6 +251,7 @@ export function DefinyProvider({
       checkPartType: typeCheck.checkPartType,
       findExpectedType: typeCheck.findExpectedType,
       fillTypeArguments: typeCheck.fillTypeArguments,
+      findInferredTypeArgument: typeCheck.findInferredTypeArgument,
       typeCheckMessage: typeCheck.typeCheckMessage,
       sidebarOpen: ui.sidebarOpen,
       sidebarView: ui.sidebarView,
@@ -314,6 +320,7 @@ export function DefinyProvider({
       typeCheck.checkPartType,
       typeCheck.findExpectedType,
       typeCheck.fillTypeArguments,
+      typeCheck.findInferredTypeArgument,
       typeCheck.typeCheckMessage,
     ],
   );

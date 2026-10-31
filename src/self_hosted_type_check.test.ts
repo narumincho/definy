@@ -767,6 +767,42 @@ describe("self-hosted type check (stage1)", () => {
         xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
       }),
     );
+    // 型引数どうしの依存: 推論する位置 (let の値) では期待する型が無いので, U は先に決まった T = number を
+    // f の引数の型 (item: T) に代入して, ラムダの本体の型 boolean から求める
+    const letMap = {
+      "#let": {
+        variable_id: 9,
+        variable_name: "mapped",
+        value: mapLessThanTwo,
+        body: { "#variable": { variable_id: 9 } },
+      },
+    };
+    expect(
+      checkParts({
+        typeChecker,
+        parts: [
+          { partType: listOf({ "#type_boolean": null }), expression: letMap },
+          { partType: listOf(number), expression: letMap },
+        ],
+        env: testEnv,
+      }).map((outcome) => outcome.kind),
+    ).toEqual(["ok", "type_error"]);
+    expect(
+      session.fillTypeArguments({
+        partType: listOf({ "#type_boolean": null }),
+        expression: letMap,
+      }),
+    ).toEqual({
+      "#let": {
+        ...letMap["#let"],
+        value: await coreCall("list-map", {
+          T: number,
+          U: { "#type_boolean": null },
+          f: lessThanTwo,
+          xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+        }),
+      },
+    });
     expect(session.fillTypeArguments(parts[6]!)).toBeNull();
     expect(session.fillTypeArguments(parts[7]!)).toBeNull();
     // 関数の本体で, 推論した型が型引数の参照なら, その引数の変数にする
