@@ -2701,10 +2701,39 @@
             "#hole_expected_type": {
               "type": "object",
               "required": [
-                "expected"
+                "expected",
+                "inferred_type_argument"
               ],
               "properties": {
                 "expected": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "#none"
+                      ],
+                      "properties": {
+                        "#none": {
+                          "type": "null"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "#some"
+                      ],
+                      "properties": {
+                        "#some": {
+                          "$ref": "#/definitions/core.type-ast"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "inferred_type_argument": {
                   "anyOf": [
                     {
                       "type": "object",

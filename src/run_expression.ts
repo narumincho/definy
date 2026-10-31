@@ -4,6 +4,7 @@
  */
 import {
   collectReferencedParts,
+  containsHole,
   evaluateCompiledWasm,
   type DefinyValue,
   type Stage1CompilerInstance,
@@ -27,6 +28,7 @@ import {
 import { expressionToTypeAst } from "./tree_layout/part_type.ts";
 import {
   floatExpressionFromNumber,
+  hole,
   partReferenceExpression,
 } from "./tree_layout/expression.ts";
 
@@ -57,15 +59,94 @@ export type RunExpressionOptions = {
   readonly wasiIoHost: Omit<WasiIoHost, "getPart" | "onStep">;
   /** I/O をするたびに, それまでの記録で呼ぶ (画面に経過を出すため) */
   readonly onProgress?: (steps: ReadonlyArray<WasiIoStep>) => void;
+  /**
+   * 未確定の型引数 (未入力のまま) を推論した型で埋める (docs/type-arguments.md「未確定の型引数」).
+   * 推論できない未入力があれば `null`. 無ければ未入力のある式はコンパイルできない
+   */
+  readonly fillTypeArguments?: TypeArgumentFiller;
 };
 
-export async function runExpression(
+/** {@link RunExpressionOptions.fillTypeArguments} */
+export type TypeArgumentFiller = {
+  /** 式 (`partType` はその式の型. 実行パネルの入力のように型が無ければ未入力) を埋めた式か `null` */
+  readonly fill: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<unknown>;
+  /** パーツ ID からパーツの型 (作業中の変更があればそちら) */
+  readonly resolvePartType: (partId: string) => unknown;
+};
+
+/**
+ * 未入力のある式とパーツの式を, 未確定の型引数を推論した型で埋めたものにする.
+ * 埋められなかったパーツは元の式のまま (コンパイルで `unresolved` になる)
+ */
+export async function fillRunTypeArguments(
   expression: unknown,
-  { compiler, resolvePart, wasiIoHost, onProgress }: RunExpressionOptions,
+  resolvePart: (partId: string) => unknown,
+  filler: TypeArgumentFiller,
+): Promise<{
+  readonly expression: unknown;
+  readonly resolvePart: (partId: string) => unknown;
+}> {
+  const filledParts = new Map<string, unknown>();
+  const resolveFilled = (partId: string): unknown =>
+    filledParts.has(partId) ? filledParts.get(partId) : resolvePart(partId);
+  const filledExpression = containsHole(expression)
+    ? ((await filler.fill({ partType: hole(), expression })) ?? expression)
+    : expression;
+  // 埋めたパーツの先の参照も集め直す. 一度試したパーツは試さない
+  const tried = new Set<string>();
+  for (;;) {
+    const pending = collectReferencedParts(
+      filledExpression,
+      resolveFilled,
+    ).unresolved.filter((partId) => {
+      const partExpression = resolveFilled(partId);
+      return (
+        !tried.has(partId) &&
+        partExpression != null &&
+        containsHole(partExpression)
+      );
+    });
+    if (pending.length === 0) {
+      break;
+    }
+    for (const partId of pending) {
+      tried.add(partId);
+      const filled = await filler.fill({
+        partType: filler.resolvePartType(partId),
+        expression: resolvePart(partId),
+      });
+      if (filled != null) {
+        filledParts.set(partId, filled);
+      }
+    }
+  }
+  return { expression: filledExpression, resolvePart: resolveFilled };
+}
+
+export async function runExpression(
+  inputExpression: unknown,
+  {
+    compiler,
+    resolvePart: inputResolvePart,
+    wasiIoHost,
+    onProgress,
+    fillTypeArguments,
+  }: RunExpressionOptions,
 ): Promise<RunOutcome> {
   const steps: WasiIoStep[] = [];
   let value: DefinyValue | undefined;
   try {
+    const { expression, resolvePart } =
+      fillTypeArguments === undefined
+        ? { expression: inputExpression, resolvePart: inputResolvePart }
+        : await fillRunTypeArguments(
+            inputExpression,
+            inputResolvePart,
+            fillTypeArguments,
+          );
     const { parts, unresolved } = collectReferencedParts(
       expression,
       resolvePart,

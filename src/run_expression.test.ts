@@ -39,6 +39,53 @@ describe("runExpression", () => {
     expect(outcome).toEqual({ kind: "value", value: 42, wasiIo: null });
   });
 
+  it("未確定の型引数は推論した型で埋めてから実行する (パーツの中も)", async () => {
+    const hole = { "#hole": { probe: false } };
+    // identity = (T, x) => x. 呼び出し側 (使うパーツ) の型引数が未確定
+    const parts: Readonly<Record<string, unknown>> = {
+      identity: {
+        "#function": {
+          parameters: [
+            { parameter_id: 0, parameter_name: "T" },
+            { parameter_id: 1, parameter_name: "x" },
+          ],
+          body: { "#variable": { variable_id: 1 } },
+        },
+      },
+      answer: call("identity", { T: hole, x: { "#number": 42 } }),
+      plus: { "#builtin": "plus" },
+    };
+    const filled: unknown[] = [];
+    const outcome = await runExpression(
+      call("plus", {
+        left: call("identity", { T: hole, x: { "#number": 0 } }),
+        right: { "#part_reference": { part_definition_event_hash: "answer" } },
+      }),
+      {
+        compiler,
+        resolvePart: (id) => parts[id],
+        wasiIoHost,
+        fillTypeArguments: {
+          // 型チェッカーの代わりに, 未入力を number で埋める
+          fill: ({ partType, expression }) => {
+            filled.push(partType);
+            return Promise.resolve(
+              JSON.parse(
+                JSON.stringify(expression).replaceAll(
+                  JSON.stringify(hole),
+                  JSON.stringify({ "#type_number": null }),
+                ),
+              ),
+            );
+          },
+          resolvePartType: (id) => (id === "answer" ? "answer-type" : null),
+        },
+      },
+    );
+    expect(outcome).toEqual({ kind: "value", value: 42, wasiIo: null });
+    expect(filled).toEqual([{ "#hole": { probe: false } }, "answer-type"]);
+  });
+
   it("見つからないパーツがあれば実行しない", async () => {
     const outcome = await runExpression(
       call("missing", { x: { "#number": 1 } }),

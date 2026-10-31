@@ -10,15 +10,45 @@ core.list-map(T: number, U: boolean, f: (item) => core.less-than(left: item, rig
 // => [true, false]
 ```
 
-データ (コミットする式) には型引数を必ず書きます (Zig と同じ。型は実行時にも値なので, 呼び出しに入っていないと渡せない)。
-書く手間はエディタの推論で省きます (2026-10-30 にユーザーが決定):
+型引数は書かなくてもよく, 書かなければ型チェッカーが推論します (Idris2 の暗黙の引数と同じ)。
+エディタでの扱い (2026-10-30 にユーザーが決定):
 
 - 未入力の型引数の枠に, 他の引数の型から推論した型を表示する
 - 確定するときは, 推論した型を置換メニューの選択肢の 1 番目に置いておき, それを選ぶ
-- 確定するまでは未入力 (`hole`) のままなので, 型検査とコミットはできない
+- 確定しないまま (未入力 `hole` のまま) でも型検査が通り, コミットできる (2026-10-31 にユーザーが決定。下の「未確定の型引数」)
 
 推論は型チェッカーで他の引数の推論した型を聞き, 呼び出すパーツの引数の型の `type_parameter(T)` と照らし合わせて求める
 (エディタ側. 下の「エディタ」)。
+
+## 未確定の型引数 (2026-10-31)
+
+確定していない型引数はデータ (コミットする式) でも未入力 `{"#hole": {"probe": false}}` のままです。
+型は実行時にも値なので, 実行・コンパイルの前に推論した型で埋めます。
+
+```text
+core.list-map(T: □, U: □, f: (item) => core.less-than(left: item, right: 2), xs: [1, 2])  // List<boolean> の位置
+// T = number (xs: List<T> と [1, 2] の型 List<number> から), U = boolean (戻り値の型 List<U> と期待する型から)
+```
+
+- 型チェッカー (`core.type-call-type-arguments`): 型が `type` の引数の実引数が未入力なら `core.type-infer-type-argument` で推論する。
+  推論の順番はエディタの推論と同じ:
+  1. 引数の型が `parameter(T)` を含むほかの引数 (未入力でないもの) を, パーツの型の引数の順に推論し (`core.type-check`),
+     引数の型と照らし合わせて `parameter(T)` の位置の型を取る (`core.type-match-parameter`。リスト・関数・レコード・直和型・
+     `Code`・`apply` の中を同じ位置どうしでたどる)
+  2. 分からなければ, 呼び出しの位置で期待する型と戻り値の型を照らし合わせる。期待する型は検査する位置
+     (`core.type-check-against-unlocated` の呼び出し) だけで分かり, `core.type-check-function-call` の `expected_type` で渡す
+  3. それでも分からなければ型エラー `the type argument 'T' is not entered and could not be inferred ...`
+  - 型引数どうしの依存 (先に推論した `T` を使って `f` のラムダを検査し `U` を求める) はしない。`f` の戻り値の型からは推論できない
+- 期待する型を聞く未入力 (`probe: true`) を型引数の位置に置くと, `hole_expected_type` の `expected` は `type`,
+  `inferred_type_argument` に推論した型 (できなければ `none`) が入る。ほかの位置の `hole_expected_type` では `none`
+- 型検査 (`createTypeCheckSession` の `check`, サーバーの `SubmitEvent` と UI 共通): 式に未入力があっても,
+  その全てが推論できる型引数なら受け付ける (未入力ごとに probe にして `inferred_type_argument` を聞く。
+  `src/type_argument_holes.ts`)。型引数でない未入力が 1 つでもあれば今まで通り `not supported: Expression has an unfilled hole`
+- 実行 (実行パネル, `runExpression` の `fillTypeArguments`): 入力した式と参照するパーツの未確定の型引数を
+  `TypeCheckSession.fillTypeArguments` で推論した型の式にしてからコンパイルする。推論した型の中の型引数の参照 `T` は,
+  その位置から見える同じ名前の関数の引数の変数にする。型環境はコミット済みのパーツ (エディタの期待する型と同じ)
+- まだ埋めずにコンパイルする所 (未入力のあるパーツは参照できないパーツになる): サーバーの定義の式の評価
+  (`definition_evaluator.ts`), `wasi.io` の `run_part`, stage1 の作り直し (`compiler_rebuild.ts`), イベントの検査
 
 ## 型を返すパーツ (型引数を取る型)
 
@@ -108,7 +138,8 @@ core.type-result        // => {"#part_reference": {part_definition_event_hash: "
 
 ## まだ無いもの
 
-- 型チェッカーでの型引数の推論 (Idris2 の暗黙の引数)。エディタは推論した型を表示するだけで, 確定しないと型エラーのまま
+- 型引数どうしの依存を解く推論 (単一化)。今は 1 つずつ, ほかの引数の推論した型か期待する型から求めるだけ
+- エディタの推論の表示は型チェッカーの推論 (`inferred_type_argument`) を使わず, TypeScript で同じことをしている
 - 型の位置で任意の関数を評価すること。型の式に書ける呼び出しは, 型を返すパーツ (宣言式が型を返す関数) の呼び出しだけ
 - 関数の型の中で同じ名前の型引数を入れ子に宣言したときの区別 (外側の型引数と同じとみなす)
 - コンパイラ組み込みのパーツ (`core.list-get` など) は型引数を取らず, 型チェッカーが名前で特別扱いしている

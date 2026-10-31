@@ -61,6 +61,7 @@ export function RunPanel(): JSX.Element {
     partNames,
     workingChanges,
     findExpectedType,
+    fillTypeArguments,
     currentAccount,
     runPanelOpen,
     setRunPanelOpen,
@@ -101,6 +102,21 @@ export function RunPanel(): JSX.Element {
     [parts, partsByIdHash, workingChanges],
   );
 
+  // パーツの型 (作業中の変更があればそちら). 未確定の型引数を埋めるときに使う
+  const resolvePartType = useCallback(
+    (partIdHash: string): unknown => {
+      const shown = parts.find((p) => p.partIdHash === partIdHash);
+      const shownChange =
+        shown === undefined
+          ? undefined
+          : workingChanges.parts.get(shown.partId);
+      return shownChange?.partType !== undefined
+        ? shownChange.partType
+        : partsByIdHash.get(partIdHash)?.partType;
+    },
+    [parts, partsByIdHash, workingChanges],
+  );
+
   const run = useCallback(
     async (expression: unknown): Promise<void> => {
       const id = nextIdRef.current;
@@ -130,6 +146,7 @@ export function RunPanel(): JSX.Element {
       const outcome = await runExpression(expression, {
         compiler,
         resolvePart,
+        fillTypeArguments: { fill: fillTypeArguments, resolvePartType },
         wasiIoHost: {
           handle: browserWasiIoHandler(
             loadWasiIoSettings(),
@@ -156,7 +173,13 @@ export function RunPanel(): JSX.Element {
           : outcome,
       );
     },
-    [currentAccount, resolvePart, findExpectedType],
+    [
+      currentAccount,
+      resolvePart,
+      resolvePartType,
+      findExpectedType,
+      fillTypeArguments,
+    ],
   );
 
   // Ctrl + ` で実行パネルを出す・隠す (VS Code のターミナルと同じ)
