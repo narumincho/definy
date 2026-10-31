@@ -1,11 +1,7 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
-import {
-  readCommitCheckInput,
-  typeCheckParts,
-  loadCommitSummaries,
-} from "./type_check.ts";
+import { readCommitCheckInput, loadCommitSummaries } from "./type_check.ts";
 import { handleRpcInDefiny } from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
@@ -326,7 +322,6 @@ async function handleRpc(
         // 型チェッカー
         readCommitCheckInput: (signedEventBytes) =>
           readCommitCheckInput(signedEventBytes, store, env),
-        typeCheckParts: (request) => Promise.resolve(typeCheckParts(request)),
         writeEvent: async (signedEventBytes) =>
           (await store.submitEvent(signedEventBytes, env)).eventHash,
         hashContents: (contentsBytes) =>

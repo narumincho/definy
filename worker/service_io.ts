@@ -7,9 +7,7 @@
  * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
 import {
-  field,
   none,
-  optionValue,
   some,
   variant,
   variantOf,
@@ -67,10 +65,6 @@ export type ServiceIoHost = {
    * プロジェクトのコミットでなければ `null`
    */
   readonly readCommitCheckInput: (signedEventBytes: string) => Promise<unknown>;
-  /** `definy.check-commit` が決めた型環境でパーツを型チェッカーで検査し, 型エラーを返す (無ければ空) */
-  readonly typeCheckParts: (
-    request: TypeCheckPartsRequest,
-  ) => Promise<ReadonlyArray<string>>;
   /** イベントを保存し, イベントハッシュを返す */
   readonly writeEvent: (signedEventBytes: string) => Promise<string>;
   /** Base64 の中身の SHA-256 (URL-safe Base64. 同じ順. Base64 でなければ `undefined`) */
@@ -81,22 +75,6 @@ export type ServiceIoHost = {
   readonly writeContents: (
     items: ReadonlyArray<ContentItem>,
   ) => Promise<ReadonlyArray<string>>;
-};
-
-/** `type_check_parts` の要求 */
-export type TypeCheckPartsRequest = {
-  /** `core.type-checker` の `latest` (definy の値) */
-  readonly latest: unknown;
-  /** `core.type-checker` の `committed` (definy の値) */
-  readonly committed: unknown;
-  readonly moduleId: string;
-  /** 検査するパーツ (`definy.type-check-request`) */
-  readonly checks: ReadonlyArray<{
-    readonly name: string;
-    readonly expression: unknown;
-    readonly partType: unknown;
-    readonly builtin: boolean;
-  }>;
 };
 
 /** `definy.service-response` */
@@ -256,26 +234,6 @@ export async function handleRpcInDefiny(
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(input === null ? none() : some(input)),
-        ]);
-        break;
-      }
-      case "type_check_parts": {
-        const read = (key: string) =>
-          instance.read(instance.recordField(payload, key));
-        const checks = read("checks");
-        const errors = await host.typeCheckParts({
-          latest: read("latest"),
-          committed: read("committed"),
-          moduleId: String(read("module_id")),
-          checks: (Array.isArray(checks) ? checks : []).map((check) => ({
-            name: String(field(check, "name")),
-            expression: optionValue(field(check, "expression")) ?? null,
-            partType: optionValue(field(check, "part_type")) ?? null,
-            builtin: field(check, "builtin") === true,
-          })),
-        });
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(errors),
         ]);
         break;
       }

@@ -28,7 +28,6 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 | `read_account_created`        | `account_id`, `then: (created: boolean) -> ...`                                                     | そのアカウントの `create_account` を受け付けたか (`isAccountCreated`)             |
 | `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
 | `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-input>) -> ...`                     | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)       |
-| `type_check_parts`            | `latest`, `committed`, `module_id`, `checks`, `then: (errors: list<string>) -> ...`                 | 型チェッカーの別のインスタンスでパーツを検査し, 型エラーを返す (`typeCheckParts`) |
 | `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                          |
 | `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                |
 | `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                     |
@@ -79,27 +78,32 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
    - 中身が `core.part-content` にならないパーツ (`definy.commit-check-malformed`)
    - 参照できないパーツへの参照 (`core.check-reference-visibility`, メッセージは `definy.visibility-violation-message`)
-   - 型: 型環境と何を検査するか (`to_check` / `without_expression`) は service.wasm の中で `core.type-checker` が決める。
+   - 型: 型環境と何を検査するか (`to_check` / `without_expression`) は `core.type-checker` が決める。
      コミットのモジュールと今のプロジェクトのモジュールのパーツはまとめて置き換えるモジュール (`#replaced`) のものにする
      (`definy.commit-check-latest-entries` / `definy.commit-check-entries`)。式か型の無いパーツは
      コンパイラ組み込み (`definy.commit-check-part-builtin`) でなければ `part 'app.x': not supported: part has no expression or type`。
-     検査するもの (`definy.commit-check-requests`: 定義の式, その後に `to_check` のパーツ) は `type_check_parts` でホストに頼む
-3. `type_check_parts` はホスト (`typeCheckParts` → `checkPartsInModuleCommit`, `src/self_hosted_type_check.ts`) が
-   型チェッカー (`wasm/type_checker.wasm`) の別のインスタンスで, definy が渡した型環境で 1 つずつ検査し, 型エラーのメッセージを返す
+     検査するもの (`definy.commit-check-requests`: 定義の式, その後に `to_check` のパーツ) は
+     `definy.type-check-requests-errors` が `core.type-checker` の返す `check` で 1 つずつ検査する (下を参照)
 
-### 型チェッカーをホストに頼む理由 (メモリ)
+### 各パーツの検査 (`definy.type-check-request-error`, 2026-10-31)
 
-2026-10-31 まで stage1 の出力は線形メモリを解放しなかった (確保はヒープの先頭をずらすだけ)。
-型チェッカーの 1 つのインスタンスで seed の全パーツ (543 個) を検査すると 1 パーツ約 1.5MB ずつ増えて 640MB になり
-(Workers の上限は 128MB), core 全体 (460 パーツ) のコミットでは service.wasm も 64〜128MB になっていた。
-そのため各パーツの検査はホストが別のインスタンスで行っている。
+以前はホストに `type_check_parts` で頼み, 型チェッカー (`wasm/type_checker.wasm`) の別のインスタンスで検査していた
+(stage1 の出力が線形メモリを解放せず, 1 パーツ約 1.5MB ずつ増えたため)。出力を Wasm GC にした ([wasm-gc.md](wasm-gc.md)) ので,
+service.wasm の中で `core.type-checker` の計画と同じインスタンスで検査するようにした。Worker は type_checker.wasm を取り込まない。
 
-同じ日に出力を Wasm GC にした ([wasm-gc.md](wasm-gc.md)) ので, 使い終わった値は回収される。
-core 全体のコミットの `SubmitEvent` でプロセスの RSS の増加は約 24MB (以前は約 700MB)。
+- 拒否するメッセージは `part '<モジュール名>.<パーツ名>': ` に続けて, 次のどれか (UI の `outcomeErrorMessage` と同じ形)
+  - `not supported: part has no expression` / `part has no type` / `compiler built-in part (plus) cannot be type-checked` /
+    `Expression has an unfilled hole` (`definy.type-check-unsupported`)。コンパイラ組み込みのパーツなら受け入れる
+  - `type error: type_mismatch (expected: number, actual: string)` など (`definy.type-error-text`)。
+    `located` は外し, 型は `definy.type-ast-text` で `List<number>`, `(value: number) -> number`, `{ a: number }`,
+    `A | B(number)` などにする。パーツの参照は ID の先頭 8 文字, 組み込みの型は `builtin plus(left, right)`
+    (引数名は `definy.builtin-parameters-text`. `BUILTIN_PARAMETERS` から作った), 文字列はダブルクォートで囲む (エスケープはしない)
+- 未入力 (`hole`) は `core.type-check-against` が期待する型として受け入れるので, 先に `core.expression-contains-hole` で見る
+- 数の表記は `std.number-to-string`, 文字列をつなぐのは `std.string-join` を使う
+- 型チェッカーが trap すると (スタック不足など) `SubmitEvent` ごと `internal` になる (以前はそのパーツだけ `type checker failed`)
+- core 全体 (と wasm) のシステムアカウントのコミットの `SubmitEvent` (`worker/type_check.test.ts` の組み込みのテスト) は 2.1 秒 → 2.7 秒
 
 ## 今後
 
-- 型チェッカーの各パーツの検査も service.wasm の中で行う (Wasm GC にしたのでメモリの面では行える)。trap したときに RPC ごと落ちることも考える
-  (今は `core.type-checker` の計画が trap すると `SubmitEvent` が `internal` になる)
 - 定義の式の評価とパーツ ID の導出も definy にする
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

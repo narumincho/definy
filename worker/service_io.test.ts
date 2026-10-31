@@ -14,7 +14,6 @@ import {
   handleRpcInDefiny,
   jsonToDefiny,
   type ServiceIoHost,
-  type TypeCheckPartsRequest,
 } from "./service_io.ts";
 import type { EventItem } from "./types.ts";
 
@@ -88,7 +87,6 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readAccountCreated: () => Promise.reject(new Error("not read")),
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
-  typeCheckParts: () => Promise.reject(new Error("not checked")),
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
@@ -369,9 +367,8 @@ describe("handleRpcInDefiny", () => {
     });
   });
 
-  it("SubmitEvent の型検査は definy.check-commit が何をどの順に検査するか決め, 各パーツの検査だけをホストに頼む", async () => {
-    const requests: Array<TypeCheckPartsRequest> = [];
-    const submitWith = (input: unknown, typeErrors: ReadonlyArray<string>) =>
+  it("SubmitEvent の型検査は definy.check-commit が service.wasm の中で型チェッカーを呼んで行う", async () => {
+    const submitWith = (input: unknown) =>
       handleRpcInDefiny(
         service,
         "SubmitEvent",
@@ -387,10 +384,6 @@ describe("handleRpcInDefiny", () => {
           readAccountCreated: () => Promise.resolve(false),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(input),
-          typeCheckParts: (request) => {
-            requests.push(request);
-            return Promise.resolve(typeErrors);
-          },
           writeEvent: () => Promise.resolve("e3"),
         }),
       );
@@ -398,18 +391,36 @@ describe("handleRpcInDefiny", () => {
     const reference = (id: string) => ({
       "#part_reference": { part_definition_event_hash: id },
     });
+    const listOfNumber = { "#type_list": { item_type: number } };
+    const numberToNumber = {
+      "#type_function": {
+        parameters: [{ name: "value", type: number }],
+        return_type: number,
+      },
+    };
 
-    // 式の無いパーツ (組み込みは除く) を先に, 型チェッカーの結果をその後に並べる
+    // 式の無いパーツ (組み込みは除く) を先に, 型エラーをその後に並べる
     expect(
       await submitWith(
         checkInput({
           parts: [
-            checkPart("x", content(number, { "#number": 1 })),
+            checkPart("x", content(number, { "#string": "a" })),
             checkPart("y", content(number, null)),
             checkPart("plus", content(null, { "#builtin": "plus" })),
+            checkPart("list", content(listOfNumber, { "#number": 1 })),
+            checkPart(
+              "f",
+              content(numberToNumber, {
+                "#record": [{ key: "a", value: { "#number": 1 } }],
+              }),
+            ),
+            checkPart(
+              "v",
+              content(number, { "#variable": { variable_id: 7 } }),
+            ),
+            checkPart("hole", content(number, { "#hole": { probe: false } })),
           ],
         }),
-        ["part 'app.x': type error: type_mismatch"],
       ),
     ).toEqual({
       status: 400,
@@ -417,55 +428,16 @@ describe("handleRpcInDefiny", () => {
         code: "invalid_argument",
         message: [
           "part 'app.y': not supported: part has no expression or type",
-          "part 'app.x': type error: type_mismatch",
+          "part 'app.x': type error: type_mismatch (expected: number, actual: string)",
+          "part 'app.list': type error: type_mismatch (expected: List<number>, actual: number)",
+          "part 'app.f': type error: type_mismatch (expected: (value: number) -> number, actual: { a: number })",
+          "part 'app.v': type error: undefined_variable (variable_id: 7)",
+          "part 'app.hole': not supported: Expression has an unfilled hole",
         ].join("\n"),
       },
     });
-    expect(requests).toHaveLength(1);
-    expect(requests[0]?.moduleId).toBe("#replaced");
-    expect(requests[0]?.checks).toEqual([
-      {
-        name: "app.x",
-        expression: { "#number": 1 },
-        partType: number,
-        builtin: false,
-      },
-      {
-        name: "app.plus",
-        expression: { "#builtin": "plus" },
-        partType: null,
-        builtin: true,
-      },
-    ]);
-    expect(requests[0]?.committed).toEqual([
-      {
-        part_id: "id-x",
-        module_id: "#replaced",
-        part_type: some(number),
-        type_declaration: none(),
-        expression_key: some("hash-x"),
-        has_expression: true,
-      },
-      {
-        part_id: "id-y",
-        module_id: "#replaced",
-        part_type: some(number),
-        type_declaration: none(),
-        expression_key: some("hash-y"),
-        has_expression: false,
-      },
-      {
-        part_id: "id-plus",
-        module_id: "#replaced",
-        part_type: some({ "#builtin": "plus" }),
-        type_declaration: none(),
-        expression_key: some("hash-plus"),
-        has_expression: true,
-      },
-    ]);
 
     // 参照できないパーツへの参照は, 型を検査する前に拒否する
-    requests.length = 0;
     expect(
       await submitWith(
         checkInput({
@@ -481,7 +453,6 @@ describe("handleRpcInDefiny", () => {
             },
           ],
         }),
-        [],
       ),
     ).toEqual({
       status: 400,
@@ -490,14 +461,12 @@ describe("handleRpcInDefiny", () => {
         message: "part 'app.x': cannot reference the private part 'lib.secret'",
       },
     });
-    expect(requests).toEqual([]);
 
     expect(
       await submitWith(
         checkInput({
           parts: [checkPart("x", content(number, { "#number": 1 }))],
         }),
-        [],
       ),
     ).toEqual({
       status: 200,
