@@ -9,6 +9,7 @@
 
 画面全体は React 19 実装の [src/components/Workbench.tsx](../src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている.
 詳細なアーキテクチャは [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照.
+UI でまだできない操作の一覧は [ui-missing-operations.md](ui-missing-operations.md).
 
 | 領域               | 内容                                                                                          | 実装                                 |
 | ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------ |
