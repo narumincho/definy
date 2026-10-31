@@ -31,14 +31,20 @@ core.list-map(T: □, U: □, f: (item) => core.less-than(left: item, right: 2),
 ```
 
 - 型チェッカー (`core.type-call-type-arguments`): 型が `type` の引数の実引数が未入力なら `core.type-infer-type-argument` で推論する。
-  推論の順番はエディタの推論と同じ:
+  エディタの枠の表示も同じ推論を使う (下の「エディタ」)。推論の順番:
   1. 引数の型が `parameter(T)` を含むほかの引数 (未入力でないもの) を, パーツの型の引数の順に推論し (`core.type-check`),
      引数の型と照らし合わせて `parameter(T)` の位置の型を取る (`core.type-match-parameter`。リスト・関数・レコード・直和型・
      `Code`・`apply` の中を同じ位置どうしでたどる)
+     - 実引数がラムダ `(item) => ...` なら, 引数の型 `(item: T) -> U` にそれまでに決まった型引数 (`known`. パーツの型の引数の
+       順で前にある型引数) を代入し, ラムダの引数をその型で型環境に足して本体の型を推論する (`core.type-infer-function-body`)。
+       その本体の型と戻り値の型 `U` を照らし合わせる (2026-10-31 に追加. 型引数どうしの依存)
+     - 引数の型にまだ決まっていない型引数があって本体の型が `parameter(T)` そのものになったときは, 推論できなかったとみなす
   2. 分からなければ, 呼び出しの位置で期待する型と戻り値の型を照らし合わせる。期待する型は検査する位置
      (`core.type-check-against-unlocated` の呼び出し) だけで分かり, `core.type-check-function-call` の `expected_type` で渡す
   3. それでも分からなければ型エラー `the type argument 'T' is not entered and could not be inferred ...`
-  - 型引数どうしの依存 (先に推論した `T` を使って `f` のラムダを検査し `U` を求める) はしない。`f` の戻り値の型からは推論できない
+  - 例: `let mapped = core.list-map(T: □, U: □, f: (item) => item < 2, xs: [1, 2]) in mapped` は期待する型が無いが,
+    T = number (xs から) を `f` の引数の型に代入して本体の型 boolean から U = boolean
+  - 依存は前にある型引数から後ろへの一方向だけ (`known` は前から順にたまる)。後ろの型引数を使わないと決まらない前の型引数は推論しない
 - 期待する型を聞く未入力 (`probe: true`) を型引数の位置に置くと, `hole_expected_type` の `expected` は `type`,
   `inferred_type_argument` に推論した型 (できなければ `none`) が入る。ほかの位置の `hole_expected_type` では `none`
 - 型検査 (`createTypeCheckSession` の `check`, サーバーの `SubmitEvent` と UI 共通): 式に未入力があっても,
@@ -130,16 +136,16 @@ core.type-result        // => {"#part_reference": {part_definition_event_hash: "
   `apply` は型の式では `call` (`part_type.ts`)
 - 値の式のエディタで期待する型が `type` の位置 (型引数) では, 型の式の選択肢 (`number`, `List` など) を先に出す (`expectsType`)
 - 未入力の型引数の推論 ([src/tree_layout/type_argument_inference.ts](../src/tree_layout/type_argument_inference.ts)):
-  呼び出しの型引数が未入力 (`□`) なら, 型引数を使うほかの引数の推論された型 (`List<T>` の引数に `[1, 2]` なら `T = number`) か,
-  呼び出しの位置で期待する型と戻り値の型を照らし合わせて型引数を求め, 枠に薄く出す (`□ number`)。
+  呼び出しの型引数が未入力 (`□`) の枠を見つけ, その枠を probe にして型チェッカーに推論した型引数を聞き
+  (`findInferredTypeArgument`. `hole_expected_type` の `inferred_type_argument`), 枠に薄く出す (`□ number`)。
   その枠の置換メニューの先頭 (最初から選んだ状態) に推論した型を出し, Enter で確定する (2026-10-30 のユーザーの指示)。
-  引数の型は呼び出しをその引数の値に置き換えて型チェッカーに聞く (未入力の型引数のある呼び出しは先にエラーになるため)。
+  2026-10-31 まではエディタが TypeScript で同じ推論をしていたが, 型チェッカーの推論 (依存も解く) に一本化した。
   推論した型の型引数の参照 (`T`) は, その位置から見える同じ名前の変数 (関数の型引数の引数) にして書く
 
 ## まだ無いもの
 
-- 型引数どうしの依存を解く推論 (単一化)。今は 1 つずつ, ほかの引数の推論した型か期待する型から求めるだけ
-- エディタの推論の表示は型チェッカーの推論 (`inferred_type_argument`) を使わず, TypeScript で同じことをしている
+- 単一化による推論。今は型引数を 1 つずつ, 前から順に決めるだけ (後ろの型引数を使わないと決まらない前の型引数, 複数の引数の型を
+  合わせて決まる型引数は推論しない)
 - 型の位置で任意の関数を評価すること。型の式に書ける呼び出しは, 型を返すパーツ (宣言式が型を返す関数) の呼び出しだけ
 - 関数の型の中で同じ名前の型引数を入れ子に宣言したときの区別 (外側の型引数と同じとみなす)
 - コンパイラ組み込みのパーツ (`core.list-get` など) は型引数を取らず, 型チェッカーが名前で特別扱いしている

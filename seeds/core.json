@@ -58451,6 +58451,14 @@
                                                                   "variable_id": 51
                                                                 }
                                                               }
+                                                            },
+                                                            {
+                                                              "name": "known",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 4
+                                                                }
+                                                              }
                                                             }
                                                           ]
                                                         }
@@ -58800,6 +58808,14 @@
                                                                             "value": {
                                                                               "#variable": {
                                                                                 "variable_id": 51
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "name": "known",
+                                                                            "value": {
+                                                                              "#variable": {
+                                                                                "variable_id": 4
                                                                               }
                                                                             }
                                                                           }
@@ -61682,6 +61698,33 @@
                   }
                 ]
               }
+            },
+            {
+              "name": "known",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_record": [
+                      {
+                        "key": "name",
+                        "value": {
+                          "#type_string": null
+                        }
+                      },
+                      {
+                        "key": "type",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "core.type-ast"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
             }
           ],
           "return_type": {
@@ -61711,11 +61754,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Infer a type argument that is not entered (hole): from the inferred types of the other arguments whose parameter types contain parameter(name), in order, and otherwise from the expected type of the call and the return type (docs/type-arguments.md)"
+          "text": "Infer a type argument that is not entered (hole): from the other arguments whose parameter types contain parameter(name), in order (a lambda argument from the type of its body, with the type arguments known so far substituted into its parameter types), and otherwise from the expected type of the call and the return type (docs/type-arguments.md)"
         },
         {
           "language": "ja",
-          "text": "未入力 (hole) の型引数を推論する: 引数の型に parameter(name) を含むほかの引数の推論した型から順に, 分からなければ呼び出しの位置で期待する型と戻り値の型から求める (docs/type-arguments.md)"
+          "text": "未入力 (hole) の型引数を推論する: 引数の型に parameter(name) を含むほかの引数から順に (ラムダの引数は, それまでに決まった型引数 known を引数の型に代入して本体の型を推論して), 分からなければ呼び出しの位置で期待する型と戻り値の型から求める (docs/type-arguments.md)"
         }
       ],
       "expression": {
@@ -61748,6 +61791,10 @@
             {
               "parameter_id": 6,
               "parameter_name": "expected_type"
+            },
+            {
+              "parameter_id": 20,
+              "parameter_name": "known"
             }
           ],
           "body": {
@@ -62040,6 +62087,733 @@
                                               "variable_id": 6
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "known",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 20
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "function",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 21,
+                                          "variable_name": "lambda"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.type-resolve"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "type",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.type-substitute"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "type",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 8
+                                                            }
+                                                          },
+                                                          "key": "type"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "arguments",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 20
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "env",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "function",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 22,
+                                                  "variable_name": "lambda_type"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#match": {
+                                              "target": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.type-infer-function-body"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "fn_parameters",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 21
+                                                            }
+                                                          },
+                                                          "key": "parameters"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "ty_parameters",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 22
+                                                            }
+                                                          },
+                                                          "key": "parameters"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "body",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 21
+                                                            }
+                                                          },
+                                                          "key": "body"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "env",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "index",
+                                                      "value": {
+                                                        "#number": 0
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "pattern": {
+                                                    "#variant": {
+                                                      "tag": "some",
+                                                      "payload": {
+                                                        "#bind": {
+                                                          "variable_id": 23,
+                                                          "variable_name": "body_type"
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "body": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.type-match-parameter"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "pattern",
+                                                              "value": {
+                                                                "#record_get": {
+                                                                  "record": {
+                                                                    "#variable": {
+                                                                      "variable_id": 22
+                                                                    }
+                                                                  },
+                                                                  "key": "return_type"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "actual",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 23
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "name",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 0
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "pattern": {
+                                                            "#variant": {
+                                                              "tag": "some",
+                                                              "payload": {
+                                                                "#bind": {
+                                                                  "variable_id": 24,
+                                                                  "variable_name": "found"
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "body": {
+                                                            "#match": {
+                                                              "target": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.equal"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 24
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "#variant": {
+                                                                          "tag": "parameter",
+                                                                          "payload": {
+                                                                            "#some": {
+                                                                              "#variable": {
+                                                                                "variable_id": 0
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "type_part": {
+                                                                            "#some": {
+                                                                              "$part": "core.type-ast"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "arms": [
+                                                                {
+                                                                  "pattern": {
+                                                                    "#boolean": true
+                                                                  },
+                                                                  "body": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.type-infer-type-argument"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "name",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 0
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "parameters",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 1
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "arguments",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 2
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "env",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 3
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "index",
+                                                                          "value": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "core.plus"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "left",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 4
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "right",
+                                                                                  "value": {
+                                                                                    "#number": 1
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "return_type",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 5
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "expected_type",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "known",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 20
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "pattern": {
+                                                                    "#boolean": false
+                                                                  },
+                                                                  "body": {
+                                                                    "#variant": {
+                                                                      "tag": "some",
+                                                                      "payload": {
+                                                                        "#some": {
+                                                                          "#variable": {
+                                                                            "variable_id": 24
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "type_part": {
+                                                                        "#none": null
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "pattern": {
+                                                            "#any": null
+                                                          },
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.type-infer-type-argument"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "name",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 0
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "parameters",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 1
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "arguments",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "env",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 3
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "index",
+                                                                  "value": {
+                                                                    "#call": {
+                                                                      "function": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.plus"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "#variable": {
+                                                                              "variable_id": 4
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "#number": 1
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "return_type",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 5
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "expected_type",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 6
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "known",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 20
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "pattern": {
+                                                    "#any": null
+                                                  },
+                                                  "body": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.type-infer-type-argument"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "name",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "parameters",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "arguments",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "env",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.plus"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "#number": 1
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "return_type",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "expected_type",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 6
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "known",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 20
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#any": null
+                                          },
+                                          "body": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.type-infer-type-argument"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "name",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "parameters",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "arguments",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "env",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "return_type",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "expected_type",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "known",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 20
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
                                         }
                                       ]
                                     }
@@ -62257,6 +63031,14 @@
                                                               "variable_id": 6
                                                             }
                                                           }
+                                                        },
+                                                        {
+                                                          "name": "known",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 20
+                                                            }
+                                                          }
                                                         }
                                                       ]
                                                     }
@@ -62355,6 +63137,14 @@
                                                   "value": {
                                                     "#variable": {
                                                       "variable_id": 6
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "known",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 20
                                                     }
                                                   }
                                                 }
@@ -62461,8 +63251,496 @@
                                       "variable_id": 6
                                     }
                                   }
+                                },
+                                {
+                                  "name": "known",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 20
+                                    }
+                                  }
                                 }
                               ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-infer-function-body",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "fn_parameters",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_record": [
+                      {
+                        "key": "parameter_id",
+                        "value": {
+                          "#type_number": null
+                        }
+                      },
+                      {
+                        "key": "parameter_name",
+                        "value": {
+                          "#type_string": null
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "name": "ty_parameters",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_record": [
+                      {
+                        "key": "name",
+                        "value": {
+                          "#type_string": null
+                        }
+                      },
+                      {
+                        "key": "type",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "core.type-ast"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "name": "body",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.expression"
+                  }
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.type-env"
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-ast"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Infer the type of the body of a lambda whose parameters have the types ty_parameters (by name). Used to infer a type argument from the return type of a lambda argument"
+        },
+        {
+          "language": "ja",
+          "text": "引数の型が ty_parameters (名前で対応) のラムダの本体の型を推論する。ラムダの引数の戻り値の型から型引数を推論するのに使う"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "fn_parameters"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "ty_parameters"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "body"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "env"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 4
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-check"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "ok",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 5,
+                                  "variable_name": "body_type"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#some": {
+                                  "#variable": {
+                                    "variable_id": 5
+                                  }
+                                }
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#any": null
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 6,
+                          "variable_name": "parameter"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.function-type-parameter-find"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "parameters",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "name",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 6
+                                    }
+                                  },
+                                  "key": "parameter_name"
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "#number": 0
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 7,
+                                  "variable_name": "parameter_type"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-infer-function-body"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "fn_parameters",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ty_parameters",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "body",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.type-env-extend-parameter"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parameter_id",
+                                          "value": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 6
+                                                }
+                                              },
+                                              "key": "parameter_id"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parameter_name",
+                                          "value": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 6
+                                                }
+                                              },
+                                              "key": "parameter_name"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "var_type",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 7
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#any": null
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
                             }
                           }
                         }

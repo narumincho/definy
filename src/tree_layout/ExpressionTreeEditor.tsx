@@ -77,7 +77,6 @@ import { type DefinyValue } from "../stage1_compiler.ts";
 import { callParameterNamesOf } from "./part_type.ts";
 import {
   inferredTypeExpression,
-  inferTypeArguments,
   INFERRED_TYPE_ARGUMENT,
   typeArgumentHoles,
   typeAstText,
@@ -144,6 +143,7 @@ export function ExpressionTreeEditor({
     partNames,
     partsByIdHash,
     findExpectedType,
+    findInferredTypeArgument,
     visibilityTargets,
     projectOfModule,
   } = useDefiny();
@@ -272,24 +272,20 @@ export function ExpressionTreeEditor({
     }
     let cancelled = false;
     const timer = setTimeout(() => {
-      inferTypeArguments(
-        expression,
-        holes,
-        async (probed, path) => {
-          const type = await findExpressionTypeAt(
-            findExpectedType,
+      // 推論は型チェッカー (`core.type-infer-type-argument`) がする. 枠を probe にして推論した型引数を聞く
+      (async () => {
+        const types = new Map<string, DefinyValue>();
+        for (const hole of holes) {
+          const type = await findInferredTypeArgument({
             partType,
-            probed,
-            path,
-          );
-          return type?.kind === "inferred" ? type.type : null;
-        },
-        (path) =>
-          findExpectedType({
-            partType,
-            expression: probeExpressionAt(expression, path),
-          }),
-      ).then(
+            expression: probeExpressionAt(expression, hole.path),
+          });
+          if (type !== null) {
+            types.set(pathToString(hole.path), type);
+          }
+        }
+        return types;
+      })().then(
         (types) => {
           if (!cancelled) {
             setInferredTypeArguments({ expression, types });
@@ -304,7 +300,7 @@ export function ExpressionTreeEditor({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [expression, mode, partType, partsByIdHash, findExpectedType]);
+  }, [expression, mode, partType, partsByIdHash, findInferredTypeArgument]);
 
   const toggleCollapse = useCallback((id: string) => {
     setCollapsedIds((prev) => {

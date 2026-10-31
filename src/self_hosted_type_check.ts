@@ -298,6 +298,11 @@ export type TypeCheckSession = {
    * 型引数でない未入力か, 推論できない型引数があれば `null` (docs/type-arguments.md「未確定の型引数」)
    */
   readonly fillTypeArguments: (part: PartToCheck) => unknown;
+  /**
+   * 式の中の `{"#hole": {"probe": true}}` が型引数の位置なら, 型チェッカーが推論した型引数 (`core.type-ast` の値).
+   * 型引数の位置でないか, 推論できなければ `null`. エディタが未確定の型引数の枠に推論した型を出すのに使う
+   */
+  readonly findInferredTypeArgument: (part: PartToCheck) => DefinyValue | null;
 };
 
 /**
@@ -446,6 +451,12 @@ function createModuleCommitSessionFromValues(options: {
         : run(part, true),
     fillTypeArguments: (part) =>
       fillHoleTypeArguments(part.expression, probeHole(part)),
+    findInferredTypeArgument: (part) => {
+      const result = probeHole(part)(part.expression);
+      return result.kind === "type_argument"
+        ? (result.type as DefinyValue)
+        : null;
+    },
     findExpectedType: (part) => {
       const outcome = run(part, true);
       if (

@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  argumentProbeTarget,
   inferredTypeExpression,
-  inferTypeArguments,
-  matchTypeParameter,
   typeArgumentHoles,
   typeAstText,
 } from "./type_argument_inference.ts";
@@ -110,43 +107,6 @@ describe("typeArgumentHoles", () => {
     expect(
       typeArgumentHoles(written, paths, partTypeOf).map((h) => h.parameterName),
     ).toEqual(["U"]);
-  });
-});
-
-describe("matchTypeParameter", () => {
-  it("引数の型の parameter(T) の位置の型を取り出す", () => {
-    expect(matchTypeParameter(listOf(T), listOf(NUMBER), "T")).toEqual(NUMBER);
-    expect(matchTypeParameter(listOf(T), NUMBER, "T")).toBeUndefined();
-    expect(matchTypeParameter(listOf(U), listOf(NUMBER), "T")).toBeUndefined();
-  });
-});
-
-describe("inferTypeArguments", () => {
-  it("引数の推論された型から, 分からなければ期待する型と戻り値の型から求める", async () => {
-    const holes = typeArgumentHoles(call, paths, partTypeOf);
-    const result = await inferTypeArguments(
-      call,
-      holes,
-      (expression, path) => {
-        // 呼び出しを引数の値に置き換えた式で聞く
-        expect(path).toEqual([]);
-        return Promise.resolve(expression === xs ? listOf(NUMBER) : null);
-      },
-      () => Promise.resolve(listOf({ "#string": null })),
-    );
-    expect(result).toEqual(
-      new Map<string, unknown>([
-        ["callArgument:0", NUMBER],
-        ["callArgument:1", { "#string": null }],
-      ]),
-    );
-  });
-
-  it("引数の値の型は, 呼び出しをその値に置き換えて聞く", () => {
-    expect(argumentProbeTarget(call, [], argument(3))).toEqual({
-      expression: xs,
-      path: [],
-    });
   });
 });
 

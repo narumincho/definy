@@ -85,6 +85,14 @@ export type TypeCheckOperations = {
     readonly partType: unknown;
     readonly expression: unknown;
   }) => Promise<unknown>;
+  /**
+   * 式の probe の未入力が型引数の位置なら, コミット済みのパーツの型環境で型チェッカーが推論した型引数.
+   * 分からなければ `null`
+   */
+  readonly findInferredTypeArgument: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<DefinyValue | null>;
   readonly typeCheckMessage: (
     partName: string | null,
     outcome: SelfHostedTypeCheckOutcome,
@@ -265,6 +273,15 @@ export function useTypeCheck({
     [committedSession],
   );
 
+  const findInferredTypeArgument = useCallback(
+    async (part: {
+      readonly partType: unknown;
+      readonly expression: unknown;
+    }): Promise<DefinyValue | null> =>
+      (await committedSession()).findInferredTypeArgument(part),
+    [committedSession],
+  );
+
   const checkCommitTypes = useCallback(
     async (projectName: string): Promise<ReadonlyArray<CommitTypeError>> => {
       if (!currentAccount) {
@@ -344,6 +361,7 @@ export function useTypeCheck({
     checkCommitTypes,
     findExpectedType,
     fillTypeArguments,
+    findInferredTypeArgument,
     typeCheckMessage,
   };
 }

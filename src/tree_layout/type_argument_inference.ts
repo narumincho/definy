@@ -1,9 +1,9 @@
 /**
  * 型引数の推論 (エディタ側. docs/type-arguments.md「エディタ」).
  *
- * 呼び出しの型引数 (呼び出すパーツの型の引数で, 型が `type` のもの) が未入力のとき, ほかの引数の推論された型と
- * パーツの型の引数の型を照らし合わせて型引数を求める. 求めた型は未入力の枠に薄く出し, 置換メニューの選択肢の先頭に置く
- * (選ぶと確定する).
+ * 呼び出しの型引数 (呼び出すパーツの型の引数で, 型が `type` のもの) が未入力の枠を見つける. 推論は型チェッカー
+ * (`core.type-infer-type-argument`) がし, エディタは枠を probe にして推論した型を聞く (`findInferredTypeArgument`).
+ * 求めた型は未入力の枠に薄く出し, 置換メニューの選択肢の先頭に置く (選ぶと確定する).
  *
  * ```text
  * core.list-map: (T: type, U: type, f: (item: T) -> U, xs: List<T>) -> List<U>
@@ -11,7 +11,6 @@
  * ```
  */
 import { field, variantOf, variantPayload } from "../definy_value.ts";
-import type { DefinyValue } from "../stage1_compiler.ts";
 import {
   callOf,
   isHole,
@@ -22,7 +21,7 @@ import {
   expressionToTypeAst,
   typeAstToExpression,
 } from "../type_ast_expression.ts";
-import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
+import { getExpressionAtPath } from "./path.ts";
 import { pathToString, type PathStep } from "./types.ts";
 import type { SelectorOption } from "./selector_options.ts";
 
@@ -149,120 +148,6 @@ export function typeArgumentHoles(
     });
   }
   return holes;
-}
-
-/**
- * 引数の型 `parameterType` (`parameter(name)` を含む) と, 実引数の推論された型 `actual` を照らし合わせて
- * 型引数 `name` の型を求める. 形が合わない・`name` が出てこなければ `undefined`
- */
-export function matchTypeParameter(
-  parameterType: unknown,
-  actual: unknown,
-  name: string,
-): DefinyValue | undefined {
-  const tagged = variantOf(parameterType);
-  if (tagged?.tag === "parameter") {
-    return tagged.payload === name ? (actual as DefinyValue) : undefined;
-  }
-  if (Array.isArray(parameterType)) {
-    if (!Array.isArray(actual) || actual.length !== parameterType.length) {
-      return undefined;
-    }
-    for (const [i, item] of parameterType.entries()) {
-      const found = matchTypeParameter(item, actual[i], name);
-      if (found !== undefined) return found;
-    }
-    return undefined;
-  }
-  if (
-    typeof parameterType !== "object" ||
-    parameterType === null ||
-    typeof actual !== "object" ||
-    actual === null ||
-    Array.isArray(actual)
-  ) {
-    return undefined;
-  }
-  for (const [key, value] of Object.entries(parameterType)) {
-    if (!Object.hasOwn(actual, key)) {
-      return undefined;
-    }
-    const found = matchTypeParameter(
-      value,
-      (actual as Readonly<Record<string, unknown>>)[key],
-      name,
-    );
-    if (found !== undefined) return found;
-  }
-  return undefined;
-}
-
-/**
- * 引数の値の型を型チェッカーに聞くための式とパス. 呼び出しを引数の値に置き換える
- * (型引数が未入力のままの呼び出しは型チェッカーが先にエラーにするので, 呼び出しの外で聞く. 変数のスコープは同じ)
- */
-export function argumentProbeTarget(
-  expression: unknown,
-  callPath: ReadonlyArray<PathStep>,
-  argumentPath: ReadonlyArray<PathStep>,
-): { readonly expression: unknown; readonly path: ReadonlyArray<PathStep> } {
-  const value = getExpressionAtPath(expression, argumentPath);
-  return {
-    expression: updateExpressionAtPath(expression, callPath, () => value),
-    path: callPath,
-  };
-}
-
-/**
- * 未入力の型引数を推論する. まず引数の値の推論された型から, 分からなければ呼び出しの位置で期待する型と戻り値の型から求める.
- * `inferTypeAt` は式 `expression` のパス `path` の位置の式の推論された型, `expectedTypeAt` はその位置で期待する型
- * (分からなければ `null`). 結果は型引数の値のパス (`pathToString`) → 推論した型 (`core.type-ast`)
- */
-export async function inferTypeArguments(
-  expression: unknown,
-  holes: ReadonlyArray<TypeArgumentHole>,
-  inferTypeAt: (
-    expression: unknown,
-    path: ReadonlyArray<PathStep>,
-  ) => Promise<unknown>,
-  expectedTypeAt: (path: ReadonlyArray<PathStep>) => Promise<unknown>,
-): Promise<ReadonlyMap<string, DefinyValue>> {
-  const result = new Map<string, DefinyValue>();
-  const expectedByCall = new Map<string, Promise<unknown>>();
-  for (const hole of holes) {
-    let found: DefinyValue | undefined;
-    for (const source of hole.sources) {
-      const target = argumentProbeTarget(
-        expression,
-        hole.callPath,
-        source.path,
-      );
-      const actual = await inferTypeAt(target.expression, target.path);
-      found =
-        actual == null
-          ? undefined
-          : matchTypeParameter(
-              source.parameterType,
-              actual,
-              hole.parameterName,
-            );
-      if (found !== undefined) break;
-    }
-    if (found === undefined && hole.returnType !== undefined) {
-      const key = pathToString(hole.callPath);
-      const expected = expectedByCall.get(key) ?? expectedTypeAt(hole.callPath);
-      expectedByCall.set(key, expected);
-      const type = await expected;
-      found =
-        type == null
-          ? undefined
-          : matchTypeParameter(hole.returnType, type, hole.parameterName);
-    }
-    if (found !== undefined) {
-      result.set(pathToString(hole.path), found);
-    }
-  }
-  return result;
 }
 
 /** 型 (`core.type-ast`) の短い表記. 推論した型引数を未入力の枠に薄く出すのに使う */
