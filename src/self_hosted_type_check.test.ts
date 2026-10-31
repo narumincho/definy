@@ -631,6 +631,182 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("未確定 (未入力) の型引数は型チェッカーが推論し, 推論した型で埋められる (docs/type-arguments.md)", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const typeType = { "#type_type": null };
+    const parameter = (name: string) => ({ "#type_parameter": name });
+    const hole = { "#hole": { probe: false } };
+    const number = { "#type_number": null };
+    const listOf = (itemType: unknown) => ({
+      "#type_list": { item_type: itemType },
+    });
+    const call = (
+      partHash: string,
+      args: Readonly<Record<string, unknown>>,
+    ) => ({
+      "#call": {
+        function: {
+          "#part_reference": { part_definition_event_hash: partHash },
+        },
+        arguments: Object.entries(args).map(([name, value]) => ({
+          name,
+          value,
+        })),
+      },
+    });
+    // identity: (T: type, x: T) -> T, empty: (T: type) -> List<T>, unused: (T: type) -> number
+    const identityId = "test-identity";
+    const emptyId = "test-empty";
+    const unusedId = "test-unused";
+    const testEnv = [
+      ...env,
+      {
+        partId: identityId,
+        partType: {
+          "#type_function": {
+            parameters: [
+              { name: "T", type: typeType },
+              { name: "x", type: parameter("T") },
+            ],
+            return_type: parameter("T"),
+          },
+        },
+      },
+      {
+        partId: emptyId,
+        partType: {
+          "#type_function": {
+            parameters: [{ name: "T", type: typeType }],
+            return_type: listOf(parameter("T")),
+          },
+        },
+      },
+      {
+        partId: unusedId,
+        partType: {
+          "#type_function": {
+            parameters: [{ name: "T", type: typeType }],
+            return_type: number,
+          },
+        },
+      },
+    ];
+    const lessThanTwo = {
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: await coreCall("less-than", {
+          left: { "#variable": { variable_id: 1 } },
+          right: { "#number": 2 },
+        }),
+      },
+    };
+    // core.list-map(T: □, U: □, f: (item) => item < 2, xs: [1, 2])
+    const mapLessThanTwo = await coreCall("list-map", {
+      T: hole,
+      U: hole,
+      f: lessThanTwo,
+      xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+    });
+    const parts: ReadonlyArray<PartToCheck> = [
+      // T は xs の型 List<number> から, U は期待する型 List<boolean> と戻り値の型 List<U> から
+      {
+        partType: listOf({ "#type_boolean": null }),
+        expression: mapLessThanTwo,
+      },
+      // U = number と推論すると f の戻り値の型 boolean が合わない
+      { partType: listOf(number), expression: mapLessThanTwo },
+      // T は x の型から
+      {
+        partType: number,
+        expression: call(identityId, { T: hole, x: { "#number": 1 } }),
+      },
+      {
+        partType: { "#type_string": null },
+        expression: call(identityId, { T: hole, x: { "#number": 1 } }),
+      },
+      // 推論する位置 (let の値) でも, ほかの引数から推論できる
+      {
+        partType: number,
+        expression: {
+          "#let": {
+            variable_id: 1,
+            variable_name: "a",
+            value: call(identityId, { T: hole, x: { "#number": 1 } }),
+            body: { "#variable": { variable_id: 1 } },
+          },
+        },
+      },
+      // 期待する型からだけ: empty(T: □) を List<number> の位置に
+      { partType: listOf(number), expression: call(emptyId, { T: hole }) },
+      // 推論できない型引数はエラー
+      { partType: number, expression: call(unusedId, { T: hole }) },
+      // 型引数でない未入力はコミットできない (unsupported)
+      {
+        partType: number,
+        expression: call(identityId, { T: number, x: hole }),
+      },
+    ];
+    const outcomes = checkParts({ typeChecker, parts, env: testEnv });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "ok",
+      "type_error",
+      "ok",
+      "ok",
+      "unsupported",
+      "unsupported",
+    ]);
+    const session = createTypeCheckSession({ typeChecker, env: testEnv });
+    // 実行の前に推論した型で埋める
+    expect(session.fillTypeArguments(parts[0]!)).toEqual(
+      await coreCall("list-map", {
+        T: number,
+        U: { "#type_boolean": null },
+        f: lessThanTwo,
+        xs: { "#list": [{ "#number": 1 }, { "#number": 2 }] },
+      }),
+    );
+    expect(session.fillTypeArguments(parts[6]!)).toBeNull();
+    expect(session.fillTypeArguments(parts[7]!)).toBeNull();
+    // 関数の本体で, 推論した型が型引数の参照なら, その引数の変数にする
+    const wrapper = {
+      "#function": {
+        parameters: [
+          { parameter_id: 0, parameter_name: "T" },
+          { parameter_id: 1, parameter_name: "x" },
+        ],
+        body: call(identityId, {
+          T: hole,
+          x: { "#variable": { variable_id: 1 } },
+        }),
+      },
+    };
+    const wrapperType = {
+      "#type_function": {
+        parameters: [
+          { name: "T", type: typeType },
+          { name: "x", type: parameter("T") },
+        ],
+        return_type: parameter("T"),
+      },
+    };
+    expect(
+      session.check({ partType: wrapperType, expression: wrapper }).kind,
+    ).toBe("ok");
+    expect(
+      session.fillTypeArguments({ partType: wrapperType, expression: wrapper }),
+    ).toEqual({
+      "#function": {
+        ...wrapper["#function"],
+        body: call(identityId, {
+          T: { "#variable": { variable_id: 0 } },
+          x: { "#variable": { variable_id: 1 } },
+        }),
+      },
+    });
+  }, 600_000);
+
   it("関数は値として書けない (関数の引数にはラムダ式を書く)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
     const mapperType = {

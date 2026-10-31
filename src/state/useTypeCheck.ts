@@ -77,6 +77,14 @@ export type TypeCheckOperations = {
     readonly partType: unknown;
     readonly expression: unknown;
   }) => Promise<DefinyValue | null>;
+  /**
+   * 未確定の型引数を, コミット済みのパーツの型環境で型チェッカーが推論した型で埋めた式.
+   * 推論できない未入力があれば `null` (docs/type-arguments.md「未確定の型引数」)
+   */
+  readonly fillTypeArguments: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<unknown>;
   readonly typeCheckMessage: (
     partName: string | null,
     outcome: SelfHostedTypeCheckOutcome,
@@ -225,24 +233,36 @@ export function useTypeCheck({
     [committedParts],
   );
 
+  /** コミット済みのパーツの型環境のセッション (型環境が変わるまで使い回す) */
+  const committedSession = useCallback(async () => {
+    const typeChecker = await loadTypeChecker();
+    if (expectedTypeSession.current?.parts !== committedParts) {
+      expectedTypeSession.current = {
+        parts: committedParts,
+        session: createTypeCheckSession({
+          typeChecker,
+          env: typeEnvFromParts(committedParts.values()),
+        }),
+      };
+    }
+    return expectedTypeSession.current.session;
+  }, [committedParts]);
+
   const findExpectedType = useCallback(
     async (part: {
       readonly partType: unknown;
       readonly expression: unknown;
-    }): Promise<DefinyValue | null> => {
-      const typeChecker = await loadTypeChecker();
-      if (expectedTypeSession.current?.parts !== committedParts) {
-        expectedTypeSession.current = {
-          parts: committedParts,
-          session: createTypeCheckSession({
-            typeChecker,
-            env: typeEnvFromParts(committedParts.values()),
-          }),
-        };
-      }
-      return expectedTypeSession.current.session.findExpectedType(part);
-    },
-    [committedParts],
+    }): Promise<DefinyValue | null> =>
+      (await committedSession()).findExpectedType(part),
+    [committedSession],
+  );
+
+  const fillTypeArguments = useCallback(
+    async (part: {
+      readonly partType: unknown;
+      readonly expression: unknown;
+    }): Promise<unknown> => (await committedSession()).fillTypeArguments(part),
+    [committedSession],
   );
 
   const checkCommitTypes = useCallback(
@@ -323,6 +343,7 @@ export function useTypeCheck({
     checkPartType,
     checkCommitTypes,
     findExpectedType,
+    fillTypeArguments,
     typeCheckMessage,
   };
 }
