@@ -48,7 +48,7 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
   - `GetEvent` (`definy.get-event`): `eventHash` の両端の空白 (`definy.string-trim`. 空白・タブ・改行) を除いて読む。
   - `GetEvents` (`definy.get-events`): `limit` を 1 から 500 (無ければ 50) に, `offset` を 0 以上にし, 空の `eventType` は指定しない。
   - `GetContent` (`definy.get-content`): `contentHash` があればその中身 (`item`), 無ければ `contentHashes` のうち見つかった中身 (`items`)。
-    中身 (Base64) も definy の線形メモリを通るので, 200 件 (約 900KB) で 25ms ほどかかる。
+    中身 (Base64) も definy の値として Wasm を通るので, 200 件 (約 900KB) で 25ms ほどかかる。
   - `CheckMissingHashes` (`definy.check-missing-hashes`): CAS に無いハッシュを返す。
   - 型の違う値 (例: `eventHash` が数) は, 以前は TypeScript の例外で `internal` になっていたのを, 無いものとして扱うようにした。
 
@@ -89,18 +89,17 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 
 ### 型チェッカーをホストに頼む理由 (メモリ)
 
-stage1 の出力は線形メモリを解放しない (確保はヒープの先頭をずらすだけ)。2026-10-31 に測ったところ,
-型チェッカーの 1 つのインスタンスで seed の全パーツ (543 個) を検査すると 1 パーツ約 1.5MB ずつ増えて 640MB になった
-(Workers の上限は 128MB)。そのため各パーツの検査は, 32 個ごとに作り直す別のインスタンスで行う。
+2026-10-31 まで stage1 の出力は線形メモリを解放しなかった (確保はヒープの先頭をずらすだけ)。
+型チェッカーの 1 つのインスタンスで seed の全パーツ (543 個) を検査すると 1 パーツ約 1.5MB ずつ増えて 640MB になり
+(Workers の上限は 128MB), core 全体 (460 パーツ) のコミットでは service.wasm も 64〜128MB になっていた。
+そのため各パーツの検査はホストが別のインスタンスで行っている。
 
-service.wasm の 1 つのインスタンスで残りを行うと, 小さいコミットは 6MB ほどで済むが, core 全体 (460 パーツ) のコミットでは
-入力の書き込みで 16MB, 全体で 64〜128MB になる (以前の TypeScript からの呼び出しでも, 公開/非公開の検査の
-インスタンスだけで 48MB だった)。core 全体を UI からコミットするには, 使い終わったメモリを回収する仕組み
-(stage1 のランタイムで, ある呼び出しの間に確保した領域を結果だけ残して戻すなど) が先に要る。
+同じ日に出力を Wasm GC にした ([wasm-gc.md](wasm-gc.md)) ので, 使い終わった値は回収される。
+core 全体のコミットの `SubmitEvent` でプロセスの RSS の増加は約 24MB (以前は約 700MB)。
 
 ## 今後
 
-- 型チェッカーの各パーツの検査も service.wasm の中で行う (上のメモリの回収が要る)。trap したときに RPC ごと落ちることも考える
+- 型チェッカーの各パーツの検査も service.wasm の中で行う (Wasm GC にしたのでメモリの面では行える)。trap したときに RPC ごと落ちることも考える
   (今は `core.type-checker` の計画が trap すると `SubmitEvent` が `internal` になる)
 - 定義の式の評価とパーツ ID の導出も definy にする
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

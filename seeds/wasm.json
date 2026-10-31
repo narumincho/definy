@@ -2975,6 +2975,367 @@
           }
         }
       }
+    },
+    {
+      "name": "drop",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction drop"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 drop のオペコード"
+        }
+      ],
+      "expression": {
+        "#number": 26
+      }
+    },
+    {
+      "name": "ref-null",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction ref.null (0xD0), followed by a heap type"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 ref.null (0xD0) のオペコード。続けてヒープ型"
+        }
+      ],
+      "expression": {
+        "#number": 208
+      }
+    },
+    {
+      "name": "ref-is-null",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction ref.is_null (0xD1)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 ref.is_null (0xD1) のオペコード"
+        }
+      ],
+      "expression": {
+        "#number": 209
+      }
+    },
+    {
+      "name": "ref-eq",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction ref.eq (0xD3)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 ref.eq (0xD3) のオペコード"
+        }
+      ],
+      "expression": {
+        "#number": 211
+      }
+    },
+    {
+      "name": "gc-prefix",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Prefix byte of the Wasm GC instructions (0xFB), such as struct.new (0xFB 0)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm GC の 0xFB で始まる命令 (struct.new は 0xFB 0) の先頭のバイト"
+        }
+      ],
+      "expression": {
+        "#number": 251
+      }
+    },
+    {
+      "name": "struct-new",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction struct.new (0xFB 0), followed by a type index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 struct.new (0xFB 0) のオペコード。続けて型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 0
+      }
+    },
+    {
+      "name": "struct-get",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction struct.get (0xFB 2), followed by a type index and a field index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 struct.get (0xFB 2) のオペコード。続けて型の番号とフィールドの番号"
+        }
+      ],
+      "expression": {
+        "#number": 2
+      }
+    },
+    {
+      "name": "array-new-default",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.new_default (0xFB 7), followed by a type index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.new_default (0xFB 7) のオペコード。続けて型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 7
+      }
+    },
+    {
+      "name": "array-new-fixed",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.new_fixed (0xFB 8), followed by a type index and the number of elements"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.new_fixed (0xFB 8) のオペコード。続けて型の番号と要素の数"
+        }
+      ],
+      "expression": {
+        "#number": 8
+      }
+    },
+    {
+      "name": "array-new-data",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.new_data (0xFB 9), followed by a type index and a data segment index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.new_data (0xFB 9) のオペコード。続けて型の番号とデータセグメントの番号"
+        }
+      ],
+      "expression": {
+        "#number": 9
+      }
+    },
+    {
+      "name": "array-get",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.get (0xFB 11), followed by a type index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.get (0xFB 11) のオペコード。続けて型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 11
+      }
+    },
+    {
+      "name": "array-get-u",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.get_u (0xFB 13), followed by a type index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.get_u (0xFB 13) のオペコード。続けて型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 13
+      }
+    },
+    {
+      "name": "array-set",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.set (0xFB 14), followed by a type index"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.set (0xFB 14) のオペコード。続けて型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 14
+      }
+    },
+    {
+      "name": "array-len",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.len (0xFB 15)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.len (0xFB 15) のオペコード"
+        }
+      ],
+      "expression": {
+        "#number": 15
+      }
+    },
+    {
+      "name": "array-copy",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction array.copy (0xFB 17), followed by the destination and source type indices"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 array.copy (0xFB 17) のオペコード。続けてコピー先とコピー元の型の番号"
+        }
+      ],
+      "expression": {
+        "#number": 17
+      }
+    },
+    {
+      "name": "ref-cast",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Opcode of the Wasm instruction ref.cast (0xFB 22) to a non-null reference, followed by a heap type"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の命令 ref.cast (0xFB 22) のオペコード。null でない参照への変換で, 続けてヒープ型"
+        }
+      ],
+      "expression": {
+        "#number": 22
+      }
+    },
+    {
+      "name": "value-type-f64",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Wasm value type f64 (0x7c)"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の値の型 f64 (0x7c)"
+        }
+      ],
+      "expression": {
+        "#number": 124
+      }
+    },
+    {
+      "name": "value-type-ref-null",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Wasm value type prefix of a nullable reference (ref null, 0x63), followed by a heap type"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の null になりうる参照の値の型 (ref null, 0x63)。続けてヒープ型"
+        }
+      ],
+      "expression": {
+        "#number": 99
+      }
+    },
+    {
+      "name": "value-type-ref",
+      "part_type": {
+        "#type_number": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Wasm value type prefix of a non-null reference (ref, 0x64), followed by a heap type"
+        },
+        {
+          "language": "ja",
+          "text": "Wasm の null にならない参照の値の型 (ref, 0x64)。続けてヒープ型"
+        }
+      ],
+      "expression": {
+        "#number": 100
+      }
     }
   ]
 }

@@ -73,6 +73,8 @@ sample.deploy-self-hosted-definy-server =
 
 `definy.cloudflare-workers-runtime-script` は以前 `worker/cloudflare_api.ts` が作っていたものと同じ。`app.wasm` の
 `evaluate()` が関数を返したら HTTP リクエストを渡し, 返った `{ status, headers, body }` (body はストリーム) をレスポンスにする。
+`app.wasm` は Wasm GC のモジュールなので, 値はエクスポートしたランタイム関数 (`value_tag`, `values_get` など) で作って読む
+([wasm-gc.md](wasm-gc.md))。`src/wasi_io.test.ts` が, アップロードする `worker.js` を Node.js で動かしてレスポンスを確かめる。
 
 ---
 

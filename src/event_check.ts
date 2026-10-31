@@ -71,7 +71,7 @@ export function compileSeedFunction(options: {
 }
 
 /**
- * 規則が見ない説明・メッセージ・パーツの中身の content hash を除いたイベントの中身 (線形メモリに書く量を減らす)
+ * 規則が見ない説明・メッセージ・パーツの中身の content hash を除いたイベントの中身 (Wasm に書き込む量を減らす)
  */
 export function contentForCheck(content: EventContent): EventContent {
   if (content.type !== "project_commit") {

@@ -17,6 +17,7 @@ import {
   containsHole,
   type DefinyValue,
   type Stage1CompilerInstance,
+  type ValueRef,
 } from "./stage1_compiler.ts";
 import {
   bytesToUrlSafeBase64NoPad,
@@ -250,11 +251,6 @@ function typeErrorToOutcome(
   return { kind: "type_error", tag, detail: payload, expression };
 }
 
-/**
- * 1 つのインスタンスで検査するパーツの数. 線形メモリは解放されないので, 増えすぎる前に作り直す
- */
-const CALLS_PER_INSTANCE = 32;
-
 function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
@@ -295,7 +291,7 @@ export type TypeCheckSession = {
 };
 
 /**
- * 型環境を決めて, パーツを 1 つずつ検査できるようにする. 型チェッカーのインスタンスと線形メモリに書いた型環境を
+ * 型環境を決めて, パーツを 1 つずつ検査できるようにする. 型チェッカーのインスタンスと書き込んだ型環境を
  * 呼び出しの間で使い回すので, 裏で少しずつ検査するときにも使う
  */
 export function createTypeCheckSession(options: {
@@ -351,19 +347,18 @@ function createModuleCommitSessionFromValues(options: {
   readonly moduleId: string;
 }): ModuleCommitSession {
   const { latest, committed, moduleId } = options;
-  // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
+  // 型環境は大きいので, インスタンスごとに 1 度だけ書き込んで definy 側で型環境を作り,
   // その環境で検査する関数 (`core.type-checker` が返すレコードの `check`) を使い回す.
-  // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
+  // 検査で作った値は GC が回収する. 型チェッカーが trap したら (スタック不足など) 念のため作り直す
   let current:
     | {
         readonly instance: CompiledFunctionInstance;
-        readonly planPtr: number;
-        readonly checkerPtr: number;
-        calls: number;
+        readonly planPtr: ValueRef;
+        readonly checkerPtr: ValueRef;
       }
     | undefined;
   const ensureInstance = (): NonNullable<typeof current> => {
-    if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
+    if (current === undefined) {
       const instance = instantiateCompiledFunction(options.typeChecker);
       const planPtr = instance.call({
         latest: instance.writeArgument(latest),
@@ -374,7 +369,6 @@ function createModuleCommitSessionFromValues(options: {
         instance,
         planPtr,
         checkerPtr: instance.recordField(planPtr, "check"),
-        calls: 0,
       };
     }
     return current;
@@ -402,9 +396,6 @@ function createModuleCommitSessionFromValues(options: {
     }
     try {
       const { instance, checkerPtr } = ensureInstance();
-      if (current !== undefined) {
-        current.calls += 1;
-      }
       return typeResultToOutcome(
         instance.read(
           instance.callClosure(
@@ -636,7 +627,6 @@ export function latestPartsToModuleEntries(
 /**
  * definy の `definy.check-commit` が決めた型環境 (`core.type-checker` の `latest` / `committed` / `module_id`) で,
  * パーツを 1 つずつ検査して型エラーのメッセージを返す (`type_check_parts`. docs/service.md).
- * 線形メモリは解放されないので, 検査は {@link CALLS_PER_INSTANCE} 個ごとに型チェッカーのインスタンスを作り直す.
  * 型チェッカーが扱えないコンパイラ組み込みのパーツ (`builtin`) は受け入れる
  */
 export function checkPartsInModuleCommit(options: {
