@@ -10,11 +10,8 @@
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  decodeCborItem,
-} from "../src/cbor.ts";
+import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
+import { base64ToBytes, decodeCborItem } from "../src/cbor.ts";
 import {
   isTypePartType,
   latestPartsToModuleEntries,
@@ -46,7 +43,7 @@ import {
   evaluatedPartReferenceIds,
 } from "../src/definition_evaluator.ts";
 import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { derivePartIds } from "../src/part_ids.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
 
 /** 型検査でストアから読むもの */
@@ -349,33 +346,30 @@ function withContent(
 }
 
 /**
- * プロジェクトのコミットのモジュールのパーツ (中身は読まない).
+ * プロジェクトのコミットの全モジュールのパーツ (中身は読まない).
+ * ID は definy 製の `core.module-part-ids` で求める (src/part_ids.ts).
  * `name` は型エラーのメッセージに使うので `モジュール名.パーツ名` にする
  */
-async function moduleParts(
-  module: CommitModule,
-): Promise<ReadonlyArray<CommitPartRef>> {
-  const moduleIdBytes = await deriveModuleIdBytes(module.name);
-  const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
-  const parts = [];
-  for (const part of module.parts) {
-    parts.push({
-      partId: await deriveModulePartId(moduleIdBytes, part.name),
-      moduleId,
+function commitParts(
+  modules: ReadonlyArray<CommitModule>,
+): ReadonlyArray<CommitPartRef> {
+  const ids = derivePartIds(
+    partIdDeriverModule,
+    modules.map((module) => ({
+      moduleName: module.name,
+      partNames: module.parts.map((part) => part.name),
+    })),
+  );
+  return modules.flatMap((module, i) =>
+    module.parts.map((part, j) => ({
+      partId: ids[i]!.partIds[j]!,
+      moduleId: ids[i]!.moduleId,
       name: `${module.name}.${part.name}`,
       moduleName: module.name,
       moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
       contentHash: part.contentHash ?? "",
-    });
-  }
-  return parts;
-}
-
-/** コミットの全モジュールのパーツ */
-async function commitParts(
-  modules: ReadonlyArray<CommitModule>,
-): Promise<ReadonlyArray<CommitPartRef>> {
-  return (await Promise.all(modules.map(moduleParts))).flat();
+    })),
+  );
 }
 
 type CachedCommit = {
@@ -417,14 +411,16 @@ async function decodeCommit(item: {
       accountId: decoded.meta.accountId,
       projectName: commit.projectName,
       moduleNames: commit.modules.map((module) => module.name),
-      moduleIds: await Promise.all(
-        commit.modules.map(async (module) =>
-          bytesToUrlSafeBase64NoPad(await deriveModuleIdBytes(module.name)),
-        ),
-      ),
+      moduleIds: derivePartIds(
+        partIdDeriverModule,
+        commit.modules.map((module) => ({
+          moduleName: module.name,
+          partNames: [],
+        })),
+      ).map((ids) => ids.moduleId),
       branch: commit.branch,
       timeMs: decoded.meta.timeMs,
-      parts: await commitParts(commit.modules),
+      parts: commitParts(commit.modules),
     };
   }
   commitCache.set(item.eventHash, result);
@@ -592,7 +588,7 @@ export async function readCommitCheckInput(
   ) {
     return null;
   }
-  const refs = await commitParts(commit.modules);
+  const refs = commitParts(commit.modules);
   // 受け付けたコミットが参照している中身は, そのときに形を確かめてある
   const accepted = new Set(
     (await loadCommits(store, env)).flatMap((cached) =>
