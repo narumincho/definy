@@ -53,6 +53,13 @@ function yieldToBrowser(): Promise<void> {
 
 export type TypeCheckParams = {
   readonly committedParts: ReadonlyMap<string, LatestPart>;
+  /**
+   * コミット済みのパーツに作業中の変更を重ねたもの (src/working_parts.ts). 式エディタの検査・型の問い合わせの型環境にする.
+   * コミットしていない新しいパーツの参照も型が分かる
+   */
+  readonly workingParts: ReadonlyMap<string, LatestPart>;
+  /** `workingParts` の型環境が変わったかを比べる文字列 (`workingTypeEnvSignature`) */
+  readonly workingEnvSignature: string;
   /** パーツ ID → 参照されるパーツとしての公開/非公開 (docs/visibility.md) */
   readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
   readonly partNames: ReadonlyMap<string, string>;
@@ -101,6 +108,8 @@ export type TypeCheckOperations = {
 
 export function useTypeCheck({
   committedParts,
+  workingParts,
+  workingEnvSignature,
   visibilityTargets,
   partNames,
   currentAccount,
@@ -132,6 +141,7 @@ export function useTypeCheck({
   // 型環境 (コミット済みの全パーツ) が同じ間は使い回す
   const expectedTypeSession = useRef<{
     readonly parts: ReadonlyMap<string, LatestPart>;
+    readonly signature: string;
     readonly session: TypeCheckSession;
   } | null>(null);
 
@@ -220,12 +230,12 @@ export function useTypeCheck({
       readonly expression: unknown;
     }): Promise<SelfHostedTypeCheckOutcome> => {
       const typeChecker = await loadTypeChecker();
-      const parts = new Map(committedParts);
-      const committed =
+      const parts = new Map(workingParts);
+      const working =
         part.partIdHash === null ? undefined : parts.get(part.partIdHash);
-      if (committed !== undefined) {
-        parts.set(committed.partId, {
-          ...committed,
+      if (working !== undefined) {
+        parts.set(working.partId, {
+          ...working,
           partType: part.partType,
           expression: part.expression,
         });
@@ -238,23 +248,30 @@ export function useTypeCheck({
         })[0] ?? { kind: "checker_failed", message: "no result" }
       );
     },
-    [committedParts],
+    [workingParts],
   );
 
-  /** コミット済みのパーツの型環境のセッション (型環境が変わるまで使い回す) */
+  /**
+   * 作業中のパーツの型環境のセッション (型環境が変わるまで使い回す).
+   * 値のパーツの式を書き換えただけなら型環境は変わらないので作り直さない
+   */
   const committedSession = useCallback(async () => {
     const typeChecker = await loadTypeChecker();
-    if (expectedTypeSession.current?.parts !== committedParts) {
+    if (
+      expectedTypeSession.current?.parts !== committedParts ||
+      expectedTypeSession.current.signature !== workingEnvSignature
+    ) {
       expectedTypeSession.current = {
         parts: committedParts,
+        signature: workingEnvSignature,
         session: createTypeCheckSession({
           typeChecker,
-          env: typeEnvFromParts(committedParts.values()),
+          env: typeEnvFromParts(workingParts.values()),
         }),
       };
     }
     return expectedTypeSession.current.session;
-  }, [committedParts]);
+  }, [committedParts, workingParts, workingEnvSignature]);
 
   const findExpectedType = useCallback(
     async (part: {

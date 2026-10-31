@@ -449,6 +449,111 @@ test.describe("definy UI E2E", () => {
     });
   });
 
+  test("refers to and runs uncommitted parts, and keeps references when a part is renamed", async ({
+    page,
+    request,
+  }) => {
+    const credentials = await generateAccountCredentials(
+      `renamer_${Date.now().toString().slice(-6)}`,
+    );
+    const created = await request.post("/definy.v1.EventService/SubmitEvent", {
+      data: {
+        signedEventBytes: (await createSignedAccountEvent(credentials))
+          .signedEventBytes,
+      },
+    });
+    expect(created.ok()).toBe(true);
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, credentials);
+    const moduleName = `fresh_${Date.now().toString().slice(-6)}`;
+    for (const name of ["double", "quad"]) {
+      await page.goto(`/new-part?module=${moduleName}`);
+      await expect(page.locator(".connection-status-connected")).toBeVisible({
+        timeout: 15000,
+      });
+      await page.locator("#new-part-module").fill(moduleName);
+      await page.locator("#new-part-name").fill(name);
+      await page.locator(".new-part-form button[type='submit']").click();
+      await expect(page).toHaveURL(new RegExp(`/part/${moduleName}\\.${name}`));
+    }
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    const fillHole = async (query: string, option: RegExp): Promise<void> => {
+      await valueTree.locator(".tree-badge", { hasText: /^□$/ }).last().click();
+      await page.locator(".dropdown-search-input").fill(query);
+      await page
+        .locator(".dropdown-option", { hasText: option })
+        .first()
+        .click();
+    };
+    // double = core.plus(x, x)
+    await page.goto(`/part/${moduleName}.double`);
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await fillHole("core.plus", /^core\.plus/);
+    await fillHole("x", /^x/);
+    await fillHole("x", /^x/);
+    // quad = double(double(x)): コミットしていない double も選択肢に出る
+    await page.goto(`/part/${moduleName}.quad`);
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const doubleOption = new RegExp(`^${moduleName}\\.double`);
+    await fillHole(`${moduleName}.double`, doubleOption);
+    await fillHole(`${moduleName}.double`, doubleOption);
+    await fillHole("x", /^x/);
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(0);
+
+    // コミットしていない quad をそのまま実行パネルで実行できる
+    const runPanel = page.locator(".run-panel");
+    if (!(await runPanel.isVisible())) {
+      await page.keyboard.press("Control+`");
+    }
+    await expect(runPanel).toBeVisible();
+    await runPanel.locator(".run-panel-use-part").click();
+    await runPanel.locator(".tree-badge", { hasText: /^□$/ }).click();
+    await page
+      .locator(".dropdown-option", { hasText: /^number/ })
+      .first()
+      .click();
+    await runPanel.locator("[data-node-id]", { hasText: /^0$/ }).last().click();
+    await runPanel.locator("input[type='number']").fill("3");
+    await page.keyboard.press("Enter");
+    await runPanel.locator(".run-panel-run").click();
+    await expect(runPanel.locator(".run-history-output").first()).toHaveText(
+      "12",
+      { timeout: 30000 },
+    );
+
+    // 名前を変えると, 参照している quad も新しい名前のパーツを参照する
+    await page.goto(`/part/${moduleName}.double`);
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await page.locator("input.def-name-input").fill("twice");
+    await page.goto(`/part/${moduleName}.quad`);
+    await expect(valueTree).toContainText(`${moduleName}.twice`, {
+      timeout: 15000,
+    });
+    await expect(valueTree).not.toContainText(`${moduleName}.double`);
+
+    // 型エラーなくコミットできる
+    await page.goto("/parts?changes=only");
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.locator("#commit-message-input").fill("twice and quad");
+    await expect(page.locator(".commit-type-check .alert-danger")).toHaveCount(
+      0,
+      { timeout: 15000 },
+    );
+    await page
+      .locator("button[type='submit']", { hasText: /Sign & Commit/ })
+      .click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+  });
+
   test("makes a part and a module private and commits it (#624)", async ({
     page,
     request,

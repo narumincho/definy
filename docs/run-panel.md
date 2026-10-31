@@ -25,7 +25,7 @@
 `runExpression` (`src/run_expression.ts`) が
 
 1. `collectReferencedParts` で式が参照するパーツを集める。
-   パーツの式は作業中の変更があればそちらを使う (表示中, つまり `module.name` ごとに最新のパーツの変更だけ)。
+   パーツの式は作業中のパーツ ([ui.md](ui.md)「作業中のパーツ」) から引く。作業中の変更があればそちらを使い, コミットしていない新しいパーツも実行できる。
    見つからない・式が無い・コンパイラ組み込みのパーツがあれば実行せず `unresolved_parts` を返す
 2. `stage1.wasm` (`loadStage1Compiler`) で Wasm にコンパイルして評価する
 3. 結果が `wasi.io` の値なら `runWasiIo` で `done` まで動かす ([wasi-io.md](wasi-io.md))。

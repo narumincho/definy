@@ -294,7 +294,7 @@ export function overlayWorkingChanges(
   return { partsList: [...partMap.values()], committedPartIds };
 }
 
-/** 作業中の変更だけにある新しいパーツ. パーツ ID は元の名前 (`partId` の `.` の後) から決まる */
+/** 作業中の変更だけにある新しいパーツ. パーツ ID は今の名前から決まる */
 export function newPartSnapshot(
   partId: string,
   change: PartChange,
@@ -309,9 +309,10 @@ export function newPartSnapshot(
     visibility: change.visibility ?? DEFAULT_VISIBILITY,
     partType: change.partType,
     contentHash: null,
+    // コミットしたときの ID (今の名前から決まる. 名前を変えたら参照も付け替える. src/rename_part.ts)
     partIdHash: deriveModulePartIdSync(
       deriveModuleIdBytesSync(moduleName),
-      partId.slice(moduleName.length + 1),
+      change.name,
     ),
     expression: change.expression,
     updatedAtMs: 0,
