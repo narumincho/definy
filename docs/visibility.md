@@ -29,7 +29,7 @@ issue #624 の後半。モジュールとパーツは公開 (`public`) か非公
 ## 検査
 
 - サーバー: `SubmitEvent` は, プロジェクトのコミットの全パーツの参照を型検査の前に確かめ, 参照できないパーツを参照していれば
-  `400` で拒否する (`checkSubmittedProjectCommit`, `worker/type_check.ts`)。参照される側は, このコミットのパーツと,
+  `400` で拒否する (`definy.check-commit-input` が `core.check-reference-visibility` を呼ぶ. [service.md](service.md))。参照される側は, このコミットのパーツと,
   他のプロジェクトの `main` の最新のコミットのパーツ。
   - メッセージ: `part 'app.a': cannot reference the private part 'lib.secret'` /
     `part 'app.b': cannot reference 'internal.helper' of a private module in another project`
