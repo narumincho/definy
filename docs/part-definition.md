@@ -100,10 +100,11 @@ app.answer の中身 (CAS) = app.define-number(description: [], value: 42)
   評価に要るパーツは `quote` の外の参照だけをたどる (`partsForEvaluation`) ので, 互いを quote する定義も評価できる
 - コミットの中の評価 (`resolveDefinitionsInCommit`): その場で評価できるものを先に求め, 求まったパーツの式を使って
   残りを繰り返し評価する。定義のパーツ自体を定義のパーツで定義してもよい。循環しているものは求まらない
-- サーバー ([worker/type_check.ts](../worker/type_check.ts) の `commitContents`):
-  - `SubmitEvent`: 評価した値の形を `core.value-conforms` で確かめ, さらに定義の式を型チェッカーで `core.part-content` として
+- サーバー:
+  - `SubmitEvent` (2026-10-31 から definy の `definy.resolve-commit-contents`. [service.md](service.md)「定義の式の評価」):
+    評価した値の形を `core.value-conforms` で確かめ, さらに定義の式を型チェッカーで `core.part-content` として
     検査する (エラーは `パーツ名 (definition): ...`)。評価できなければ `is not a part definition that evaluates to a core.part-content`
-  - 型環境: main の最新のコミットにその場で評価できない定義があれば, そのコミットの中で評価した中身を使う (コミットごとに覚えておく)
+  - 型環境 ([worker/type_check.ts](../worker/type_check.ts) の `commitContents`. まだ TypeScript): main の最新のコミットにその場で評価できない定義があれば, そのコミットの中で評価した中身を使う (コミットごとに覚えておく)
   - コミットの外のパーツは, その場で評価できる定義のもの (`core.define-part` など) だけを参照できる
 - ブラウザ ([src/content_store.ts](../src/content_store.ts)): `loadContents` がその場で評価できない定義の式を覚えておき,
   評価器を読み込んでから `withEvaluatedDefinitions` がコミットごとに評価して埋める。中身を変えずにコミットし直すときは
