@@ -139,9 +139,10 @@ export function ExpressionTreeEditor({
 }: ExpressionTreeEditorProps): JSX.Element {
   const {
     language,
-    parts: allParts,
-    partNames,
-    partsByIdHash,
+    // コミットしていない新しいパーツも参照できるよう, 作業中の変更を重ねたパーツを使う (src/working_parts.ts)
+    workingParts: allParts,
+    workingPartNames: partNames,
+    workingPartsByIdHash: partsByIdHash,
     findExpectedType,
     findInferredTypeArgument,
     visibilityTargets,
