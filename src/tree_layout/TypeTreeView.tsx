@@ -19,7 +19,7 @@ export function TypeTreeView({
   type,
   maxWidth = 420,
 }: TypeTreeViewProps): JSX.Element {
-  const { partNames } = useDefiny();
+  const { workingPartNames: partNames } = useDefiny();
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(
     new Set(),
   );

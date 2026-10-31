@@ -56,10 +56,10 @@ const RUN_PANEL_SOURCE = "run-panel";
 export function RunPanel(): JSX.Element {
   const {
     language,
-    parts,
-    partsByIdHash,
-    partNames,
-    workingChanges,
+    // コミットしていない新しいパーツも実行できるよう, 作業中の変更を重ねたパーツを使う (src/working_parts.ts)
+    workingParts: parts,
+    workingPartsByIdHash: partsByIdHash,
+    workingPartNames: partNames,
     findExpectedType,
     fillTypeArguments,
     currentAccount,
@@ -88,33 +88,14 @@ export function RunPanel(): JSX.Element {
 
   // パーツの式 (作業中の変更があればそちら)
   const resolvePart = useCallback(
-    (partIdHash: string): unknown => {
-      // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
-      const shown = parts.find((p) => p.partIdHash === partIdHash);
-      const shownChange =
-        shown === undefined
-          ? undefined
-          : workingChanges.parts.get(shown.partId);
-      return shownChange?.expression !== undefined
-        ? shownChange.expression
-        : partsByIdHash.get(partIdHash)?.expression;
-    },
-    [parts, partsByIdHash, workingChanges],
+    (partIdHash: string): unknown => partsByIdHash.get(partIdHash)?.expression,
+    [partsByIdHash],
   );
 
   // パーツの型 (作業中の変更があればそちら). 未確定の型引数を埋めるときに使う
   const resolvePartType = useCallback(
-    (partIdHash: string): unknown => {
-      const shown = parts.find((p) => p.partIdHash === partIdHash);
-      const shownChange =
-        shown === undefined
-          ? undefined
-          : workingChanges.parts.get(shown.partId);
-      return shownChange?.partType !== undefined
-        ? shownChange.partType
-        : partsByIdHash.get(partIdHash)?.partType;
-    },
-    [parts, partsByIdHash, workingChanges],
+    (partIdHash: string): unknown => partsByIdHash.get(partIdHash)?.partType,
+    [partsByIdHash],
   );
 
   const run = useCallback(

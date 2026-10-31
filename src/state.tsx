@@ -31,6 +31,11 @@ import {
   type CommitWorkingChangesParams,
 } from "./state/useWorkingChanges.ts";
 import { useTypeCheck, type CommitTypeError } from "./state/useTypeCheck.ts";
+import {
+  workingLatestParts,
+  workingPartsView,
+  workingTypeEnvSignature,
+} from "./working_parts.ts";
 
 export type { CommitWorkingChangesParams, CommitTypeError, PageUndoControls };
 
@@ -49,6 +54,14 @@ export type DefinyContextValue = {
    * `PartReference` の解決に使う
    */
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
+  /**
+   * コミット済みのパーツに作業中の変更を重ねたもの (src/working_parts.ts). コミットしていない新しいパーツも入り,
+   * 名前を変えたパーツは新しい名前の ID になる. 式エディタの選択肢や実行パネルはこちらを使う
+   */
+  readonly workingParts: ReadonlyArray<PartSnapshot>;
+  readonly workingPartsByIdHash: ReadonlyMap<string, PartSnapshot>;
+  /** `partNames` に作業中のパーツの名前を足したもの */
+  readonly workingPartNames: ReadonlyMap<string, string>;
   /** パーツ ID → 参照されるパーツとしての公開/非公開 (docs/visibility.md) */
   readonly visibilityTargets: ReadonlyMap<string, VisibilityTarget>;
   readonly accountNames: ReadonlyMap<string, string>;
@@ -202,8 +215,35 @@ export function DefinyProvider({
     selectBranch: events.selectBranch,
     refreshEvents: events.refreshEvents,
   });
+  const workingView = useMemo(
+    () =>
+      workingPartsView(
+        {
+          parts: events.parts,
+          partsByIdHash: events.partsByIdHash,
+          partNames: events.partNames,
+        },
+        working.workingChanges,
+      ),
+    [
+      events.parts,
+      events.partsByIdHash,
+      events.partNames,
+      working.workingChanges,
+    ],
+  );
+  const workingParts = useMemo(
+    () => workingLatestParts(events.committedParts, working.workingChanges),
+    [events.committedParts, working.workingChanges],
+  );
+  const workingEnvSignature = useMemo(
+    () => workingTypeEnvSignature(working.workingChanges),
+    [working.workingChanges],
+  );
   const typeCheck = useTypeCheck({
     committedParts: events.committedParts,
+    workingParts,
+    workingEnvSignature,
     visibilityTargets: events.visibilityTargets,
     partNames: events.partNames,
     currentAccount: account.currentAccount,
@@ -221,6 +261,9 @@ export function DefinyProvider({
       parts: events.parts,
       partNames: events.partNames,
       partsByIdHash: events.partsByIdHash,
+      workingParts: workingView.parts,
+      workingPartsByIdHash: workingView.partsByIdHash,
+      workingPartNames: workingView.partNames,
       visibilityTargets: events.visibilityTargets,
       accountNames: events.accountNames,
       decodedCommits: events.decodedCommits,
@@ -292,6 +335,7 @@ export function DefinyProvider({
       events.parts,
       events.partNames,
       events.partsByIdHash,
+      workingView,
       events.visibilityTargets,
       events.accountNames,
       events.decodedCommits,

@@ -1,3 +1,8 @@
+import { partIdHashOf } from "../../src/working_parts.ts";
+import {
+  retargetPartChange,
+  retargetReferencesOf,
+} from "../../src/rename_part.ts";
 import { useState, useCallback, useEffect, useMemo, type JSX } from "react";
 import { useParams, useRouter } from "@void/react";
 import { HierarchyBreadcrumb } from "../../src/components/HierarchyBreadcrumb.tsx";
@@ -122,10 +127,12 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
   const router = useRouter();
   const isNewPart = !parts.some((p) => p.partId === part.partId);
 
-  const partIdHash = part.partIdHash;
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
+  // パーツ ID はモジュール名とパーツ名から決まる. 名前を変えたパーツは, 参照も新しい名前の ID に付け替えている
+  // (src/rename_part.ts) ので, 今の名前の ID を使う
+  const partIdHash = partIdHashOf(part.moduleName, currentName);
   usePageTitle(`${part.moduleName}.${currentName}`);
   const currentDescription = change?.description ?? part.description;
   // 作業中の変更の型 (null は型指定なし) を優先する
@@ -201,10 +208,12 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
    * 参照しているパーツがあれば先に確かめる (削除するとそれらは型エラーになる)
    */
   const handleDelete = (): void => {
-    const referencing =
-      partIdHash === null
-        ? []
-        : partsReferencing(partIdHash, part.partId, parts, workingChanges);
+    const referencing = partsReferencing(
+      partIdHash,
+      part.partId,
+      parts,
+      workingChanges,
+    );
     if (
       referencing.length > 0 &&
       !window.confirm(
@@ -267,13 +276,29 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
       ...contentFields,
       ...(definition !== undefined ? { definition } : {}),
     };
+    // 名前を変えたら, このパーツ自身 (再帰呼び出し) と他のパーツの参照を新しい名前の ID に付け替える.
+    // 他のパーツの変更は作業中の変更に入れるだけで, このページの Undo では戻さない
+    if (fields.name !== undefined && fields.name !== currentName) {
+      const renamedId = partIdHashOf(part.moduleName, fields.name);
+      for (const [key, retargeted] of retargetReferencesOf(
+        parts,
+        workingChanges,
+        partIdHash,
+        renamedId,
+        part.partId,
+      )) {
+        updateWorkingPart(key, retargeted);
+      }
+      changePart(retargetPartChange(next, partIdHash, renamedId), mergeKey);
+      return;
+    }
     // 引数名を変えたら, このパーツ自身 (再帰呼び出し) と他のパーツの呼び出しの引数名も合わせて変える.
     // 他のパーツの変更は作業中の変更に入れるだけで, このページの Undo では戻さない
     const renames =
-      fields.partType === undefined || partIdHash === null
+      fields.partType === undefined
         ? new Map<string, string>()
         : parameterRenames(currentPartType, fields.partType);
-    if (renames.size > 0 && partIdHash !== null) {
+    if (renames.size > 0) {
       for (const caller of renameCallersOf(
         parts,
         workingChanges,
@@ -298,7 +323,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
       afterNames !== undefined &&
       (beforeNames.length !== afterNames.length ||
         beforeNames.some((name, i) => name !== afterNames[i]));
-    if (parametersChanged && partIdHash !== null) {
+    if (parametersChanged) {
       for (const caller of syncCallersOf(
         parts,
         workingChanges,
@@ -308,10 +333,6 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
       )) {
         updateWorkingPart(caller.partDefinitionEventHash, caller);
       }
-    }
-    if (partIdHash === null) {
-      changePart(next, mergeKey);
-      return;
     }
     // 型の行で引数名を変えたときは, 式の根の関数の引数名も合わせる
     const rootSynced =
