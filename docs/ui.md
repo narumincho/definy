@@ -270,6 +270,15 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   `move-binding-earlier` / `move-binding-later` / `delete-binding`. 新しい束縛は式全体で使われていない変数 ID
   (`nextVariableId`) と名前 (`x`, `x1`, ...) にし, 値を未入力にしてその値を選ぶ. 最後の束縛を消すと let をやめて本体だけにする.
   消した変数を参照している式・前へ動かして見えなくなった変数は, 型チェッカーが型エラーにする
+- レコードの操作 ([src/tree_layout/record_fields.ts](../src/tree_layout/record_fields.ts)):
+  レコードの式 (`record`) とレコードの型 (`type_record`) は同じ形なので同じ操作にする. レコードを選ぶと `add-field` (末尾に足す),
+  フィールド (値か名前) を選ぶと `insert-field-before` / `insert-field-after` / `move-field-earlier` / `move-field-later` / `delete-field`.
+  新しいフィールドの名前は他と重ならない `field`, `field1`, ... で, 値は式なら未入力, 型なら `number`. 足したフィールドは名前を選ぶ.
+  フィールド名は変数の名前と同じく, 選ぶとその場で名前を変えられる (`recordItemKey` のパス. 式ではない)
+- レコードの値を作る式: 選択肢 `record`. 期待する型がレコードならそのフィールドを未入力にしたレコード, 分からなければフィールドの無いレコード
+- フィールドを取り出す式 (`record_get`, `p.key` と表示): 選択肢 `get-field` は `□.key` (フィールド名はその場で変えられる `recordGetKey` のパス).
+  型が分かるレコード型の変数 (パーツの型から型が決まる関数の引数. 型パーツの参照は宣言をたどる) には,
+  変数の後にフィールドごとの選択肢 `p.key` (`ref:field:{変数 ID}:{フィールド名}`) を出す
 - Variant (タグ付きの値) の作成 ([src/tree_layout/variant.ts](../src/tree_layout/variant.ts)):
   直和型の型パーツ (式が `type_union` の型パーツ) のタグを `sample.option-number.some` のような名前の選択肢に出す
   (`some` と打てば見つかる). 選ぶと型パーツを指定した Variant (`type_part: some(ID)`) にし,

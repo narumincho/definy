@@ -62,6 +62,11 @@ import {
 } from "./go_to_definition.ts";
 import { applyListAction, isListAction } from "./list_items.ts";
 import { applyLetAction, isLetAction } from "./let_bindings.ts";
+import {
+  applyRecordAction,
+  isRecordAction,
+  recordFieldNamesOfType,
+} from "./record_fields.ts";
 import { expectedVariantsFromTypeAst } from "./variant.ts";
 import {
   CLIPBOARD_COPY,
@@ -238,6 +243,16 @@ export function ExpressionTreeEditor({
     [expression, partType, partsByIdHash],
   );
 
+  // レコード型の変数のフィールド名. 置換メニューにフィールドを取り出す選択肢 (`p.key`) を出す
+  const recordFieldsOfVariable = useCallback(
+    (variableId: number): ReadonlyArray<string> | undefined =>
+      recordFieldNamesOfType(
+        parameterTypes.get(variableId),
+        (hash) => partsByIdHash.get(hash)?.expression,
+      ),
+    [parameterTypes, partsByIdHash],
+  );
+
   const typeErrorNodeId = useMemo(() => {
     if (typeError === null) return null;
     const path =
@@ -407,6 +422,7 @@ export function ExpressionTreeEditor({
     setSelectedPath,
     setInlineEdit,
     inferredTypeArguments: holeHints,
+    recordFieldsOfVariable,
   });
 
   const hoverTarget = useMemo(
@@ -820,10 +836,16 @@ export function ExpressionTreeEditor({
         keyboard.returnToTree();
         return;
       }
-      if (isListAction(optionValue) || isLetAction(optionValue)) {
+      if (
+        isListAction(optionValue) ||
+        isLetAction(optionValue) ||
+        isRecordAction(optionValue)
+      ) {
         const result = isListAction(optionValue)
           ? applyListAction(expression, selectedPath, optionValue)
-          : applyLetAction(expression, selectedPath, optionValue);
+          : isLetAction(optionValue)
+            ? applyLetAction(expression, selectedPath, optionValue)
+            : applyRecordAction(expression, selectedPath, optionValue);
         if (result !== null) {
           onChange(result.expression);
           keyboard.selectInTree(result.selectedPath);

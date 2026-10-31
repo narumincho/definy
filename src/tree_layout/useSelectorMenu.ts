@@ -31,6 +31,7 @@ import { goToDefinitionOption } from "./go_to_definition.ts";
 import { isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
 import { letBindingSelectorOptions } from "./let_bindings.ts";
+import { recordFieldSelectorOptions } from "./record_fields.ts";
 import { clipboardSelectorOptions } from "./clipboard.ts";
 import {
   typePartVariantOptions,
@@ -68,6 +69,10 @@ export type UseSelectorMenuParams = {
    * (type_argument_inference.ts)
    */
   readonly inferredTypeArguments?: ReadonlyMap<string, string>;
+  /** レコード型の変数のフィールド名. フィールドを取り出す選択肢 (`p.key`) を出すのに使う */
+  readonly recordFieldsOfVariable?: (
+    variableId: number,
+  ) => ReadonlyArray<string> | undefined;
 };
 
 export type SelectorMenuState = {
@@ -105,6 +110,7 @@ export function useSelectorMenu({
   setSelectedPath,
   setInlineEdit,
   inferredTypeArguments,
+  recordFieldsOfVariable,
 }: UseSelectorMenuParams): SelectorMenuState {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuOpenCount, setMenuOpenCount] = useState(0);
@@ -144,13 +150,18 @@ export function useSelectorMenu({
       const options = buildSelectorOptions({
         mode,
         scopeVariables: expressionNode?.scopeVariables,
+        recordFieldsOfVariable,
         typeParameters: expressionNode?.typeParameters,
         partOptions,
         variantOptions,
       });
       // コピー・切り取り・貼り付けは, 式を置き換える選択肢より後に出す
       if (mode === "type") {
-        return [...options, ...clipboardSelectorOptions()];
+        return [
+          ...recordFieldSelectorOptions(expression, path),
+          ...options,
+          ...clipboardSelectorOptions(),
+        ];
       }
       const inferred = inferredTypeArguments?.get(pathToString(path));
       // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す.
@@ -162,6 +173,7 @@ export function useSelectorMenu({
         ...goToDefinitionOption(expression, path),
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
+        ...recordFieldSelectorOptions(expression, path),
         // 型引数の位置では型の式 (`number`, `List` など) を先に出す
         ...(expectsType ? TYPE_EXPRESSION_SELECTOR_OPTIONS : []),
         ...options,
@@ -175,6 +187,7 @@ export function useSelectorMenu({
       layoutRoot,
       mode,
       partOptions,
+      recordFieldsOfVariable,
       patternVariants,
       variantOptions,
     ],
