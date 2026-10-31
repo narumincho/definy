@@ -7,7 +7,6 @@
  * `wasm/type_checker.wasm` を `?module` で取り込んで使う (Cloudflare Workers は実行時に Wasm をコンパイルできない).
  * そのため本番で `core` の型チェッカーを編集しても, seed に書き戻してデプロイするまでサーバーの検査には反映されない
  */
-import typeCheckerModule from "../wasm/type_checker.wasm?module";
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
@@ -17,7 +16,6 @@ import {
   decodeCborItem,
 } from "../src/cbor.ts";
 import {
-  checkPartsInModuleCommit,
   isTypePartType,
   latestPartsToModuleEntries,
   type LatestPart,
@@ -643,25 +641,4 @@ export async function readCommitCheckInput(
     latest: latestPartsToModuleEntries(latest.parts.values()),
     project_module_ids: latest.projectModuleIds.get(commit.projectName) ?? [],
   };
-}
-
-/**
- * `definy.check-commit` が決めた型環境でパーツを型チェッカーで検査し, 型エラーのメッセージを返す (`type_check_parts`).
- * 型チェッカーのインスタンスは service.wasm とは別にする
- */
-export function typeCheckParts(request: {
-  readonly latest: unknown;
-  readonly committed: unknown;
-  readonly moduleId: string;
-  readonly checks: ReadonlyArray<{
-    readonly name: string;
-    readonly expression: unknown;
-    readonly partType: unknown;
-    readonly builtin: boolean;
-  }>;
-}): ReadonlyArray<string> {
-  return checkPartsInModuleCommit({
-    typeChecker: typeCheckerModule,
-    ...request,
-  });
 }

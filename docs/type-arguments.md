@@ -43,7 +43,7 @@ core.list-map(T: □, U: □, f: (item) => core.less-than(left: item, right: 2),
   `inferred_type_argument` に推論した型 (できなければ `none`) が入る。ほかの位置の `hole_expected_type` では `none`
 - 型検査 (`createTypeCheckSession` の `check`, サーバーの `SubmitEvent` と UI 共通): 式に未入力があっても,
   その全てが推論できる型引数なら受け付ける (未入力ごとに probe にして `inferred_type_argument` を聞く。
-  `src/type_argument_holes.ts`)。型引数でない未入力が 1 つでもあれば今まで通り `not supported: Expression has an unfilled hole`
+  `src/type_argument_holes.ts`. サーバーでは同じことを definy の `definy.holes-are-inferred-type-arguments` で行う. [service.md](service.md))。型引数でない未入力が 1 つでもあれば今まで通り `not supported: Expression has an unfilled hole`
 - 実行 (実行パネル, `runExpression` の `fillTypeArguments`): 入力した式と参照するパーツの未確定の型引数を
   `TypeCheckSession.fillTypeArguments` で推論した型の式にしてからコンパイルする。推論した型の中の型引数の参照 `T` は,
   その位置から見える同じ名前の関数の引数の変数にする。型環境はコミット済みのパーツ (エディタの期待する型と同じ)

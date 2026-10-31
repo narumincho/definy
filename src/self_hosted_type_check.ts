@@ -654,37 +654,6 @@ export function latestPartsToModuleEntries(
   return moduleEntriesExpression([...parts].map(latestPartToModuleEntry));
 }
 
-/**
- * definy の `definy.check-commit` が決めた型環境 (`core.type-checker` の `latest` / `committed` / `module_id`) で,
- * パーツを 1 つずつ検査して型エラーのメッセージを返す (`type_check_parts`. docs/service.md).
- * 型チェッカーが扱えないコンパイラ組み込みのパーツ (`builtin`) は受け入れる
- */
-export function checkPartsInModuleCommit(options: {
-  readonly typeChecker: WebAssembly.Module;
-  readonly latest: unknown;
-  readonly committed: unknown;
-  readonly moduleId: string;
-  readonly checks: ReadonlyArray<{
-    readonly name: string;
-    readonly expression: unknown;
-    readonly partType: unknown;
-    readonly builtin: boolean;
-  }>;
-}): ReadonlyArray<string> {
-  const session = createModuleCommitSessionFromValues(options);
-  return options.checks.flatMap((check) => {
-    const outcome = session.check({
-      expression: check.expression,
-      partType: check.partType,
-    });
-    const message =
-      outcome.kind === "unsupported" && check.builtin
-        ? null
-        : outcomeErrorMessage(check.name, outcome);
-    return message === null ? [] : [message];
-  });
-}
-
 /** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式, コンパイラ組み込みの名前から決まる) */
 export function typeEnvKey(parts: Iterable<LatestPart>): string {
   return expressionContentHashSync(
