@@ -22,7 +22,7 @@ import {
   type ProjectSeedData,
 } from "./seed_projects.ts";
 import { decodeVerifiedSignedEvent } from "./signed_event.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
 
 const PAGE_SIZE = 500;
@@ -87,10 +87,10 @@ export async function buildPartReferenceTable(
 ): Promise<ReadonlyMap<string, string>> {
   const table = new Map<string, string>();
   for (const seed of seeds) {
-    const moduleId = await deriveModuleIdBytes(seed.module_name);
+    const moduleId = deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       table.set(
-        await deriveModulePartId(moduleId, part.name),
+        deriveModulePartId(moduleId, part.name),
         `${seed.module_name}.${part.name}`,
       );
     }

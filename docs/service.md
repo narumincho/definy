@@ -130,8 +130,10 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 
 ## パーツ ID の導出 (`core.module-part-ids`, 2026-10-31)
 
-サーバーがコミットのパーツの ID (とモジュール ID) を求めるのも definy 製の関数にした。以前は TypeScript (`worker/cbor.ts` の
-`deriveModuleIdBytes` / `deriveModulePartId`. Web Crypto の SHA-256) だった。
+サーバーがコミットのパーツの ID (とモジュール ID) を求めるのも definy 製の関数にした。以前は TypeScript (`deriveModuleIdBytes` /
+`deriveModulePartId`) だった。TypeScript 版は `src/cbor.ts` に 1 つだけ残し (同期. TypeScript で書いた SHA-256), シードの生成
+(`npm run build:seeds` は `part_id_deriver.wasm` を作る前に ID が要る) とブラウザで使う。以前は Web Crypto を使う async 版の
+`worker/cbor.ts` もあったが, 同じ導出の重複なので 2026-11-01 に消した。
 
 - 導出のしかたは変えていない: モジュール ID は `"definy:module:" + モジュール名` の UTF-8 に SHA-256 を 2 回 (`core.module-id-bytes`),
   パーツ ID は `モジュール ID の 32 バイト + ":part:" + パーツ名` に SHA-256 を 2 回かけて Base64URL (パディング無し) にしたもの (`core.part-id`)

@@ -6,8 +6,8 @@
 import { variant } from "./definy_value.ts";
 import { hole } from "./tree_layout/expression.ts";
 import {
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
   type DecodedPart,
 } from "./cbor.ts";
 import { DEFAULT_VISIBILITY, MAIN_BRANCH } from "./event_content.ts";
@@ -310,8 +310,8 @@ export function newPartSnapshot(
     partType: change.partType,
     contentHash: null,
     // コミットしたときの ID (今の名前から決まる. 名前を変えたら参照も付け替える. src/rename_part.ts)
-    partIdHash: deriveModulePartIdSync(
-      deriveModuleIdBytesSync(moduleName),
+    partIdHash: deriveModulePartId(
+      deriveModuleIdBytes(moduleName),
       change.name,
     ),
     expression: change.expression,

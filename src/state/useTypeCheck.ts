@@ -3,8 +3,8 @@ import type { AccountState } from "../types.ts";
 import type { CommitModulesResult } from "./useWorkingChanges.ts";
 import {
   bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
 } from "../cbor.ts";
 import {
   checkModuleCommitParts,
@@ -311,13 +311,13 @@ export function useTypeCheck({
       }
       const typeChecker = await loadTypeChecker();
       const moduleIdOf = (name: string): string =>
-        bytesToUrlSafeBase64NoPad(deriveModuleIdBytesSync(name));
+        bytesToUrlSafeBase64NoPad(deriveModuleIdBytes(name));
       const committed = modules.flatMap((module) => {
-        const moduleIdBytes = deriveModuleIdBytesSync(module.name);
+        const moduleIdBytes = deriveModuleIdBytes(module.name);
         const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
         const changed = changedModuleNames.has(module.name);
         return module.parts.map((part) => {
-          const partId = deriveModulePartIdSync(moduleIdBytes, part.name);
+          const partId = deriveModulePartId(moduleIdBytes, part.name);
           return {
             partId,
             moduleId,

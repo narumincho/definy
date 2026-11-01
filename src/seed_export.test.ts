@@ -19,7 +19,7 @@ import {
   resolvePartPlaceholders,
   resolveSeedPartType,
 } from "./seed_parts.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/test_helpers.ts";
 import { loadTestSeedBundle } from "../worker/test_runtime.ts";
@@ -211,8 +211,8 @@ describe("exportSeeds", () => {
         );
 
       // core.eval-ast のパーツ ID を導出
-      const coreModId = await deriveModuleIdBytes("core");
-      const coreEvalAstIdStr = await deriveModulePartId(coreModId, "eval-ast");
+      const coreModId = deriveModuleIdBytes("core");
+      const coreEvalAstIdStr = deriveModulePartId(coreModId, "eval-ast");
 
       // 新パーツ: core.eval-ast を呼び出す式
       const newPart: DecodedPart = {

@@ -3,7 +3,7 @@
  * できたコンパイラでもう 1 度コンパイルし, 同じバイト列になる (不動点) ことを確かめる.
  * `npm run build:stage1` (seed のパーツから) と, 実行パネルの「コンパイラを作り直す」(表示中のパーツから) が使う
  */
-import { deriveModuleIdBytesSync, deriveModulePartIdSync } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { variant } from "./definy_value.ts";
 import { compileTypeChecker } from "./self_hosted_type_check.ts";
 import {
@@ -12,16 +12,16 @@ import {
   type Stage1ReferencedPart,
 } from "./stage1_compiler.ts";
 
-const CORE_MODULE_ID = deriveModuleIdBytesSync("core");
+const CORE_MODULE_ID = deriveModuleIdBytes("core");
 
 /** `core.compile-to-wasm` のパーツ ID */
-export const COMPILE_TO_WASM_PART_ID = deriveModulePartIdSync(
+export const COMPILE_TO_WASM_PART_ID = deriveModulePartId(
   CORE_MODULE_ID,
   "compile-to-wasm",
 );
 
 /** `core.type-checker` のパーツ ID */
-export const TYPE_CHECKER_PART_ID = deriveModulePartIdSync(
+export const TYPE_CHECKER_PART_ID = deriveModulePartId(
   CORE_MODULE_ID,
   "type-checker",
 );

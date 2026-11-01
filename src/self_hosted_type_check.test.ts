@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { resolvePartPlaceholders, resolveSeedPartType } from "./seed_parts.ts";
 import {
   checkParts,
@@ -48,11 +48,11 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
       readonly module_name: string;
       readonly parts: ReadonlyArray<Readonly<Record<string, unknown>>>;
     };
-    const moduleId = await deriveModuleIdBytes(seed.module_name);
+    const moduleId = deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       const name = String(part.name);
       parts.push({
-        id: await deriveModulePartId(moduleId, name),
+        id: deriveModulePartId(moduleId, name),
         name: `${seed.module_name}.${name}`,
         partType: await resolveSeedPartType(part.part_type),
         expression: await resolvePartPlaceholders(part.expression ?? null),
@@ -62,7 +62,7 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
   return parts;
 }
 
-const coreModuleId = await deriveModuleIdBytes("core");
+const coreModuleId = deriveModuleIdBytes("core");
 
 /** seed の core のパーツ (`core.plus` などのコンパイラ組み込み) の呼び出し */
 async function coreCall(
@@ -73,10 +73,7 @@ async function coreCall(
     "#call": {
       function: {
         "#part_reference": {
-          part_definition_event_hash: await deriveModulePartId(
-            coreModuleId,
-            name,
-          ),
+          part_definition_event_hash: deriveModulePartId(coreModuleId, name),
         },
       },
       arguments: Object.entries(args).map(([argName, value]) => ({
@@ -409,7 +406,7 @@ describe("self-hosted type check (stage1)", () => {
 
   it("型引数は普通の引数で, 後ろの引数の型と戻り値の型に入る (Zig / Idris2 と同じ)", async () => {
     const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
-    const optionId = await deriveModulePartId(coreModuleId, "option");
+    const optionId = deriveModulePartId(coreModuleId, "option");
     const typeType = { "#type_type": null };
     const parameter = (name: string) => ({ "#type_parameter": name });
     const apply = (

@@ -1,11 +1,11 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
   sha256Bytes,
   sha256BytesSync,
 } from "./cbor.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 
 function hex(bytes: Uint8Array): string {
   return bytes.toHex();
@@ -40,11 +40,18 @@ describe("sha256BytesSync", () => {
 });
 
 describe("module / part ID derivation", () => {
-  it("sync and async versions agree", async () => {
-    const moduleId = deriveModuleIdBytesSync("std");
-    expect(hex(moduleId)).toBe(hex(await deriveModuleIdBytes("std")));
-    expect(deriveModulePartIdSync(moduleId, "abs")).toBe(
-      await deriveModulePartId(moduleId, "abs"),
+  const sha256d = (text: string | Uint8Array): Buffer =>
+    createHash("sha256")
+      .update(createHash("sha256").update(text).digest())
+      .digest();
+
+  it("is SHA-256 applied twice to the prefixed names", () => {
+    const moduleId = deriveModuleIdBytes("std");
+    expect(hex(moduleId)).toBe(sha256d("definy:module:std").toString("hex"));
+    expect(deriveModulePartId(moduleId, "abs")).toBe(
+      sha256d(Buffer.concat([moduleId, Buffer.from(":part:abs")])).toString(
+        "base64url",
+      ),
     );
   });
 });

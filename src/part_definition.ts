@@ -8,7 +8,7 @@
  * `core.define-part` / `core.define-type` の呼び出し) だけをその場で評価する. 結果が stage1 で評価したものと同じことは
  * src/part_definition.test.ts で確かめている
  */
-import { deriveModuleIdBytesSync, deriveModulePartIdSync } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import {
   field,
   optionValue,
@@ -38,11 +38,11 @@ export function definitionPartIdsOf(): {
 } {
   if (definitionPartIds === undefined) {
     // cbor.ts は event_content.ts を読み込むので, モジュールを読み込むときではなく使うときに求める
-    const core = deriveModuleIdBytesSync("core");
+    const core = deriveModuleIdBytes("core");
     definitionPartIds = {
-      definePart: deriveModulePartIdSync(core, "define-part"),
-      defineType: deriveModulePartIdSync(core, "define-type"),
-      partContent: deriveModulePartIdSync(core, "part-content"),
+      definePart: deriveModulePartId(core, "define-part"),
+      defineType: deriveModulePartId(core, "define-type"),
+      partContent: deriveModulePartId(core, "part-content"),
     };
   }
   return definitionPartIds;

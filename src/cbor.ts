@@ -355,9 +355,11 @@ const MODULE_PREFIX_BYTES = TEXT_ENCODER.encode("definy:module:");
 const PART_SEP_BYTES = TEXT_ENCODER.encode(":part:");
 
 /**
- * `worker/cbor.ts` の `deriveModuleIdBytes` と同一のアルゴリズムで Module ID を同期的に導出する
+ * モジュール名から Module ID の内部 32 バイトを導出する (`definy:module:` + 名前 の SHA-256 を 2 回).
+ * モジュールはアカウントによらず名前で決まり, 誰がコミットできるかはブランチで決まる (docs/branch.md).
+ * サーバーは definy 製の `core.module-part-ids` (src/part_ids.ts) で求める. これはシードの生成とブラウザで使う
  */
-export function deriveModuleIdBytesSync(moduleName: string): Uint8Array {
+export function deriveModuleIdBytes(moduleName: string): Uint8Array {
   const nameBytes = TEXT_ENCODER.encode(moduleName);
   const buf = new Uint8Array(MODULE_PREFIX_BYTES.length + nameBytes.length);
   buf.set(MODULE_PREFIX_BYTES, 0);
@@ -366,9 +368,9 @@ export function deriveModuleIdBytesSync(moduleName: string): Uint8Array {
 }
 
 /**
- * `worker/cbor.ts` の `deriveModulePartId` と同一のアルゴリズムで Part ID (`EventHashId` 文字列) を同期的に導出する
+ * Module ID とパーツ名から Part ID (`EventHashId` 文字列) を導出する (Module ID + `:part:` + 名前 の SHA-256 を 2 回)
  */
-export function deriveModulePartIdSync(
+export function deriveModulePartId(
   moduleIdBytes: Uint8Array,
   partName: string,
 ): string {
@@ -490,7 +492,7 @@ export function extractProjectCommit(
       mergedCommitHash: commit.mergedCommitHash,
       modules: commit.modules.map((module) => {
         const moduleIdBytes = decoded.accountBytes
-          ? deriveModuleIdBytesSync(module.name)
+          ? deriveModuleIdBytes(module.name)
           : null;
         return {
           name: module.name,
@@ -502,7 +504,7 @@ export function extractProjectCommit(
           parts: module.parts.map((part) => ({
             ...part,
             partIdHash: moduleIdBytes
-              ? deriveModulePartIdSync(moduleIdBytes, part.name)
+              ? deriveModulePartId(moduleIdBytes, part.name)
               : null,
           })),
         };

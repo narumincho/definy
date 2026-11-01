@@ -1,4 +1,4 @@
-import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
+import { InvalidSignedEventError } from "../src/signed_event.ts";
 import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
@@ -10,7 +10,11 @@ import {
 import { handleRpcInDefiny } from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
-import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
+import {
+  base64ToBytes,
+  bytesToBase64,
+  sha256EventHashId,
+} from "../src/cbor.ts";
 import type {
   ContentItem,
   Env,

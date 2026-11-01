@@ -7,8 +7,8 @@
  */
 import {
   bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
 } from "./cbor.ts";
 import { DEFAULT_VISIBILITY } from "./event_content.ts";
 import { isTypePartType, type LatestPart } from "./self_hosted_type_check.ts";
@@ -16,7 +16,7 @@ import type { PartChange, PartSnapshot, WorkingChanges } from "./types.ts";
 
 /** モジュール `moduleName` のパーツ `partName` のパーツ ID (コミットしたときの ID) */
 export function partIdHashOf(moduleName: string, partName: string): string {
-  return deriveModulePartIdSync(deriveModuleIdBytesSync(moduleName), partName);
+  return deriveModulePartId(deriveModuleIdBytes(moduleName), partName);
 }
 
 /** 作業中の変更のキー (`モジュール名.元のパーツ名`) のモジュール名 */
@@ -102,14 +102,14 @@ export function workingLatestParts(
   const parts = new Map(committedParts);
   for (const [key, change] of workingChanges.parts) {
     const moduleName = moduleNameOfKey(key);
-    const moduleIdBytes = deriveModuleIdBytesSync(moduleName);
+    const moduleIdBytes = deriveModuleIdBytes(moduleName);
     parts.delete(
-      deriveModulePartIdSync(moduleIdBytes, key.slice(moduleName.length + 1)),
+      deriveModulePartId(moduleIdBytes, key.slice(moduleName.length + 1)),
     );
     if (change.deleted === true) {
       continue;
     }
-    const partId = deriveModulePartIdSync(moduleIdBytes, change.name);
+    const partId = deriveModulePartId(moduleIdBytes, change.name);
     parts.set(partId, {
       partId,
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),

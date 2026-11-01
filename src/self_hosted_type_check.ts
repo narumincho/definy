@@ -21,8 +21,8 @@ import {
 } from "./stage1_compiler.ts";
 import {
   bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
   encodeCborItem,
   sha256BytesSync,
 } from "./cbor.ts";
@@ -776,8 +776,8 @@ export function checkModuleCommitParts(options: {
     ];
   }
   const partContentType = variant("part_reference", {
-    part_definition_event_hash: deriveModulePartIdSync(
-      deriveModuleIdBytesSync("core"),
+    part_definition_event_hash: deriveModulePartId(
+      deriveModuleIdBytes("core"),
       "part-content",
     ),
   });
