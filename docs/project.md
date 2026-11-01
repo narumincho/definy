@@ -26,7 +26,7 @@
 
 - モジュール名の規則は definy 製の `core.check-event-module-names` (各モジュールのパーツ名は `core.check-event-part-names`)。
 - 他のプロジェクトのモジュールはサーバーが集めて `core.event-check-state` の `modules_in_other_projects` に入れる
-  (コミットのモジュール名のうち, 他のプロジェクトの各ブランチの最新のコミットにあるもの. `branchStateOf`, `worker/type_check.ts`)。
+  (コミットのモジュール名のうち, 他のプロジェクトの各ブランチの最新のコミットにあるもの. definy の `definy.submit-event` が集める)。
 - モジュールの無いプロジェクトのコミットも受け付ける。
 
 ## 型検査

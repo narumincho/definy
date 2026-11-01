@@ -2,7 +2,8 @@
  * ストアのイベントを読む. 受け付けたプロジェクトのコミットを definy 製の `definy.decode-stored-commit`
  * (`wasm/commit_decoder.wasm`) で読んで (isolate の中で使い回す),
  * ブランチの最新のコミットを definy 製の `core.project-branches` (`wasm/branch_summarizer.wasm`) で求める.
- * `SubmitEvent` の検査 (worker/type_check.ts) と `read_commits` が使う
+ * テストがブランチの最新のコミットを求めるのに使う ({@link latestCommitHashOf}).
+ * definy の `definy.read-commits` / `definy.read-definitions` が読んだものを覚える能力もここ
  */
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import commitDecoderModule from "../wasm/commit_decoder.wasm?module";
@@ -11,7 +12,11 @@ import { variantOf } from "../src/definy_value.ts";
 import type { VisibilityTarget } from "../src/visibility.ts";
 import { MAIN_BRANCH, type Visibility } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
-import type { CommitSummary } from "../src/event_check.ts";
+import type {
+  CommitCacheEntry,
+  DefinitionCacheEntry,
+  ServiceIoHost,
+} from "./service_io.ts";
 import { instantiateCompiledFunction } from "../src/stage1_compiler.ts";
 import type { LatestPart } from "../src/self_hosted_type_check.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -55,7 +60,7 @@ export type CommitLatestPart = LatestPart &
   };
 
 /** コミットのパーツのうち, 中身 (`core.part-content`) を読まなくても分かるもの */
-export type CommitPartRef = Omit<
+type CommitPartRef = Omit<
   CommitLatestPart,
   "visibility" | "partType" | "expression" | "expressionKey"
 >;
@@ -156,7 +161,7 @@ function decodeCommit(item: {
 }
 
 /** ストアのプロジェクトのコミットすべて (ストアには definy が署名を確かめたイベントしか入れない) */
-export async function loadCommits(
+async function loadCommits(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<ReadonlyArray<StoredCommit>> {
@@ -168,23 +173,6 @@ export async function loadCommits(
     }
   }
   return commits;
-}
-
-/** プロジェクトごとの main ブランチの最新のコミット (キーはプロジェクト名). どれが最新かは definy の `core.project-branches` が決める */
-export async function loadLatestMainCommits(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyMap<string, StoredCommit>> {
-  const commits = await loadCommits(store, env);
-  const byHash = new Map(commits.map((commit) => [commit.eventHash, commit]));
-  const latest = new Map<string, StoredCommit>();
-  for (const branch of summarizeBranches(branchSummarizerModule, commits)) {
-    const commit = byHash.get(branch.latestEventHash);
-    if (branch.name === MAIN_BRANCH && commit !== undefined) {
-      latest.set(branch.projectName, commit);
-    }
-  }
-  return latest;
 }
 
 /** プロジェクト `projectName` のブランチ (既定は main) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
@@ -204,17 +192,54 @@ export async function latestCommitHashOf(
   );
 }
 
-/** ストアのプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
-export async function loadCommitSummaries(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<CommitSummary>> {
-  return (await loadCommits(store, env)).map((commit) => ({
-    eventHash: commit.eventHash,
-    accountId: commit.accountId,
-    projectName: commit.projectName,
-    branch: commit.branch,
-    timeMs: commit.timeMs,
-    moduleNames: commit.moduleNames,
-  }));
-}
+/**
+ * definy (`definy.read-commits`) がイベントをプロジェクトのコミットとして読んだもの (キーはイベントハッシュ).
+ * 中身は変わらないので isolate の中で使い回す (`read_cached_commits` / `write_cached_commits`)
+ */
+const definyCommitCache = new Map<string, CommitCacheEntry>();
+
+/** {@link definyCommitCache} を読み書きする能力 */
+export const commitCacheHost: Pick<
+  ServiceIoHost,
+  "readCachedCommits" | "writeCachedCommits"
+> = {
+  readCachedCommits: (eventHashes) =>
+    Promise.resolve(
+      eventHashes.flatMap((eventHash) => {
+        const entry = definyCommitCache.get(eventHash);
+        return entry === undefined ? [] : [entry];
+      }),
+    ),
+  writeCachedCommits: (entries) => {
+    for (const entry of entries) {
+      definyCommitCache.set(entry.event_hash, entry);
+    }
+    return Promise.resolve();
+  },
+};
+
+/**
+ * definy (`definy.read-definitions`) が CAS の中身を定義の式として読んだもの (キーは content hash).
+ * 中身は変わらないので isolate の中で使い回す (`read_cached_definitions` / `write_cached_definitions`)
+ */
+const definyDefinitionCache = new Map<string, DefinitionCacheEntry>();
+
+/** {@link definyDefinitionCache} を読み書きする能力 */
+export const definitionCacheHost: Pick<
+  ServiceIoHost,
+  "readCachedDefinitions" | "writeCachedDefinitions"
+> = {
+  readCachedDefinitions: (contentHashes) =>
+    Promise.resolve(
+      contentHashes.flatMap((contentHash) => {
+        const entry = definyDefinitionCache.get(contentHash);
+        return entry === undefined ? [] : [entry];
+      }),
+    ),
+  writeCachedDefinitions: (entries) => {
+    for (const entry of entries) {
+      definyDefinitionCache.set(entry.content_hash, entry);
+    }
+    return Promise.resolve();
+  },
+};

@@ -101,7 +101,7 @@ seed の 218 か所の呼び出しは, 範囲を確かめる `match` (`less-than
   (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
   期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.
   組み込みのパーツ自身の式 (`builtin`) は宣言した関数の型と比べられないので検査しない (`unsupported`).
-  サーバー (`worker/type_check.ts`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"#builtin": name}` の
+  サーバー (`definy.check-commit`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"#builtin": name}` の
   content hash から組み込みと分かるようにしている
 - 評価 (`core.eval-value`): `builtin(name)` は値 `core.value` の `builtin(name)` になり, それを呼ぶと `core.eval-builtin-call` が名前で評価する
 - `core.expression-to-source` は `plus(left: …, right: …)` のように出す. `core.optimize-expression` は組み込みそのものを呼ぶ

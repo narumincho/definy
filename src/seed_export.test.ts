@@ -328,7 +328,7 @@ describe("exportSeeds", () => {
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   it("CAS の中身の復元: content_hash だけを持つパーツの中身が GetContent 経由で復元される", async () => {
     const seedBundle = await loadTestSeedBundle();

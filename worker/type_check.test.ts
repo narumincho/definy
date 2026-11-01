@@ -239,6 +239,7 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
     },
   });
 
+  // 最初の SubmitEvent は型環境 (seed の全パーツ) の定義の式を definy が CAS から読むので時間がかかる (以降は isolate が覚える)
   it("定義の式はコミットの中の定義のパーツで評価し, その中身で型検査する", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
@@ -290,7 +291,7 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
         ])
       ).status,
     ).toBe(400);
-  });
+  }, 60_000);
 
   it("定義の式も型検査し, 評価して core.part-content にならなければ拒否する", async () => {
     const { store, env } = await createSeededStore();

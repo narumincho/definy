@@ -59,7 +59,7 @@ core.define-type(
 ここでの評価が stage1 で定義の式を評価した結果と同じことは `src/part_definition.test.ts` で確かめている。
 
 使うところ: `partContentItem` / `loadContents` ([src/content_store.ts](../src/content_store.ts)),
-サーバーの `SubmitEvent` の検査と型環境 ([worker/type_check.ts](../worker/type_check.ts)), seed の書き出し
+サーバーの `SubmitEvent` の検査と型環境 (`definy.read-commit-check-input`. [service.md](service.md)「型検査」), seed の書き出し
 ([seed-export.md](seed-export.md))。seeds/\*.json はこれまでどおり `description` / `part_type` / `expression` を並べて書き,
 `npm run build:seeds` が定義の式にして CAS に入れる。
 

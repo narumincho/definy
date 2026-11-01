@@ -46,7 +46,7 @@ definy の文字列は UTF-8 のバイト列なので, バイト列から文字�
 - 署名は確かめない。ストアに入るのは definy が確かめたイベント (`definy.store-write-event`) と seed だけなので, 以前の TypeScript のように読むたびに確かめるのはやめた
 - モジュールとパーツの ID も `core.module-part-ids` で付ける (`definy.stored-commit`)。読んだ結果はホストがイベントハッシュごとに isolate の中で使い回す
   (Wasm の値は呼び出しごとに作り直すので, 使い回すのは JavaScript に読み出した値)
-- `SubmitEvent` の型検査の入力 (`read_commit_check_input`) も, 受け取ったイベントを同じ関数で読む
+- `SubmitEvent` の型検査の入力 (`definy.read-commit-check-input`) も, 受け取ったイベントを同じ関数で読む
 - `definy.store-write-event` は definy が読んだメタデータ (イベントハッシュ, アカウント, 種類, 時刻) も渡すので, ストアは保存のときに署名を確かめ直さない
 
 ## TypeScript の CBOR エンコーダーの修正

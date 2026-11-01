@@ -86,7 +86,7 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 - 形が違うイベントは署名が正しくても `InvalidSignedEventError` になる (`src/signed_event.ts`)。
   サーバーの `SubmitEvent` は 400 で拒否し, ブラウザは受け取ったイベントを「不正」として表示から外す。
   CAS に預けたパーツの中身 (定義の式) はイベントの形の検査を通らないので, サーバーは型を検査する前に
-  定義の式を評価して `core.part-content` の形かを確かめ, 違えば拒否する (`worker/type_check.ts`, [part-definition.md](part-definition.md))。
+  定義の式を評価して `core.part-content` の形かを確かめ, 違えば拒否する (`definy.check-commit`, [part-definition.md](part-definition.md))。
   ブラウザも形の違う中身は読まない (`src/content_store.ts` の `loadContents`)。
 - seed の JSON だけで書けるパーツ名の参照 `{"$part": ...}` はイベントの中には書けない (文字列の位置でも拒否する)。
 - 検査の重さ: パーツの中身を CAS に分けたので, seed の core のコミットは CBOR で約 48 KB (Base64 で約 65 KB) と軽い。
@@ -101,7 +101,7 @@ definy 製の `core.value-conforms(value: core.value, declaration: core.expressi
   `{ id: 型パーツ名, declaration }` の一覧にして渡すだけ (`conformsInDefiny`, `src/event_check.ts`)。宣言の中の型パーツの参照も名前にする
 - 形が違えばメッセージ `content must be a value of core.event-content` で拒否する。2026-11-01 からイベントの中身は
   `core.value-conforms` ではなく definy の `core.value-to-event-content` で読む ([cbor.md](cbor.md))。
-  パーツの中身は, 受け付けたコミットが参照していない (まだ確かめていない) ものだけを確かめる (`worker/type_check.ts`)。
+  パーツの中身は, 受け付けたコミットが参照していない (まだ確かめていない) ものだけを確かめていた (以前の `worker/type_check.ts`。今は definy の `definy.read-definitions` がいつも `core.value-to-expression` で確かめ, 読んだものを isolate が覚える)。
   core の全パーツの中身 (約 260) を確かめると 0.25 秒 (TypeScript は 0.06 秒) かかるため
 - ブラウザと, 確かめた後に TypeScript の型にする `decodeEventContent` は今も TypeScript の `conformsToTypeDeclaration` を使う。
   両者が同じ結果になることを `src/event_check.test.ts` が確かめる
@@ -151,7 +151,7 @@ core.event-check-state = {
 - 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerProject`)。同じ秒の 2 つのコミットは先のものが最新のままになる
 - 規則はサーバーの `definy.submit-event` (`wasm/service.wasm`. [service.md](service.md)) の中で呼ぶ (2026-10-30)。
   署名と中身の形は definy が確かめ (`definy.verify-signed-event`. [cbor.md](cbor.md). ホストは Ed25519 の検証だけ), 規則が使う事実 (アカウントを作ったか. definy の `definy.read-account-created` が
-  `definy.store-read-events-page` で読む. 受け付けたコミットの一覧 `read_commits`) を読むだけ。理由の英語のメッセージも definy (`definy.event-rejection-message`) が作る。
+  `definy.store-read-events-page` で読む. 受け付けたコミットの一覧 `definy.read-commit-summaries`) を読むだけ。理由の英語のメッセージも definy (`definy.event-rejection-message`) が作る。
   拒否は Connect-RPC の `invalid_argument` (400)。`wasm/event_checker.wasm` (`core.check-event` だけをコンパイルしたもの) はテストで規則を試すのに使う
 - ブランチの最新のコミット・作成者・他のプロジェクトのモジュールなどの状態も definy (`core.event-check-state-of`) が求める
   (以前は TypeScript の `branchStateOf` が求めていた)。全コミットを毎回渡し, 各コミットについて最新かを調べるので O(コミット数²)

@@ -25,24 +25,25 @@
 処理は I/O をせず, 何を読みたいかを値で返す ([wasi-io.md](wasi-io.md) の `wasi.io` と同じ考え方)。ホスト
 (`handleRequestInDefiny`) が読んで `then` に渡し, `respond` か `serve_asset` が返るまで続ける。
 
-| タグ                      | ペイロード                                                                                     | ホストがすること                                                                                                                                                                                               |
-| :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `respond`                 | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                      | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る                                                                       |
-| `serve_asset`             | なし                                                                                           | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                                                                                            |
-| `read_seed_status`        | `then: (status: definy.seed-status) -> ...`                                                    | この isolate がもう seed を入れたか (`seeded`) と期待する指紋。入れていなければ `mark_seeded` まで他のリクエストを待たせる                                                                                     |
-| `read_seed_bundle`        | `then: (bundle: option<definy.seed-bundle>) -> ...`                                            | seed バンドルを読む (`/__definy_seed_bundle.json`。指紋も付ける)                                                                                                                                               |
-| `mark_seeded`             | `then: (marked: boolean) -> ...`                                                               | この isolate が seed を入れたと覚える                                                                                                                                                                          |
-| `read_request_json`       | `then: (body: definy.request-json) -> ...`                                                     | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                                                                                                     |
-| `read_commits`            | `then: (commits: list<core.commit-summary>) -> definy.service-io`                              | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                                                                                           |
-| `sql`                     | `statements: list<definy.sql-statement>`, `then: (results: list<list<definy.sql-row>>) -> ...` | SQL の文を D1 で順に実行し, それぞれの結果の行を返す (2 つ以上なら `batch` で 1 つのトランザクション. `runD1Statements`)。どの SQL を流すかは definy の `definy.store-*` が決める ([database.md](database.md)) |
-| `verify_ed25519`          | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                          | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                                                                                               |
-| `read_time`               | `then: (now_ms: number) -> ...`                                                                | 今の時刻 (ミリ秒)                                                                                                                                                                                              |
-| `read_commit_check_input` | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`               | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                                                                                                    |
-| `read_part_definitions`   | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                        | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                                                                                               |
-| `hash_contents`           | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                                                                                             |
-| `read_request_text`       | `then: (body: string) -> ...`                                                                  | リクエストの本文を文字列で読む (`Authorization` の署名を確かめるのは definy の `definy.read-rpc-authorization`. [rpc-authorization.md](rpc-authorization.md))                                                  |
-| `read_admin_account_ids`  | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                            |
-| `http_fetch`              | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                    |
+| タグ                       | ペイロード                                                                                     | ホストがすること                                                                                                                                                                                               |
+| :------------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `respond`                  | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                      | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る                                                                       |
+| `serve_asset`              | なし                                                                                           | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                                                                                            |
+| `read_seed_status`         | `then: (status: definy.seed-status) -> ...`                                                    | この isolate がもう seed を入れたか (`seeded`) と期待する指紋。入れていなければ `mark_seeded` まで他のリクエストを待たせる                                                                                     |
+| `read_seed_bundle`         | `then: (bundle: option<definy.seed-bundle>) -> ...`                                            | seed バンドルを読む (`/__definy_seed_bundle.json`。指紋も付ける)                                                                                                                                               |
+| `mark_seeded`              | `then: (marked: boolean) -> ...`                                                               | この isolate が seed を入れたと覚える                                                                                                                                                                          |
+| `read_request_json`        | `then: (body: definy.request-json) -> ...`                                                     | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                                                                                                     |
+| `read_cached_commits`      | `event_hashes`, `then: (cached: list<definy.commit-cache-entry>) -> ...`                       | この isolate が覚えている, イベントをプロジェクトのコミットとして読んだもの (覚えていないものは入れない)。読むのは definy の `definy.read-commits`                                                             |
+| `write_cached_commits`     | `entries: list<definy.commit-cache-entry>`, `then: (written: boolean) -> ...`                  | definy が読んだものを覚える (中身は変わらないので isolate の中で使い回す)                                                                                                                                      |
+| `sql`                      | `statements: list<definy.sql-statement>`, `then: (results: list<list<definy.sql-row>>) -> ...` | SQL の文を D1 で順に実行し, それぞれの結果の行を返す (2 つ以上なら `batch` で 1 つのトランザクション. `runD1Statements`)。どの SQL を流すかは definy の `definy.store-*` が決める ([database.md](database.md)) |
+| `verify_ed25519`           | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                          | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                                                                                               |
+| `read_time`                | `then: (now_ms: number) -> ...`                                                                | 今の時刻 (ミリ秒)                                                                                                                                                                                              |
+| `read_cached_definitions`  | `content_hashes`, `then: (cached: list<definy.definition-cache-entry>) -> ...`                 | この isolate が覚えている, CAS の中身を定義の式として読んだもの (覚えていないものは入れない)。読むのは definy の `definy.read-definitions`                                                                     |
+| `write_cached_definitions` | `entries: list<definy.definition-cache-entry>`, `then: (written: boolean) -> ...`              | definy が読んだものを覚える (CAS の中身は変わらないので isolate の中で使い回す)                                                                                                                                |
+| `hash_contents`            | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                                                                                             |
+| `read_request_text`        | `then: (body: string) -> ...`                                                                  | リクエストの本文を文字列で読む (`Authorization` の署名を確かめるのは definy の `definy.read-rpc-authorization`. [rpc-authorization.md](rpc-authorization.md))                                                  |
+| `read_admin_account_ids`   | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                            |
+| `http_fetch`               | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                    |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。
@@ -73,7 +74,7 @@
     `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
     中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も
     ここで確かめ, 違えば `invalid`。規則が使う事実はアカウントを作ったか (`definy.read-account-created`. 下を参照) と, プロジェクトのコミットなら
-    受け付けたコミット (`read_commits`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
+    受け付けたコミット (`definy.read-commit-summaries`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
   - `UploadContent` (`definy.upload-content`): `items` を読み (`definy.json-content-items`), 中身の SHA-256 (`hash_contents`) が
     `contentHash` と違うものが 1 つでもあれば何も保存せずに `invalid_argument` にする (`definy.content-hash-mismatch`)。
     以前は Base64 でない中身や形の違う `items` が `internal` になっていたのを `invalid_argument` にした。
@@ -110,13 +111,17 @@ CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は
 
 `SubmitEvent` のプロジェクトのコミットの型検査も, 何をどの順に確かめて何を返すかは definy が決める。
 
-1. `read_commit_check_input` でホスト (`readCommitCheckInput`, `worker/type_check.ts`) が読むもの (`definy.commit-check-source`):
+1. `definy.read-commit-check-input` が読むもの (`definy.commit-check-source`. 2026-11-01 にホストの `readCommitCheckInput` から移した):
    コミットのパーツ (`definy.commit-check-source-part`. ID, `モジュール名.パーツ名`, モジュール, content hash, CAS の定義の式),
    各プロジェクトの `main` の最新のコミット (`definy.latest-commit-source`. プロジェクト名とパーツ. パーツは同じく定義の式のまま),
    今の `main` のこのプロジェクトのモジュールの ID。プロジェクトのコミットでなければ `none`。
-   - 定義の式は CAS に無いか CBOR でないか `core.expression` の形でなければ `none` (受け付けたコミットの中身は形を確かめない)
-   - ストアと CAS を読むこと, どれが main の最新のコミットか (definy 製の `core.project-branches`) と,
-     受け付けたコミットの定義の式 (CBOR を読んだもの) の content hash ごとのキャッシュはホストのまま。パーツ ID は definy で求める (下の「パーツ ID の導出」)
+   - コミットの一覧は `definy.read-commits`, main の最新は `definy.latest-main-commits` (`core.project-branches`) で求める
+   - 定義の式は `definy.read-definitions` が CAS の中身 (Base64) を `definy.definition-of-content`
+     (`definy.base64-decode` → `core.cbor-read` → `core.cbor-to-value` → `core.value-to-expression`) で読む。
+     CAS に無いか CBOR でないか `core.expression` の形でなければ `none`。以前は受け付けたコミットの中身は形を確かめなかったが, 今はいつも確かめる
+   - 読んだ定義の式はホストが isolate ごとに content hash で覚える (`read_cached_definitions` / `write_cached_definitions`. 2026-11-01 ユーザーの決定「キャッシュの能力を足す」)。
+     CAS に無いものは覚えない (後で預けられるので)。最初の検査は型環境 (seed の全パーツ, 約 860) の式を definy で読むので, テストでは 1.5 秒ほど遅くなった
+   - CAS に足りない中身が無いかは `definy.submit-verified-event` が先に確かめるので, ここでは確かめない。パーツ ID は definy で求める (下の「パーツ ID の導出」)
    - 定義の式を評価してパーツの中身にするのは definy (下の「定義の式の評価」)
    - 型環境も definy が求める (`definy.resolve-latest-commits`, 2026-11-01): main の最新のコミットごとに `definy.resolve-commit-contents` で
      中身を求め, 型チェッカーの項目 (`definy.latest-type-check-entry`. 式は型パーツとコンパイラ組み込みのものだけ持つ) と
@@ -142,7 +147,7 @@ CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は
    読めるリテラルは [part-definition.md](part-definition.md)「読み方」と同じ (説明・`public` / `private`・`none` / `some(quote(e).expression)`)。
    型の付いた値に読めなければ (呼び出しの形だが `core.part-content` にならなければ) 中身は `none` で, 評価器でも評価しない
 2. それ以外の定義の式は評価器で評価する。評価で参照するコミットの外のパーツの式は, `quote` の外の参照 (`definy.evaluated-part-references`) を
-   たどって `read_part_definitions` で読む (`definy.collect-evaluation-parts`。外のパーツは 1 の形の定義のものだけ使える)
+   たどって `definy.read-part-definitions` (main の最新のコミットのパーツの定義の式を `definy.read-definitions` で読む) で読む (`definy.collect-evaluation-parts`。外のパーツは 1 の形の定義のものだけ使える)
 3. `core.eval-value` で評価し, 値 (`core.value`) を `core.value-to-part-content` で `core.part-content` にする
    ([value-decoder.md](value-decoder.md)。形が違えば `none`)。以前 (2026-11-01 まで) は definy に `core.value` を型の付いた値にする関数が無く,
    `decode_part_contents` でホストに頼んでいた。
@@ -186,7 +191,7 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 - SHA-256 は `core.sha256` (FIPS 180-4)。32 ビットのワードを 64 ビットの数で持ち, 足し算のたびに `core.uint32` (下位 32 ビット) にする。
   回転は `core.rotate-right-32`。ビット演算の組み込み ([builtin-parts.md](builtin-parts.md)) を使う。Base64URL は `core.bytes-to-base64url`
 - `npm run build:seeds` が `core.module-part-ids(module_name, part_names) -> {module_id, part_ids}` を `wasm/part_id_deriver.wasm` にコンパイルし,
-  `worker/type_check.ts` (コミットのパーツの一覧) が `src/part_ids.ts` の `derivePartIds` で呼ぶ。
+  `src/part_ids.ts` の `derivePartIds` で呼ぶ (サーバーでは `definy.decode-stored-commit` が同じ関数を service.wasm の中で呼ぶ)。
   ID は名前だけで決まるので, 求めた ID は isolate の中で使い回し, 新しい名前の分だけ definy で求める (コミットはどれも同じ名前のパーツが多い)。
   seed の全パーツ (674) を初めて求めると 180ms ほど (1 パーツ 0.3ms. SHA-256 を 2 回)。2 回目からは使い回すので 0.1ms
 - `src/part_ids.test.ts` で `core.sha256` を `node:crypto` と, パーツ ID を TypeScript の導出と比べている

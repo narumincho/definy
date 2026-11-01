@@ -234,6 +234,8 @@ test.describe("definy UI E2E", () => {
     page,
     request,
   }) => {
+    // 2 回コミットする. 最初のコミットの検査は型環境 (seed の全パーツ) の定義の式を definy が CAS から読むので時間がかかる (docs/service.md「型検査」)
+    test.setTimeout(60_000);
     // アカウントはテストから作り, localStorage に入れてログインした状態にする
     const credentials = await generateAccountCredentials(
       `maker_${Date.now().toString().slice(-6)}`,

@@ -252,7 +252,7 @@ Storage）として分離し、未登録のハッシュのみをネゴシエー�
 >   SHA-256 が content hash と合い `core.part-content` の形のものだけを使う ([src/content_store.ts](../src/content_store.ts))。
 > - 読む (サーバー): `SubmitEvent` はコミットの全パーツの中身を CAS から読んで形を確かめ, 公開/非公開と型を検査する。
 >   型環境に使う各プロジェクトの main の最新のパーツの中身は isolate の中で使い回し, 型パーツの宣言式とコンパイラ組み込みの式だけを持つ
->   ([worker/type_check.ts](../worker/type_check.ts))。
+>   (definy の `definy.read-definitions`。読んだ定義の式はホストが content hash ごとに覚える. [service.md](service.md)「型検査」)。
 > - 署名が不正なサンプル ([invalid-signature-debug.md](invalid-signature-debug.md)) のパーツの中身も seed の CAS に入れる。
 
 ```mermaid

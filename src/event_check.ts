@@ -99,7 +99,7 @@ export function contentForCheck(content: EventContent): EventContent {
 }
 
 /** 受け付けたコミットを definy の値 (`core.commit-summary`) にする */
-export function commitSummaryLiteral(commit: CommitSummary): unknown {
+function commitSummaryLiteral(commit: CommitSummary): unknown {
   return {
     event_hash: commit.eventHash,
     account_id: commit.accountId,
