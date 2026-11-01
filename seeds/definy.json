@@ -13687,6 +13687,357 @@
       }
     },
     {
+      "name": "content-type-check-entry",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "part_id",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "module_id",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "content_hash",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "content",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.part-content"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.type-check-entry"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The entry of the type checker (core.type-checker) for a part with the content. The expression is kept only for type parts and compiler built-ins"
+        },
+        {
+          "language": "ja",
+          "text": "中身のあるパーツの型チェッカー (core.type-checker) の項目。式は型パーツとコンパイラ組み込みのものだけ持つ"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "part_id"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "module_id"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "content_hash"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "content"
+            }
+          ],
+          "body": {
+            "#record": [
+              {
+                "key": "part_id",
+                "value": {
+                  "#variable": {
+                    "variable_id": 0
+                  }
+                }
+              },
+              {
+                "key": "module_id",
+                "value": {
+                  "#variable": {
+                    "variable_id": 1
+                  }
+                }
+              },
+              {
+                "key": "part_type",
+                "value": {
+                  "#match": {
+                    "target": {
+                      "#match": {
+                        "target": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 3
+                              }
+                            },
+                            "key": "expression"
+                          }
+                        },
+                        "arms": [
+                          {
+                            "pattern": {
+                              "#variant": {
+                                "tag": "some",
+                                "payload": {
+                                  "#variant": {
+                                    "tag": "builtin",
+                                    "payload": {
+                                      "#any": null
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "#boolean": true
+                            }
+                          },
+                          {
+                            "pattern": {
+                              "#any": null
+                            },
+                            "body": {
+                              "#boolean": false
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "arms": [
+                      {
+                        "pattern": {
+                          "#boolean": true
+                        },
+                        "body": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 3
+                              }
+                            },
+                            "key": "expression"
+                          }
+                        }
+                      },
+                      {
+                        "pattern": {
+                          "#boolean": false
+                        },
+                        "body": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 3
+                              }
+                            },
+                            "key": "part_type"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "type_declaration",
+                "value": {
+                  "#match": {
+                    "target": {
+                      "#record_get": {
+                        "record": {
+                          "#variable": {
+                            "variable_id": 3
+                          }
+                        },
+                        "key": "part_type"
+                      }
+                    },
+                    "arms": [
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "some",
+                            "payload": {
+                              "#bind": {
+                                "variable_id": 4,
+                                "variable_name": "part_type"
+                              }
+                            }
+                          }
+                        },
+                        "body": {
+                          "#match": {
+                            "target": {
+                              "#call": {
+                                "function": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "core.is-type-part-type"
+                                    }
+                                  }
+                                },
+                                "arguments": [
+                                  {
+                                    "name": "part_type",
+                                    "value": {
+                                      "#variable": {
+                                        "variable_id": 4
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "arms": [
+                              {
+                                "pattern": {
+                                  "#boolean": true
+                                },
+                                "body": {
+                                  "#record_get": {
+                                    "record": {
+                                      "#variable": {
+                                        "variable_id": 3
+                                      }
+                                    },
+                                    "key": "expression"
+                                  }
+                                }
+                              },
+                              {
+                                "pattern": {
+                                  "#boolean": false
+                                },
+                                "body": {
+                                  "#variant": {
+                                    "tag": "none",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#any": null
+                            }
+                          }
+                        },
+                        "body": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#none": null
+                            },
+                            "type_part": {
+                              "#none": null
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "expression_key",
+                "value": {
+                  "#variant": {
+                    "tag": "some",
+                    "payload": {
+                      "#some": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "has_expression",
+                "value": {
+                  "#match": {
+                    "target": {
+                      "#record_get": {
+                        "record": {
+                          "#variable": {
+                            "variable_id": 3
+                          }
+                        },
+                        "key": "expression"
+                      }
+                    },
+                    "arms": [
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "some",
+                            "payload": {
+                              "#any": null
+                            }
+                          }
+                        },
+                        "body": {
+                          "#boolean": true
+                        }
+                      },
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#any": null
+                            }
+                          }
+                        },
+                        "body": {
+                          "#boolean": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "commit-check-entries",
       "part_type": {
         "#type_function": {
@@ -13831,287 +14182,57 @@
                                     {
                                       "name": "item",
                                       "value": {
-                                        "#record": [
-                                          {
-                                            "key": "part_id",
-                                            "value": {
-                                              "#record_get": {
-                                                "record": {
-                                                  "#variable": {
-                                                    "variable_id": 2
-                                                  }
-                                                },
-                                                "key": "id"
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "definy.content-type-check-entry"
                                               }
                                             }
                                           },
-                                          {
-                                            "key": "module_id",
-                                            "value": {
-                                              "#string": "#replaced"
-                                            }
-                                          },
-                                          {
-                                            "key": "part_type",
-                                            "value": {
-                                              "#match": {
-                                                "target": {
-                                                  "#match": {
-                                                    "target": {
-                                                      "#record_get": {
-                                                        "record": {
-                                                          "#variable": {
-                                                            "variable_id": 3
-                                                          }
-                                                        },
-                                                        "key": "expression"
-                                                      }
-                                                    },
-                                                    "arms": [
-                                                      {
-                                                        "pattern": {
-                                                          "#variant": {
-                                                            "tag": "some",
-                                                            "payload": {
-                                                              "#variant": {
-                                                                "tag": "builtin",
-                                                                "payload": {
-                                                                  "#any": null
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        },
-                                                        "body": {
-                                                          "#boolean": true
-                                                        }
-                                                      },
-                                                      {
-                                                        "pattern": {
-                                                          "#any": null
-                                                        },
-                                                        "body": {
-                                                          "#boolean": false
-                                                        }
-                                                      }
-                                                    ]
-                                                  }
-                                                },
-                                                "arms": [
-                                                  {
-                                                    "pattern": {
-                                                      "#boolean": true
-                                                    },
-                                                    "body": {
-                                                      "#record_get": {
-                                                        "record": {
-                                                          "#variable": {
-                                                            "variable_id": 3
-                                                          }
-                                                        },
-                                                        "key": "expression"
-                                                      }
+                                          "arguments": [
+                                            {
+                                              "name": "part_id",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 2
                                                     }
                                                   },
-                                                  {
-                                                    "pattern": {
-                                                      "#boolean": false
-                                                    },
-                                                    "body": {
-                                                      "#record_get": {
-                                                        "record": {
-                                                          "#variable": {
-                                                            "variable_id": 3
-                                                          }
-                                                        },
-                                                        "key": "part_type"
-                                                      }
-                                                    }
-                                                  }
-                                                ]
+                                                  "key": "id"
+                                                }
                                               }
-                                            }
-                                          },
-                                          {
-                                            "key": "type_declaration",
-                                            "value": {
-                                              "#match": {
-                                                "target": {
-                                                  "#record_get": {
-                                                    "record": {
-                                                      "#variable": {
-                                                        "variable_id": 3
-                                                      }
-                                                    },
-                                                    "key": "part_type"
-                                                  }
-                                                },
-                                                "arms": [
-                                                  {
-                                                    "pattern": {
-                                                      "#variant": {
-                                                        "tag": "some",
-                                                        "payload": {
-                                                          "#bind": {
-                                                            "variable_id": 4,
-                                                            "variable_name": "part_type"
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    "body": {
-                                                      "#match": {
-                                                        "target": {
-                                                          "#call": {
-                                                            "function": {
-                                                              "#part_reference": {
-                                                                "part_definition_event_hash": {
-                                                                  "$part": "core.is-type-part-type"
-                                                                }
-                                                              }
-                                                            },
-                                                            "arguments": [
-                                                              {
-                                                                "name": "part_type",
-                                                                "value": {
-                                                                  "#variable": {
-                                                                    "variable_id": 4
-                                                                  }
-                                                                }
-                                                              }
-                                                            ]
-                                                          }
-                                                        },
-                                                        "arms": [
-                                                          {
-                                                            "pattern": {
-                                                              "#boolean": true
-                                                            },
-                                                            "body": {
-                                                              "#record_get": {
-                                                                "record": {
-                                                                  "#variable": {
-                                                                    "variable_id": 3
-                                                                  }
-                                                                },
-                                                                "key": "expression"
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "pattern": {
-                                                              "#boolean": false
-                                                            },
-                                                            "body": {
-                                                              "#variant": {
-                                                                "tag": "none",
-                                                                "payload": {
-                                                                  "#none": null
-                                                                },
-                                                                "type_part": {
-                                                                  "#none": null
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        ]
-                                                      }
+                                            },
+                                            {
+                                              "name": "module_id",
+                                              "value": {
+                                                "#string": "#replaced"
+                                              }
+                                            },
+                                            {
+                                              "name": "content_hash",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 2
                                                     }
                                                   },
-                                                  {
-                                                    "pattern": {
-                                                      "#variant": {
-                                                        "tag": "none",
-                                                        "payload": {
-                                                          "#any": null
-                                                        }
-                                                      }
-                                                    },
-                                                    "body": {
-                                                      "#variant": {
-                                                        "tag": "none",
-                                                        "payload": {
-                                                          "#none": null
-                                                        },
-                                                        "type_part": {
-                                                          "#none": null
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                ]
+                                                  "key": "content_hash"
+                                                }
                                               }
-                                            }
-                                          },
-                                          {
-                                            "key": "expression_key",
-                                            "value": {
-                                              "#variant": {
-                                                "tag": "some",
-                                                "payload": {
-                                                  "#some": {
-                                                    "#record_get": {
-                                                      "record": {
-                                                        "#variable": {
-                                                          "variable_id": 2
-                                                        }
-                                                      },
-                                                      "key": "content_hash"
-                                                    }
-                                                  }
-                                                },
-                                                "type_part": {
-                                                  "#none": null
+                                            },
+                                            {
+                                              "name": "content",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
                                                 }
                                               }
                                             }
-                                          },
-                                          {
-                                            "key": "has_expression",
-                                            "value": {
-                                              "#match": {
-                                                "target": {
-                                                  "#record_get": {
-                                                    "record": {
-                                                      "#variable": {
-                                                        "variable_id": 3
-                                                      }
-                                                    },
-                                                    "key": "expression"
-                                                  }
-                                                },
-                                                "arms": [
-                                                  {
-                                                    "pattern": {
-                                                      "#variant": {
-                                                        "tag": "some",
-                                                        "payload": {
-                                                          "#any": null
-                                                        }
-                                                      }
-                                                    },
-                                                    "body": {
-                                                      "#boolean": true
-                                                    }
-                                                  },
-                                                  {
-                                                    "pattern": {
-                                                      "#variant": {
-                                                        "tag": "none",
-                                                        "payload": {
-                                                          "#any": null
-                                                        }
-                                                      }
-                                                    },
-                                                    "body": {
-                                                      "#boolean": false
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        ]
+                                          ]
+                                        }
                                       }
                                     }
                                   ]
@@ -14155,6 +14276,423 @@
                 }
               ]
             }
+          }
+        }
+      }
+    },
+    {
+      "name": "latest-type-check-entry",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "part",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.commit-check-part"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.type-check-entry"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The entry of the type checker for a part of the latest main commit (no type if the content is none)"
+        },
+        {
+          "language": "ja",
+          "text": "main の最新のコミットのパーツの型チェッカーの項目 (中身が none なら型も無い)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "part"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#record_get": {
+                  "record": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  },
+                  "key": "content"
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "content"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.content-type-check-entry"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "part_id",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "key": "id"
+                            }
+                          }
+                        },
+                        {
+                          "name": "module_id",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "key": "module_id"
+                            }
+                          }
+                        },
+                        {
+                          "name": "content_hash",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "key": "content_hash"
+                            }
+                          }
+                        },
+                        {
+                          "name": "content",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#record": [
+                      {
+                        "key": "part_id",
+                        "value": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 0
+                              }
+                            },
+                            "key": "id"
+                          }
+                        }
+                      },
+                      {
+                        "key": "module_id",
+                        "value": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 0
+                              }
+                            },
+                            "key": "module_id"
+                          }
+                        }
+                      },
+                      {
+                        "key": "part_type",
+                        "value": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#none": null
+                            },
+                            "type_part": {
+                              "#none": null
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "key": "type_declaration",
+                        "value": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#none": null
+                            },
+                            "type_part": {
+                              "#none": null
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "key": "expression_key",
+                        "value": {
+                          "#variant": {
+                            "tag": "some",
+                            "payload": {
+                              "#some": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "key": "content_hash"
+                                }
+                              }
+                            },
+                            "type_part": {
+                              "#none": null
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "key": "has_expression",
+                        "value": {
+                          "#boolean": false
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "latest-visibility-target",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "project_name",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "part",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.commit-check-part"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.visibility-target"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A part of the latest main commit as a part that can be referenced (docs/visibility.md). public if the content is none"
+        },
+        {
+          "language": "ja",
+          "text": "main の最新のコミットのパーツを, 参照されるパーツとしたもの (docs/visibility.md)。中身が none なら public"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "project_name"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "part"
+            }
+          ],
+          "body": {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#record_get": {
+                    "record": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    },
+                    "key": "id"
+                  }
+                }
+              },
+              {
+                "key": "name",
+                "value": {
+                  "#record_get": {
+                    "record": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    },
+                    "key": "name"
+                  }
+                }
+              },
+              {
+                "key": "module_name",
+                "value": {
+                  "#record_get": {
+                    "record": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    },
+                    "key": "module_name"
+                  }
+                }
+              },
+              {
+                "key": "project_name",
+                "value": {
+                  "#variable": {
+                    "variable_id": 0
+                  }
+                }
+              },
+              {
+                "key": "visibility",
+                "value": {
+                  "#match": {
+                    "target": {
+                      "#record_get": {
+                        "record": {
+                          "#variable": {
+                            "variable_id": 1
+                          }
+                        },
+                        "key": "content"
+                      }
+                    },
+                    "arms": [
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "some",
+                            "payload": {
+                              "#bind": {
+                                "variable_id": 2,
+                                "variable_name": "content"
+                              }
+                            }
+                          }
+                        },
+                        "body": {
+                          "#record_get": {
+                            "record": {
+                              "#variable": {
+                                "variable_id": 2
+                              }
+                            },
+                            "key": "visibility"
+                          }
+                        }
+                      },
+                      {
+                        "pattern": {
+                          "#variant": {
+                            "tag": "none",
+                            "payload": {
+                              "#any": null
+                            }
+                          }
+                        },
+                        "body": {
+                          "#variant": {
+                            "tag": "public",
+                            "payload": {
+                              "#none": null
+                            },
+                            "type_part": {
+                              "#some": {
+                                "$part": "core.visibility"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "module_visibility",
+                "value": {
+                  "#record_get": {
+                    "record": {
+                      "#variable": {
+                        "variable_id": 1
+                      }
+                    },
+                    "key": "module_visibility"
+                  }
+                }
+              }
+            ]
           }
         }
       }
@@ -21044,27 +21582,13 @@
             }
           },
           {
-            "key": "environment",
+            "key": "latest_commits",
             "value": {
               "#type_list": {
                 "item_type": {
                   "#part_reference": {
                     "part_definition_event_hash": {
-                      "$part": "core.visibility-target"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          {
-            "key": "latest",
-            "value": {
-              "#type_list": {
-                "item_type": {
-                  "#part_reference": {
-                    "part_definition_event_hash": {
-                      "$part": "definy.type-check-entry"
+                      "$part": "definy.latest-commit-source"
                     }
                   }
                 }
@@ -30743,6 +31267,626 @@
       }
     },
     {
+      "name": "latest-commit-source",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The latest main commit of a project, with the definitions of the parts (read_commit_check_input)"
+        },
+        {
+          "language": "ja",
+          "text": "プロジェクトの main の最新のコミット。パーツは定義の式のまま (read_commit_check_input)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "project_name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "parts",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.commit-check-source-part"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "resolve-latest-commits",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "commits",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.latest-commit-source"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "latest",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.type-check-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "environment",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.visibility-target"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "then",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "latest",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.type-check-entry"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "name": "environment",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.visibility-target"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.service-io"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Find the contents of the parts of the latest main commits from index (definy.resolve-commit-contents in each commit) and continue with the entries of the type checker and the parts that can be referenced, appended to latest and environment"
+        },
+        {
+          "language": "ja",
+          "text": "index 番目からの main の最新のコミットのパーツの中身を求め (コミットごとに definy.resolve-commit-contents), 型チェッカーの項目と参照されるパーツを latest と environment に足して then に渡す"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "commits"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "latest"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "environment"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "then"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#variable": {
+                          "variable_id": 4
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "latest",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "environment",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 5,
+                          "variable_name": "commit"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.resolve-commit-contents"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "parts",
+                          "value": {
+                            "#record_get": {
+                              "record": {
+                                "#variable": {
+                                  "variable_id": 5
+                                }
+                              },
+                              "key": "parts"
+                            }
+                          }
+                        },
+                        {
+                          "name": "then",
+                          "value": {
+                            "#function": {
+                              "parameters": [
+                                {
+                                  "parameter_id": 6,
+                                  "parameter_name": "parts"
+                                }
+                              ],
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.resolve-latest-commits"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "commits",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "latest",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-concat"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.list-map"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "T",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.commit-check-part"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "U",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.type-check-entry"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "f",
+                                                      "value": {
+                                                        "#function": {
+                                                          "parameters": [
+                                                            {
+                                                              "parameter_id": 7,
+                                                              "parameter_name": "item"
+                                                            }
+                                                          ],
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.latest-type-check-entry"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "part",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "xs",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 6
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "environment",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-concat"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.list-map"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "T",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.commit-check-part"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "U",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.visibility-target"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "f",
+                                                      "value": {
+                                                        "#function": {
+                                                          "parameters": [
+                                                            {
+                                                              "parameter_id": 8,
+                                                              "parameter_name": "item"
+                                                            }
+                                                          ],
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.latest-visibility-target"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "project_name",
+                                                                  "value": {
+                                                                    "#record_get": {
+                                                                      "record": {
+                                                                        "#variable": {
+                                                                          "variable_id": 5
+                                                                        }
+                                                                      },
+                                                                      "key": "project_name"
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "part",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 8
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "xs",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 6
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "then",
+                                      "value": {
+                                        "#function": {
+                                          "parameters": [
+                                            {
+                                              "parameter_id": 9,
+                                              "parameter_name": "latest"
+                                            },
+                                            {
+                                              "parameter_id": 10,
+                                              "parameter_name": "environment"
+                                            }
+                                          ],
+                                          "body": {
+                                            "#call": {
+                                              "function": {
+                                                "#variable": {
+                                                  "variable_id": 4
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "latest",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 9
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "environment",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 10
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "check-commit-input",
       "part_type": {
         "#type_function": {
@@ -31668,13 +32812,13 @@
                                       "function": {
                                         "#part_reference": {
                                           "part_definition_event_hash": {
-                                            "$part": "definy.resolve-commit-contents"
+                                            "$part": "definy.resolve-latest-commits"
                                           }
                                         }
                                       },
                                       "arguments": [
                                         {
-                                          "name": "parts",
+                                          "name": "commits",
                                           "value": {
                                             "#record_get": {
                                               "record": {
@@ -31682,8 +32826,26 @@
                                                   "variable_id": 3
                                                 }
                                               },
-                                              "key": "parts"
+                                              "key": "latest_commits"
                                             }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#number": 0
+                                          }
+                                        },
+                                        {
+                                          "name": "latest",
+                                          "value": {
+                                            "#list": []
+                                          }
+                                        },
+                                        {
+                                          "name": "environment",
+                                          "value": {
+                                            "#list": []
                                           }
                                         },
                                         {
@@ -31692,8 +32854,12 @@
                                             "#function": {
                                               "parameters": [
                                                 {
-                                                  "parameter_id": 4,
-                                                  "parameter_name": "parts"
+                                                  "parameter_id": 6,
+                                                  "parameter_name": "latest"
+                                                },
+                                                {
+                                                  "parameter_id": 7,
+                                                  "parameter_name": "environment"
                                                 }
                                               ],
                                               "body": {
@@ -31701,76 +32867,22 @@
                                                   "function": {
                                                     "#part_reference": {
                                                       "part_definition_event_hash": {
-                                                        "$part": "definy.check-commit-input"
+                                                        "$part": "definy.resolve-commit-contents"
                                                       }
                                                     }
                                                   },
                                                   "arguments": [
                                                     {
-                                                      "name": "input",
+                                                      "name": "parts",
                                                       "value": {
-                                                        "#record": [
-                                                          {
-                                                            "key": "project_name",
-                                                            "value": {
-                                                              "#record_get": {
-                                                                "record": {
-                                                                  "#variable": {
-                                                                    "variable_id": 3
-                                                                  }
-                                                                },
-                                                                "key": "project_name"
-                                                              }
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 3
                                                             }
                                                           },
-                                                          {
-                                                            "key": "parts",
-                                                            "value": {
-                                                              "#variable": {
-                                                                "variable_id": 4
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "key": "environment",
-                                                            "value": {
-                                                              "#record_get": {
-                                                                "record": {
-                                                                  "#variable": {
-                                                                    "variable_id": 3
-                                                                  }
-                                                                },
-                                                                "key": "environment"
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "key": "latest",
-                                                            "value": {
-                                                              "#record_get": {
-                                                                "record": {
-                                                                  "#variable": {
-                                                                    "variable_id": 3
-                                                                  }
-                                                                },
-                                                                "key": "latest"
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "key": "project_module_ids",
-                                                            "value": {
-                                                              "#record_get": {
-                                                                "record": {
-                                                                  "#variable": {
-                                                                    "variable_id": 3
-                                                                  }
-                                                                },
-                                                                "key": "project_module_ids"
-                                                              }
-                                                            }
-                                                          }
-                                                        ]
+                                                          "key": "parts"
+                                                        }
                                                       }
                                                     },
                                                     {
@@ -31779,23 +32891,106 @@
                                                         "#function": {
                                                           "parameters": [
                                                             {
-                                                              "parameter_id": 5,
-                                                              "parameter_name": "errors"
+                                                              "parameter_id": 4,
+                                                              "parameter_name": "parts"
                                                             }
                                                           ],
                                                           "body": {
                                                             "#call": {
                                                               "function": {
-                                                                "#variable": {
-                                                                  "variable_id": 1
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.check-commit-input"
+                                                                  }
                                                                 }
                                                               },
                                                               "arguments": [
                                                                 {
-                                                                  "name": "errors",
+                                                                  "name": "input",
                                                                   "value": {
-                                                                    "#variable": {
-                                                                      "variable_id": 5
+                                                                    "#record": [
+                                                                      {
+                                                                        "key": "project_name",
+                                                                        "value": {
+                                                                          "#record_get": {
+                                                                            "record": {
+                                                                              "#variable": {
+                                                                                "variable_id": 3
+                                                                              }
+                                                                            },
+                                                                            "key": "project_name"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "key": "parts",
+                                                                        "value": {
+                                                                          "#variable": {
+                                                                            "variable_id": 4
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "key": "environment",
+                                                                        "value": {
+                                                                          "#variable": {
+                                                                            "variable_id": 7
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "key": "latest",
+                                                                        "value": {
+                                                                          "#variable": {
+                                                                            "variable_id": 6
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "key": "project_module_ids",
+                                                                        "value": {
+                                                                          "#record_get": {
+                                                                            "record": {
+                                                                              "#variable": {
+                                                                                "variable_id": 3
+                                                                              }
+                                                                            },
+                                                                            "key": "project_module_ids"
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "then",
+                                                                  "value": {
+                                                                    "#function": {
+                                                                      "parameters": [
+                                                                        {
+                                                                          "parameter_id": 5,
+                                                                          "parameter_name": "errors"
+                                                                        }
+                                                                      ],
+                                                                      "body": {
+                                                                        "#call": {
+                                                                          "function": {
+                                                                            "#variable": {
+                                                                              "variable_id": 1
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "errors",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 5
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
                                                                     }
                                                                   }
                                                                 }

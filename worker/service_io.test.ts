@@ -52,13 +52,24 @@ const checkPart = (
 /** `definy.commit-check-source` */
 const checkInput = (input: {
   readonly parts: ReadonlyArray<unknown>;
-  readonly environment?: ReadonlyArray<unknown>;
+  /** 型環境にする各プロジェクトの main の最新のコミット (`definy.latest-commit-source`) */
+  readonly latestCommits?: ReadonlyArray<unknown>;
 }): unknown => ({
   project_name: "app",
   parts: input.parts,
-  environment: input.environment ?? [],
-  latest: [],
+  latest_commits: input.latestCommits ?? [],
   project_module_ids: [],
+});
+
+/** プロジェクト `lib` の main の最新のコミットのパーツ (`definy.commit-check-source-part`) */
+const libPart = (name: string, content: PartContent): unknown => ({
+  id: `id-${name}`,
+  name: `lib.${name}`,
+  module_name: "lib",
+  module_id: "module-lib",
+  module_visibility: variant("public"),
+  content_hash: `hash-lib-${name}`,
+  definition: some(partDefinitionExpression(content)),
 });
 
 const content = (partType: unknown, expression: unknown): PartContent => ({
@@ -458,14 +469,15 @@ describe("handleRpcInDefiny", () => {
       await submitWith(
         checkInput({
           parts: [checkPart("x", content(number, reference("id-secret")))],
-          environment: [
+          latestCommits: [
             {
-              id: "id-secret",
-              name: "lib.secret",
-              module_name: "lib",
               project_name: "lib",
-              visibility: variant("private"),
-              module_visibility: variant("public"),
+              parts: [
+                libPart("secret", {
+                  ...content(number, { "#number": 1 }),
+                  visibility: "private",
+                }),
+              ],
             },
           ],
         }),
@@ -475,6 +487,35 @@ describe("handleRpcInDefiny", () => {
       body: {
         code: "invalid_argument",
         message: "part 'app.x': cannot reference the private part 'lib.secret'",
+      },
+    });
+
+    // 型環境 (main の最新のコミット) の定義の式も definy が読む
+    const lib = [
+      {
+        project_name: "lib",
+        parts: [libPart("n", content(number, { "#number": 1 }))],
+      },
+    ];
+    expect(
+      await submitWith(
+        checkInput({
+          parts: [
+            checkPart("x", content(number, reference("id-n"))),
+            checkPart(
+              "s",
+              content({ "#type_string": null }, reference("id-n")),
+            ),
+          ],
+          latestCommits: lib,
+        }),
+      ),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message:
+          "part 'app.s': type error: type_mismatch (expected: string, actual: number)",
       },
     });
 

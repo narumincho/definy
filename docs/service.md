@@ -76,12 +76,17 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 
 1. `read_commit_check_input` でホスト (`readCommitCheckInput`, `worker/type_check.ts`) が読むもの (`definy.commit-check-source`):
    コミットのパーツ (`definy.commit-check-source-part`. ID, `モジュール名.パーツ名`, モジュール, content hash, CAS の定義の式),
-   参照できるパーツ (`core.visibility-target`), 各プロジェクトの `main` の最新のパーツ (`core.type-checker` の `latest` の形),
+   各プロジェクトの `main` の最新のコミット (`definy.latest-commit-source`. プロジェクト名とパーツ. パーツは同じく定義の式のまま),
    今の `main` のこのプロジェクトのモジュールの ID。プロジェクトのコミットでなければ `none`。
    - 定義の式は CAS に無いか CBOR でないか `core.expression` の形でなければ `none` (受け付けたコミットの中身は形を確かめない)
-   - ストアと CAS を読むこと, 型環境 (`latest`) の中身を求めること
-     (main の最新のコミットの定義の評価を含む) と受け付けたコミットの中身のキャッシュはホストのまま。パーツ ID は definy で求める (下の「パーツ ID の導出」)
+   - ストアと CAS を読むこと, どれが main の最新のコミットか (definy 製の `core.project-branches`) と,
+     受け付けたコミットの定義の式 (CBOR を読んだもの) の content hash ごとのキャッシュはホストのまま。パーツ ID は definy で求める (下の「パーツ ID の導出」)
    - 定義の式を評価してパーツの中身にするのは definy (下の「定義の式の評価」)
+   - 型環境も definy が求める (`definy.resolve-latest-commits`, 2026-11-01): main の最新のコミットごとに `definy.resolve-commit-contents` で
+     中身を求め, 型チェッカーの項目 (`definy.latest-type-check-entry`. 式は型パーツとコンパイラ組み込みのものだけ持つ) と
+     参照できるパーツ (`definy.latest-visibility-target`. 中身が無ければ `public`) にする。以前はホストが TypeScript (`commitContents`,
+     `wasm/definition_evaluator.wasm`) で求め, 中身を content hash ごと・コミットごとにキャッシュしていた。今は SubmitEvent のたびに
+     型環境の全パーツの定義の式を service.wasm に渡して読む (core 全体のコミットの組み込みのテストで 2.2 秒 → 2.4 秒)
 2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
    - 中身が `core.part-content` にならないパーツ (`definy.commit-check-malformed`)
    - 参照できないパーツへの参照 (`core.check-reference-visibility`, メッセージは `definy.visibility-violation-message`)
@@ -154,5 +159,4 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 
 ## 今後
 
-- 型環境 (main の最新のコミット) の定義の式の評価も definy にする
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

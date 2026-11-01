@@ -117,7 +117,7 @@ let loadedEvaluator: WebAssembly.Module | undefined;
 
 /**
  * definy 製の評価器 (`core.eval-value`). ユーザーが作った定義のパーツで定義したパーツの中身を
- * コミットの中で評価するのに使う (docs/part-definition.md). サーバーと同じ `wasm/definition_evaluator.wasm` を使う
+ * コミットの中で評価するのに使う (docs/part-definition.md). サーバーは service.wasm の中で同じ `core.eval-value` を呼ぶ
  */
 export const loadDefinitionEvaluator = once(async () => {
   const module = await compile(
