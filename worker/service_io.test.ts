@@ -74,36 +74,50 @@ const commit = (
   moduleNames: ["app"],
 });
 
-/** `definy.commit-check-part` (中身が `null` なら core.part-content に評価できなかったもの) */
+/** 型検査するコミットのパーツ (中身が `null` なら core.part-content に評価できなかったもの) */
+type CheckPart = {
+  readonly name: string;
+  readonly contentHash: string;
+  /** 中身の定義の式 (`option<core.expression>`) */
+  readonly definition: unknown;
+};
+
 const checkPart = (
   name: string,
   content: PartContent | null,
   contentHash = `hash-${name}`,
-): unknown => ({
-  id: `id-${name}`,
-  name: `app.${name}`,
-  module_name: "app",
-  module_id: "module-app",
-  module_visibility: variant("public"),
-  content_hash: contentHash,
+): CheckPart => ({
+  name,
+  contentHash,
   definition:
     content === null ? none() : some(partDefinitionExpression(content)),
 });
 
-/** `definy.commit-check-source` */
-const checkInput = (input: {
-  readonly parts: ReadonlyArray<unknown>;
-  /** 型環境にする各プロジェクトの main の最新のコミット (`definy.latest-commit-source`) */
-  readonly latestCommits?: ReadonlyArray<unknown>;
-}): unknown => ({
-  project_name: "app",
-  parts: input.parts,
-  latest_commits: input.latestCommits ?? [],
-  project_module_ids: [],
-});
+/** 型環境にするプロジェクトの main の最新のコミットのパーツ (`definy.stored-commit-part` と定義の式) */
+type LibPart = {
+  readonly id: string;
+  readonly name: string;
+  readonly module_name: string;
+  readonly module_id: string;
+  readonly module_visibility: unknown;
+  readonly content_hash: string;
+  readonly definition: unknown;
+};
 
-/** プロジェクト `lib` の main の最新のコミットのパーツ (`definy.commit-check-source-part`) */
-const libPart = (name: string, content: PartContent): unknown => ({
+/** 型検査するコミット (プロジェクト `app` を作るコミット) と型環境 */
+type CheckInput = {
+  readonly parts: ReadonlyArray<CheckPart>;
+  /** 型環境にする各プロジェクトの main の最新のコミット */
+  readonly latestCommits?: ReadonlyArray<{
+    readonly project_name: string;
+    readonly parts: ReadonlyArray<LibPart>;
+  }>;
+};
+
+const checkInput = (input: CheckInput): CheckInput => input;
+
+/** プロジェクト `lib` の main の最新のコミットのパーツ */
+const libPart = (name: string, content: PartContent): LibPart => ({
   id: `id-${name}`,
   name: `lib.${name}`,
   module_name: "lib",
@@ -165,7 +179,13 @@ async function sqlStore(
   log: Array<string> = [],
 ): Promise<{
   readonly db: D1Database;
-  readonly host: Pick<ServiceIoHost, "runSql" | "readCachedCommits">;
+  readonly host: Pick<
+    ServiceIoHost,
+    | "runSql"
+    | "readCachedCommits"
+    | "readCachedDefinitions"
+    | "writeCachedDefinitions"
+  >;
 }> {
   const commits = fixtures.commits ?? [];
   fixtures = {
@@ -211,6 +231,14 @@ async function sqlStore(
       runSql: (statements) => {
         log.push(["sql", ...statements.map(sqlLabel)].join(" ").trim());
         return runD1Statements(db, statements);
+      },
+      // 定義の式は覚えていないことにする (definy が CAS から読んで覚える)
+      readCachedDefinitions: () => Promise.resolve([]),
+      writeCachedDefinitions: (entries) => {
+        log.push(
+          `cache definitions ${entries.map((entry) => entry.content_hash).join(",")}`,
+        );
+        return Promise.resolve();
       },
       readCachedCommits: (eventHashes) => {
         log.push(`cached ${eventHashes.join(",")}`);
@@ -277,8 +305,8 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   now: () => {
     throw new Error("not read");
   },
-  readCommitCheckInput: () => Promise.reject(new Error("not read")),
-  readPartDefinitions: () => Promise.reject(new Error("not read")),
+  readCachedDefinitions: () => Promise.reject(new Error("not read")),
+  writeCachedDefinitions: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   readRequestText: () => Promise.reject(new Error("not read")),
   readAdminAccountIds: () => {
@@ -293,6 +321,115 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readRequestJson: () => Promise.reject(new Error("not read")),
   ...overrides,
 });
+
+/**
+ * `alice` がプロジェクト `app` を作るコミット (`input.parts`) を SubmitEvent で出す.
+ * 中身は CAS にあり, 定義の式と型環境のコミットはホストが覚えていることにする
+ * (`read_cached_definitions` / `read_cached_commits`). 型検査は definy (`definy.check-commit`) が行う
+ */
+async function submitCheckedCommit(
+  eventHash: string,
+  input: CheckInput,
+): Promise<{ readonly status: number; readonly body: unknown }> {
+  const latestCommits = input.latestCommits ?? [];
+  const latestHash = (index: number) => `latest-${index}`;
+  const definitions = new Map<string, unknown>([
+    ...input.parts.map((part) => [part.contentHash, part.definition] as const),
+    ...latestCommits.flatMap((latest) =>
+      latest.parts.map((part) => [part.content_hash, part.definition] as const),
+    ),
+  ]);
+  const store = await sqlStore({
+    events: [
+      ...createdAccounts([alice]),
+      ...latestCommits.map((_, i) => event(latestHash(i), 10 + i)),
+    ],
+    contents: input.parts.map((part) => ({
+      contentHash: part.contentHash,
+      contentBytes: "AA==",
+    })),
+  });
+  return handleRpcInDefiny(
+    service,
+    "EventService/SubmitEvent",
+    () => ({
+      signedEventBytes: signedEvent({
+        type: "project_commit",
+        commit: {
+          projectName: "app",
+          branch: "main",
+          projectDescription: [],
+          message: "",
+          parentCommitHash: null,
+          mergedCommitHash: null,
+          modules: [
+            {
+              name: "app",
+              description: [],
+              parts: input.parts.map((part) => ({
+                name: part.name,
+                description: [],
+                partType: null,
+                expression: null,
+                contentHash: part.contentHash,
+              })),
+            },
+          ],
+        },
+      }),
+    }),
+    host({
+      ...verifyingHost(eventHash),
+      ...store.host,
+      readCachedCommits: (eventHashes) =>
+        Promise.resolve(
+          latestCommits.flatMap((latest, i) =>
+            eventHashes.includes(latestHash(i))
+              ? [
+                  {
+                    event_hash: latestHash(i),
+                    commit: some({
+                      account_id: "alice",
+                      project_name: latest.project_name,
+                      branch: "main",
+                      time_ms: 10 + i,
+                      modules: [
+                        {
+                          name: latest.project_name,
+                          id: `module-${latest.project_name}`,
+                          parts: latest.parts.map((part) => ({
+                            id: part.id,
+                            name: part.name,
+                            module_name: part.module_name,
+                            module_id: part.module_id,
+                            module_visibility: part.module_visibility,
+                            content_hash: part.content_hash,
+                          })),
+                        },
+                      ],
+                    }),
+                  },
+                ]
+              : [],
+          ),
+        ),
+      readCachedDefinitions: (contentHashes) =>
+        Promise.resolve(
+          contentHashes.flatMap((contentHash) =>
+            definitions.has(contentHash)
+              ? [
+                  {
+                    content_hash: contentHash,
+                    definition: definitions.get(contentHash),
+                  },
+                ]
+              : [],
+          ),
+        ),
+      writeCachedDefinitions: () => Promise.resolve(),
+    }),
+  );
+}
 
 describe("handleRpcInDefiny", () => {
   it("GetProjectBranches はブランチと最新のイベントを返す", async () => {
@@ -384,10 +521,6 @@ describe("handleRpcInDefiny", () => {
           steps.push(`verify ${publicKey.length} ${message.length}`);
           return Promise.resolve(true);
         },
-        readCommitCheckInput: () => {
-          steps.push("type check");
-          return Promise.resolve(null);
-        },
         ...overrides,
       });
     };
@@ -414,7 +547,6 @@ describe("handleRpcInDefiny", () => {
       "sql SELECT events create_account,500,0",
       // CAS に足りない中身 (create_account には中身が無いので文も無い)
       "sql",
-      "type check",
       "sql INSERT events e1,…,…,create_account,1000000,1000000",
     ]);
     // created_at_rfc3339 は definy が SQL で time_ms から作る
@@ -443,24 +575,6 @@ describe("handleRpcInDefiny", () => {
       body: {
         code: "invalid_argument",
         message: "the account has already been created",
-      },
-    });
-    expect(
-      await submit(
-        { signedEventBytes: signed },
-        submitHost({
-          readCommitCheckInput: () =>
-            Promise.resolve(
-              checkInput({ parts: [checkPart("x", null, "c1")] }),
-            ),
-        }),
-      ),
-    ).toEqual({
-      status: 400,
-      body: {
-        code: "invalid_argument",
-        message:
-          "app.x: the content c1 is not a part definition that evaluates to a core.part-content",
       },
     });
     const rejected = (message: string) => ({
@@ -514,6 +628,14 @@ describe("handleRpcInDefiny", () => {
         modules: options.modules,
       },
     });
+    // 中身 (CAS) は数 1 の定義の式の CBOR
+    const numberDefinitionBytes = bytesToBase64(
+      encodeCborItem(
+        partDefinitionExpression(
+          content({ "#type_number": null }, { "#number": 1 }),
+        ),
+      ),
+    );
     const reads: Array<string> = [];
     const submitCommit = async (
       content: EventContent,
@@ -535,7 +657,6 @@ describe("handleRpcInDefiny", () => {
               reads,
             )
           ).host,
-          readCommitCheckInput: () => Promise.resolve(null),
         }),
       );
     const commitX = projectCommit({
@@ -571,7 +692,7 @@ describe("handleRpcInDefiny", () => {
         commitX,
         ["hash-x", "hash-x2"].map((contentHash) => ({
           contentHash,
-          contentBytes: "AA==",
+          contentBytes: numberDefinitionBytes,
         })),
       ),
     ).toEqual({
@@ -583,6 +704,11 @@ describe("handleRpcInDefiny", () => {
       "sql SELECT events project_commit,500,0",
       "cached m1",
       "sql SELECT cas_contents hash-x,hash-x2",
+      // 型検査の入力 (definy.read-commit-check-input): main の最新のコミットと, 定義の式を CAS から読んで覚える
+      "sql SELECT events project_commit,500,0",
+      "cached m1",
+      "sql SELECT cas_contents hash-x,hash-x2",
+      "cache definitions hash-x,hash-x2",
       "sql INSERT events e2,…,…,project_commit,1000000,1000000",
     ]);
 
@@ -609,22 +735,7 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent の型検査は definy.check-commit が service.wasm の中で型チェッカーを呼んで行う", async () => {
-    const submitWith = async (input: unknown) =>
-      handleRpcInDefiny(
-        service,
-        "EventService/SubmitEvent",
-        () => ({
-          signedEventBytes: signedEvent({
-            type: "create_account",
-            accountName: "alice",
-          }),
-        }),
-        host({
-          ...verifyingHost("e3"),
-          ...(await sqlStore()).host,
-          readCommitCheckInput: () => Promise.resolve(input),
-        }),
-      );
+    const submitWith = (input: CheckInput) => submitCheckedCommit("e3", input);
     const number = { "#type_number": null };
     const reference = (id: string) => ({
       "#part_reference": { part_definition_event_hash: id },
@@ -672,6 +783,18 @@ describe("handleRpcInDefiny", () => {
           "part 'app.v': type error: undefined_variable (variable_id: 7)",
           "part 'app.hole': not supported: Expression has an unfilled hole",
         ].join("\n"),
+      },
+    });
+
+    // 中身が定義の式でなければ拒否する
+    expect(
+      await submitWith(checkInput({ parts: [checkPart("x", null, "c1")] })),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message:
+          "app.x: the content c1 is not a part definition that evaluates to a core.part-content",
       },
     });
 
@@ -743,22 +866,8 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent はパーツの定義の式を definy がその場で読むか, 評価器 (core.eval-value) で評価して読む", async () => {
-    const submitWith = async (parts: ReadonlyArray<unknown>) =>
-      handleRpcInDefiny(
-        service,
-        "EventService/SubmitEvent",
-        () => ({
-          signedEventBytes: signedEvent({
-            type: "create_account",
-            accountName: "alice",
-          }),
-        }),
-        host({
-          ...verifyingHost("e4"),
-          ...(await sqlStore()).host,
-          readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
-        }),
-      );
+    const submitWith = (parts: ReadonlyArray<CheckPart>) =>
+      submitCheckedCommit("e4", { parts });
     // core.define-part / core.define-type の呼び出しは評価器を使わずに読む
     expect(
       await submitWith([
@@ -784,7 +893,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await submitWith([
         {
-          ...(checkPart("y", null) as object),
+          ...checkPart("y", null),
           definition: some({ "#number": 1 }),
         },
       ]),
@@ -810,7 +919,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await submitWith([
         {
-          ...(checkPart("z", null) as object),
+          ...checkPart("z", null),
           definition: some({
             "#record": [
               field("description", { "#list": [] }),
@@ -859,7 +968,6 @@ describe("handleRpcInDefiny", () => {
           ...verifyingHost("e5"),
           ...(await sqlStore({ events: createdAccounts(accountIds) }, reads))
             .host,
-          readCommitCheckInput: () => Promise.resolve(null),
         }),
       );
     const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);

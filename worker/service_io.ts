@@ -28,6 +28,17 @@ export type ServiceIoHost = {
     entries: ReadonlyArray<CommitCacheEntry>,
   ) => Promise<void>;
   /**
+   * この isolate が覚えている, CAS の中身を定義の式として読んだもの (`read_cached_definitions`.
+   * `definy.definition-cache-entry` の値). 覚えていない content hash は入れない
+   */
+  readonly readCachedDefinitions: (
+    contentHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<DefinitionCacheEntry>>;
+  /** definy が読んだものを覚える (`write_cached_definitions`) */
+  readonly writeCachedDefinitions: (
+    entries: ReadonlyArray<DefinitionCacheEntry>,
+  ) => Promise<void>;
+  /**
    * SQL の文を順に実行し, それぞれの結果の行を返す (`sql`. 2 つ以上なら 1 つのトランザクション).
    * 行は列の名前から値 (文字列, 整数, `null`) で, 列は SELECT の順
    */
@@ -42,15 +53,6 @@ export type ServiceIoHost = {
   ) => Promise<boolean>;
   /** 今の時刻 (Unix エポックからのミリ秒. `read_time`) */
   readonly now: () => number;
-  /**
-   * プロジェクトのコミットなら, 検査に使うもの (`definy.commit-check-source` の値. パーツは定義の式のまま) を読む.
-   * プロジェクトのコミットでなければ `null`
-   */
-  readonly readCommitCheckInput: (signedEventBytes: string) => Promise<unknown>;
-  /** そのパーツ (コミットの外. 各プロジェクトの `main` の最新) の定義の式 (同じ順. 無ければ `undefined`) */
-  readonly readPartDefinitions: (
-    partIds: ReadonlyArray<string>,
-  ) => Promise<ReadonlyArray<unknown>>;
   /** Base64 の中身の SHA-256 (URL-safe Base64. 同じ順. Base64 でなければ `undefined`) */
   readonly hashContents: (
     contentsBytes: ReadonlyArray<string>,
@@ -92,6 +94,12 @@ export type ServiceIoHost = {
 export type CommitCacheEntry = {
   readonly event_hash: string;
   readonly commit: unknown;
+};
+
+/** `definy.definition-cache-entry` (`definition` は `option<core.expression>` の値) */
+export type DefinitionCacheEntry = {
+  readonly content_hash: string;
+  readonly definition: unknown;
 };
 
 /** `definy.sql-value` */
@@ -347,28 +355,25 @@ async function runServiceIo(
         ]);
         break;
       }
-      case "read_commit_check_input": {
-        const input = await host.readCommitCheckInput(
-          String(
-            instance.read(instance.recordField(payload, "signed_event_bytes")),
+      case "read_cached_definitions": {
+        const entries = await host.readCachedDefinitions(
+          readStrings(
+            instance.read(instance.recordField(payload, "content_hashes")),
           ),
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(input === null ? none() : some(input)),
+          instance.writeArgument(entries),
         ]);
         break;
       }
-      case "read_part_definitions": {
-        const ids = instance.read(instance.recordField(payload, "part_ids"));
-        const definitions = await host.readPartDefinitions(
-          (Array.isArray(ids) ? ids : []).map(String),
+      case "write_cached_definitions": {
+        await host.writeCachedDefinitions(
+          instance.read(
+            instance.recordField(payload, "entries"),
+          ) as ReadonlyArray<DefinitionCacheEntry>,
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            definitions.map((definition) =>
-              definition === undefined ? none() : some(definition),
-            ),
-          ),
+          instance.writeArgument(true),
         ]);
         break;
       }

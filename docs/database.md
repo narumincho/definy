@@ -58,7 +58,7 @@ RPC が読み書きする SQL は definy の `definy.store-*` (`seeds/definy.jso
 
 - D1 は 1 つの文のパラメーターの数に上限があるので, `IN` は `definy.sql-in-statements` で 50 個ずつの文に分ける
 - 受け付けたコミットの一覧は definy (`definy.read-commits`) が `project_commit` のイベントを 500 件ずつ読み, `definy.decode-stored-commit` で読む。読んだものはホストが isolate ごとにイベントハッシュで覚える (`read_cached_commits` / `write_cached_commits`. 2026-11-01 ユーザーの決定)
-- 型チェッカーの入力 (`read_commit_check_input` / `read_part_definitions`) はまだホスト (TypeScript)
+- 型チェッカーの入力も definy (`definy.read-commit-check-input`) が読む。CAS の中身を定義の式として読んだものはホストが isolate ごとに content hash で覚える (`read_cached_definitions` / `write_cached_definitions`)
 - 以前の TypeScript は保存のときに Base64 を標準の形にそろえていたが, 今は definy が受け取った文字列をそのまま保存する
   (中身のハッシュは `hash_contents` で前もって確かめるので, 違う形の Base64 でもバイト列は同じ)
 - テスト (`worker/service_io.test.ts`) は sqlite の D1 に行を入れて, definy が流した SQL を `sql SELECT events ...` のように記録して確かめる

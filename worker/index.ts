@@ -1,9 +1,5 @@
 import serviceModule from "../wasm/service.wasm?module";
-import {
-  readCommitCheckInput,
-  readExternalPartDefinitions,
-} from "./type_check.ts";
-import { commitCacheHost } from "./commit_store.ts";
+import { commitCacheHost, definitionCacheHost } from "./commit_store.ts";
 import {
   handleRequestInDefiny,
   type HttpFetchRequest,
@@ -121,14 +117,10 @@ export async function handleWorkerRequest(
       },
       {
         ...commitCacheHost,
+        ...definitionCacheHost,
         runSql: (statements) => runD1Statements(requireDb(env), statements),
         verifyEd25519,
         now: Date.now,
-        // 型チェッカー
-        readCommitCheckInput: (signedEventBytes) =>
-          readCommitCheckInput(signedEventBytes, store, env),
-        readPartDefinitions: (partIds) =>
-          readExternalPartDefinitions(partIds, store, env),
         hashContents: (contentsBytes) =>
           Promise.all(
             contentsBytes.map(async (contentBytes) => {
