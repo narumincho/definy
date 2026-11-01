@@ -29,7 +29,6 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 | `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
 | `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)       |
 | `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                  |
-| `decode_part_contents`        | `values: list<core.value>`, `then: (contents: list<option<core.part-content>>) -> ...`              | 評価器で評価した値を, 形を確かめて `core.part-content` にする                     |
 | `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                          |
 | `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                |
 | `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                     |
@@ -98,8 +97,9 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
    型の付いた値に読めなければ (呼び出しの形だが `core.part-content` にならなければ) 中身は `none` で, 評価器でも評価しない
 2. それ以外の定義の式は評価器で評価する。評価で参照するコミットの外のパーツの式は, `quote` の外の参照 (`definy.evaluated-part-references`) を
    たどって `read_part_definitions` で読む (`definy.collect-evaluation-parts`。外のパーツは 1 の形の定義のものだけ使える)
-3. `core.eval-value` で評価し, 値 (`core.value`) を `decode_part_contents` でホストに `core.part-content` にしてもらう
-   (`core.value` を型の付いた `core.expression` にする関数が definy にまだ無いため。ホストは `core.value-conforms` で形を確かめる)。
+3. `core.eval-value` で評価し, 値 (`core.value`) を `core.value-to-part-content` で `core.part-content` にする
+   ([value-decoder.md](value-decoder.md)。形が違えば `none`)。以前 (2026-11-01 まで) は definy に `core.value` を型の付いた値にする関数が無く,
+   `decode_part_contents` でホストに頼んでいた。
    求まったパーツの式を使って, 求まるものがある間繰り返す (`definy.evaluate-pending-definitions`)。評価器で求めたパーツは
    定義の式も型検査する (`definition_check`)
 
@@ -150,5 +150,4 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 ## 今後
 
 - 型環境 (main の最新のコミット) の定義の式の評価も definy にする
-- `core.value` を型の付いた値 (`core.expression` など) にする関数を definy で書き, `decode_part_contents` をなくす
 - `HttpProxyService` は EventService ではないので, まだ TypeScript。

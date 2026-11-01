@@ -88,9 +88,6 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
   readPartDefinitions: () => Promise.reject(new Error("not read")),
-  decodePartContents: () => {
-    throw new Error("not decoded");
-  },
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
@@ -479,7 +476,6 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent はパーツの定義の式を definy がその場で読むか, 評価器 (core.eval-value) で評価して読む", async () => {
-    const decoded: Array<ReadonlyArray<unknown>> = [];
     const submitWith = (parts: ReadonlyArray<unknown>) =>
       handleRpcInDefiny(
         service,
@@ -496,14 +492,10 @@ describe("handleRpcInDefiny", () => {
           readAccountCreated: () => Promise.resolve(false),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
-          decodePartContents: (values) => {
-            decoded.push(values);
-            return values.map(() => undefined);
-          },
           writeEvent: () => Promise.resolve("e4"),
         }),
       );
-    // core.define-part / core.define-type の呼び出しは評価器を使わずに読む (decodePartContents を呼ばない)
+    // core.define-part / core.define-type の呼び出しは評価器を使わずに読む
     expect(
       await submitWith([
         checkPart("color", {
@@ -523,9 +515,8 @@ describe("handleRpcInDefiny", () => {
       status: 200,
       body: { eventHash: "e4", status: "accepted", missingContentHashes: [] },
     });
-    expect(decoded).toEqual([]);
 
-    // それ以外は評価器で評価し, 値をホストに core.part-content にしてもらう
+    // それ以外は評価器で評価し, 値を definy (core.value-to-part-content) が core.part-content にする
     expect(
       await submitWith([
         {
@@ -541,7 +532,51 @@ describe("handleRpcInDefiny", () => {
           "app.y: the content hash-y is not a part definition that evaluates to a core.part-content",
       },
     });
-    expect(decoded).toEqual([[{ "#number": 1 }]]);
+    const field = (key: string, value: unknown) => ({ key, value });
+    const option = (value: unknown) => ({
+      "#variant": {
+        tag: value === undefined ? "none" : "some",
+        payload: value === undefined ? { "#none": null } : { "#some": value },
+        type_part: { "#none": null },
+      },
+    });
+    const quoted = (expression: unknown) => ({
+      "#record_get": { record: { "#quote": expression }, key: "expression" },
+    });
+    expect(
+      await submitWith([
+        {
+          ...(checkPart("z", null) as object),
+          definition: some({
+            "#record": [
+              field("description", { "#list": [] }),
+              field("visibility", {
+                "#variant": {
+                  tag: "public",
+                  payload: { "#none": null },
+                  type_part: { "#none": null },
+                },
+              }),
+              field("part_type", option(quoted({ "#type_number": null }))),
+              field(
+                "expression",
+                option(quoted({ "#string": "not a number" })),
+              ),
+            ],
+          }),
+        },
+      ]),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        // 評価器で求めたパーツは定義の式も型検査する (空のリストは型が決まらない)
+        message: [
+          "part 'app.z (definition)': type error: cannot_infer_empty_list",
+          "part 'app.z': type error: type_mismatch (expected: number, actual: string)",
+        ].join("\n"),
+      },
+    });
   });
 
   it("UploadContent は SHA-256 が content hash と一致するときだけ保存する", async () => {
