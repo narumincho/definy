@@ -8,6 +8,7 @@ import type {
   SeedBundle,
   SeedEventEntry,
 } from "./types.ts";
+import type { SqlRow, SqlStatement } from "./service_io.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import seedFingerprintFile from "../seeds/seed_bundle_fingerprint.json" with { type: "json" };
 
@@ -125,7 +126,7 @@ async function fetchSeedBundle(
  * 保存先は常に `env.DB` (Cloudflare D1)。無ければ例外 (2026-11-01 にインメモリストアを無くした。テストは sqlite の D1 を使う)
  */
 /** `env.DB` (D1). 無ければ例外 (サーバーは D1 が無いと動かない) */
-function requireDb(env: Env | undefined): D1Database {
+export function requireDb(env: Env | undefined): D1Database {
   if (env?.DB === undefined) {
     throw new Error("the D1 binding DB is required");
   }
@@ -385,68 +386,6 @@ export class WorkerStore {
   }
 
   /**
-   * 単一イベントを `eventHash` で取得する
-   */
-  async getEvent(eventHash: string, env?: Env): Promise<EventItem | undefined> {
-    const db = requireDb(env);
-    await this.ensureD1Schema(db);
-    const row = await db
-      .prepare(
-        `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
-       FROM events
-       WHERE event_hash = ?`,
-      )
-      .bind(eventHash)
-      .first<D1EventRow>();
-    if (!row) {
-      return undefined;
-    }
-    return {
-      eventHash: row.event_hash,
-      signedEventBytes: row.signed_event_bytes,
-      accountId: row.account_id,
-      eventType: row.event_type,
-      createdAtRfc3339: row.created_at_rfc3339,
-      timeMs:
-        row.time_ms ??
-        (row.created_at_rfc3339 ? Date.parse(row.created_at_rfc3339) : 0),
-    };
-  }
-
-  /**
-   * definy (`definy.submit-event`) が署名・規則・CAS に足りない中身・型を確かめたイベントを保存する (`write_event`).
-   * メタデータも definy が読んだもの. Base64 は標準の形にそろえる. 既にあるイベントは何もしない
-   */
-  async writeEvent(
-    event: {
-      readonly signedEventBytes: string;
-      readonly eventHash: string;
-      readonly accountId: string;
-      readonly eventType: string;
-      readonly timeMs: number;
-    },
-    env?: Env,
-  ): Promise<void> {
-    const normalizedB64 = bytesToBase64(base64ToBytes(event.signedEventBytes));
-    const createdAtRfc3339 = new Date(event.timeMs).toISOString();
-
-    await requireDb(env)
-      .prepare(
-        `INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(
-        event.eventHash,
-        normalizedB64,
-        event.accountId,
-        event.eventType,
-        createdAtRfc3339,
-        event.timeMs,
-      )
-      .run();
-  }
-
-  /**
    * 指定されたハッシュ一覧のうち、CAS に未保存のハッシュ一覧を返す
    */
   async checkMissingHashes(
@@ -518,28 +457,6 @@ export class WorkerStore {
   }
 
   /**
-   * 指定された単一ハッシュに対応する CAS コンテンツを取得する
-   */
-  async getContentItem(
-    hash: string,
-    env?: Env,
-  ): Promise<ContentItem | undefined> {
-    const row = await requireDb(env)
-      .prepare(
-        `SELECT content_hash, content_bytes FROM cas_contents WHERE content_hash = ?`,
-      )
-      .bind(hash)
-      .first<D1ContentRow>();
-    if (!row) {
-      return undefined;
-    }
-    return {
-      contentHash: row.content_hash,
-      contentBytes: row.content_bytes,
-    };
-  }
-
-  /**
    * 指定されたハッシュ一覧に対応する CAS コンテンツを取得する
    */
   async getContentItems(
@@ -570,20 +487,26 @@ export class WorkerStore {
       return b64 !== undefined ? [{ contentHash: h, contentBytes: b64 }] : [];
     });
   }
-
-  /**
-   * 指定されたハッシュの CAS コンテンツを生バイト列として取得する
-   */
-  async getRawContentBytes(
-    hash: string,
-    env?: Env,
-  ): Promise<Uint8Array | undefined> {
-    const item = await this.getContentItem(hash, env);
-    if (!item) {
-      return undefined;
-    }
-    return base64ToBytes(item.contentBytes);
-  }
 }
 
 export const defaultStore = new WorkerStore();
+
+/**
+ * definy の `sql` の文を D1 で順に実行し, それぞれの結果の行を返す (docs/database.md).
+ * 2 つ以上の文は `batch` で 1 つのトランザクションにする
+ */
+export async function runD1Statements(
+  db: D1Database,
+  statements: ReadonlyArray<SqlStatement>,
+): Promise<ReadonlyArray<ReadonlyArray<SqlRow>>> {
+  const prepared = statements.map((statement) =>
+    db.prepare(statement.sql).bind(...statement.params),
+  );
+  if (prepared.length === 1) {
+    return [(await prepared[0]!.all<SqlRow>()).results];
+  }
+  if (prepared.length === 0) {
+    return [];
+  }
+  return (await db.batch<SqlRow>(prepared)).map((result) => result.results);
+}

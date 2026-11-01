@@ -10,36 +10,31 @@ import {
   type HttpHeader,
   type ServiceResult,
 } from "./service_io.ts";
-import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
+import {
+  defaultStore,
+  requireDb,
+  runD1Statements,
+  WorkerStore,
+} from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import type { ContentItem, Env } from "./types.ts";
+import type { Env } from "./types.ts";
 
 export type { Env } from "./types.ts";
 export { defaultStore, WorkerStore } from "./store.ts";
 
-type ConnectErrorCode = "invalid_argument" | "internal";
-
-const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
-  invalid_argument: 400,
-  internal: 500,
-};
-
 /**
- * ホストの能力 (ストアなど) が例外を投げたときのレスポンス. 処理が決めるレスポンスではないので, CORS のヘッダーだけ付ける.
- * 中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
+ * ホストの能力 (ストアなど) が例外を投げたときのレスポンス. 処理が決めるレスポンスではないので, CORS のヘッダーだけ付ける
  */
 function hostErrorResponse(error: unknown): Response {
-  const code: ConnectErrorCode =
-    error instanceof InvalidContentError ? "invalid_argument" : "internal";
   return new Response(
     JSON.stringify({
-      code,
+      code: "internal",
       message: error instanceof Error ? error.message : String(error),
     }),
     {
-      status: CONNECT_ERROR_STATUS[code],
+      status: 500,
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Origin": "*",
@@ -65,15 +60,6 @@ function parseJsonObject(
     return { invalid: "request body must be an object" };
   }
   return { json: parsed };
-}
-
-/** `hashes` の順に, 見つかった中身 (無ければ `undefined`) */
-function contentsInOrder(
-  hashes: ReadonlyArray<string>,
-  items: ReadonlyArray<ContentItem>,
-): ReadonlyArray<ContentItem | undefined> {
-  const byHash = new Map(items.map((item) => [item.contentHash, item]));
-  return hashes.map((hash) => byHash.get(hash));
 }
 
 /** Ed25519 の署名を確かめる (`verify_ed25519`). 公開鍵として読めなければ `false` */
@@ -158,14 +144,7 @@ export async function handleWorkerRequest(
       },
       {
         readCommits: () => loadCommitSummaries(store, env),
-        readEvents: (hashes) =>
-          Promise.all(hashes.map((hash) => store.getEvent(hash, env))),
-        readEventsPage: (page) => store.getEvents(page, env),
-        readContents: async (hashes) =>
-          contentsInOrder(hashes, await store.getContentItems(hashes, env)),
-        // definy はコミットのパーツの content hash を重複を除かずに渡す
-        readMissingContentHashes: (hashes) =>
-          store.checkMissingHashes([...new Set(hashes)], env),
+        runSql: (statements) => runD1Statements(requireDb(env), statements),
         verifyEd25519,
         now: Date.now,
         // 型チェッカー
@@ -173,7 +152,6 @@ export async function handleWorkerRequest(
           readCommitCheckInput(signedEventBytes, store, env),
         readPartDefinitions: (partIds) =>
           readExternalPartDefinitions(partIds, store, env),
-        writeEvent: (event) => store.writeEvent(event, env),
         hashContents: (contentsBytes) =>
           Promise.all(
             contentsBytes.map(async (contentBytes) => {
@@ -184,7 +162,6 @@ export async function handleWorkerRequest(
               }
             }),
           ),
-        writeContents: (items) => store.uploadContent(items, env),
         readAuthorization: async () => {
           try {
             const accountId = await verifyRpcAuthorization(
@@ -207,15 +184,6 @@ export async function handleWorkerRequest(
         httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
         ensureSeeded: () => store.ensureSeeded(env, url.origin),
         readRequestJson: async () => parseJsonObject(await readBody()),
-        readRawContent: async (key) => {
-          const bytes = await store.getRawContentBytes(key, env);
-          return bytes
-            ? {
-                contentHash: await sha256EventHashId(bytes),
-                bytesBase64: bytesToBase64(new Uint8Array(bytes)),
-              }
-            : undefined;
-        },
       },
     );
   } catch (e) {
