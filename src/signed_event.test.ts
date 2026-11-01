@@ -3,7 +3,8 @@ import {
   createSignedAccountEvent,
   generateAccountCredentials,
 } from "./auth.ts";
-import { base64ToBytes, sha256EventHashId } from "./cbor.ts";
+import { base64ToBytes } from "./base64.ts";
+import { sha256EventHashId } from "./sha256.ts";
 import {
   createInvalidSignatureSamples,
   type InvalidSignatureSample,

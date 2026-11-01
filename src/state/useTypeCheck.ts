@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AccountState } from "../types.ts";
 import type { CommitModulesResult } from "./useWorkingChanges.ts";
-import {
-  bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-} from "../cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "../base64.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../part_ids.ts";
 import {
   checkModuleCommitParts,
   checkParts,

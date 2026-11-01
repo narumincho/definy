@@ -1,11 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import {
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  sha256Bytes,
-  sha256BytesSync,
-} from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
+import { sha256Bytes, sha256BytesSync } from "./sha256.ts";
 
 function hex(bytes: Uint8Array): string {
   return bytes.toHex();

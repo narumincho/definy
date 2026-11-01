@@ -2,7 +2,7 @@
  * 開発用システムアカウント. `DEFINY_SYSTEM_ACCOUNT_*` が未設定のとき, seed の署名やビルトインモジュールの所有者に使う
  * (秘密鍵は公開されている. 詳細は docs/system-account.md). Worker からも使うので Node.js 専用の API は使わない
  */
-import { base64ToBytes } from "./cbor.ts";
+import { base64ToBytes } from "./base64.ts";
 
 /** 開発用システムアカウント鍵のシード (秘密鍵が公開されている. docs/system-account.md) */
 export const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(

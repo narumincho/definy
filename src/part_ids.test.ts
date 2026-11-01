@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
 import {
-  bytesToUrlSafeBase64NoPad,
   deriveModuleIdBytes,
   deriveModulePartId,
-} from "./cbor.ts";
+  derivePartIds,
+} from "./part_ids.ts";
 import { compileSeedFunction } from "./event_check.ts";
-import { derivePartIds } from "./part_ids.ts";
 import { loadSeedPartExpressions } from "./seed_parts.ts";
 import {
   createStage1Compiler,

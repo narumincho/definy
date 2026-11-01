@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { LocalizedText } from "./cbor.ts";
+import type { LocalizedText } from "./event_content.ts";
 
 /** seeds/projects/*.json に書く, ビルトインのプロジェクト (docs/project.md) */
 export type ProjectSeedData = {

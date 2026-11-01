@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 
 export {
   DEV_SYSTEM_KEY_SEED,

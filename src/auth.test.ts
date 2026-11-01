@@ -5,13 +5,9 @@ import {
   createSignedAccountEvent,
   submitSignedEvent,
 } from "./auth.ts";
-import {
-  base64ToBytes,
-  decodeCborItem,
-  extractCreateAccount,
-  extractProjectCommit,
-  toUint8Array,
-} from "./cbor.ts";
+import { base64ToBytes } from "./base64.ts";
+import { decodeCborItem, toUint8Array } from "./cbor.ts";
+import { extractCreateAccount, extractProjectCommit } from "./decoded_event.ts";
 import { verifySignedEvent } from "./signed_event.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 import { cachedContent } from "./content_store.ts";

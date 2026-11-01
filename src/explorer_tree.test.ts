@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildExplorerTree } from "./explorer_tree.ts";
-import type { DecodedProjectCommit } from "./cbor.ts";
+import type { DecodedProjectCommit } from "./decoded_event.ts";
 import type { ModuleSnapshot, PartSnapshot, ProjectSnapshot } from "./types.ts";
 
 const branch = (name: string, latestEventHash: string) => ({

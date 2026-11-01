@@ -1,5 +1,6 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
-import { bytesToBase64, sha256EventHashId } from "../src/cbor.ts";
+import { bytesToBase64 } from "../src/base64.ts";
+import { sha256EventHashId } from "../src/sha256.ts";
 import {
   type AccountCredentials,
   createSignedAccountEvent,

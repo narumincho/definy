@@ -5,11 +5,8 @@
  */
 import { variant } from "./definy_value.ts";
 import { hole } from "./tree_layout/expression.ts";
-import {
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  type DecodedPart,
-} from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import { DEFAULT_VISIBILITY, MAIN_BRANCH } from "./event_content.ts";
 import type {
   ModulePartSnapshot,

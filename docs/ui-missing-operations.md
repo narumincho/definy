@@ -41,7 +41,7 @@ Playwright で操作して確かめた。直したらこの一覧から消し, �
 
 ## 調べ方
 
-- `npm run dev` には Node 26 が要る (`src/cbor.ts` が `Uint8Array.prototype.toBase64` を使う)。Node 22 だと `build:seeds` が `bytes.toBase64 is not a function` で落ちる
+- `npm run dev` には Node 26 が要る (`src/base64.ts` が `Uint8Array.prototype.toBase64` を使う)。Node 22 だと `build:seeds` が `bytes.toBase64 is not a function` で落ちる
 - Playwright の `launchPersistentContext` でプロファイルを残すと, UI で作ったアカウント (`definy.account.v1`) と作業中の変更が次の実行にも残るので,
   1 操作ずつ別のスクリプトにして `ariaSnapshot()` とスクリーンショットで確かめられる
 - 置換メニューの候補は `.dropdown-option`, 検索欄は `.dropdown-search-input`, 式のバッジは `.tree-badge`。

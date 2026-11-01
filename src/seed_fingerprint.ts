@@ -3,7 +3,8 @@
  * `npm run build:seeds` が seed バンドルと `seeds/seed_bundle_fingerprint.json` に書き,
  * Worker は D1 に記録した指紋と比べて, 違えば seed を入れ直す (`worker/store.ts`)
  */
-import { bytesToUrlSafeBase64NoPad, sha256Bytes } from "./cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { sha256Bytes } from "./sha256.ts";
 
 export async function seedBundleFingerprint(bundle: {
   readonly events: ReadonlyArray<{ readonly eventHash: string }>;

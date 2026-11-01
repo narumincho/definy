@@ -6,7 +6,8 @@
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
-import { base64ToBytes, decodeCborItem } from "../src/cbor.ts";
+import { base64ToBytes } from "../src/base64.ts";
+import { decodeCborItem } from "../src/cbor.ts";
 import {
   isTypePartType,
   latestPartsToModuleEntries,

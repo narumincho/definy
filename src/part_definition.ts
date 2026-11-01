@@ -8,7 +8,7 @@
  * `core.define-part` / `core.define-type` の呼び出し) だけをその場で評価する. 結果が stage1 で評価したものと同じことは
  * src/part_definition.test.ts で確かめている
  */
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import {
   field,
   optionValue,

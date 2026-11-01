@@ -9,11 +9,11 @@ import {
   base64ToBytes,
   bytesToBase64,
   bytesToUrlSafeBase64NoPad,
-  encodeCborItem,
-  sha256EventHashId,
-  type LocalizedText,
-} from "../src/cbor.ts";
+} from "../src/base64.ts";
+import { encodeCborItem } from "../src/cbor.ts";
+import { sha256EventHashId } from "../src/sha256.ts";
 import {
+  type LocalizedText,
   DEFAULT_VISIBILITY,
   encodeEventContent,
   MAIN_BRANCH,
@@ -37,7 +37,7 @@ import {
   loadProjectSeeds,
   type ProjectSeedData,
 } from "../src/seed_projects.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import type {
   SeedBundle,
   SeedContentEntry,

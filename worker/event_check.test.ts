@@ -6,7 +6,8 @@ import {
   type AccountCredentials,
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
-import { base64ToBytes, bytesToBase64, encodeCborItem } from "../src/cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
+import { encodeCborItem } from "../src/cbor.ts";
 import { MALFORMED_CONTENT_MESSAGE } from "./event_check.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";

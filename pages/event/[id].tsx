@@ -9,7 +9,7 @@ import {
   eventTypeInfo,
 } from "../../src/components/EventTimeline.tsx";
 import { CopyButton } from "../../src/components/CopyButton.tsx";
-import { extractCreateAccount } from "../../src/cbor.ts";
+import { extractCreateAccount } from "../../src/decoded_event.ts";
 import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import type { DecodedCommitEvent } from "../../src/state/useEvents.ts";

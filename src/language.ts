@@ -1,4 +1,4 @@
-import type { LocalizedText } from "./cbor.ts";
+import type { LocalizedText } from "./event_content.ts";
 import type { LanguageCode } from "./types.ts";
 
 export function label(

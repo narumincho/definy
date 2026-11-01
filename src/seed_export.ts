@@ -1,11 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { importAccountCredentials } from "./auth.ts";
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  decodeCborItem,
-} from "./cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { decodeCborItem } from "./cbor.ts";
 import { devSystemAccountBytes } from "./seed_parts.ts";
 import {
   MAIN_BRANCH,
@@ -22,7 +19,7 @@ import {
   type ProjectSeedData,
 } from "./seed_projects.ts";
 import { decodeVerifiedSignedEvent } from "./signed_event.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
 
 const PAGE_SIZE = 500;

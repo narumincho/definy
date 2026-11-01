@@ -10,11 +10,8 @@ import { loadCommitSummaries } from "./commit_store.ts";
 import { handleRpcInDefiny } from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
-import {
-  base64ToBytes,
-  bytesToBase64,
-  sha256EventHashId,
-} from "../src/cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
+import { sha256EventHashId } from "../src/sha256.ts";
 import type {
   ContentItem,
   Env,

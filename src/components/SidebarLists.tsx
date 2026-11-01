@@ -2,7 +2,7 @@ import { useMemo, type JSX } from "react";
 import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
 import { dateLocale, eventTypeInfo } from "./EventTimeline.tsx";
-import { extractCreateAccount } from "../cbor.ts";
+import { extractCreateAccount } from "../decoded_event.ts";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 

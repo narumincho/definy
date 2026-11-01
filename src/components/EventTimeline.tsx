@@ -7,7 +7,7 @@ import {
   ModuleIcon,
   type IconComponent,
 } from "../icons.tsx";
-import { extractCreateAccount } from "../cbor.ts";
+import { extractCreateAccount } from "../decoded_event.ts";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import type { DecodedCommitEvent } from "../state/useEvents.ts";

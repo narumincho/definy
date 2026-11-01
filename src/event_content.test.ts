@@ -3,7 +3,8 @@ import {
   generateAccountCredentials,
   importPrivateKeyFromSecretKey,
 } from "./auth.ts";
-import { base64ToBytes, encodeCborItem } from "./cbor.ts";
+import { base64ToBytes } from "./base64.ts";
+import { encodeCborItem } from "./cbor.ts";
 import {
   decodeEventContent,
   decodePartContent,

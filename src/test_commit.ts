@@ -8,8 +8,8 @@ import {
   type CommitModuleParams,
   type SignedProjectCommitResult,
 } from "./auth.ts";
-import type { DecodedPart, LocalizedText } from "./cbor.ts";
-import type { Visibility } from "./event_content.ts";
+import type { DecodedPart } from "./decoded_event.ts";
+import type { LocalizedText, Visibility } from "./event_content.ts";
 
 export function createSignedSingleModuleCommitEvent(
   params: {

@@ -19,7 +19,7 @@ import {
   extractProjectCommit,
   type DecodedPart,
   type DecodedProjectCommit,
-} from "../cbor.ts";
+} from "../decoded_event.ts";
 import { verifyEventRecord } from "../signed_event.ts";
 import {
   displayedBranch,

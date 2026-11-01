@@ -2,8 +2,7 @@
  * definy の TypeScript フロントエンド共通型定義
  */
 import type { BranchSummary } from "./branches.ts";
-import type { LocalizedText } from "./cbor.ts";
-import type { Visibility } from "./event_content.ts";
+import type { LocalizedText, Visibility } from "./event_content.ts";
 import type { EventVerification } from "./signed_event.ts";
 
 export type LanguageCode = "en" | "ja" | "eo";

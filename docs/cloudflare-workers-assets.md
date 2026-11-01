@@ -48,7 +48,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 - `worker/`
   - `index.ts`: Worker リクエストハンドラー
   - `store.ts`: シードバンドルロード、D1 (SQLite) ストア
-  - `cbor.ts`: 決定論的 CBOR & Ed25519 ユーティリティ
+  - `commit_store.ts`: 受け付けたコミットの読み出しとブランチの最新のコミット
   - `types.ts`: 型定義
 
 ---
