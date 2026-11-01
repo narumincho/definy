@@ -1,6 +1,8 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { variantFromOptionValue } from "./variant.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
+import { recordExpressionFor, recordGetExpression } from "./record_fields.ts";
+import { RECORD_FIELD_OPTION_PREFIX } from "./selector_options.ts";
 import { BUILTIN_PARAMETERS, compilerBuiltinName } from "../stage1_compiler.ts";
 import { none, variant, variantPayload } from "../definy_value.ts";
 import {
@@ -304,6 +306,19 @@ export function applySelection(
     newSubExpr = hole();
   } else if (selectionValue === "expr:list") {
     newSubExpr = variant("list", []);
+  } else if (selectionValue === "expr:record") {
+    // 期待する型がレコードなら, そのフィールドを未入力にしておく
+    newSubExpr = recordExpressionFor(expectedType);
+  } else if (selectionValue === "expr:record_get") {
+    newSubExpr = recordGetExpression(hole(), "key");
+  } else if (selectionValue.startsWith(RECORD_FIELD_OPTION_PREFIX)) {
+    const [id = "", ...key] = selectionValue
+      .slice(RECORD_FIELD_OPTION_PREFIX.length)
+      .split(":");
+    newSubExpr = recordGetExpression(
+      variableExpression(Number(id)),
+      key.join(":"),
+    );
   } else if (selectionValue === "expr:secret") {
     // ID はシークレットを区別するだけなので, 作るときにランダムに決める (値はブラウザに保存する. docs/secret.md)
     newSubExpr = variant("secret", {

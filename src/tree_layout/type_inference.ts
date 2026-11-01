@@ -139,6 +139,10 @@ export function getOptionValueForExpression(node: unknown): string | null {
       return payload === false ? "expr:boolean:false" : "expr:boolean:true";
     case "list":
       return "expr:list";
+    case "record":
+      return "expr:record";
+    case "record_get":
+      return "expr:record_get";
     case "quote":
       return "expr:quote";
     case "secret":
