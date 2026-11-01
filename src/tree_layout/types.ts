@@ -91,7 +91,7 @@ export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   chipPaddingX: 8,
 };
 
-export function pathStepToString(step: PathStep): string {
+function pathStepToString(step: PathStep): string {
   if (typeof step === "string") {
     return step;
   }

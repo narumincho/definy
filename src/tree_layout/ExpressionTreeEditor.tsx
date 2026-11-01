@@ -106,7 +106,7 @@ export type ExpressionTypeError = {
   readonly message: string;
 };
 
-export type ExpressionTreeEditorProps = {
+type ExpressionTreeEditorProps = {
   readonly expression: unknown;
   readonly partType?: unknown;
   /**

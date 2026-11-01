@@ -3,8 +3,8 @@ import type { AccountState } from "../types.ts";
 import type { CommitModulesResult } from "./useWorkingChanges.ts";
 import {
   bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
 } from "../cbor.ts";
 import {
   checkModuleCommitParts,
@@ -18,8 +18,7 @@ import {
   type TypeCheckSession,
 } from "../self_hosted_type_check.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
-import { loadTypeChecker } from "../type_checker_browser.ts";
-import { loadVisibilityChecker } from "../visibility_checker_browser.ts";
+import { loadTypeChecker, loadVisibilityChecker } from "../wasm_browser.ts";
 import { onRebuiltCompilerChange } from "../rebuilt_compiler.ts";
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import {
@@ -51,7 +50,7 @@ function yieldToBrowser(): Promise<void> {
   });
 }
 
-export type TypeCheckParams = {
+type TypeCheckParams = {
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   /**
    * コミット済みのパーツに作業中の変更を重ねたもの (src/working_parts.ts). 式エディタの検査・型の問い合わせの型環境にする.
@@ -67,7 +66,7 @@ export type TypeCheckParams = {
   readonly buildCommitModules: (projectName: string) => CommitModulesResult;
 };
 
-export type TypeCheckOperations = {
+type TypeCheckOperations = {
   readonly partTypeCheckResults: ReadonlyMap<
     string,
     SelfHostedTypeCheckOutcome
@@ -311,13 +310,13 @@ export function useTypeCheck({
       }
       const typeChecker = await loadTypeChecker();
       const moduleIdOf = (name: string): string =>
-        bytesToUrlSafeBase64NoPad(deriveModuleIdBytesSync(name));
+        bytesToUrlSafeBase64NoPad(deriveModuleIdBytes(name));
       const committed = modules.flatMap((module) => {
-        const moduleIdBytes = deriveModuleIdBytesSync(module.name);
+        const moduleIdBytes = deriveModuleIdBytes(module.name);
         const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
         const changed = changedModuleNames.has(module.name);
         return module.parts.map((part) => {
-          const partId = deriveModulePartIdSync(moduleIdBytes, part.name);
+          const partId = deriveModulePartId(moduleIdBytes, part.name);
           return {
             partId,
             moduleId,

@@ -4,7 +4,7 @@ import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { typeAstToExpression } from "./part_type.ts";
 import { useDefiny } from "../state.tsx";
 
-export type TypeTreeViewProps = {
+type TypeTreeViewProps = {
   /** 表示する型 (`core.type-ast` の値) */
   readonly type: unknown;
   /** 1 行に収める幅の目安 (px). 超えると式と同じように縦に並べる */

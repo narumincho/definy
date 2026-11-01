@@ -31,10 +31,10 @@ export type InvalidSignatureSample = {
 };
 
 /** サンプルのモジュール名。不正なイベントを表示から除外できていなければ、このモジュールが一覧に現れる */
-export const INVALID_SIGNATURE_SAMPLE_MODULE_NAME = "invalid_signature_sample";
+const INVALID_SIGNATURE_SAMPLE_MODULE_NAME = "invalid_signature_sample";
 
 /** サンプルのアカウント名。不正なイベントを除外できていなければ、アカウント一覧に現れる */
-export const INVALID_SIGNATURE_SAMPLE_ACCOUNT_NAME = "invalid-signature-sample";
+const INVALID_SIGNATURE_SAMPLE_ACCOUNT_NAME = "invalid-signature-sample";
 
 /**
  * seed に入れるサンプルを署名する鍵の種 (32 バイト)。seed バンドルを何度作っても同じになるよう固定する。

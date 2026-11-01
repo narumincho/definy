@@ -16,7 +16,7 @@ import {
   type PathStep,
 } from "./types.ts";
 
-export type TreeLayoutRendererProps = {
+type TreeLayoutRendererProps = {
   readonly node: LayoutNode;
   readonly selectedPath?: ReadonlyArray<PathStep> | null;
   readonly hoveredId?: string | null;
@@ -65,7 +65,7 @@ function TypeErrorMarker({
   );
 }
 
-export function nodeBadgeColors(kind: NodeKind): {
+function nodeBadgeColors(kind: NodeKind): {
   readonly bg: string;
   readonly color: string;
   readonly border: string;

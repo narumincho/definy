@@ -55,15 +55,8 @@ import {
   base64ToBytes,
   bytesToBase64,
   sha256EventHashId,
-  verifySignedEvent,
-} from "./cbor.ts";
-
-export {
-  base64ToBytes,
-  bytesToBase64,
-  bytesToUrlSafeBase64NoPad,
-  sha256EventHashId,
-} from "./cbor.ts";
+} from "../src/cbor.ts";
+import { verifySignedEvent } from "../src/signed_event.ts";
 
 /** CAS へのアップロード内容が不正であることを表すエラー */
 export class InvalidContentError extends Error {

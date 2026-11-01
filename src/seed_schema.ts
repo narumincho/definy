@@ -40,7 +40,7 @@ function referencedPartName(declaration: unknown): string | undefined {
 }
 
 /** 型パーツの宣言 (`core.expression` の `type_*` の値) を JSON Schema にする */
-export function typeDeclarationToJsonSchema(declaration: unknown): JsonSchema {
+function typeDeclarationToJsonSchema(declaration: unknown): JsonSchema {
   const tagged = variantOf(declaration);
   if (tagged === undefined) {
     return {};
@@ -219,7 +219,7 @@ function referencedPartNames(declaration: unknown): ReadonlyArray<string> {
  * サーバーとブラウザがイベントの形を `conformsToTypeDeclaration` で検査するときに使う
  * (seeds/core.json は大きいので, 必要な宣言だけを seeds/schemas/event-types.json に書き出す)
  */
-export function reachableTypeDeclarations(
+function reachableTypeDeclarations(
   coreParts: ReadonlyArray<SeedSchemaPart>,
   rootNames: ReadonlyArray<string>,
 ): Readonly<Record<string, unknown>> {

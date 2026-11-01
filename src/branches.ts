@@ -26,13 +26,14 @@ export type BranchSummary = {
 };
 
 /** プロジェクト名付きのブランチ */
-export type ProjectBranchSummary = BranchSummary & {
+type ProjectBranchSummary = BranchSummary & {
   readonly projectName: string;
 };
 
 /**
- * コミット (ストアの順) を全プロジェクトのブランチに, 最初に現れた順でまとめる. サーバーの `GetProjectBranches` が使う
- * (ブラウザは全コミットを読まず, その結果を受け取る).
+ * コミット (ストアの順) を全プロジェクトのブランチに, 最初に現れた順でまとめる. サーバーがコミットを受け付けるときに
+ * main やブランチの最新のコミットを求めるのに使う (worker/type_check.ts). `GetProjectBranches` は definy の
+ * `definy.handle-rpc` が同じ `core.project-branches` を呼ぶ (docs/service.md). ブラウザは全コミットを読まず, その結果を受け取る.
  * まとめ方は definy 製の `core.project-branches` で, `npm run build:seeds` がコンパイルした `wasm/branch_summarizer.wasm` を `summarizer` に渡す
  */
 export function summarizeBranches(

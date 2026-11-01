@@ -210,15 +210,6 @@ export function partContentFromValue(value: unknown): PartContent {
   };
 }
 
-/** 中身を読んだパーツにする (content hash はそのまま) */
-export function withPartContent<T extends CommitPart>(
-  part: T,
-  content: PartContent,
-): T {
-  const { unresolved: _, ...rest } = part;
-  return { ...rest, ...content } as T;
-}
-
 /** definy の値 (`core.event-content`) をイベントの中身にする. 形が違えば `undefined` */
 export function decodeEventContent(value: unknown): EventContent | undefined {
   if (!isEventContent(value)) {

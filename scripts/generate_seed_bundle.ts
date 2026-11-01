@@ -37,7 +37,7 @@ import {
   loadProjectSeeds,
   type ProjectSeedData,
 } from "../src/seed_projects.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
 import type {
   SeedBundle,
   SeedContentEntry,
@@ -162,10 +162,10 @@ async function seedPartExpressions(
 ): Promise<ReadonlyMap<string, unknown>> {
   const partExpressions = new Map<string, unknown>();
   for (const mod of modules.values()) {
-    const moduleId = await deriveModuleIdBytes(mod.module_name);
+    const moduleId = deriveModuleIdBytes(mod.module_name);
     for (const part of mod.parts) {
       partExpressions.set(
-        await deriveModulePartId(moduleId, String(part.name)),
+        deriveModulePartId(moduleId, String(part.name)),
         part.expression ?? undefined,
       );
     }
@@ -390,8 +390,8 @@ export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
     core: {
-      typeChecker: await deriveModulePartId(
-        await deriveModuleIdBytes("core"),
+      typeChecker: deriveModulePartId(
+        deriveModuleIdBytes("core"),
         "type-checker",
       ),
     },
@@ -456,10 +456,7 @@ async function compileSeedPart(
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
-    partId: await deriveModulePartId(
-      await deriveModuleIdBytes(moduleName),
-      partName,
-    ),
+    partId: deriveModulePartId(deriveModuleIdBytes(moduleName), partName),
     resolvePart: (id) => partExpressions.get(id),
   });
 }

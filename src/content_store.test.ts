@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   bytesToBase64,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
   encodeCborItem,
   sha256EventHashIdSync,
   type DecodedPart,
@@ -31,7 +31,7 @@ const evaluate: DefinitionEvaluator = (definition, resolve) =>
   evaluateDefinition(evaluator, definition, resolve);
 
 const partId = (moduleName: string, name: string) =>
-  deriveModulePartIdSync(deriveModuleIdBytesSync(moduleName), name);
+  deriveModulePartId(deriveModuleIdBytes(moduleName), name);
 const reference = (id: string) => ({
   "#part_reference": { part_definition_event_hash: id },
 });

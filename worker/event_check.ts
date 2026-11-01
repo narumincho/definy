@@ -15,10 +15,8 @@ import {
 import { conformsInDefiny, contentForCheck } from "../src/event_check.ts";
 import type { EventContent } from "../src/event_content.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
-import type { PartStoreReader } from "./type_check.ts";
+import { storeEvents, type PartStoreReader } from "./commit_store.ts";
 import type { Env } from "./types.ts";
-
-const EVENTS_PAGE_SIZE = 500;
 
 /** そのアカウントの `create_account` をすでに受け付けたか */
 export async function isAccountCreated(
@@ -26,18 +24,12 @@ export async function isAccountCreated(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<boolean> {
-  for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
-    const page = await store.getEvents(
-      { eventType: "create_account", limit: EVENTS_PAGE_SIZE, offset },
-      env,
-    );
-    if (page.some((item) => item.accountId === accountId)) {
+  for await (const item of storeEvents(store, "create_account", env)) {
+    if (item.accountId === accountId) {
       return true;
     }
-    if (page.length < EVENTS_PAGE_SIZE) {
-      return false;
-    }
   }
+  return false;
 }
 
 /** SignedEvent の内側のイベントの `content` (CBOR から読んだまま). 読めなければ `undefined` */
@@ -62,7 +54,7 @@ export const MALFORMED_CONTENT_MESSAGE =
   "content must be a value of core.event-content";
 
 /** 署名を確かめて読んだイベント (`definy.verified-event`) か, 受け付けない理由 */
-export type VerifiedEvent =
+type VerifiedEvent =
   | {
       readonly eventHash: string;
       readonly accountId: string;

@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
-import { bytesToBase64 } from "./store.ts";
+import { bytesToBase64 } from "../src/cbor.ts";
 import {
   createInvalidSignatureSamples,
   invalidSignatureSampleContents,

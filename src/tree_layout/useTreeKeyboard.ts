@@ -10,7 +10,7 @@ import {
 } from "./keyboard.ts";
 import type { DefinitionTarget } from "./go_to_definition.ts";
 
-export type UseTreeKeyboardParams = {
+type UseTreeKeyboardParams = {
   readonly containerRef: RefObject<HTMLDivElement | null>;
   readonly selectedPath: ReadonlyArray<PathStep> | null;
   readonly setSelectedPath: (path: ReadonlyArray<PathStep> | null) => void;
@@ -31,7 +31,7 @@ export type UseTreeKeyboardParams = {
   readonly openPart: (partIdHash: string) => void;
 };
 
-export type TreeKeyboardOperations = {
+type TreeKeyboardOperations = {
   readonly focusContainer: () => void;
   readonly returnToTree: () => void;
   readonly handleContainerKeyDown: (e: KeyboardEvent<HTMLDivElement>) => void;

@@ -11,7 +11,7 @@ SignedEvent = { signature: bytes(64), event_binary: tag24(bytes(Event)) }
 Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateAccount | ChangeProfile | ModuleCommit: ... } }
 ```
 
-`src/signed_event.ts` の `verifySignedEvent` (`worker/cbor.ts` から再エクスポート) が次を確認し、1 つでも満たさなければ `invalid_argument` (400) を返す。
+`src/signed_event.ts` の `verifySignedEvent` が次を確認し、1 つでも満たさなければ `invalid_argument` (400) を返す。
 
 - 末尾に余分なバイトが無く、上の形をしている
 - `event_binary` (tag 24 の中身のバイト列そのもの) に対する `signature` が、`account_id` を公開鍵とする Ed25519 署名として正しい

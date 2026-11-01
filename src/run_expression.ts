@@ -51,7 +51,7 @@ export type RunOutcome =
     }
   | { readonly kind: "error"; readonly message: string };
 
-export type RunExpressionOptions = {
+type RunExpressionOptions = {
   readonly compiler: Stage1CompilerInstance;
   /** パーツ ID (URL-safe Base64) からパーツの式 (作業中の変更があればそちら). 無ければ `undefined` */
   readonly resolvePart: (partId: string) => unknown;
@@ -67,7 +67,7 @@ export type RunExpressionOptions = {
 };
 
 /** {@link RunExpressionOptions.fillTypeArguments} */
-export type TypeArgumentFiller = {
+type TypeArgumentFiller = {
   /** 式 (`partType` はその式の型. 実行パネルの入力のように型が無ければ未入力) を埋めた式か `null` */
   readonly fill: (part: {
     readonly partType: unknown;
@@ -81,7 +81,7 @@ export type TypeArgumentFiller = {
  * 未入力のある式とパーツの式を, 未確定の型引数を推論した型で埋めたものにする.
  * 埋められなかったパーツは元の式のまま (コンパイルで `unresolved` になる)
  */
-export async function fillRunTypeArguments(
+async function fillRunTypeArguments(
   expression: unknown,
   resolvePart: (partId: string) => unknown,
   filler: TypeArgumentFiller,
@@ -184,7 +184,7 @@ export async function runExpression(
   }
 }
 
-export type RunValueExpressionOptions = {
+type RunValueExpressionOptions = {
   /**
    * 式の型 (`core.type-ast` の値). 分からなければ `null`.
    * stage1 から受け取る浮動小数は JavaScript の数なので, 整数の値の浮動小数 (`2.0`) は型が `float` のときだけ見分けられる
@@ -207,7 +207,7 @@ const MAX_TYPE_RESOLVE_DEPTH = 32;
  * 型を返すパーツ `(T) => union {...}` は, 本体の引数の変数を呼び出しの型引数にした型にする.
  * 展開できなければ `null`
  */
-export function resolveRunValueType(
+function resolveRunValueType(
   type: unknown,
   resolvePart: (partId: string) => unknown,
 ): unknown {

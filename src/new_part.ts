@@ -6,8 +6,8 @@
 import { variant } from "./definy_value.ts";
 import { hole } from "./tree_layout/expression.ts";
 import {
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
   type DecodedPart,
 } from "./cbor.ts";
 import { DEFAULT_VISIBILITY, MAIN_BRANCH } from "./event_content.ts";
@@ -28,7 +28,7 @@ export type NewPartKind =
   /** 型パーツ (式が型の宣言. 未入力で始める) */
   | "type";
 
-export type NewPartInput = {
+type NewPartInput = {
   readonly moduleName: string;
   readonly name: string;
   readonly kind: NewPartKind;
@@ -96,7 +96,7 @@ export function validateProjectName(
 }
 
 /** モジュール `moduleName` の (作業中の変更を重ねた) パーツ名 */
-export function partNamesInModule(
+function partNamesInModule(
   moduleName: string,
   parts: ReadonlyArray<Pick<PartSnapshot, "moduleName" | "name" | "partId">>,
   workingChanges: WorkingChanges,
@@ -310,8 +310,8 @@ export function newPartSnapshot(
     partType: change.partType,
     contentHash: null,
     // コミットしたときの ID (今の名前から決まる. 名前を変えたら参照も付け替える. src/rename_part.ts)
-    partIdHash: deriveModulePartIdSync(
-      deriveModuleIdBytesSync(moduleName),
+    partIdHash: deriveModulePartId(
+      deriveModuleIdBytes(moduleName),
       change.name,
     ),
     expression: change.expression,

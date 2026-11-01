@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 
 export {
   DEV_SYSTEM_KEY_SEED,
@@ -8,8 +8,8 @@ export {
 
 async function seedPartId(name: string): Promise<string> {
   const dot = name.indexOf(".");
-  const moduleId = await deriveModuleIdBytes(name.slice(0, dot));
-  return await deriveModulePartId(moduleId, name.slice(dot + 1));
+  const moduleId = deriveModuleIdBytes(name.slice(0, dot));
+  return deriveModulePartId(moduleId, name.slice(dot + 1));
 }
 
 /**
@@ -61,10 +61,10 @@ export async function loadSeedPartExpressions(): Promise<
         readonly expression?: unknown;
       }>;
     };
-    const moduleId = await deriveModuleIdBytes(seed.module_name);
+    const moduleId = deriveModuleIdBytes(seed.module_name);
     for (const part of seed.parts) {
       map.set(
-        await deriveModulePartId(moduleId, part.name),
+        deriveModulePartId(moduleId, part.name),
         await resolvePartPlaceholders(part.expression ?? null),
       );
     }

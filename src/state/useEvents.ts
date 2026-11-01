@@ -3,7 +3,7 @@ import type { VisibilityTarget } from "../visibility.ts";
 import {
   loadDefinitionEvaluator,
   loadedDefinitionEvaluator,
-} from "../definition_evaluator_browser.ts";
+} from "../wasm_browser.ts";
 import { evaluateDefinition } from "../definition_evaluator.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
@@ -42,9 +42,7 @@ export type DecodedCommitEvent = {
 };
 
 /** コミットの全モジュールのパーツ */
-export function commitParts(
-  commit: DecodedProjectCommit,
-): ReadonlyArray<DecodedPart> {
+function commitParts(commit: DecodedProjectCommit): ReadonlyArray<DecodedPart> {
   return commit.modules.flatMap((module) => module.parts);
 }
 
@@ -52,7 +50,7 @@ export function commitParts(
  * プロジェクトのコミット (各プロジェクトの表示しているブランチの最新のもの) のパーツを集める (キーはパーツ ID).
  * 型チェッカーの型環境に使う
  */
-export function latestParts(
+function latestParts(
   decodedCommits: ReadonlyArray<DecodedCommitEvent>,
 ): ReadonlyMap<string, LatestPart> {
   const parts = new Map<string, LatestPart>();
@@ -82,7 +80,7 @@ export function latestParts(
   return parts;
 }
 
-export type EventsState = {
+type EventsState = {
   /**
    * 読んだイベント (新しい順). 全イベントではなく, 最新の 100 件, 各プロジェクトの各ブランチの最新のコミット,
    * 全アカウントの作成, `loadEvent` で読んだもの

@@ -19,7 +19,7 @@ export type DefinitionRow =
 /** パーツ定義のツリーの表示: 項目ごと (説明・型・式) か, 定義の式 1 つか */
 export type DefinitionView = "fields" | "definition";
 
-export const DEFINITION_ROWS: ReadonlyArray<DefinitionRow> = [
+const DEFINITION_ROWS: ReadonlyArray<DefinitionRow> = [
   "name",
   "module",
   "description",
@@ -28,7 +28,7 @@ export const DEFINITION_ROWS: ReadonlyArray<DefinitionRow> = [
 ];
 
 /** 定義の式で表示しているときの行 */
-export const DEFINITION_EXPRESSION_ROWS: ReadonlyArray<DefinitionRow> = [
+const DEFINITION_EXPRESSION_ROWS: ReadonlyArray<DefinitionRow> = [
   "name",
   "module",
   "definition",

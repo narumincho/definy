@@ -25,7 +25,7 @@ import type { SelectorOption } from "./selector_options.ts";
  */
 const VARIANT_PREFIX = "variant:";
 
-export function variantOptionValue(
+function variantOptionValue(
   typePartIdHash: string | null,
   variant: PatternVariant,
 ): string {

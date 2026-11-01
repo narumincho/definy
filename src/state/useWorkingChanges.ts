@@ -57,7 +57,7 @@ export type CommitWorkingChangesParams = {
   readonly createBranch?: boolean;
 };
 
-export type WorkingChangesParams = {
+type WorkingChangesParams = {
   readonly currentAccount: AccountState | null;
   readonly projects: ReadonlyArray<ProjectSnapshot>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
@@ -82,7 +82,7 @@ export type CommitModulesResult = {
   readonly changedModuleNames: ReadonlySet<string>;
 };
 
-export type WorkingChangesOperations = {
+type WorkingChangesOperations = {
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
@@ -117,7 +117,7 @@ export type WorkingChangesOperations = {
  * 作業中の変更 `workingChanges` を, プロジェクト `projectName` のモジュールに重ねる.
  * `projectOf` はモジュール名から入っているプロジェクトを返す. パーツの無くなったモジュールはコミットに入れない
  */
-export function overlayProjectChanges(
+function overlayProjectChanges(
   projectName: string,
   project: ProjectSnapshot | undefined,
   modules: ReadonlyArray<ModuleSnapshot>,

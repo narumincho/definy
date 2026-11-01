@@ -9,12 +9,12 @@ import {
 
 const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
-export type AccountParams = {
+type AccountParams = {
   readonly accountNames: ReadonlyMap<string, string>;
   readonly refreshEvents: () => Promise<void>;
 };
 
-export type AccountOperations = {
+type AccountOperations = {
   readonly currentAccount: AccountState | null;
   readonly setCurrentAccount: (account: AccountState | null) => void;
   readonly loginWithSecretKey: (

@@ -41,7 +41,7 @@ export type EventCheckFacts = {
 };
 
 /** `core.event-rejection` の値. `tag` はバリアント名 (`parent_commit_mismatch` など) */
-export type EventRejection = {
+type EventRejection = {
   readonly tag: string;
   readonly payload: unknown;
 };
@@ -142,7 +142,7 @@ export function checkEvent(
 }
 
 /** CBOR から読んだ値を `core.value` の値にする (`core.value-conforms` に渡す) */
-export function toCoreValue(value: unknown): unknown {
+function toCoreValue(value: unknown): unknown {
   if (typeof value === "string") {
     return variant("string", value);
   }

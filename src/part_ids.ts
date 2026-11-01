@@ -7,12 +7,12 @@
  */
 import { instantiateCompiledFunction } from "./stage1_compiler.ts";
 
-export type ModulePartNames = {
+type ModulePartNames = {
   readonly moduleName: string;
   readonly partNames: ReadonlyArray<string>;
 };
 
-export type ModulePartIds = {
+type ModulePartIds = {
   readonly moduleId: string;
   /** `partNames` と同じ順のパーツ ID */
   readonly partIds: ReadonlyArray<string>;

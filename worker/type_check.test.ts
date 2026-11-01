@@ -19,10 +19,10 @@ import {
   resolveSeedPartType,
 } from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
-import { latestCommitHashOf } from "./type_check.ts";
+import { latestCommitHashOf } from "./commit_store.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
@@ -114,8 +114,8 @@ async function partReference(
 ): Promise<unknown> {
   return {
     "#part_reference": {
-      part_definition_event_hash: await deriveModulePartId(
-        await deriveModuleIdBytes(moduleName),
+      part_definition_event_hash: deriveModulePartId(
+        deriveModuleIdBytes(moduleName),
         partName,
       ),
     },
@@ -182,8 +182,8 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
                 "#type_list": {
                   item_type: {
                     "#part_reference": {
-                      part_definition_event_hash: await deriveModulePartId(
-                        await deriveModuleIdBytes("core"),
+                      part_definition_event_hash: deriveModulePartId(
+                        deriveModuleIdBytes("core"),
                         "localized-text",
                       ),
                     },
@@ -195,8 +195,8 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
           ],
           return_type: {
             "#part_reference": {
-              part_definition_event_hash: await deriveModulePartId(
-                await deriveModuleIdBytes("core"),
+              part_definition_event_hash: deriveModulePartId(
+                deriveModuleIdBytes("core"),
                 "part-content",
               ),
             },
@@ -224,8 +224,8 @@ describe("ユーザーが作った定義のパーツ (docs/part-definition.md)",
                 tag: "number",
                 payload: { "#some": { "#variable": { variable_id: 1 } } },
                 type_part: {
-                  "#some": await deriveModulePartId(
-                    await deriveModuleIdBytes("core"),
+                  "#some": deriveModulePartId(
+                    deriveModuleIdBytes("core"),
                     "expression",
                   ),
                 },

@@ -10,7 +10,7 @@ import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { AccountsIcon } from "../icons.tsx";
 
-export type AccountModalProps = {
+type AccountModalProps = {
   readonly open: boolean;
   readonly onClose: () => void;
 };

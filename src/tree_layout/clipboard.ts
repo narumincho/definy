@@ -18,18 +18,18 @@ import {
 } from "./expression.ts";
 
 /** クリップボードの JSON の `format` の値. これが無い文字列は貼り付けない */
-export const EXPRESSION_CLIPBOARD_FORMAT = "definy.expression";
+const EXPRESSION_CLIPBOARD_FORMAT = "definy.expression";
 
 /** 置換メニューの選択肢の value */
 export const CLIPBOARD_COPY = "clipboard:copy";
 export const CLIPBOARD_CUT = "clipboard:cut";
-export const CLIPBOARD_PASTE = "clipboard:paste";
+const CLIPBOARD_PASTE = "clipboard:paste";
 
 export function isClipboardAction(value: string): boolean {
   return value.startsWith("clipboard:");
 }
 
-export type ExpressionClipboardData = {
+type ExpressionClipboardData = {
   readonly format: typeof EXPRESSION_CLIPBOARD_FORMAT;
   readonly version: 1;
   /** 式のツリーエディタ (`expression`) か, パーツの型のツリーエディタ (`type`) か. 違う種類には貼り付けない */
@@ -165,7 +165,7 @@ export function parseClipboardText(
  * - 式の外の変数は, 貼り付け先から参照できる同じ名前の変数に付け替える. 同じ ID で同じ名前ならそのまま.
  *   見つからなければ未入力 (`hole`) にする (その変数の呼び出しなら呼び出しごと未入力にする)
  */
-export function remapPastedVariables(
+function remapPastedVariables(
   data: ExpressionClipboardData,
   firstFreshId: number,
   scopeVariables: ReadonlyMap<number, string> | undefined,

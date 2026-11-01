@@ -27,7 +27,7 @@ export type SelectorOption = {
   readonly partId?: string | undefined;
 };
 
-export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
+const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   {
     value: "expr:number",
     name: "number",
@@ -256,7 +256,7 @@ export function typePartSelectorOptions(
 }
 
 /** パーツの型の短い表記 (`number`, `function` など). 選択肢の名前の横に出す */
-export function partTypeText(partType: unknown): string | undefined {
+function partTypeText(partType: unknown): string | undefined {
   const tagged = variantOf(partType);
   if (tagged === undefined) {
     return undefined;
@@ -290,7 +290,7 @@ export function partSelectorOptions(
 }
 
 /** その位置から参照できる変数 (関数のパラメーター, let の束縛, match の束縛) の選択肢 */
-export function variableSelectorOptions(
+function variableSelectorOptions(
   scopeVariables: ReadonlyMap<number, string>,
 ): ReadonlyArray<SelectorOption> {
   return [...scopeVariables].map(([id, name]) => ({

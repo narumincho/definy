@@ -13,7 +13,7 @@ import { useDefiny } from "../state.tsx";
 import type { DecodedCommitEvent } from "../state/useEvents.ts";
 import type { EventRecord, LanguageCode } from "../types.ts";
 
-export type EventTypeInfo = {
+type EventTypeInfo = {
   readonly type: string;
   readonly en: string;
   readonly ja: string;

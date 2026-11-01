@@ -42,7 +42,7 @@ export type Stage1CompilerInstance = {
 type ValuesRef = { readonly [valueRefBrand]: "values" };
 
 /** stage1 でコンパイルした Wasm のエクスポート (`core.wasm-runtime-exports`) */
-export type WasmExports = {
+type WasmExports = {
   readonly evaluate: () => ValueRef;
   readonly table: WebAssembly.Table;
   /** 文字列を渡すための置き場. 値は GC のヒープにある */
@@ -196,7 +196,7 @@ function valuesOf(exports: WasmExports, value: ValueRef): Array<ValueRef> {
 }
 
 /** Wasm の値を JavaScript の値 (docs/value-encoding.md の JSON の形) として読む */
-export function readDefinyValue(
+function readDefinyValue(
   exports: WasmExports,
   value: ValueRef | null,
 ): DefinyValue {

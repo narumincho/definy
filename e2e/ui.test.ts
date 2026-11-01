@@ -13,10 +13,7 @@ import {
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
-import {
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
-} from "../src/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
 
 /** イベントを `SubmitEvent` で出す. プロジェクトのコミットなら先にパーツの中身を `UploadContent` で送る */
 async function submitEvent(
@@ -47,11 +44,6 @@ function callCapsule(tree: Locator, functionName: string): Locator {
       }),
     })
     .last();
-}
-
-/** 呼び出しのカプセルの左端 (子のノードの外側) をクリックして, 呼び出しそのものを選ぶ */
-async function clickCallCapsule(capsule: Locator): Promise<void> {
-  await capsule.click({ position: { x: 3, y: 8 } });
 }
 
 test.describe("definy UI E2E", () => {
@@ -632,7 +624,7 @@ test.describe("definy UI E2E", () => {
     };
     await submit(await createSignedAccountEvent(credentials));
     const moduleName = `def_${suffix}`;
-    const core = deriveModuleIdBytesSync("core");
+    const core = deriveModuleIdBytes("core");
     const tagged = (tag: string, payload?: unknown, typePart?: string) => ({
       "#variant": {
         tag,
@@ -659,7 +651,7 @@ test.describe("definy UI E2E", () => {
                 parameters: [{ name: "value", type: { "#type_number": null } }],
                 return_type: {
                   "#part_reference": {
-                    part_definition_event_hash: deriveModulePartIdSync(
+                    part_definition_event_hash: deriveModulePartId(
                       core,
                       "part-content",
                     ),
@@ -674,7 +666,7 @@ test.describe("definy UI E2E", () => {
                   "#call": {
                     function: {
                       "#part_reference": {
-                        part_definition_event_hash: deriveModulePartIdSync(
+                        part_definition_event_hash: deriveModulePartId(
                           core,
                           "define-part",
                         ),
@@ -699,7 +691,7 @@ test.describe("definy UI E2E", () => {
                           tagged(
                             "number",
                             { "#variable": { variable_id: 0 } },
-                            deriveModulePartIdSync(core, "expression"),
+                            deriveModulePartId(core, "expression"),
                           ),
                         ),
                       },

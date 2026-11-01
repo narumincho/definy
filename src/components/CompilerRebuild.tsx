@@ -7,7 +7,7 @@ import {
   saveRebuiltCompiler,
   type RebuiltCompiler,
 } from "../rebuilt_compiler.ts";
-import { loadStage1Bytes } from "../stage1_browser.ts";
+import { loadStage1Bytes } from "../wasm_browser.ts";
 import type { LanguageCode } from "../types.ts";
 
 /** 作り直すときに, できたコンパイラで自分自身をコンパイルし直す最大の回数 */

@@ -37,7 +37,7 @@ export function partContentItem(content: PartContent): ContentItem {
 }
 
 /** 定義の式を CAS に預ける形 (CBOR) にする */
-export function definitionContentItem(definition: unknown): ContentItem {
+function definitionContentItem(definition: unknown): ContentItem {
   const bytes = encodeCborItem(definition);
   return {
     contentHash: sha256EventHashIdSync(bytes),

@@ -105,48 +105,15 @@ export type GetProjectBranchesResponse = {
   readonly branches: ReadonlyArray<ProjectBranchItem>;
 };
 
-export type GetEventRequest = {
-  readonly eventHash?: string;
-};
-
-export type GetEventResponse = {
-  readonly event?: EventItem;
-};
-
-export type SubmitEventRequest = {
-  readonly signedEventBytes?: string;
-};
-
 export type SubmitEventResponse = {
   readonly eventHash: string;
   readonly status: "accepted" | "missing_content";
   readonly missingContentHashes: ReadonlyArray<string>;
 };
 
-export type CheckMissingHashesRequest = {
-  readonly contentHashes?: ReadonlyArray<string>;
-};
-
-export type CheckMissingHashesResponse = {
-  readonly missingContentHashes: ReadonlyArray<string>;
-};
-
 export type ContentItem = {
   readonly contentHash: string;
   readonly contentBytes: string;
-};
-
-export type UploadContentRequest = {
-  readonly items?: ReadonlyArray<ContentItem>;
-};
-
-export type UploadContentResponse = {
-  readonly storedContentHashes: ReadonlyArray<string>;
-};
-
-export type GetContentRequest = {
-  readonly contentHash?: string;
-  readonly contentHashes?: ReadonlyArray<string>;
 };
 
 export type GetContentResponse = {

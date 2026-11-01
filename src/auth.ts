@@ -36,7 +36,7 @@ export type SignedProjectCommitResult = SignedEventResult & {
   readonly contents: ReadonlyMap<string, ContentItem>;
 };
 
-export type SubmitEventResult = {
+type SubmitEventResult = {
   readonly eventHash: string;
   readonly status: string;
   readonly missingContentHashes?: ReadonlyArray<string>;
@@ -51,7 +51,7 @@ export type CommitModuleParams = {
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
-export type CreateProjectCommitParams = {
+type CreateProjectCommitParams = {
   readonly credentials: AccountCredentials;
   readonly projectName: string;
   /** コミットするブランチ. 省略すると `main` */

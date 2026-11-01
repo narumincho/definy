@@ -12,7 +12,7 @@ import {
   extractProjectCommit,
   toUint8Array,
 } from "./cbor.ts";
-import { verifySignedEvent } from "../worker/cbor.ts";
+import { verifySignedEvent } from "./signed_event.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 import { cachedContent } from "./content_store.ts";
 

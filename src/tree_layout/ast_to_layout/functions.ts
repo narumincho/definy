@@ -204,9 +204,7 @@ function calleeParameterNames(
  * 呼び出しの引数を, 呼び出す関数の引数の宣言の順に並べる (データ上の順番は自由. docs/call-syntax.md).
  * 宣言に無い引数は後ろにデータの順で並べる. `idx` はデータ上の位置で, パスに使う
  */
-export function argumentsInDeclarationOrder<
-  T extends { readonly name?: unknown },
->(
+function argumentsInDeclarationOrder<T extends { readonly name?: unknown }>(
   args: ReadonlyArray<T>,
   parameterNames: ReadonlyArray<string> | undefined,
 ): ReadonlyArray<{ readonly arg: T; readonly idx: number }> {

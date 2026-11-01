@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytesSync,
-  deriveModulePartIdSync,
+  deriveModuleIdBytes,
+  deriveModulePartId,
 } from "./cbor.ts";
 import { compileSeedFunction } from "./event_check.ts";
 import { derivePartIds } from "./part_ids.ts";
@@ -34,10 +34,7 @@ function callSeedPart(
       new Uint8Array(
         compileSeedFunction({
           compiler,
-          partId: deriveModulePartIdSync(
-            deriveModuleIdBytesSync(moduleName),
-            partName,
-          ),
+          partId: deriveModulePartId(deriveModuleIdBytes(moduleName), partName),
           resolvePart: (id) => seedExpressions.get(id),
         }),
       ),
@@ -87,11 +84,11 @@ describe("derivePartIds (core.module-part-ids)", () => {
     ];
     expect(derivePartIds(deriver, modules)).toEqual(
       modules.map(({ moduleName, partNames }) => {
-        const moduleIdBytes = deriveModuleIdBytesSync(moduleName);
+        const moduleIdBytes = deriveModuleIdBytes(moduleName);
         return {
           moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
           partIds: partNames.map((name) =>
-            deriveModulePartIdSync(moduleIdBytes, name),
+            deriveModulePartId(moduleIdBytes, name),
           ),
         };
       }),
@@ -100,14 +97,14 @@ describe("derivePartIds (core.module-part-ids)", () => {
 
   it("一度求めた名前と新しい名前が混ざっていても順番どおりに返す", () => {
     derivePartIds(deriver, [{ moduleName: "mixed", partNames: ["b"] }]);
-    const moduleIdBytes = deriveModuleIdBytesSync("mixed");
+    const moduleIdBytes = deriveModuleIdBytes("mixed");
     expect(
       derivePartIds(deriver, [
         { moduleName: "mixed", partNames: ["a", "b", "c", "a"] },
       ])[0]?.partIds,
     ).toEqual(
       ["a", "b", "c", "a"].map((name) =>
-        deriveModulePartIdSync(moduleIdBytes, name),
+        deriveModulePartId(moduleIdBytes, name),
       ),
     );
   });

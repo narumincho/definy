@@ -175,7 +175,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
 }
 
 /** アームが `true` / `false` (と `_`) だけの, Bool に対する match か. `_` だけの match は違う */
-export function isBooleanMatch(expression: unknown): boolean {
+function isBooleanMatch(expression: unknown): boolean {
   const arms = matchOf(expression)?.arms ?? [];
   return (
     arms.some((arm) => arm.kind === "boolean") &&
