@@ -37,7 +37,8 @@
 | `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                                                                            |
 | `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                                                                              |
 | `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                                                                          |
-| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)`                                                        |
+| `verify_ed25519`              | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                               | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                         |
+| `read_time`                   | `then: (now_ms: number) -> ...`                                                                     | 今の時刻 (ミリ秒)                                                                                                                        |
 | `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                              |
 | `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                         |
 | `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                                                                                 |
@@ -67,9 +68,11 @@
   - 型の違う値 (例: `eventHash` が数) は, 以前は TypeScript の例外で `internal` になっていたのを, 無いものとして扱うようにした。
 
 - 書き込みの RPC (2026-10-29):
-  - `SubmitEvent` (`definy.submit-event`): `signedEventBytes` の両端の空白を除き, 署名を確かめ (`verify_signed_event`),
+  - `SubmitEvent` (`definy.submit-event`): `signedEventBytes` の両端の空白を除き, 署名を確かめ (`definy.verify-signed-event`. [cbor.md](cbor.md)),
     規則 (`core.check-event`), CAS に足りない中身 (`read_missing_content_hashes`. 足りなければ `missing_content` でそれを返す),
     型検査 (`definy.check-commit`. 下を参照) の順に見てから保存する (`write_event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
+  - (2026-11-01) SignedEvent の Base64・CBOR・中身の型は definy が読み (`definy.verify-signed-event`), ホストは Ed25519 の署名と時刻だけを渡す
+    (`verify_ed25519`, `read_time`)。以前のホストの `verify_signed_event` (`worker/event_check.ts`) は無くした。
   - (2026-10-30) 規則 `core.check-event` は `definy.submit-verified-event` の中で呼ぶ。`verify_signed_event` は
     `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
     中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も

@@ -80,6 +80,10 @@ describe("core.value-to-*", () => {
       "value-to-callee",
       "value-to-match-arm",
       "value-to-pattern",
+      "value-to-event-content",
+      "value-to-project-commit",
+      "value-to-project-commit-module",
+      "value-to-module-commit-part",
     ]);
   });
 

@@ -7,7 +7,6 @@
  * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
 import { none, some, variant, variantOf } from "../src/definy_value.ts";
-import { encodeEventContent, type EventContent } from "../src/event_content.ts";
 import {
   commitSummaryLiteral,
   type CommitSummary,
@@ -40,19 +39,14 @@ export type ServiceIoHost = {
   readonly readMissingContentHashes: (
     contentHashes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<string>>;
-  /**
-   * 署名済みイベント (Base64) の Ed25519 署名を確かめて読む. 不正なら理由 (中身が `core.event-content` の形でないときも).
-   * `content` は規則 (`core.check-event`) に渡す中身 (`contentForCheck`)
-   */
-  readonly verifySignedEvent: (signedEventBytes: string) => Promise<
-    | {
-        readonly eventHash: string;
-        readonly accountId: string;
-        readonly content: EventContent;
-        readonly referencedContentHashes: ReadonlyArray<string>;
-      }
-    | { readonly invalid: string }
-  >;
+  /** Ed25519 の署名 `signature` が公開鍵 `publicKey` で `message` の正しい署名か (`verify_ed25519`) */
+  readonly verifyEd25519: (
+    publicKey: Uint8Array,
+    signature: Uint8Array,
+    message: Uint8Array,
+  ) => Promise<boolean>;
+  /** 今の時刻 (Unix エポックからのミリ秒. `read_time`) */
+  readonly now: () => number;
   /**
    * プロジェクトのコミットなら, 検査に使うもの (`definy.commit-check-source` の値. パーツは定義の式のまま) を読む.
    * プロジェクトのコミットでなければ `null`
@@ -296,23 +290,24 @@ export async function handleRequestInDefiny(
         ]);
         break;
       }
-      case "verify_signed_event": {
-        const result = await host.verifySignedEvent(
-          String(
-            instance.read(instance.recordField(payload, "signed_event_bytes")),
-          ),
+      case "verify_ed25519": {
+        const bytesField = (key: string): Uint8Array => {
+          const value = instance.read(instance.recordField(payload, key));
+          return Uint8Array.from(Array.isArray(value) ? value.map(Number) : []);
+        };
+        const valid = await host.verifyEd25519(
+          bytesField("public_key"),
+          bytesField("signature"),
+          bytesField("message"),
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            "invalid" in result
-              ? variant("invalid", result.invalid)
-              : variant("valid", {
-                  event_hash: result.eventHash,
-                  account_id: result.accountId,
-                  content: encodeEventContent(result.content),
-                  referenced_content_hashes: result.referencedContentHashes,
-                }),
-          ),
+          instance.writeArgument(valid),
+        ]);
+        break;
+      }
+      case "read_time": {
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(host.now()),
         ]);
         break;
       }

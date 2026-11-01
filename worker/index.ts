@@ -1,5 +1,4 @@
 import { InvalidSignedEventError } from "../src/signed_event.ts";
-import { verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   readCommitCheckInput,
@@ -81,6 +80,30 @@ function contentsInOrder(
   return hashes.map((hash) => byHash.get(hash));
 }
 
+/** Ed25519 の署名を確かめる (`verify_ed25519`). 公開鍵として読めなければ `false` */
+async function verifyEd25519(
+  publicKey: Uint8Array,
+  signature: Uint8Array,
+  message: Uint8Array,
+): Promise<boolean> {
+  try {
+    return await crypto.subtle.verify(
+      { name: "Ed25519" },
+      await crypto.subtle.importKey(
+        "raw",
+        publicKey as Uint8Array<ArrayBuffer>,
+        { name: "Ed25519" },
+        false,
+        ["verify"],
+      ),
+      signature as Uint8Array<ArrayBuffer>,
+      message as Uint8Array<ArrayBuffer>,
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** definy の決めたレスポンスを HTTP のレスポンスにする */
 function toResponse(
   result: Extract<ServiceResult, { readonly type: "respond" }>,
@@ -144,10 +167,11 @@ export async function handleWorkerRequest(
         readEventsPage: (page) => store.getEvents(page, env),
         readContents: async (hashes) =>
           contentsInOrder(hashes, await store.getContentItems(hashes, env)),
+        // definy はコミットのパーツの content hash を重複を除かずに渡す
         readMissingContentHashes: (hashes) =>
-          store.checkMissingHashes(hashes, env),
-        // 署名と中身の形を確かめる. 規則 (core.check-event) は definy.submit-event の中で呼ぶ
-        verifySignedEvent: verifySubmittedEvent,
+          store.checkMissingHashes([...new Set(hashes)], env),
+        verifyEd25519,
+        now: Date.now,
         // 型チェッカー
         readCommitCheckInput: (signedEventBytes) =>
           readCommitCheckInput(signedEventBytes, store, env),

@@ -2,7 +2,10 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { CommitSummary } from "../src/event_check.ts";
 import { none, some, variant } from "../src/definy_value.ts";
+import { bytesToBase64, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
+import { encodeCborItem } from "../src/cbor.ts";
 import {
+  encodeEventContent,
   type CommitModule,
   type CommitPart,
   type EventContent,
@@ -132,6 +135,37 @@ const createdAccounts =
         : [],
     );
 
+/** テストのイベントを出したアカウントの公開鍵 (署名は確かめないので何でも良い) */
+const ALICE_PUBLIC_KEY = new Uint8Array(32).fill(7);
+const alice = bytesToUrlSafeBase64NoPad(ALICE_PUBLIC_KEY);
+
+/** {@link signedEvent} の署名した内側のイベント (時刻は 1000 秒) */
+const signedEventInner = (content: EventContent): Uint8Array =>
+  encodeCborItem({
+    account_id: ALICE_PUBLIC_KEY,
+    time: { __tag: 1, value: 1000 },
+    content: encodeEventContent(content),
+  });
+
+const signedEventInnerLength = (content: EventContent): number =>
+  signedEventInner(content).length;
+
+/** `alice` が `content` を出した SignedEvent (Base64). 署名は 0 で埋める ({@link verifyingHost} が正しいとする) */
+const signedEvent = (content: EventContent): string =>
+  bytesToBase64(
+    encodeCborItem({
+      signature: new Uint8Array(64),
+      event_binary: { __tag: 24, value: signedEventInner(content) },
+    }),
+  );
+
+/** `definy.verify-signed-event` が使う能力. 署名は正しいとし, イベントハッシュは `eventHash` */
+const verifyingHost = (eventHash: string): Partial<ServiceIoHost> => ({
+  verifyEd25519: () => Promise.resolve(true),
+  now: () => 1_000_000,
+  hashContents: (contents) => Promise.resolve(contents.map(() => eventHash)),
+});
+
 /** 読まないはずのホスト. `overrides` で読むものだけ与える */
 const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readCommits: () => Promise.reject(new Error("not read")),
@@ -139,7 +173,10 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readEventsPage: () => Promise.reject(new Error("not read")),
   readContents: () => Promise.reject(new Error("not read")),
   readMissingContentHashes: () => Promise.reject(new Error("not read")),
-  verifySignedEvent: () => Promise.reject(new Error("not verified")),
+  verifyEd25519: () => Promise.reject(new Error("not verified")),
+  now: () => {
+    throw new Error("not read");
+  },
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
   readPartDefinitions: () => Promise.reject(new Error("not read")),
   writeEvent: () => Promise.reject(new Error("not written")),
@@ -236,23 +273,15 @@ describe("handleRpcInDefiny", () => {
       type: "create_account",
       accountName: "alice",
     };
+    const signed = signedEvent(createAccount);
     const submitHost = (
       overrides: Partial<ServiceIoHost> = {},
-      content: EventContent = createAccount,
     ): ServiceIoHost =>
       host({
-        verifySignedEvent: (bytes) => {
-          steps.push(`verify ${bytes}`);
-          return Promise.resolve(
-            bytes === "bad"
-              ? { invalid: "Ed25519 signature verification failed" }
-              : {
-                  eventHash: "e1",
-                  accountId: "alice",
-                  content,
-                  referencedContentHashes: ["c1", "c2"],
-                },
-          );
+        ...verifyingHost("e1"),
+        verifyEd25519: (publicKey, _signature, message) => {
+          steps.push(`verify ${publicKey.length} ${message.length}`);
+          return Promise.resolve(true);
         },
         readEventsPage: (page) => {
           steps.push(`events ${page.eventType} ${page.offset}`);
@@ -260,7 +289,7 @@ describe("handleRpcInDefiny", () => {
         },
         readCommits: () => {
           steps.push("commits");
-          return Promise.resolve([commit("m1", "alice", "main", 100)]);
+          return Promise.resolve([commit("m1", alice, "main", 100)]);
         },
         readMissingContentHashes: (hashes) => {
           steps.push(`missing ${hashes.join(",")}`);
@@ -271,7 +300,7 @@ describe("handleRpcInDefiny", () => {
           return Promise.resolve(null);
         },
         writeEvent: (bytes) => {
-          steps.push(`write ${bytes}`);
+          steps.push(`write ${bytes === signed}`);
           return Promise.resolve("e1");
         },
         ...overrides,
@@ -279,22 +308,25 @@ describe("handleRpcInDefiny", () => {
     const submit = (request: unknown, h: ServiceIoHost) =>
       handleRpcInDefiny(service, "EventService/SubmitEvent", () => request, h);
 
-    expect(await submit({ signedEventBytes: " ok\n" }, submitHost())).toEqual({
+    expect(
+      await submit({ signedEventBytes: ` ${signed}\n` }, submitHost()),
+    ).toEqual({
       status: 200,
       body: { eventHash: "e1", status: "accepted", missingContentHashes: [] },
     });
+    const innerLength = signedEventInnerLength(createAccount);
     expect(steps).toEqual([
-      "verify ok",
+      `verify 32 ${innerLength}`,
       "events create_account 0",
-      "missing c1,c2",
+      "missing ",
       "type check",
-      "write ok",
+      "write true",
     ]);
 
     steps.length = 0;
     expect(
       await submit(
-        { signedEventBytes: "ok" },
+        { signedEventBytes: signed },
         submitHost({ readMissingContentHashes: () => Promise.resolve(["c2"]) }),
       ),
     ).toEqual({
@@ -305,12 +337,15 @@ describe("handleRpcInDefiny", () => {
         missingContentHashes: ["c2"],
       },
     });
-    expect(steps).toEqual(["verify ok", "events create_account 0"]);
+    expect(steps).toEqual([
+      `verify 32 ${innerLength}`,
+      "events create_account 0",
+    ]);
 
     expect(
       await submit(
-        { signedEventBytes: "ok" },
-        submitHost({ readEventsPage: createdAccounts(["alice"]) }),
+        { signedEventBytes: signed },
+        submitHost({ readEventsPage: createdAccounts([alice]) }),
       ),
     ).toEqual({
       status: 400,
@@ -321,7 +356,7 @@ describe("handleRpcInDefiny", () => {
     });
     expect(
       await submit(
-        { signedEventBytes: "ok" },
+        { signedEventBytes: signed },
         submitHost({
           readCommitCheckInput: () =>
             Promise.resolve(
@@ -337,20 +372,32 @@ describe("handleRpcInDefiny", () => {
           "app.x: the content c1 is not a part definition that evaluates to a core.part-content",
       },
     });
-    expect(await submit({ signedEventBytes: "bad" }, submitHost())).toEqual({
+    const rejected = (message: string) => ({
       status: 400,
-      body: {
-        code: "invalid_argument",
-        message: "Ed25519 signature verification failed",
-      },
+      body: { code: "invalid_argument", message },
     });
-    expect(await submit({ signedEventBytes: " " }, host())).toEqual({
-      status: 400,
-      body: {
-        code: "invalid_argument",
-        message: "signedEventBytes is required",
-      },
-    });
+    expect(
+      await submit(
+        { signedEventBytes: signed },
+        submitHost({ verifyEd25519: () => Promise.resolve(false) }),
+      ),
+    ).toEqual(rejected("Ed25519 signature verification failed"));
+    // 署名時刻 (1000 秒) が今より 10 分を超えて先
+    expect(
+      await submit(
+        { signedEventBytes: signed },
+        submitHost({ now: () => 1_000_000 - 600_001 }),
+      ),
+    ).toEqual(rejected("event time is too far in the future"));
+    expect(
+      await submit({ signedEventBytes: "not base64!" }, submitHost()),
+    ).toEqual(rejected("signedEventBytes must be Base64"));
+    expect(await submit({ signedEventBytes: "AAAA" }, submitHost())).toEqual(
+      rejected("trailing bytes after SignedEvent"),
+    );
+    expect(await submit({ signedEventBytes: " " }, host())).toEqual(
+      rejected("signedEventBytes is required"),
+    );
   });
 
   it("SubmitEvent はプロジェクトのコミットなら受け付けたコミットも読んで規則 (core.check-event) で検査する", async () => {
@@ -359,7 +406,7 @@ describe("handleRpcInDefiny", () => {
       description: [],
       partType: null,
       expression: null,
-      contentHash: "",
+      contentHash: `hash-${name}`,
     });
     const projectCommit = (options: {
       readonly parent: string | null;
@@ -381,21 +428,18 @@ describe("handleRpcInDefiny", () => {
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
-        () => ({ signedEventBytes: "ok" }),
+        () => ({ signedEventBytes: signedEvent(content) }),
         host({
-          verifySignedEvent: () =>
-            Promise.resolve({
-              eventHash: "e2",
-              accountId: "alice",
-              content,
-              referencedContentHashes: [],
-            }),
-          readEventsPage: createdAccounts(["alice"]),
+          ...verifyingHost("e2"),
+          readEventsPage: createdAccounts([alice]),
           readCommits: () => {
             reads.push("commits");
-            return Promise.resolve([commit("m1", "alice", "main", 100)]);
+            return Promise.resolve([commit("m1", alice, "main", 100)]);
           },
-          readMissingContentHashes: () => Promise.resolve([]),
+          readMissingContentHashes: (hashes) => {
+            reads.push(`missing ${hashes.join(",")}`);
+            return Promise.resolve([]);
+          },
           readCommitCheckInput: () => Promise.resolve(null),
           writeEvent: () => Promise.resolve("e2"),
         }),
@@ -412,7 +456,7 @@ describe("handleRpcInDefiny", () => {
       status: 200,
       body: { eventHash: "e2", status: "accepted", missingContentHashes: [] },
     });
-    expect(reads).toEqual(["commits"]);
+    expect(reads).toEqual(["commits", "missing hash-x"]);
 
     expect(
       await submitCommit(
@@ -441,15 +485,14 @@ describe("handleRpcInDefiny", () => {
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
-        () => ({ signedEventBytes: "ok" }),
+        () => ({
+          signedEventBytes: signedEvent({
+            type: "create_account",
+            accountName: "alice",
+          }),
+        }),
         host({
-          verifySignedEvent: () =>
-            Promise.resolve({
-              eventHash: "e3",
-              accountId: "alice",
-              content: { type: "create_account", accountName: "alice" },
-              referencedContentHashes: [],
-            }),
+          ...verifyingHost("e3"),
           readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(input),
@@ -578,15 +621,14 @@ describe("handleRpcInDefiny", () => {
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
-        () => ({ signedEventBytes: "ok" }),
+        () => ({
+          signedEventBytes: signedEvent({
+            type: "create_account",
+            accountName: "alice",
+          }),
+        }),
         host({
-          verifySignedEvent: () =>
-            Promise.resolve({
-              eventHash: "e4",
-              accountId: "alice",
-              content: { type: "create_account", accountName: "alice" },
-              referencedContentHashes: [],
-            }),
+          ...verifyingHost("e4"),
           readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
@@ -683,15 +725,14 @@ describe("handleRpcInDefiny", () => {
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
-        () => ({ signedEventBytes: "ok" }),
+        () => ({
+          signedEventBytes: signedEvent({
+            type: "create_account",
+            accountName: "alice",
+          }),
+        }),
         host({
-          verifySignedEvent: () =>
-            Promise.resolve({
-              eventHash: "e5",
-              accountId: "alice",
-              content: { type: "create_account", accountName: "alice" },
-              referencedContentHashes: [],
-            }),
+          ...verifyingHost("e5"),
           readEventsPage: (page) => {
             offsets.push(page.offset);
             return createdAccounts(accountIds)(page);
@@ -702,7 +743,7 @@ describe("handleRpcInDefiny", () => {
         }),
       );
     const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);
-    expect(await submitCreateAccount([...others, "alice"])).toEqual({
+    expect(await submitCreateAccount([...others, alice])).toEqual({
       status: 400,
       body: {
         code: "invalid_argument",

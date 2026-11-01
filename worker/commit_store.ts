@@ -1,7 +1,7 @@
 /**
  * ストアのイベントを読む. 受け付けたプロジェクトのコミットを読んで (署名を確かめ, isolate の中で使い回す),
  * ブランチの最新のコミットを definy 製の `core.project-branches` (`wasm/branch_summarizer.wasm`) で求める.
- * `SubmitEvent` の検査 (worker/type_check.ts, worker/event_check.ts) が使う
+ * `SubmitEvent` の検査 (worker/type_check.ts) と `read_commits` が使う
  */
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
