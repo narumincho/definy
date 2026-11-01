@@ -62,7 +62,7 @@ export const MALFORMED_CONTENT_MESSAGE =
   "content must be a value of core.event-content";
 
 /** 署名を確かめて読んだイベント (`definy.verified-event`) か, 受け付けない理由 */
-export type VerifiedEvent =
+type VerifiedEvent =
   | {
       readonly eventHash: string;
       readonly accountId: string;

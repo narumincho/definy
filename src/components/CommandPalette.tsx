@@ -17,7 +17,7 @@ import {
 import { label, localizedText, withLanguage } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
-export type PaletteItem = {
+type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
@@ -41,7 +41,7 @@ const MAX_RESULTS = 60;
  */
 const SEPARATOR_CHARS: ReadonlySet<string> = new Set([".", "-", "_", " ", "/"]);
 
-export function matchScore(labelStr: string, query: string): number | null {
+function matchScore(labelStr: string, query: string): number | null {
   const normLabel = labelStr.toLowerCase();
   const normQuery = query.toLowerCase();
 
@@ -83,7 +83,7 @@ export function matchScore(labelStr: string, query: string): number | null {
 /**
  * 候補一覧をスコア順・文字長順・元の順位順に並べ替えて返す
  */
-export function rankItems(
+function rankItems(
   items: ReadonlyArray<PaletteItem>,
   query: string,
   maxResults = MAX_RESULTS,

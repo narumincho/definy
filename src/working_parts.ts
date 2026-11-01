@@ -25,7 +25,7 @@ function moduleNameOfKey(key: string): string {
   return dot < 0 ? key : key.slice(0, dot);
 }
 
-export type WorkingPartsView = {
+type WorkingPartsView = {
   /** `module.name` ごとのパーツ (`partId` は作業中の変更のキーと同じ `モジュール名.元のパーツ名`) */
   readonly parts: ReadonlyArray<PartSnapshot>;
   /** パーツ ID → パーツ. 名前を変えたパーツは新しい ID, 削除したパーツは無い */

@@ -51,7 +51,7 @@ function yieldToBrowser(): Promise<void> {
   });
 }
 
-export type TypeCheckParams = {
+type TypeCheckParams = {
   readonly committedParts: ReadonlyMap<string, LatestPart>;
   /**
    * コミット済みのパーツに作業中の変更を重ねたもの (src/working_parts.ts). 式エディタの検査・型の問い合わせの型環境にする.
@@ -67,7 +67,7 @@ export type TypeCheckParams = {
   readonly buildCommitModules: (projectName: string) => CommitModulesResult;
 };
 
-export type TypeCheckOperations = {
+type TypeCheckOperations = {
   readonly partTypeCheckResults: ReadonlyMap<
     string,
     SelfHostedTypeCheckOutcome

@@ -69,7 +69,7 @@ export function findSecretUsages(
 }
 
 /** 設定画面のシークレット一覧の 1 行 */
-export type SecretListItem<Stored> = {
+type SecretListItem<Stored> = {
   readonly id: string;
   readonly label: string;
   /** シークレットリテラルだけを式にしているパーツ (シークレットのパーツ) */

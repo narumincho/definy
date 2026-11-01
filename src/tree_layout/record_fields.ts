@@ -11,9 +11,9 @@ import { hole } from "./expression.ts";
 
 /** 置換メニューの選択肢の value */
 export const RECORD_APPEND_FIELD = "record:append";
-export const RECORD_INSERT_BEFORE = "record:insert-before";
-export const RECORD_INSERT_AFTER = "record:insert-after";
-export const RECORD_MOVE_EARLIER = "record:move-earlier";
+const RECORD_INSERT_BEFORE = "record:insert-before";
+const RECORD_INSERT_AFTER = "record:insert-after";
+const RECORD_MOVE_EARLIER = "record:move-earlier";
 export const RECORD_MOVE_LATER = "record:move-later";
 export const RECORD_DELETE_FIELD = "record:delete";
 
@@ -118,7 +118,7 @@ function updateRecordAt(
 }
 
 /** 他のフィールドと重ならない新しいフィールド名 (`field`, `field1`, ...) */
-export function newFieldName(fields: ReadonlyArray<RecordField>): string {
+function newFieldName(fields: ReadonlyArray<RecordField>): string {
   const used = new Set(fields.map((f) => f.key));
   if (!used.has("field")) {
     return "field";

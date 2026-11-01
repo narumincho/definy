@@ -15,15 +15,13 @@ import {
   type EventType,
 } from "./event_content.ts";
 
-export type ParsedSignedEventMeta = {
+type ParsedSignedEventMeta = {
   readonly accountId: string;
   readonly eventType: EventType;
   readonly createdAtRfc3339: string;
   readonly timeMs: number;
   readonly referencedContentHashes: ReadonlyArray<string>;
 };
-
-export type { EventType } from "./event_content.ts";
 
 /** 署名済みイベントとして受理できないバイト列であることを表すエラー */
 export class InvalidSignedEventError extends Error {

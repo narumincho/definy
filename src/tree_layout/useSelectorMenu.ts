@@ -48,7 +48,7 @@ const TYPE_EXPRESSION_SELECTOR_OPTIONS = TYPE_SELECTOR_OPTIONS.filter(
     option.value !== "expr:type:type" && option.value !== "expr:type:code",
 );
 
-export type UseSelectorMenuParams = {
+type UseSelectorMenuParams = {
   readonly mode: "expression" | "type";
   readonly editable: boolean;
   readonly expression: unknown;
@@ -76,7 +76,7 @@ export type UseSelectorMenuParams = {
   ) => ReadonlyArray<string> | undefined;
 };
 
-export type SelectorMenuState = {
+type SelectorMenuState = {
   readonly isMenuOpen: boolean;
   readonly menuOpenCount: number;
   readonly searchQuery: string;

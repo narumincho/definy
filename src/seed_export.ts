@@ -27,7 +27,7 @@ import type { GetContentResponse, GetEventsResponse } from "../worker/types.ts";
 
 const PAGE_SIZE = 500;
 
-export type PartSeedData = {
+type PartSeedData = {
   readonly name: string;
   readonly part_type?: unknown;
   readonly description?: unknown;
@@ -36,7 +36,7 @@ export type PartSeedData = {
   readonly expression?: unknown;
 };
 
-export type ModuleSeedData = {
+type ModuleSeedData = {
   readonly module_name: string;
   readonly module_description: unknown;
   /** 非公開のときだけ `"private"` (docs/visibility.md) */
@@ -44,7 +44,7 @@ export type ModuleSeedData = {
   readonly parts: ReadonlyArray<PartSeedData>;
 };
 
-export type ExportSeedsOptions = {
+type ExportSeedsOptions = {
   /** definy サーバーのベース URL (例: `http://localhost:8787`) */
   readonly baseUrl: string;
   /** テスト用の fetch 関数。未指定の場合はグローバルの fetch */
@@ -63,7 +63,7 @@ export type ExportSeedsOptions = {
  * 2. 環境変数 `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` から導出
  * 3. 無ければ開発用鍵 (`devSystemAccountBytes`)
  */
-export async function resolveSystemAccountBytes(
+async function resolveSystemAccountBytes(
   overrideBytes?: Uint8Array,
 ): Promise<Uint8Array> {
   if (overrideBytes) {
@@ -81,7 +81,7 @@ export async function resolveSystemAccountBytes(
  * 全モジュールの最新パーツ定義から「パーツ ID (URL-safe Base64) → `module.name`」の対応表を作成する。
  * ID の導出は `deriveModuleIdBytes` / `deriveModulePartId` を使う。
  */
-export async function buildPartReferenceTable(
+async function buildPartReferenceTable(
   accountBytes: Uint8Array,
   seeds: ReadonlyArray<ModuleSeedData>,
 ): Promise<ReadonlyMap<string, string>> {
@@ -102,7 +102,7 @@ export async function buildPartReferenceTable(
  * 式または型の中のパーツ ID の文字列を対応表に基づいて `{"$part": "module.name"}` に置き換える。
  * CBOR デコード時の特殊表現 (`{__float64: ...}`, `{__tag: ...}`) を seed の素の JSON に戻す。
  */
-export function symbolizePartReferences(
+function symbolizePartReferences(
   value: unknown,
   table: ReadonlyMap<string, string>,
 ): unknown {
@@ -335,7 +335,7 @@ async function tryReadSeedFile(
  * - パーツのキー順: `name`, `part_type` (ある場合), `description`, `visibility` (非公開の場合), `expression` (ある場合)
  * - インデント 2、末尾改行なし
  */
-export function moduleSeedToJson(
+function moduleSeedToJson(
   seed: ModuleSeedData,
   table: ReadonlyMap<string, string>,
 ): string {

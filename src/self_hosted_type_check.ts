@@ -43,7 +43,7 @@ import {
 } from "./type_argument_holes.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
-export type SelfHostedCoreParts = {
+type SelfHostedCoreParts = {
   /**
    * `core.type-checker`. 全モジュールの最新のパーツとコミットするパーツから型環境と検査するパーツを決め,
    * その環境のもとで `core.type-check-against` で検査する関数と一緒に返す
@@ -113,7 +113,7 @@ class UnsupportedPartError extends Error {
  * コンパイラ組み込みのパーツか. パーツの定義で決まり, モジュールやアカウントによらない.
  * 式が `{"#builtin": ...}` のパーツ (`core.plus` など) と, 式の無い型パーツ (`core.number` などの組み込みの型)
  */
-export function isCompilerBuiltinPart(part: {
+function isCompilerBuiltinPart(part: {
   readonly partType: unknown;
   readonly expression: unknown;
 }): boolean {
@@ -680,11 +680,9 @@ export function typeEnvKey(parts: Iterable<LatestPart>): string {
 }
 
 /** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ (同期版) */
-export function expressionContentHashSync(expression: unknown): string {
+function expressionContentHashSync(expression: unknown): string {
   return bytesToUrlSafeBase64NoPad(sha256BytesSync(encodeCborItem(expression)));
 }
-
-export { expressionContentHashSync as expressionContentHash };
 
 function partTypeKey(partType: unknown): string {
   return partType == null ? "" : expressionContentHashSync(partType);

@@ -12,7 +12,7 @@ import type { LanguageCode } from "../types.ts";
 import { TypeTreeView } from "./TypeTreeView.tsx";
 import { hoverCardPosition } from "./hover_info.ts";
 
-export type ExpressionHoverCardProps = {
+type ExpressionHoverCardProps = {
   readonly language: LanguageCode;
   /** ツリーの枠. カードを出す式のノードをこの中から探す */
   readonly containerRef: RefObject<HTMLDivElement | null>;

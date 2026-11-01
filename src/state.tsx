@@ -37,9 +37,9 @@ import {
   workingTypeEnvSignature,
 } from "./working_parts.ts";
 
-export type { CommitWorkingChangesParams, CommitTypeError, PageUndoControls };
+export type { CommitTypeError };
 
-export type DefinyContextValue = {
+type DefinyContextValue = {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
   readonly events: ReadonlyArray<EventRecord>;

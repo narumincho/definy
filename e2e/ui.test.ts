@@ -46,11 +46,6 @@ function callCapsule(tree: Locator, functionName: string): Locator {
     .last();
 }
 
-/** 呼び出しのカプセルの左端 (子のノードの外側) をクリックして, 呼び出しそのものを選ぶ */
-async function clickCallCapsule(capsule: Locator): Promise<void> {
-  await capsule.click({ position: { x: 3, y: 8 } });
-}
-
 test.describe("definy UI E2E", () => {
   test("events timeline loads events and allows filtering", async ({
     page,

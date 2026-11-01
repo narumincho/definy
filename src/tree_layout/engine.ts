@@ -1,8 +1,8 @@
 import type { LayoutMode, LayoutNode, LayoutOptions } from "./types.ts";
 import { DEFAULT_LAYOUT_OPTIONS } from "./types.ts";
-import { expressionToLayoutNode, type ScopeContext } from "./ast_to_layout.ts";
+import { expressionToLayoutNode } from "./ast_to_layout.ts";
 
-export { expressionToLayoutNode, type ScopeContext };
+export { expressionToLayoutNode };
 
 /** 改行を含む文字列は一番長い行の幅にする */
 export function estimateTextWidth(text: string, charWidth: number): number {
@@ -20,7 +20,7 @@ export function estimateTextWidth(text: string, charWidth: number): number {
   return Math.max(max, count) * charWidth;
 }
 
-export function countLines(text: string): number {
+function countLines(text: string): number {
   return text.split("\n").length;
 }
 

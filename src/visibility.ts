@@ -21,10 +21,10 @@ export type VisibilityTarget = {
 };
 
 /** 参照できない理由 */
-export type VisibilityViolationReason = "private_part" | "private_module";
+type VisibilityViolationReason = "private_part" | "private_module";
 
 /** 参照できないパーツへの参照 */
-export type VisibilityViolation = {
+type VisibilityViolation = {
   /** 参照しているパーツ (`モジュール名.パーツ名`) */
   readonly partName: string;
   /** 参照されているパーツ (`モジュール名.パーツ名`) */

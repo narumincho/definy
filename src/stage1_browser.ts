@@ -21,7 +21,7 @@ let compilerPromise: {
  * 同梱の stage1.wasm のバイト列を取得する.
  * 取得は 1 度だけ行い, 失敗した場合は次回呼び出し時に再試行する
  */
-export function loadBundledStage1Bytes(): Promise<Uint8Array> {
+function loadBundledStage1Bytes(): Promise<Uint8Array> {
   bundledBytesPromise ??= (async () => {
     const res = await fetch(new URL("../wasm/stage1.wasm", import.meta.url));
     if (!res.ok) {

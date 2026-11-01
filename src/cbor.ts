@@ -515,7 +515,7 @@ export function extractProjectCommit(
   }
 }
 
-export type DecodedCreateAccount = {
+type DecodedCreateAccount = {
   readonly accountId: string;
   readonly accountName: string;
 };

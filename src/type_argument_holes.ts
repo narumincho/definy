@@ -13,10 +13,10 @@
 import { typeAstToExpression } from "./type_ast_expression.ts";
 
 /** 式の JSON の中の位置 (オブジェクトのキーか配列の添字の並び) */
-export type JsonPath = ReadonlyArray<string | number>;
+type JsonPath = ReadonlyArray<string | number>;
 
 /** 式 (`core.expression` の値) の中の未入力 (`{"#hole": ...}`) の位置を, 出てくる順に集める */
-export function holePaths(expression: unknown): ReadonlyArray<JsonPath> {
+function holePaths(expression: unknown): ReadonlyArray<JsonPath> {
   const paths: JsonPath[] = [];
   const walk = (value: unknown, path: JsonPath): void => {
     if (Array.isArray(value)) {
@@ -39,7 +39,7 @@ export function holePaths(expression: unknown): ReadonlyArray<JsonPath> {
 }
 
 /** 式の `path` の位置を `replacement` に置き換えた式 */
-export function replaceAtJsonPath(
+function replaceAtJsonPath(
   expression: unknown,
   path: JsonPath,
   replacement: unknown,
@@ -138,7 +138,7 @@ function functionParametersInScope(
  * 推論した型 (`core.type-ast`) を `path` の位置に書く型の式にする. 型引数の参照はその位置から見える
  * 同じ名前の関数の引数の変数にする (見つからなければ `type_parameter` のまま)
  */
-export function inferredTypeArgumentExpression(
+function inferredTypeArgumentExpression(
   expression: unknown,
   path: JsonPath,
   type: unknown,

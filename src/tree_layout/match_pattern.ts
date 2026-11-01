@@ -43,19 +43,19 @@ type MatchInner = {
  * 検索欄に打った文字列をそのままパターンにする ({@link literalPatternOption}).
  * `_` (どれにでも一致) とは別のパターンなので, 文字列 `"_"` にも一致させられる
  */
-export const STRING_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> =
-  Object.freeze([]);
+const STRING_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> = Object.freeze(
+  [],
+);
 
 /** match の対象が数値のときのタグの候補 (無い). 検索欄に打った整数をそのままパターンにする */
 export const NUMBER_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> =
   Object.freeze([]);
 
 /** match の対象が Bool のときのパターン (`true` / `false` のリテラル) */
-export const BOOLEAN_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> =
-  Object.freeze([
-    { tag: "true", hasPayload: false },
-    { tag: "false", hasPayload: false },
-  ]);
+const BOOLEAN_PATTERN_VARIANTS: ReadonlyArray<PatternVariant> = Object.freeze([
+  { tag: "true", hasPayload: false },
+  { tag: "false", hasPayload: false },
+]);
 
 /** match の対象が文字列か数値か (アームのパターンを検索欄に打ったリテラルにできるか) */
 export function isLiteralPatternVariants(
@@ -141,9 +141,7 @@ function lastStepIndex(
 }
 
 /** `path` の最後がアームのパターン ({@link PathStep} の `matchArmPattern`) なら, そのアームの番号 */
-export function matchArmPatternIndex(
-  path: ReadonlyArray<PathStep>,
-): number | null {
+function matchArmPatternIndex(path: ReadonlyArray<PathStep>): number | null {
   return lastStepIndex(path, "matchArmPattern");
 }
 

@@ -26,7 +26,7 @@ import { pathToString, type PathStep } from "./types.ts";
 import type { SelectorOption } from "./selector_options.ts";
 
 /** 未入力の型引数の枠と, 推論に使う引数 */
-export type TypeArgumentHole = {
+type TypeArgumentHole = {
   /** 未入力の型引数の値のパス */
   readonly path: ReadonlyArray<PathStep>;
   /** 型引数の名前 (`T`) */

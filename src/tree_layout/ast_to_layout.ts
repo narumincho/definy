@@ -5,8 +5,6 @@ import { tryBuildFunctionNode } from "./ast_to_layout/functions.ts";
 import { tryBuildCollectionNode } from "./ast_to_layout/collections.ts";
 import { tryBuildControlOrTypeNode } from "./ast_to_layout/control_and_types.ts";
 
-export type { ScopeContext };
-
 export function expressionToLayoutNode(
   expr: unknown,
   idPrefix = "root",

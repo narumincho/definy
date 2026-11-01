@@ -97,7 +97,7 @@ export function evaluatedPartReferenceIds(
 /**
  * 式を評価するのに要るパーツ (参照先をたどる. quote の中はたどらない). `resolve` で式が無いパーツは `unresolved`
  */
-export function partsForEvaluation(
+function partsForEvaluation(
   expression: unknown,
   resolve: (id: string) => unknown,
 ): {

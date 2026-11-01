@@ -12,7 +12,7 @@ export type PageUndoControls = {
   readonly redo: () => void;
 };
 
-export type UiState = {
+type UiState = {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
   /**

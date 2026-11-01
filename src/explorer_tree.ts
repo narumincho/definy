@@ -7,12 +7,12 @@ import type { ModuleSnapshot, PartSnapshot, ProjectSnapshot } from "./types.ts";
  * エクスプローラーの木 (docs/ui.md「エクスプローラー」): プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ.
  * コミットは各ブランチの最新のコミット (ブランチが今指しているもの) だけを出す
  */
-export type ExplorerProject = {
+type ExplorerProject = {
   readonly name: string;
   readonly branches: ReadonlyArray<ExplorerBranch>;
 };
 
-export type ExplorerBranch = {
+type ExplorerBranch = {
   readonly name: string;
   /** 作成者. まだコミットの無い新しいプロジェクトの `main` では `null` */
   readonly creatorAccountId: string | null;
@@ -24,19 +24,19 @@ export type ExplorerBranch = {
   readonly latestEventHash: string;
 };
 
-export type ExplorerCommit = {
+type ExplorerCommit = {
   /** まだコミットしていない (新しいプロジェクトの作業中の変更だけ) なら空文字 */
   readonly eventHash: string;
   readonly message: string;
   readonly modules: ReadonlyArray<ExplorerModule>;
 };
 
-export type ExplorerModule = {
+type ExplorerModule = {
   readonly name: string;
   readonly parts: ReadonlyArray<ExplorerPart>;
 };
 
-export type ExplorerPart = {
+type ExplorerPart = {
   /** `/part/{partId}` の ID (`モジュール名.パーツ名`) */
   readonly partId: string;
   readonly name: string;

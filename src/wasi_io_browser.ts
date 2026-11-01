@@ -21,7 +21,7 @@ import {
   type WasiSecretValue,
 } from "./wasi_io.ts";
 
-export type WasiIoSettings = {
+type WasiIoSettings = {
   readonly relayOnCorsError: boolean;
 };
 
@@ -32,10 +32,6 @@ const SECRET_USAGE_KEY = "definy.secret-usage";
 const MAX_SECRET_USAGE = 500;
 
 export const HTTP_PROXY_PATH = "/definy.v1.HttpProxyService/Fetch";
-
-export const defaultWasiIoSettings: WasiIoSettings = {
-  relayOnCorsError: false,
-};
 
 function readJson(key: string): unknown {
   try {
@@ -170,7 +166,7 @@ export function parseUrlPrefixes(text: string): ReadonlyArray<string> {
 }
 
 /** サーバーの `HttpProxyService/Fetch` で HTTP リクエストを送る `WasiIoHost["handle"]` */
-export function relayHandler(
+function relayHandler(
   credentials: AccountCredentials,
   fetchFn: typeof fetch = fetch,
 ): WasiIoHost["handle"] {

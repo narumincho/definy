@@ -21,12 +21,9 @@ export const COMPILE_TO_WASM_PART_ID = deriveModulePartId(
 );
 
 /** `core.type-checker` のパーツ ID */
-export const TYPE_CHECKER_PART_ID = deriveModulePartId(
-  CORE_MODULE_ID,
-  "type-checker",
-);
+const TYPE_CHECKER_PART_ID = deriveModulePartId(CORE_MODULE_ID, "type-checker");
 
-export type SelfCompileResult =
+type SelfCompileResult =
   | {
       readonly kind: "fixed_point";
       /** 不動点のコンパイラ (自分自身をコンパイルすると同じバイト列になる) */

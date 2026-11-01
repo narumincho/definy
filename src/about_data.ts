@@ -32,7 +32,7 @@ export type ComparisonItem = {
   };
 };
 
-export type BuiltinModuleItem = {
+type BuiltinModuleItem = {
   readonly id: string;
   readonly name: string;
   readonly icon: string;
@@ -48,7 +48,7 @@ export type BuiltinModuleItem = {
   };
 };
 
-export type RpcMethodItem = {
+type RpcMethodItem = {
   readonly name: string;
   readonly service: string;
   readonly request: string;

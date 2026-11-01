@@ -10,16 +10,16 @@ import type { LanguageCode } from "./types.ts";
  * キーの組み合わせの 1 つ. `"Mod"` は Mac なら ⌘ (Command), それ以外なら Ctrl として表示する.
  * それ以外の要素はそのままキーの名前として表示する
  */
-export type KeyCombo = ReadonlyArray<string>;
+type KeyCombo = ReadonlyArray<string>;
 
-export type Shortcut = {
+type Shortcut = {
   readonly id: string;
   /** どれを押しても同じ動作になるキーの組み合わせ */
   readonly keys: ReadonlyArray<KeyCombo>;
   readonly description: (language: LanguageCode) => string;
 };
 
-export type ShortcutGroup = {
+type ShortcutGroup = {
   readonly id: string;
   readonly title: (language: LanguageCode) => string;
   readonly shortcuts: ReadonlyArray<Shortcut>;

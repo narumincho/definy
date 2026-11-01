@@ -91,7 +91,7 @@ export function redo<T>(
   };
 }
 
-export type UndoKey = "undo" | "redo";
+type UndoKey = "undo" | "redo";
 
 /**
  * キー入力を元に戻す / やり直すに変換する. Ctrl / Cmd + Z で元に戻す,

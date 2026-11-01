@@ -11,13 +11,6 @@
  * - タグ付きの値 (Variant): キーが `#タグ` の 1 つだけのオブジェクト. 値はペイロード (無ければ `null`)
  */
 
-export type DefinyData =
-  | number
-  | string
-  | boolean
-  | ReadonlyArray<DefinyData>
-  | { readonly [key: string]: DefinyData | null };
-
 /** タグ付きの値のキーの先頭の文字 */
 export const VARIANT_PREFIX = "#";
 

@@ -10,7 +10,7 @@ const seedBundleUrl = new URL(
 );
 
 /** 開発用システムアカウントの seed バンドル */
-export type TestSeedBundle = {
+type TestSeedBundle = {
   readonly events: ReadonlyArray<{
     readonly eventHash: string;
     readonly signedEventBytes: string;

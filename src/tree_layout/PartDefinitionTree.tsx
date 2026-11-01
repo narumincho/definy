@@ -27,7 +27,7 @@ function rowElementId(row: DefinitionRow): string {
   return `part-def-${row}`;
 }
 
-export type PartDefinitionTreeProps = {
+type PartDefinitionTreeProps = {
   readonly name: string;
   readonly moduleName: string;
   readonly description: string;

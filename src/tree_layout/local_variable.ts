@@ -33,9 +33,7 @@ import {
 } from "./expression.ts";
 
 /** `path` の最後が let の束縛の変数名 ({@link PathStep} の `letBindingName`) なら, その束縛の番号 */
-export function letBindingNameIndex(
-  path: ReadonlyArray<PathStep>,
-): number | null {
+function letBindingNameIndex(path: ReadonlyArray<PathStep>): number | null {
   const last = path[path.length - 1];
   return typeof last === "object" && last.kind === "letBindingName"
     ? last.index
@@ -59,7 +57,7 @@ export function isVariableNamePath(path: ReadonlyArray<PathStep>): boolean {
 }
 
 /** let の束縛 (`path` は `letBindingName` で終わる) の変数名を変える */
-export function renameLetBinding(
+function renameLetBinding(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
   name: string,
@@ -109,7 +107,7 @@ export function renameVariableAt(
 /**
  * その位置の式が参照する変数の ID. 変数そのもののほか, 関数型の変数の呼び出し (`f(x: 1)`) も変数を参照しているとみなす
  */
-export function referencedVariableId(
+function referencedVariableId(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
 ): number | null {

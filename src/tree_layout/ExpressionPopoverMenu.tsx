@@ -23,7 +23,7 @@ import {
  * CSS Anchor Positioning と Popover API に対応しているか.
  * 未対応なら従来どおり式全体の下に通常のフローで表示する
  */
-export function supportsAnchoredPopover(): boolean {
+function supportsAnchoredPopover(): boolean {
   return (
     typeof CSS !== "undefined" &&
     typeof HTMLElement !== "undefined" &&
@@ -37,13 +37,13 @@ export function supportsAnchoredPopover(): boolean {
  * メニューを top layer に出す. エディタの `overflow` で切り取られないようにするため.
  * 検索欄へのフォーカス (useEffect) より前に表示されている必要があるので ref コールバックで行う
  */
-export function showAsPopover(element: HTMLDivElement | null): void {
+function showAsPopover(element: HTMLDivElement | null): void {
   if (element !== null && !element.matches(":popover-open")) {
     element.showPopover();
   }
 }
 
-export type ExpressionPopoverMenuProps = {
+type ExpressionPopoverMenuProps = {
   readonly language: LanguageCode;
   readonly selectedPath: ReadonlyArray<PathStep>;
   readonly selectionAnchorName: string;

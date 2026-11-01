@@ -107,7 +107,7 @@ export function isWasiIoValue(value: DefinyValue): boolean {
 }
 
 /** `wasi.http-result` の値 */
-export function httpResultLiteral(result: WasiHttpResult): unknown {
+function httpResultLiteral(result: WasiHttpResult): unknown {
   if ("error" in result) {
     return variant("error", result.error);
   }

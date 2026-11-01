@@ -84,7 +84,7 @@ export type ServiceIoHost = {
 };
 
 /** `definy.service-response` */
-export type ServiceResponse = {
+type ServiceResponse = {
   readonly status: number;
   /** JSON の値 */
   readonly body: unknown;

@@ -27,10 +27,10 @@ import {
 const typeNumber = variant("type_number");
 
 /** 型のツリーエディタの型引数 (`T`) の選択肢の value の頭. 後ろに型引数の名前が付く */
-export const TYPE_PARAMETER_OPTION_PREFIX = "expr:type:parameter:";
+const TYPE_PARAMETER_OPTION_PREFIX = "expr:type:parameter:";
 
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
-export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
+const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:number": typeNumber,
   "expr:type:float": variant("type_float"),
   "expr:type:string": variant("type_string"),
@@ -53,7 +53,7 @@ export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
 };
 
 /** 呼び出す関数の引数. `type` は引数の型 (`core.type-ast` の値). 型の無い組み込みのパーツは無い */
-export type CalleeParameter = {
+type CalleeParameter = {
   readonly name: string;
   readonly type?: unknown;
 };

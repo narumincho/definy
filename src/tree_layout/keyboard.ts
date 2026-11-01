@@ -19,7 +19,7 @@ export type NavKey =
   | "firstChild"
   | "lastChild";
 
-export type KeyInput = {
+type KeyInput = {
   readonly key: string;
   readonly shiftKey: boolean;
   readonly ctrlKey: boolean;

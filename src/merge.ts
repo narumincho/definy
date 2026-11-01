@@ -109,7 +109,7 @@ function stableJson(value: unknown): string {
   );
 }
 
-export type MergeResult = {
+type MergeResult = {
   /** 取り込んだ後のパーツ (名前順ではなく, ours の順に theirs で増えたものを足す) */
   readonly parts: ReadonlyArray<MergePart>;
   /** 両方のブランチで違うように変えたパーツ. 取り込む側 (theirs) のものを使う */

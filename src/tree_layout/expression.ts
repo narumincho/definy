@@ -71,7 +71,7 @@ export function partReferenceExpression(partId: string): unknown {
   return variant("part_reference", { part_definition_event_hash: partId });
 }
 
-export type CallArgument = {
+type CallArgument = {
   readonly name: string;
   readonly value: unknown;
 };
@@ -193,11 +193,11 @@ export type MatchArm = {
 export const NO_VARIABLE = -1;
 
 /** `core.pattern` の `any` (`_`) */
-export function anyPattern(): unknown {
+function anyPattern(): unknown {
   return variant("any");
 }
 
-export function bindPattern(variableId: number, variableName: string): unknown {
+function bindPattern(variableId: number, variableName: string): unknown {
   return variant("bind", {
     variable_id: variableId,
     variable_name: variableName,
@@ -225,7 +225,7 @@ export function literalArm(
 }
 
 /** データ上のアーム `{pattern, body}` をエディタのアームにする */
-export function armFromData(arm: unknown): MatchArm {
+function armFromData(arm: unknown): MatchArm {
   const body = field(arm, "body");
   const pattern = variantOf(field(arm, "pattern"));
   const bound = (payload: unknown) => ({
@@ -285,7 +285,7 @@ export function patternOfArm(arm: MatchArm): unknown {
 }
 
 /** エディタのアームをデータ上のアーム `{pattern, body}` にする */
-export function armToData(arm: MatchArm): unknown {
+function armToData(arm: MatchArm): unknown {
   return { pattern: patternOfArm(arm), body: arm.body };
 }
 
