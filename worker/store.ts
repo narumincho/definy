@@ -51,11 +51,8 @@ const D1_SCHEMA_STATEMENTS: ReadonlyArray<string> = [
 
 const D1_BATCH_CHUNK_SIZE = 50;
 
-import {
-  base64ToBytes,
-  bytesToBase64,
-  sha256EventHashId,
-} from "../src/cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
+import { sha256EventHashId } from "../src/sha256.ts";
 import { verifySignedEvent } from "../src/signed_event.ts";
 
 /** CAS へのアップロード内容が不正であることを表すエラー */

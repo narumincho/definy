@@ -6,12 +6,12 @@ import {
   base64ToBytes,
   bytesToBase64,
   bytesToUrlSafeBase64NoPad,
-  encodeCborItem,
-  sha256EventHashId,
-  type DecodedPart,
-  type LocalizedText,
-} from "./cbor.ts";
+} from "./base64.ts";
+import { encodeCborItem } from "./cbor.ts";
+import { sha256EventHashId } from "./sha256.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import {
+  type LocalizedText,
   DEFAULT_VISIBILITY,
   encodeEventContent,
   MAIN_BRANCH,

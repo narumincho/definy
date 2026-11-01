@@ -5,7 +5,7 @@
  */
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
-import { base64ToBytes } from "../src/cbor.ts";
+import { base64ToBytes } from "../src/base64.ts";
 import { summarizeBranches } from "../src/branches.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import type { VisibilityTarget } from "../src/visibility.ts";

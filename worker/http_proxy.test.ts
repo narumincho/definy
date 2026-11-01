@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { generateAccountCredentials } from "../src/auth.ts";
-import { base64ToBytes, bytesToBase64 } from "../src/cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import type { Env, HttpProxyFetchResponse } from "./types.ts";
 import { adminCredentials, signedPost } from "./test_helpers.ts";
 import {

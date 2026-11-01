@@ -1,13 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import {
-  bytesToBase64,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  encodeCborItem,
-  sha256EventHashIdSync,
-  type DecodedPart,
-} from "./cbor.ts";
+import { bytesToBase64 } from "./base64.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
+import { encodeCborItem } from "./cbor.ts";
+import { sha256EventHashIdSync } from "./sha256.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import {
   hasPendingDefinitions,
   loadContents,

@@ -11,7 +11,7 @@
  * 詳細は docs/wasi-io.md, docs/secret.md
  */
 import type { AccountCredentials } from "./auth.ts";
-import { base64ToBytes, bytesToBase64 } from "./cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "./base64.ts";
 import { createRpcAuthorization } from "./rpc_auth.ts";
 import {
   fetchHandler,

@@ -19,13 +19,10 @@ import {
   type Stage1CompilerInstance,
   type ValueRef,
 } from "./stage1_compiler.ts";
-import {
-  bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  encodeCborItem,
-  sha256BytesSync,
-} from "./cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
+import { encodeCborItem } from "./cbor.ts";
+import { sha256BytesSync } from "./sha256.ts";
 import {
   field,
   isVariant,

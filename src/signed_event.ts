@@ -2,13 +2,9 @@
  * SignedEvent (`{ signature, event_binary: tag24(Event) }`) のデコードと Ed25519 署名検証。
  * Worker (SubmitEvent の受理) とブラウザ (受信したイベントの表示前チェック) の両方で使う。
  */
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  decodeCborItem,
-  sha256EventHashId,
-  toUint8Array,
-} from "./cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { decodeCborItem, toUint8Array } from "./cbor.ts";
+import { sha256EventHashId } from "./sha256.ts";
 import {
   decodeEventContent,
   type EventContent,

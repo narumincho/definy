@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import { resolvePartPlaceholders, resolveSeedPartType } from "./seed_parts.ts";
 import {
   checkParts,

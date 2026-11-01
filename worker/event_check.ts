@@ -6,12 +6,9 @@
  * (アカウントを作ったか) をストアから読むだけ. 規則が使う状態は definy の `core.event-check-state-of` が求める
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
-import {
-  base64ToBytes,
-  decodeCborItem,
-  sha256EventHashId,
-  toUint8Array,
-} from "../src/cbor.ts";
+import { base64ToBytes } from "../src/base64.ts";
+import { decodeCborItem, toUint8Array } from "../src/cbor.ts";
+import { sha256EventHashId } from "../src/sha256.ts";
 import { conformsInDefiny, contentForCheck } from "../src/event_check.ts";
 import type { EventContent } from "../src/event_content.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";

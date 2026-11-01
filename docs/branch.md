@@ -9,7 +9,7 @@ definy には GitHub のフォークは無く, ブランチだけで編集を分
 
 ## ID
 
-モジュール ID はモジュール名だけで決まる (`deriveModuleIdBytes(moduleName)`, `src/cbor.ts`)。
+モジュール ID はモジュール名だけで決まる (`deriveModuleIdBytes(moduleName)`, `src/part_ids.ts`)。
 パーツ ID は `H(モジュール ID, ":part:", パーツ名)` なので, プロジェクトのどのブランチでも同じパーツは同じ ID になる。
 以前はモジュール ID がアカウントとモジュール名で決まり, 同じ名前のモジュールでもアカウントごとに別のモジュールだった。
 

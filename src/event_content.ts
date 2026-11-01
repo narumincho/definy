@@ -6,7 +6,6 @@
  * (seed の検査と同じ関数) で確かめてから読む.
  */
 import eventTypeDeclarations from "../seeds/schemas/event-types.json" with { type: "json" };
-import type { LocalizedText } from "./cbor.ts";
 import {
   field,
   none,
@@ -16,6 +15,14 @@ import {
   variantOf,
 } from "./definy_value.ts";
 import { conformsToTypeDeclaration } from "./seed_schema.ts";
+
+/** 言語ごとのテキスト (`[{ language: "en", text: "..." }, ...]`) */
+export type LocalizedTextEntry = {
+  readonly language: string;
+  readonly text: string;
+};
+
+export type LocalizedText = ReadonlyArray<LocalizedTextEntry>;
 
 /**
  * モジュールやパーツを外から参照できるか (`core.visibility`. docs/visibility.md).

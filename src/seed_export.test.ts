@@ -7,19 +7,16 @@ import {
   generateAccountCredentials,
   importAccountCredentials,
 } from "./auth.ts";
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  type DecodedPart,
-  type LocalizedText,
-} from "./cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import type { DecodedPart } from "./decoded_event.ts";
+import type { LocalizedText } from "./event_content.ts";
 import { exportSeeds } from "./seed_export.ts";
 import {
   DEV_SYSTEM_KEY_SEED,
   resolvePartPlaceholders,
   resolveSeedPartType,
 } from "./seed_parts.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/test_helpers.ts";
 import { loadTestSeedBundle } from "../worker/test_runtime.ts";

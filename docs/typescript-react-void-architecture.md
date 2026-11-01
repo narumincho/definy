@@ -85,7 +85,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 ├── worker/                   # Cloudflare Worker バックエンド実装
 │   ├── index.ts              # API ハンドラー (Connect-RPC, /virtual/wasm/*, /healthz)
 │   ├── store.ts              # Cloudflare D1 (SQLite) イベントストア
-│   └── cbor.ts               # 決定論的 CBOR & Ed25519 署名ユーティリティ
+│   └── commit_store.ts       # 受け付けたコミットの読み出し
 ├── wasm/
 │   └── stage1.wasm           # definy 自己記述コンパイラ
 ├── src/
@@ -207,7 +207,7 @@ export default defineConfig({
   - すでにイベントが存在する本番環境やテスト環境では再シードを自動スキップし、安全かつ無駄なクエリを発生させません。
   - シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) が生成し、`npm run dev` / `npm run build` / `npm test` でも自動で作られます。コミットするのは指紋 `seeds/seed_bundle_fingerprint.json` だけです ([build-artifacts.md](build-artifacts.md))。
 - **純粋なブラウザ対応 CBOR デコーダー ([src/cbor.ts](../src/cbor.ts))**:
-  - `node:crypto` に依存しない標準 Web API（`atob`, `Uint8Array`, `TextDecoder`）のみで CBOR デコードおよび `ModuleCommit` 抽出を行い、署名済みイベントバイト列からモジュールメタデータ（`module_name`, `parts`, `expression`, `content_hash` 等）を React 状態（[src/state.tsx](../src/state.tsx)）へ動的に射影します。
+  - `node:crypto` に依存しない標準 Web API（`Uint8Array`, `TextDecoder`）のみで CBOR をデコードし、[src/decoded_event.ts](../src/decoded_event.ts) がプロジェクトのコミットを取り出して、署名済みイベントバイト列からモジュールメタデータ（`module_name`, `parts`, `expression`, `content_hash` 等）を React 状態（[src/state.tsx](../src/state.tsx)）へ動的に射影します。
 
 ---
 

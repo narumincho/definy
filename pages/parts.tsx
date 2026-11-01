@@ -9,7 +9,7 @@ import { PlayIcon } from "../src/icons.tsx";
 import { label, localizedText, withLanguage } from "../src/language.ts";
 import { moduleOfPartId } from "../src/new_part.ts";
 import { useDefiny } from "../src/state.tsx";
-import type { LocalizedText } from "../src/cbor.ts";
+import type { LocalizedText } from "../src/event_content.ts";
 
 /** パーツ一覧の 1 行. コミット済みのパーツに作業中の変更 (新規・変更・削除) を重ねたもの */
 type PartListItem = {

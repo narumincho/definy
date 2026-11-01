@@ -13,7 +13,7 @@ import {
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 
 /** イベントを `SubmitEvent` で出す. プロジェクトのコミットなら先にパーツの中身を `UploadContent` で送る */
 async function submitEvent(

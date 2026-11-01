@@ -8,11 +8,8 @@
  * 時刻のずれが `RPC_AUTHORIZATION_MAX_SKEW_SECONDS` を超えるものは拒否する。
  */
 
-import {
-  base64ToBytes,
-  bytesToUrlSafeBase64NoPad,
-  sha256EventHashId,
-} from "./cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { sha256EventHashId } from "./sha256.ts";
 import {
   type AccountCredentials,
   importPrivateKeyFromSecretKey,

@@ -10,7 +10,7 @@ import {
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
 import { getExpressionAtPath } from "./path.ts";
-import { bytesToUrlSafeBase64NoPad } from "../cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "../base64.ts";
 
 describe("tree layout mutation and selection", () => {
   it("パーツの参照を選ぶとパーツ ID の文字列で参照し, 選択肢の値に戻せる", () => {

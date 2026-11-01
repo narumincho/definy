@@ -4,14 +4,10 @@
  * docs/content-addressed.md「差分ハッシュ・ネゴシエーション方式」).
  * コミットにはパーツの名前と中身の content hash だけを入れ, 中身は `UploadContent` / `GetContent` でやり取りする
  */
-import {
-  base64ToBytes,
-  bytesToBase64,
-  decodeCborItem,
-  encodeCborItem,
-  sha256EventHashIdSync,
-  type DecodedPart,
-} from "./cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "./base64.ts";
+import { decodeCborItem, encodeCborItem } from "./cbor.ts";
+import { sha256EventHashIdSync } from "./sha256.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import { DEFAULT_VISIBILITY, type PartContent } from "./event_content.ts";
 import {
   decodePartDefinition,

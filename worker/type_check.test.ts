@@ -7,19 +7,16 @@ import {
   type CommitModuleParams,
   type AccountCredentials,
 } from "../src/auth.ts";
-import {
-  bytesToBase64,
-  bytesToUrlSafeBase64NoPad,
-  encodeCborItem,
-  sha256EventHashIdSync,
-  type DecodedPart,
-} from "../src/cbor.ts";
+import { bytesToBase64, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
+import { encodeCborItem } from "../src/cbor.ts";
+import { sha256EventHashIdSync } from "../src/sha256.ts";
+import type { DecodedPart } from "../src/decoded_event.ts";
 import {
   resolvePartPlaceholders,
   resolveSeedPartType,
 } from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { latestCommitHashOf } from "./commit_store.ts";

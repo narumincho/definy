@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bytesToUrlSafeBase64NoPad } from "../cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "../base64.ts";
 import type { PartSnapshot } from "../types.ts";
 import { applySelection } from "./selection.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";

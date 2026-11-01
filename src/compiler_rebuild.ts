@@ -3,7 +3,7 @@
  * できたコンパイラでもう 1 度コンパイルし, 同じバイト列になる (不動点) ことを確かめる.
  * `npm run build:stage1` (seed のパーツから) と, 実行パネルの「コンパイラを作り直す」(表示中のパーツから) が使う
  */
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import { variant } from "./definy_value.ts";
 import { compileTypeChecker } from "./self_hosted_type_check.ts";
 import {

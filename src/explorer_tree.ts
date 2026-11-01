@@ -1,5 +1,5 @@
 import { MAIN_BRANCH } from "./event_content.ts";
-import type { DecodedProjectCommit } from "./cbor.ts";
+import type { DecodedProjectCommit } from "./decoded_event.ts";
 import type { BranchSummary } from "./branches.ts";
 import type { ModuleSnapshot, PartSnapshot, ProjectSnapshot } from "./types.ts";
 

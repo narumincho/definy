@@ -5,11 +5,8 @@
  * パーツ ID はモジュール名とパーツ名だけから決まる (docs/content-addressed.md「決定論的 ID 生成」) ので,
  * コミット前でもコミットしたときの ID が分かる. 名前を変えたパーツは新しい名前の ID にする (コミットするとその ID になる)
  */
-import {
-  bytesToUrlSafeBase64NoPad,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-} from "./cbor.ts";
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import { DEFAULT_VISIBILITY } from "./event_content.ts";
 import { isTypePartType, type LatestPart } from "./self_hosted_type_check.ts";
 import type { PartChange, PartSnapshot, WorkingChanges } from "./types.ts";

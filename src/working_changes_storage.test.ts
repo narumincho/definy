@@ -5,7 +5,7 @@ import {
 } from "./working_changes_storage.ts";
 import type { WorkingChanges } from "./types.ts";
 import { generateAccountCredentials } from "./auth.ts";
-import { extractProjectCommit } from "./cbor.ts";
+import { extractProjectCommit } from "./decoded_event.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 import { withCachedContents } from "./content_store.ts";
 

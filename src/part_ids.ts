@@ -5,6 +5,8 @@
  * ID はモジュール名とパーツ名だけで決まるので, 一度求めた ID は isolate の中で使い回す
  * (コミットはどれも同じ名前のパーツを多く持つので, 新しい名前の分だけ definy で求める)
  */
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { sha256BytesSync } from "./sha256.ts";
 import { instantiateCompiledFunction } from "./stage1_compiler.ts";
 
 type ModulePartNames = {
@@ -76,4 +78,38 @@ export function derivePartIds(
       partIds: partNames.map((name) => found.partIds.get(name) ?? ""),
     };
   });
+}
+
+const TEXT_ENCODER = new TextEncoder();
+const MODULE_PREFIX_BYTES = TEXT_ENCODER.encode("definy:module:");
+const PART_SEP_BYTES = TEXT_ENCODER.encode(":part:");
+
+/**
+ * モジュール名から Module ID の内部 32 バイトを導出する (`definy:module:` + 名前 の SHA-256 を 2 回).
+ * モジュールはアカウントによらず名前で決まり, 誰がコミットできるかはブランチで決まる (docs/branch.md).
+ * サーバーは definy 製の `core.module-part-ids` (src/part_ids.ts) で求める. これはシードの生成とブラウザで使う
+ */
+export function deriveModuleIdBytes(moduleName: string): Uint8Array {
+  const nameBytes = TEXT_ENCODER.encode(moduleName);
+  const buf = new Uint8Array(MODULE_PREFIX_BYTES.length + nameBytes.length);
+  buf.set(MODULE_PREFIX_BYTES, 0);
+  buf.set(nameBytes, MODULE_PREFIX_BYTES.length);
+  return sha256BytesSync(sha256BytesSync(buf));
+}
+
+/**
+ * Module ID とパーツ名から Part ID (`EventHashId` 文字列) を導出する (Module ID + `:part:` + 名前 の SHA-256 を 2 回)
+ */
+export function deriveModulePartId(
+  moduleIdBytes: Uint8Array,
+  partName: string,
+): string {
+  const nameBytes = TEXT_ENCODER.encode(partName);
+  const buf = new Uint8Array(
+    moduleIdBytes.length + PART_SEP_BYTES.length + nameBytes.length,
+  );
+  buf.set(moduleIdBytes, 0);
+  buf.set(PART_SEP_BYTES, moduleIdBytes.length);
+  buf.set(nameBytes, moduleIdBytes.length + PART_SEP_BYTES.length);
+  return bytesToUrlSafeBase64NoPad(sha256BytesSync(sha256BytesSync(buf)));
 }

@@ -82,7 +82,7 @@ import {
 } from "./clipboard.ts";
 
 const NO_EXPECTED_VARIANTS = expectedVariantsFromTypeAst(null);
-import { type DefinyValue } from "../stage1_compiler.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
 import { callParameterNamesOf } from "./part_type.ts";
 import {
   inferredTypeExpression,

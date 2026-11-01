@@ -5,7 +5,10 @@ import {
   submitProjectCommitEvent,
   submitSignedEvent,
 } from "../src/auth.ts";
-import { extractProjectCommit, type DecodedPart } from "../src/cbor.ts";
+import {
+  extractProjectCommit,
+  type DecodedPart,
+} from "../src/decoded_event.ts";
 import {
   cachedContent,
   loadContents,

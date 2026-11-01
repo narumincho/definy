@@ -15,11 +15,9 @@ import {
   base64ToBytes,
   bytesToBase64,
   bytesToUrlSafeBase64NoPad,
-  decodeCborItem,
-  encodeCborItem,
-  toUint8Array,
-  type DecodedPart,
-} from "./cbor.ts";
+} from "./base64.ts";
+import { decodeCborItem, encodeCborItem, toUint8Array } from "./cbor.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import { variant, variantPayload } from "./definy_value.ts";
 
 export type InvalidSignatureSampleKind =

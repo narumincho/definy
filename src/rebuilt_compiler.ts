@@ -3,7 +3,7 @@
  * このブラウザの localStorage にだけ保存し, あれば同梱の `wasm/stage1.wasm` と `wasm/type_checker.wasm` の代わりに使う
  * (src/wasm_browser.ts)
  */
-import { base64ToBytes, bytesToBase64 } from "./cbor.ts";
+import { base64ToBytes, bytesToBase64 } from "./base64.ts";
 
 export type RebuiltCompiler = {
   /** 不動点のコンパイラ (`core.compile-to-wasm` を自分自身でコンパイルしたもの) */

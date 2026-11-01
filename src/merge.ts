@@ -3,8 +3,11 @@
  * パーツごとの 3 方向マージで重ね, 作業中の変更にする. コミットは `merged_commit_hash` に取り込んだコミットを持つ.
  * ブランチはプロジェクトにあるので, パーツはプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べて扱う
  */
-import type { LocalizedText } from "./cbor.ts";
-import { DEFAULT_VISIBILITY, type Visibility } from "./event_content.ts";
+import {
+  type LocalizedText,
+  DEFAULT_VISIBILITY,
+  type Visibility,
+} from "./event_content.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
 
 /** 取り込みに使うコミット (親と, 取り込んだコミットと, プロジェクトの全パーツ) */
