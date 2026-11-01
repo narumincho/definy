@@ -122,7 +122,7 @@ export type HttpRequestInfo = {
   readonly method: string;
   readonly path: string;
   readonly headers: ReadonlyArray<HttpHeader>;
-  /** `cloudflare-d1` / `in-memory` */
+  /** `cloudflare-d1` (D1 の binding が無ければ `none`. ストアを使う処理は失敗する) */
   readonly storage: string;
   /** 静的アセット (`env.ASSETS`) があるか */
   readonly hasAssets: boolean;

@@ -121,10 +121,17 @@ async function fetchSeedBundle(
 }
 
 /**
- * Cloudflare Worker 内でイベント・CAS コンテンツ・デプロイ履歴を管理するストア。
- * `env.DB` (Cloudflare D1) がバインドされている場合は D1 (SQLite) に永続化し、
- * 未バインド時はインメモリストアとして動作する。
+ * Cloudflare Worker 内でイベント・CAS コンテンツを管理するストア。
+ * 保存先は常に `env.DB` (Cloudflare D1)。無ければ例外 (2026-11-01 にインメモリストアを無くした。テストは sqlite の D1 を使う)
  */
+/** `env.DB` (D1). 無ければ例外 (サーバーは D1 が無いと動かない) */
+function requireDb(env: Env | undefined): D1Database {
+  if (env?.DB === undefined) {
+    throw new Error("the D1 binding DB is required");
+  }
+  return env.DB;
+}
+
 export class WorkerStore {
   /** D1 の seed がこの指紋なら最新とみなす. 既定はビルド時の seed バンドルの指紋 */
   private readonly expectedSeedFingerprint: string;
@@ -137,9 +144,6 @@ export class WorkerStore {
   private seedPromise: Promise<void> | null = null;
   private seedEvents: ReadonlyArray<SeedEventEntry> = [];
   private seedContents: ReadonlyMap<string, string> = new Map<string, string>();
-  private events: ReadonlyArray<SeedEventEntry> = [];
-  private eventHashes: ReadonlySet<string> = new Set<string>();
-  private contents: ReadonlyMap<string, string> = new Map<string, string>();
 
   constructor(options: { readonly expectedSeedFingerprint?: string } = {}) {
     this.expectedSeedFingerprint =
@@ -188,49 +192,29 @@ export class WorkerStore {
   }
 
   /**
-   * D1 またはインメモリストアにシードデータを投入する。
-   * `env.DB` (Cloudflare D1) 利用時は D1 スキーマを確実に適用し、未投入時のみシードデータを同期する。
+   * D1 にシードデータを投入する。D1 スキーマを確実に適用し、未投入時のみシードデータを同期する。
    */
   async ensureSeeded(env: Env, requestOrigin?: string): Promise<void> {
-    if (env.DB) {
-      await this.ensureD1Schema(env.DB);
-      if (!this.d1Seeded) {
-        if (!this.seedPromise) {
-          this.seedPromise = (async () => {
-            // D1 の seed が最新なら何もしない (コールドスタートのたびに seed バンドルを取りに行かない)
-            if (
-              (await readSeedFingerprint(env.DB!)) !==
-              this.expectedSeedFingerprint
-            ) {
-              if (!this.seeded) {
-                const bundle = await fetchSeedBundle(env, requestOrigin);
-                if (bundle) {
-                  this.loadSeedBundle(bundle);
-                }
-              }
-              if (this.seeded) {
-                await this.persistSeedToD1(env.DB!);
-              }
-            }
-            this.d1Seeded = true;
-          })().finally(() => {
-            this.seedPromise = null;
-          });
-        }
-        await this.seedPromise;
-      }
-      return;
-    }
-
-    if (this.seeded) {
+    const db = requireDb(env);
+    await this.ensureD1Schema(db);
+    if (this.d1Seeded) {
       return;
     }
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        const bundle = await fetchSeedBundle(env, requestOrigin);
-        if (bundle) {
-          this.loadSeedBundle(bundle);
+        // D1 の seed が最新なら何もしない (コールドスタートのたびに seed バンドルを取りに行かない)
+        if ((await readSeedFingerprint(db)) !== this.expectedSeedFingerprint) {
+          if (!this.seeded) {
+            const bundle = await fetchSeedBundle(env, requestOrigin);
+            if (bundle) {
+              this.loadSeedBundle(bundle);
+            }
+          }
+          if (this.seeded) {
+            await this.persistSeedToD1(db);
+          }
         }
+        this.d1Seeded = true;
       })().finally(() => {
         this.seedPromise = null;
       });
@@ -330,7 +314,7 @@ export class WorkerStore {
   }
 
   /**
-   * シードバンドルをインメモリストアに反映する
+   * D1 に書くシードバンドルを読み込む
    */
   loadSeedBundle(bundle: SeedBundle): void {
     this.seeded = true;
@@ -350,25 +334,6 @@ export class WorkerStore {
       nextSeedContents.set(item.contentHash, item.contentBytes);
     }
     this.seedContents = nextSeedContents;
-
-    const nextHashes = new Set<string>(this.eventHashes);
-    const mergedEvents: SeedEventEntry[] = [...this.events];
-
-    for (const ev of bundle.events) {
-      if (!nextHashes.has(ev.eventHash)) {
-        nextHashes.add(ev.eventHash);
-        mergedEvents.push(ev);
-      }
-    }
-    mergedEvents.sort((a, b) => b.timeMs - a.timeMs);
-    this.events = mergedEvents;
-    this.eventHashes = nextHashes;
-
-    const nextContents = new Map<string, string>(this.contents);
-    for (const item of bundle.contents) {
-      nextContents.set(item.contentHash, item.contentBytes);
-    }
-    this.contents = nextContents;
   }
 
   /**
@@ -382,54 +347,40 @@ export class WorkerStore {
     const offset = Math.max(0, req.offset ?? 0);
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
 
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      let stmt: D1PreparedStatement;
-      if (requestedType) {
-        const normalized = requestedType.toLowerCase().replace(/_/g, "");
-        stmt = env.DB.prepare(
-          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
-           FROM events
-           WHERE REPLACE(LOWER(event_type), '_', '') = ?
-           ORDER BY time_ms DESC
-           LIMIT ? OFFSET ?`,
-        ).bind(normalized, limit, offset);
-      } else {
-        stmt = env.DB.prepare(
-          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
-           FROM events
-           ORDER BY time_ms DESC
-           LIMIT ? OFFSET ?`,
-        ).bind(limit, offset);
-      }
-      const res = await stmt.all<D1EventRow>();
-      return res.results.map((r) => ({
-        eventHash: r.event_hash,
-        signedEventBytes: r.signed_event_bytes,
-        accountId: r.account_id,
-        eventType: r.event_type,
-        createdAtRfc3339: r.created_at_rfc3339,
-        timeMs:
-          r.time_ms ??
-          (r.created_at_rfc3339 ? Date.parse(r.created_at_rfc3339) : 0),
-      }));
-    }
-
-    let filtered = this.events;
+    const db = requireDb(env);
+    await this.ensureD1Schema(db);
+    let stmt: D1PreparedStatement;
     if (requestedType) {
       const normalized = requestedType.toLowerCase().replace(/_/g, "");
-      filtered = filtered.filter(
-        (e) => e.eventType.toLowerCase().replace(/_/g, "") === normalized,
-      );
+      stmt = db
+        .prepare(
+          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
+         FROM events
+         WHERE REPLACE(LOWER(event_type), '_', '') = ?
+         ORDER BY time_ms DESC
+         LIMIT ? OFFSET ?`,
+        )
+        .bind(normalized, limit, offset);
+    } else {
+      stmt = db
+        .prepare(
+          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
+         FROM events
+         ORDER BY time_ms DESC
+         LIMIT ? OFFSET ?`,
+        )
+        .bind(limit, offset);
     }
-    return filtered.slice(offset, offset + limit).map((e) => ({
-      eventHash: e.eventHash,
-      signedEventBytes: e.signedEventBytes,
-      accountId: e.accountId,
-      eventType: e.eventType,
-      createdAtRfc3339: e.createdAtRfc3339,
+    const res = await stmt.all<D1EventRow>();
+    return res.results.map((r) => ({
+      eventHash: r.event_hash,
+      signedEventBytes: r.signed_event_bytes,
+      accountId: r.account_id,
+      eventType: r.event_type,
+      createdAtRfc3339: r.created_at_rfc3339,
       timeMs:
-        e.timeMs ?? (e.createdAtRfc3339 ? Date.parse(e.createdAtRfc3339) : 0),
+        r.time_ms ??
+        (r.created_at_rfc3339 ? Date.parse(r.created_at_rfc3339) : 0),
     }));
   }
 
@@ -437,40 +388,28 @@ export class WorkerStore {
    * 単一イベントを `eventHash` で取得する
    */
   async getEvent(eventHash: string, env?: Env): Promise<EventItem | undefined> {
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      const row = await env.DB.prepare(
+    const db = requireDb(env);
+    await this.ensureD1Schema(db);
+    const row = await db
+      .prepare(
         `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
-         FROM events
-         WHERE event_hash = ?`,
+       FROM events
+       WHERE event_hash = ?`,
       )
-        .bind(eventHash)
-        .first<D1EventRow>();
-      if (!row) {
-        return undefined;
-      }
-      return {
-        eventHash: row.event_hash,
-        signedEventBytes: row.signed_event_bytes,
-        accountId: row.account_id,
-        eventType: row.event_type,
-        createdAtRfc3339: row.created_at_rfc3339,
-        timeMs:
-          row.time_ms ??
-          (row.created_at_rfc3339 ? Date.parse(row.created_at_rfc3339) : 0),
-      };
-    }
-
-    const found = this.events.find((e) => e.eventHash === eventHash);
-    if (!found) {
+      .bind(eventHash)
+      .first<D1EventRow>();
+    if (!row) {
       return undefined;
     }
     return {
-      eventHash: found.eventHash,
-      signedEventBytes: found.signedEventBytes,
-      accountId: found.accountId,
-      eventType: found.eventType,
-      createdAtRfc3339: found.createdAtRfc3339,
+      eventHash: row.event_hash,
+      signedEventBytes: row.signed_event_bytes,
+      accountId: row.account_id,
+      eventType: row.event_type,
+      createdAtRfc3339: row.created_at_rfc3339,
+      timeMs:
+        row.time_ms ??
+        (row.created_at_rfc3339 ? Date.parse(row.created_at_rfc3339) : 0),
     };
   }
 
@@ -491,36 +430,20 @@ export class WorkerStore {
     const normalizedB64 = bytesToBase64(base64ToBytes(event.signedEventBytes));
     const createdAtRfc3339 = new Date(event.timeMs).toISOString();
 
-    if (env?.DB) {
-      await env.DB.prepare(
+    await requireDb(env)
+      .prepare(
         `INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?)`,
       )
-        .bind(
-          event.eventHash,
-          normalizedB64,
-          event.accountId,
-          event.eventType,
-          createdAtRfc3339,
-          event.timeMs,
-        )
-        .run();
-    }
-
-    if (!this.eventHashes.has(event.eventHash)) {
-      const nextHashes = new Set<string>(this.eventHashes);
-      nextHashes.add(event.eventHash);
-      const entry: SeedEventEntry = {
-        eventHash: event.eventHash,
-        signedEventBytes: normalizedB64,
-        accountId: event.accountId,
-        eventType: event.eventType,
+      .bind(
+        event.eventHash,
+        normalizedB64,
+        event.accountId,
+        event.eventType,
         createdAtRfc3339,
-        timeMs: event.timeMs,
-      };
-      this.events = [entry, ...this.events];
-      this.eventHashes = nextHashes;
-    }
+        event.timeMs,
+      )
+      .run();
   }
 
   /**
@@ -534,24 +457,22 @@ export class WorkerStore {
       return [];
     }
 
-    if (env?.DB) {
-      const existing = new Set<string>();
-      for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
-        const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
-        const placeholders = chunk.map(() => "?").join(", ");
-        const res = await env.DB.prepare(
+    const db = requireDb(env);
+    const existing = new Set<string>();
+    for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
+      const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
+      const placeholders = chunk.map(() => "?").join(", ");
+      const res = await db
+        .prepare(
           `SELECT content_hash FROM cas_contents WHERE content_hash IN (${placeholders})`,
         )
-          .bind(...chunk)
-          .all<{ readonly content_hash: string }>();
-        for (const row of res.results) {
-          existing.add(row.content_hash);
-        }
+        .bind(...chunk)
+        .all<{ readonly content_hash: string }>();
+      for (const row of res.results) {
+        existing.add(row.content_hash);
       }
-      return hashes.filter((h) => !existing.has(h));
     }
-
-    return hashes.filter((h) => !this.contents.has(h));
+    return hashes.filter((h) => !existing.has(h));
   }
 
   /**
@@ -579,27 +500,20 @@ export class WorkerStore {
       }),
     );
 
-    if (env?.DB && verified.length > 0) {
+    const db = requireDb(env);
+    if (verified.length > 0) {
       const statements = verified.map((item) =>
-        env
-          .DB!.prepare(
+        db
+          .prepare(
             `INSERT OR IGNORE INTO cas_contents (content_hash, content_bytes)
            VALUES (?, ?)`,
           )
           .bind(item.contentHash, item.contentBytes),
       );
       for (let i = 0; i < statements.length; i += D1_BATCH_CHUNK_SIZE) {
-        await env.DB.batch(statements.slice(i, i + D1_BATCH_CHUNK_SIZE));
+        await db.batch(statements.slice(i, i + D1_BATCH_CHUNK_SIZE));
       }
     }
-
-    const nextContents = new Map<string, string>(this.contents);
-    for (const item of verified) {
-      if (!nextContents.has(item.contentHash)) {
-        nextContents.set(item.contentHash, item.contentBytes);
-      }
-    }
-    this.contents = nextContents;
     return verified.map((item) => item.contentHash);
   }
 
@@ -610,26 +524,19 @@ export class WorkerStore {
     hash: string,
     env?: Env,
   ): Promise<ContentItem | undefined> {
-    if (env?.DB) {
-      const row = await env.DB.prepare(
+    const row = await requireDb(env)
+      .prepare(
         `SELECT content_hash, content_bytes FROM cas_contents WHERE content_hash = ?`,
       )
-        .bind(hash)
-        .first<D1ContentRow>();
-      if (!row) {
-        return undefined;
-      }
-      return {
-        contentHash: row.content_hash,
-        contentBytes: row.content_bytes,
-      };
-    }
-
-    const contentBytes = this.contents.get(hash);
-    if (contentBytes === undefined) {
+      .bind(hash)
+      .first<D1ContentRow>();
+    if (!row) {
       return undefined;
     }
-    return { contentHash: hash, contentBytes };
+    return {
+      contentHash: row.content_hash,
+      contentBytes: row.content_bytes,
+    };
   }
 
   /**
@@ -643,31 +550,24 @@ export class WorkerStore {
       return [];
     }
 
-    if (env?.DB) {
-      const byHash = new Map<string, string>();
-      for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
-        const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
-        const placeholders = chunk.map(() => "?").join(", ");
-        const res = await env.DB.prepare(
+    const db = requireDb(env);
+    const byHash = new Map<string, string>();
+    for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
+      const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
+      const placeholders = chunk.map(() => "?").join(", ");
+      const res = await db
+        .prepare(
           `SELECT content_hash, content_bytes FROM cas_contents WHERE content_hash IN (${placeholders})`,
         )
-          .bind(...chunk)
-          .all<D1ContentRow>();
-        for (const row of res.results) {
-          byHash.set(row.content_hash, row.content_bytes);
-        }
+        .bind(...chunk)
+        .all<D1ContentRow>();
+      for (const row of res.results) {
+        byHash.set(row.content_hash, row.content_bytes);
       }
-      return hashes.flatMap((h) => {
-        const b64 = byHash.get(h);
-        return b64 !== undefined ? [{ contentHash: h, contentBytes: b64 }] : [];
-      });
     }
-
     return hashes.flatMap((h) => {
-      const contentBytes = this.contents.get(h);
-      return contentBytes !== undefined
-        ? [{ contentHash: h, contentBytes }]
-        : [];
+      const b64 = byHash.get(h);
+      return b64 !== undefined ? [{ contentHash: h, contentBytes: b64 }] : [];
     });
   }
 

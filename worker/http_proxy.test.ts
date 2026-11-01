@@ -3,7 +3,11 @@ import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { generateAccountCredentials } from "../src/auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import type { Env, HttpProxyFetchResponse } from "./types.ts";
-import { adminCredentials, signedPost } from "./test_helpers.ts";
+import {
+  adminCredentials,
+  createSqliteD1Database,
+  signedPost,
+} from "./test_helpers.ts";
 import {
   browserWasiIoHandler,
   HTTP_PROXY_PATH,
@@ -24,7 +28,10 @@ const proxyRequest = {
 
 describe("HttpProxyService/Fetch", () => {
   it("管理者の署名があればリクエストを仲介し, レスポンスをそのまま返す", async () => {
-    const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
+    };
     const sent: Array<{
       readonly url: string;
       readonly method: string;
@@ -69,7 +76,10 @@ describe("HttpProxyService/Fetch", () => {
   });
 
   it("署名が無ければ 401, 管理者でないアカウントなら 403 で, 仲介しない", async () => {
-    const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
+    };
     let fetched = 0;
     const mockFetch = (async () => {
       fetched++;
@@ -102,7 +112,10 @@ describe("HttpProxyService/Fetch", () => {
   });
 
   it("http / https 以外の URL は送らない", async () => {
-    const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
+    };
     const res = await handleWorkerRequest(
       await signedPost(proxyUrl, {
         ...proxyRequest,
@@ -116,7 +129,10 @@ describe("HttpProxyService/Fetch", () => {
   });
 
   it("ブラウザの fetch が CORS で失敗したら, 仲介が有効ならサーバーの仲介で送り直す", async () => {
-    const env: Env = { DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId };
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
+    };
     const upstream = (async () =>
       new Response("relayed", { status: 200 })) as typeof fetch;
     let relayed = 0;

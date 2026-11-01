@@ -11,7 +11,7 @@
 }
 ```
 
-- `storage`: `env.DB` (D1) があれば `cloudflare-d1`、無ければ `in-memory`
+- `storage`: `env.DB` (D1) があれば `cloudflare-d1`、無ければ `none` (2026-11-01 からストアは常に D1。以前は `in-memory` でメモリに保存していた)
 - `ipVersion`: クライアントが IPv4 / IPv6 のどちらで接続してきたか (`ipv4` / `ipv6` / `unknown`)。
   設定画面 (`/settings`) の「IP バージョン」に表示する
 

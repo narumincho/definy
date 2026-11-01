@@ -311,8 +311,8 @@ export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [
     name: "GetEvents",
     request: "GetEventsRequest",
     desc: {
-      en: "Stream and query deterministic signed events from D1 or in-memory store.",
-      ja: "D1 またはストアから暗号署名済みイベントログを順次取得します。",
+      en: "Stream and query deterministic signed events from D1.",
+      ja: "D1 から暗号署名済みイベントログを順次取得します。",
       eo: "Akiri subskribitajn eventojn el la datumbazo.",
     },
   },
