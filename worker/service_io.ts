@@ -64,13 +64,6 @@ export type ServiceIoHost = {
   readonly readPartDefinitions: (
     partIds: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<unknown>>;
-  /**
-   * 評価器 (`core.eval-value`) で評価した値 (`core.value`) を `core.part-content` の値にする (同じ順).
-   * 形が違えば `undefined`
-   */
-  readonly decodePartContents: (
-    values: ReadonlyArray<unknown>,
-  ) => ReadonlyArray<unknown>;
   /** イベントを保存し, イベントハッシュを返す */
   readonly writeEvent: (signedEventBytes: string) => Promise<string>;
   /** Base64 の中身の SHA-256 (URL-safe Base64. 同じ順. Base64 でなければ `undefined`) */
@@ -252,20 +245,6 @@ export async function handleRpcInDefiny(
           instance.writeArgument(
             definitions.map((definition) =>
               definition === undefined ? none() : some(definition),
-            ),
-          ),
-        ]);
-        break;
-      }
-      case "decode_part_contents": {
-        const values = instance.read(instance.recordField(payload, "values"));
-        const contents = host.decodePartContents(
-          Array.isArray(values) ? values : [],
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            contents.map((content) =>
-              content === undefined ? none() : some(content),
             ),
           ),
         ]);

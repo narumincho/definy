@@ -1,7 +1,7 @@
 /**
  * `SubmitEvent` で受け取ったプロジェクトのコミットの検査で, definy の `definy.check-commit` (docs/service.md) が使う能力.
  * 何をどの順に確かめるか, 定義の式の評価, 型検査は definy (`wasm/service.wasm`) が行い, ここはストアと CAS を読んで
- * 検査の入力を作ることと, 評価した値 (`core.value`) を `core.part-content` にすることだけをする.
+ * 検査の入力を作ることだけをする.
  * 型環境 (各プロジェクトの main の最新のコミット) の中身を求めるのはまだここ (`commitContents`)
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
@@ -21,7 +21,6 @@ import {
 } from "../src/visibility.ts";
 import {
   DEFAULT_VISIBILITY,
-  encodePartContent,
   partContentFromValue,
   type PartContent,
 } from "../src/event_content.ts";
@@ -30,7 +29,6 @@ import {
   resolveDefinitionsInCommit,
 } from "../src/part_definition.ts";
 import {
-  coreValueToValue,
   evaluateDefinition,
   evaluatedPartReferenceIds,
 } from "../src/definition_evaluator.ts";
@@ -470,23 +468,4 @@ export async function readExternalPartDefinitions(
   return hashes.map((hash) =>
     hash === undefined ? undefined : definitions.get(hash),
   );
-}
-
-/**
- * 評価器 (`core.eval-value`) で評価した定義の値 (`core.value`) を, 形を definy 製の `core.value-conforms` で確かめて
- * `core.part-content` の値にする (`decode_part_contents`). 形が違えば `undefined`
- */
-export function decodeEvaluatedPartContents(
-  values: ReadonlyArray<unknown>,
-): ReadonlyArray<unknown> {
-  return values.map((coreValue) => {
-    try {
-      const value = coreValueToValue(coreValue);
-      return conformsInDefiny(shapeCheckerModule, value, "core.part-content")
-        ? encodePartContent(partContentFromValue(value))
-        : undefined;
-    } catch {
-      return undefined;
-    }
-  });
 }

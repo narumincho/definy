@@ -2,7 +2,6 @@ import { InvalidSignedEventError } from "../src/signed_event.ts";
 import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
-  decodeEvaluatedPartContents,
   readCommitCheckInput,
   readExternalPartDefinitions,
 } from "./type_check.ts";
@@ -330,7 +329,6 @@ async function handleRpc(
           readCommitCheckInput(signedEventBytes, store, env),
         readPartDefinitions: (partIds) =>
           readExternalPartDefinitions(partIds, store, env),
-        decodePartContents: decodeEvaluatedPartContents,
         writeEvent: async (signedEventBytes) =>
           (await store.submitEvent(signedEventBytes, env)).eventHash,
         hashContents: (contentsBytes) =>
