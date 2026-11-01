@@ -80,6 +80,10 @@ describe("core.value-to-*", () => {
       "value-to-callee",
       "value-to-match-arm",
       "value-to-pattern",
+      "value-to-event-content",
+      "value-to-project-commit",
+      "value-to-project-commit-module",
+      "value-to-module-commit-part",
     ]);
   });
 
@@ -101,7 +105,8 @@ describe("core.value-to-*", () => {
         part.name,
       ).toEqual({ "#some": expression });
     }
-  });
+    // definy の全パーツ (CBOR などで 2026-11-01 に約 8000 行増えた) を読むので CI では 5 秒を超える
+  }, 30_000);
 
   it("core.value-to-part-content はパーツの中身を読み, 形が違えば none", () => {
     const content = {

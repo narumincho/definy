@@ -7,7 +7,6 @@ import type {
   GetEventsRequest,
   SeedBundle,
   SeedEventEntry,
-  SubmitEventResponse,
 } from "./types.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import seedFingerprintFile from "../seeds/seed_bundle_fingerprint.json" with { type: "json" };
@@ -53,7 +52,6 @@ const D1_BATCH_CHUNK_SIZE = 50;
 
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import { verifySignedEvent } from "../src/signed_event.ts";
 
 /** CAS へのアップロード内容が不正であることを表すエラー */
 export class InvalidContentError extends Error {
@@ -477,32 +475,21 @@ export class WorkerStore {
   }
 
   /**
-   * 署名済みイベントバイナリ（Base64）の Ed25519 署名を検証して追加し、`SubmitEventResponse` を返す。
-   * 署名・形式が不正な場合は `InvalidSignedEventError` を投げる。
+   * definy (`definy.submit-event`) が署名・規則・CAS に足りない中身・型を確かめたイベントを保存する (`write_event`).
+   * メタデータも definy が読んだもの. Base64 は標準の形にそろえる. 既にあるイベントは何もしない
    */
-  async submitEvent(
-    eventBinaryBase64: string,
+  async writeEvent(
+    event: {
+      readonly signedEventBytes: string;
+      readonly eventHash: string;
+      readonly accountId: string;
+      readonly eventType: string;
+      readonly timeMs: number;
+    },
     env?: Env,
-  ): Promise<SubmitEventResponse> {
-    const bytes = base64ToBytes(eventBinaryBase64);
-    const meta = await verifySignedEvent(bytes);
-    const eventHash = await sha256EventHashId(bytes);
-
-    if (meta.referencedContentHashes.length > 0) {
-      const missing = await this.checkMissingHashes(
-        meta.referencedContentHashes,
-        env,
-      );
-      if (missing.length > 0) {
-        return {
-          eventHash,
-          status: "missing_content",
-          missingContentHashes: missing,
-        };
-      }
-    }
-
-    const normalizedB64 = bytesToBase64(bytes);
+  ): Promise<void> {
+    const normalizedB64 = bytesToBase64(base64ToBytes(event.signedEventBytes));
+    const createdAtRfc3339 = new Date(event.timeMs).toISOString();
 
     if (env?.DB) {
       await env.DB.prepare(
@@ -510,36 +497,30 @@ export class WorkerStore {
          VALUES (?, ?, ?, ?, ?, ?)`,
       )
         .bind(
-          eventHash,
+          event.eventHash,
           normalizedB64,
-          meta.accountId,
-          meta.eventType,
-          meta.createdAtRfc3339,
-          meta.timeMs,
+          event.accountId,
+          event.eventType,
+          createdAtRfc3339,
+          event.timeMs,
         )
         .run();
     }
 
-    if (!this.eventHashes.has(eventHash)) {
+    if (!this.eventHashes.has(event.eventHash)) {
       const nextHashes = new Set<string>(this.eventHashes);
-      nextHashes.add(eventHash);
+      nextHashes.add(event.eventHash);
       const entry: SeedEventEntry = {
-        eventHash,
+        eventHash: event.eventHash,
         signedEventBytes: normalizedB64,
-        accountId: meta.accountId,
-        eventType: meta.eventType,
-        createdAtRfc3339: meta.createdAtRfc3339,
-        timeMs: meta.timeMs,
+        accountId: event.accountId,
+        eventType: event.eventType,
+        createdAtRfc3339,
+        timeMs: event.timeMs,
       };
       this.events = [entry, ...this.events];
       this.eventHashes = nextHashes;
     }
-
-    return {
-      eventHash,
-      status: "accepted",
-      missingContentHashes: [],
-    };
   }
 
   /**

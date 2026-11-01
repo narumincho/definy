@@ -8,7 +8,6 @@ import {
 } from "../src/auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { encodeCborItem } from "../src/cbor.ts";
-import { MALFORMED_CONTENT_MESSAGE } from "./event_check.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
@@ -198,7 +197,7 @@ describe("SubmitEvent のブランチの規則 (core.check-event)", () => {
   }, 60_000);
 });
 
-describe("SubmitEvent の中身の形 (core.value-conforms)", () => {
+describe("SubmitEvent の中身の形 (core.value-to-event-content)", () => {
   it("署名が正しくても中身の形が違うイベントは, definy の検査で拒否する", async () => {
     const store = new WorkerStore();
     const db = createSqliteD1Database();
@@ -230,6 +229,9 @@ describe("SubmitEvent の中身の形 (core.value-conforms)", () => {
         }),
       ),
     );
-    expect(result).toEqual({ status: 400, message: MALFORMED_CONTENT_MESSAGE });
+    expect(result).toEqual({
+      status: 400,
+      message: "content must be a value of core.event-content",
+    });
   });
 });

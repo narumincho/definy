@@ -16,6 +16,8 @@ definy 製の評価器 `core.eval-value` が返すのは, 型の無い値の表�
 | `core.value-to-list`                                                                                   | `(T, items: list<core.value>, decode, index, acc: list<T>) -> option<list<T>>` |
 | `core.value-decoded`                                                                                   | `(T, decoded: option<T>) -> option<T>` (そのまま返す)                          |
 
+| `core.value-to-event-content` / `-project-commit` / `-project-commit-module` / `-module-commit-part` | 同じく. SignedEvent の中身を読む ([cbor.md](cbor.md). 2026-11-01) |
+
 - 形が違えば `none` (`core.value-conforms` で確かめてから読むのと同じ。余分なレコードのキーは無視する)
 - 直和型の中身の無いタグ (`#public` など) は, 中身 (ふつうは `unit`) を見ない
 - `core.value-decoded` は型を付けるためだけの関数。`match` の対象のように期待する型の無い位置に `#some(x)` / `#none` を置くと,

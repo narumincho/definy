@@ -1,22 +1,18 @@
 /**
- * ストアのイベントを読む. 受け付けたプロジェクトのコミットを読んで (署名を確かめ, isolate の中で使い回す),
+ * ストアのイベントを読む. 受け付けたプロジェクトのコミットを definy 製の `definy.decode-stored-commit`
+ * (`wasm/commit_decoder.wasm`) で読んで (isolate の中で使い回す),
  * ブランチの最新のコミットを definy 製の `core.project-branches` (`wasm/branch_summarizer.wasm`) で求める.
- * `SubmitEvent` の検査 (worker/type_check.ts, worker/event_check.ts) が使う
+ * `SubmitEvent` の検査 (worker/type_check.ts) と `read_commits` が使う
  */
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
-import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
-import { base64ToBytes } from "../src/base64.ts";
+import commitDecoderModule from "../wasm/commit_decoder.wasm?module";
 import { summarizeBranches } from "../src/branches.ts";
-import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
+import { variantOf } from "../src/definy_value.ts";
 import type { VisibilityTarget } from "../src/visibility.ts";
-import {
-  DEFAULT_VISIBILITY,
-  MAIN_BRANCH,
-  type CommitModule,
-} from "../src/event_content.ts";
+import { MAIN_BRANCH, type Visibility } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
 import type { CommitSummary } from "../src/event_check.ts";
-import { derivePartIds } from "../src/part_ids.ts";
+import { instantiateCompiledFunction } from "../src/stage1_compiler.ts";
 import type { LatestPart } from "../src/self_hosted_type_check.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
 
@@ -64,33 +60,6 @@ export type CommitPartRef = Omit<
   "visibility" | "partType" | "expression" | "expressionKey"
 >;
 
-/**
- * プロジェクトのコミットの全モジュールのパーツ (中身は読まない).
- * ID は definy 製の `core.module-part-ids` で求める (src/part_ids.ts).
- * `name` は型エラーのメッセージに使うので `モジュール名.パーツ名` にする
- */
-export function commitParts(
-  modules: ReadonlyArray<CommitModule>,
-): ReadonlyArray<CommitPartRef> {
-  const ids = derivePartIds(
-    partIdDeriverModule,
-    modules.map((module) => ({
-      moduleName: module.name,
-      partNames: module.parts.map((part) => part.name),
-    })),
-  );
-  return modules.flatMap((module, i) =>
-    module.parts.map((part, j) => ({
-      partId: ids[i]!.partIds[j]!,
-      moduleId: ids[i]!.moduleId,
-      name: `${module.name}.${part.name}`,
-      moduleName: module.name,
-      moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
-      contentHash: part.contentHash ?? "",
-    })),
-  );
-}
-
 export type StoredCommit = {
   readonly eventHash: string;
   readonly accountId: string;
@@ -105,55 +74,95 @@ export type StoredCommit = {
   readonly parts: ReadonlyArray<CommitPartRef>;
 };
 
+/** `definy.stored-commit` (`definy.decode-stored-commit` の結果) */
+type DefinyStoredCommit = {
+  readonly account_id: string;
+  readonly project_name: string;
+  readonly branch: string;
+  readonly time_ms: number;
+  readonly modules: ReadonlyArray<{
+    readonly name: string;
+    readonly id: string;
+    readonly parts: ReadonlyArray<{
+      readonly id: string;
+      readonly name: string;
+      readonly module_name: string;
+      readonly module_id: string;
+      readonly module_visibility: unknown;
+      readonly content_hash: string;
+    }>;
+  }>;
+};
+
 /**
- * イベントハッシュごとの, 署名を検証してデコードしたプロジェクトのコミット (プロジェクトのコミットでなければ `null`).
+ * SignedEvent (Base64) を definy の `definy.decode-stored-commit` でプロジェクトのコミットとして読む.
+ * 署名は確かめない (ストアのイベントと, definy が確かめた後の受け取ったイベントにだけ使う). プロジェクトのコミットでなければ `null`
+ */
+export function decodeStoredCommit(
+  signedEventBytes: string,
+): Omit<StoredCommit, "eventHash"> | null {
+  const instance = instantiateCompiledFunction(commitDecoderModule);
+  const result = variantOf(
+    instance.read(
+      instance.call({
+        signed_event_bytes: instance.writeArgument(signedEventBytes),
+      }),
+    ),
+  );
+  if (result?.tag !== "some") {
+    return null;
+  }
+  const commit = result.payload as DefinyStoredCommit;
+  return {
+    accountId: commit.account_id,
+    projectName: commit.project_name,
+    moduleNames: commit.modules.map((module) => module.name),
+    moduleIds: commit.modules.map((module) => module.id),
+    branch: commit.branch,
+    timeMs: commit.time_ms,
+    parts: commit.modules.flatMap((module) =>
+      module.parts.map((part) => ({
+        partId: part.id,
+        moduleId: part.module_id,
+        name: part.name,
+        moduleName: part.module_name,
+        moduleVisibility: (variantOf(part.module_visibility)?.tag ??
+          "public") as Visibility,
+        contentHash: part.content_hash,
+      })),
+    ),
+  };
+}
+
+/**
+ * イベントハッシュごとの, 読んだプロジェクトのコミット (プロジェクトのコミットでなければ `null`).
  * イベントは変わらないので isolate の中で使い回す
  */
 const commitCache = new Map<string, StoredCommit | null>();
 
-async function decodeCommit(item: {
+function decodeCommit(item: {
   readonly eventHash: string;
   readonly signedEventBytes: string;
-}): Promise<StoredCommit | null> {
+}): StoredCommit | null {
   const cached = commitCache.get(item.eventHash);
   if (cached !== undefined) {
     return cached;
   }
-  const decoded = await decodeVerifiedSignedEvent(
-    base64ToBytes(item.signedEventBytes),
-  ).catch(() => undefined);
-  let result: StoredCommit | null = null;
-  if (decoded?.content.type === "project_commit") {
-    const { commit } = decoded.content;
-    result = {
-      eventHash: item.eventHash,
-      accountId: decoded.meta.accountId,
-      projectName: commit.projectName,
-      moduleNames: commit.modules.map((module) => module.name),
-      moduleIds: derivePartIds(
-        partIdDeriverModule,
-        commit.modules.map((module) => ({
-          moduleName: module.name,
-          partNames: [],
-        })),
-      ).map((ids) => ids.moduleId),
-      branch: commit.branch,
-      timeMs: decoded.meta.timeMs,
-      parts: commitParts(commit.modules),
-    };
-  }
+  const decoded = decodeStoredCommit(item.signedEventBytes);
+  const result =
+    decoded === null ? null : { eventHash: item.eventHash, ...decoded };
   commitCache.set(item.eventHash, result);
   return result;
 }
 
-/** ストアの署名の正しいプロジェクトのコミットすべて */
+/** ストアのプロジェクトのコミットすべて (ストアには definy が署名を確かめたイベントしか入れない) */
 export async function loadCommits(
   store: PartStoreReader,
   env: Env | undefined,
 ): Promise<ReadonlyArray<StoredCommit>> {
   const commits: Array<StoredCommit> = [];
   for await (const item of storeEvents(store, "project_commit", env)) {
-    const commit = await decodeCommit(item);
+    const commit = decodeCommit(item);
     if (commit !== null) {
       commits.push(commit);
     }
@@ -195,7 +204,7 @@ export async function latestCommitHashOf(
   );
 }
 
-/** ストアの署名の正しいプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
+/** ストアのプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
 export async function loadCommitSummaries(
   store: PartStoreReader,
   env: Env | undefined,

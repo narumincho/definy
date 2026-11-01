@@ -119,9 +119,16 @@ function encodeCborHeader(major: number, length: number): Uint8Array {
   if (length < 65536) {
     return new Uint8Array([prefix | 25, (length >> 8) & 0xff, length & 0xff]);
   }
-  const buf = new Uint8Array(5);
-  buf[0] = prefix | 26;
-  new DataView(buf.buffer).setUint32(1, length);
+  if (length <= 0xffffffff) {
+    const buf = new Uint8Array(5);
+    buf[0] = prefix | 26;
+    new DataView(buf.buffer).setUint32(1, length);
+    return buf;
+  }
+  // 2^32 以上 (definy の数の 0x000fffffffffffff など) は 8 バイト
+  const buf = new Uint8Array(9);
+  buf[0] = prefix | 27;
+  new DataView(buf.buffer).setBigUint64(1, BigInt(length));
   return buf;
 }
 

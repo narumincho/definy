@@ -1,5 +1,3 @@
-import { InvalidSignedEventError } from "../src/signed_event.ts";
-import { verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   readCommitCheckInput,
@@ -30,14 +28,11 @@ const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
 
 /**
  * ホストの能力 (ストアなど) が例外を投げたときのレスポンス. 処理が決めるレスポンスではないので, CORS のヘッダーだけ付ける.
- * 署名や中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
+ * 中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
  */
 function hostErrorResponse(error: unknown): Response {
   const code: ConnectErrorCode =
-    error instanceof InvalidSignedEventError ||
-    error instanceof InvalidContentError
-      ? "invalid_argument"
-      : "internal";
+    error instanceof InvalidContentError ? "invalid_argument" : "internal";
   return new Response(
     JSON.stringify({
       code,
@@ -79,6 +74,30 @@ function contentsInOrder(
 ): ReadonlyArray<ContentItem | undefined> {
   const byHash = new Map(items.map((item) => [item.contentHash, item]));
   return hashes.map((hash) => byHash.get(hash));
+}
+
+/** Ed25519 の署名を確かめる (`verify_ed25519`). 公開鍵として読めなければ `false` */
+async function verifyEd25519(
+  publicKey: Uint8Array,
+  signature: Uint8Array,
+  message: Uint8Array,
+): Promise<boolean> {
+  try {
+    return await crypto.subtle.verify(
+      { name: "Ed25519" },
+      await crypto.subtle.importKey(
+        "raw",
+        publicKey as Uint8Array<ArrayBuffer>,
+        { name: "Ed25519" },
+        false,
+        ["verify"],
+      ),
+      signature as Uint8Array<ArrayBuffer>,
+      message as Uint8Array<ArrayBuffer>,
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** definy の決めたレスポンスを HTTP のレスポンスにする */
@@ -144,17 +163,17 @@ export async function handleWorkerRequest(
         readEventsPage: (page) => store.getEvents(page, env),
         readContents: async (hashes) =>
           contentsInOrder(hashes, await store.getContentItems(hashes, env)),
+        // definy はコミットのパーツの content hash を重複を除かずに渡す
         readMissingContentHashes: (hashes) =>
-          store.checkMissingHashes(hashes, env),
-        // 署名と中身の形を確かめる. 規則 (core.check-event) は definy.submit-event の中で呼ぶ
-        verifySignedEvent: verifySubmittedEvent,
+          store.checkMissingHashes([...new Set(hashes)], env),
+        verifyEd25519,
+        now: Date.now,
         // 型チェッカー
         readCommitCheckInput: (signedEventBytes) =>
           readCommitCheckInput(signedEventBytes, store, env),
         readPartDefinitions: (partIds) =>
           readExternalPartDefinitions(partIds, store, env),
-        writeEvent: async (signedEventBytes) =>
-          (await store.submitEvent(signedEventBytes, env)).eventHash,
+        writeEvent: (event) => store.writeEvent(event, env),
         hashContents: (contentsBytes) =>
           Promise.all(
             contentsBytes.map(async (contentBytes) => {

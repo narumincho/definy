@@ -105,12 +105,6 @@ export type GetProjectBranchesResponse = {
   readonly branches: ReadonlyArray<ProjectBranchItem>;
 };
 
-export type SubmitEventResponse = {
-  readonly eventHash: string;
-  readonly status: "accepted" | "missing_content";
-  readonly missingContentHashes: ReadonlyArray<string>;
-};
-
 export type ContentItem = {
   readonly contentHash: string;
   readonly contentBytes: string;

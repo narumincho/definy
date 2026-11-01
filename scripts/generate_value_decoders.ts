@@ -27,7 +27,7 @@ type SeedModule = {
   readonly parts: ReadonlyArray<SeedPart>;
 };
 
-/** 中身を `core.value` から読む型パーツ. `core.part-content` から参照をたどったもの */
+/** 中身を `core.value` から読む型パーツ. `core.part-content` と `core.event-content` から参照をたどったもの */
 export const VALUE_DECODER_TYPES: ReadonlyArray<string> = [
   "part-content",
   "localized-text",
@@ -36,6 +36,10 @@ export const VALUE_DECODER_TYPES: ReadonlyArray<string> = [
   "callee",
   "match-arm",
   "pattern",
+  "event-content",
+  "project-commit",
+  "project-commit-module",
+  "module-commit-part",
 ];
 
 /** リストを読む補助のパーツの名前 */
