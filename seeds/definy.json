@@ -2786,45 +2786,6 @@
             }
           },
           {
-            "tag": "read_commits",
-            "payload_type": {
-              "#some": {
-                "#type_record": [
-                  {
-                    "key": "then",
-                    "value": {
-                      "#type_function": {
-                        "parameters": [
-                          {
-                            "name": "commits",
-                            "type": {
-                              "#type_list": {
-                                "item_type": {
-                                  "#part_reference": {
-                                    "part_definition_event_hash": {
-                                      "$part": "core.commit-summary"
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ],
-                        "return_type": {
-                          "#part_reference": {
-                            "part_definition_event_hash": {
-                              "$part": "definy.service-io"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          {
             "tag": "verify_ed25519",
             "payload_type": {
               "#some": {
@@ -3398,6 +3359,100 @@
                         "parameters": [
                           {
                             "name": "marked",
+                            "type": {
+                              "#type_boolean": null
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "read_cached_commits",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "event_hashes",
+                    "value": {
+                      "#type_list": {
+                        "item_type": {
+                          "#type_string": null
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "cached",
+                            "type": {
+                              "#type_list": {
+                                "item_type": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "definy.commit-cache-entry"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "write_cached_commits",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "entries",
+                    "value": {
+                      "#type_list": {
+                        "item_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.commit-cache-entry"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "written",
                             "type": {
                               "#type_boolean": null
                             }
@@ -4540,213 +4595,210 @@
             }
           ],
           "body": {
-            "#variant": {
-              "tag": "read_commits",
-              "payload": {
-                "#some": {
-                  "#record": [
-                    {
-                      "key": "then",
-                      "value": {
-                        "#function": {
-                          "parameters": [
-                            {
-                              "parameter_id": 1,
-                              "parameter_name": "commits"
-                            }
-                          ],
-                          "body": {
-                            "#let": {
-                              "variable_id": 2,
-                              "variable_name": "branches",
-                              "value": {
-                                "#call": {
-                                  "function": {
-                                    "#part_reference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.project-branches"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "commits",
-                                      "value": {
-                                        "#variable": {
-                                          "variable_id": 1
-                                        }
-                                      }
-                                    }
-                                  ]
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.read-commit-summaries"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "then",
+                  "value": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 1,
+                          "parameter_name": "commits"
+                        }
+                      ],
+                      "body": {
+                        "#let": {
+                          "variable_id": 2,
+                          "variable_name": "branches",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.project-branches"
+                                  }
                                 }
                               },
-                              "body": {
-                                "#call": {
-                                  "function": {
-                                    "#part_reference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "definy.store-read-events"
-                                      }
+                              "arguments": [
+                                {
+                                  "name": "commits",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
                                     }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "event_hashes",
-                                      "value": {
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.store-read-events"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "event_hashes",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.branch-latest-event-hashes"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "branches",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#number": 0
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "then",
+                                  "value": {
+                                    "#function": {
+                                      "parameters": [
+                                        {
+                                          "parameter_id": 3,
+                                          "parameter_name": "events"
+                                        }
+                                      ],
+                                      "body": {
                                         "#call": {
                                           "function": {
                                             "#part_reference": {
                                               "part_definition_event_hash": {
-                                                "$part": "definy.branch-latest-event-hashes"
+                                                "$part": "definy.json-response"
                                               }
                                             }
                                           },
                                           "arguments": [
                                             {
-                                              "name": "branches",
+                                              "name": "status",
                                               "value": {
-                                                "#variable": {
-                                                  "variable_id": 2
-                                                }
+                                                "#number": 200
                                               }
                                             },
                                             {
-                                              "name": "index",
+                                              "name": "body",
                                               "value": {
-                                                "#number": 0
+                                                "#variant": {
+                                                  "tag": "object",
+                                                  "payload": {
+                                                    "#some": {
+                                                      "#list": [
+                                                        {
+                                                          "#record": [
+                                                            {
+                                                              "key": "key",
+                                                              "value": {
+                                                                "#string": "branches"
+                                                              }
+                                                            },
+                                                            {
+                                                              "key": "value",
+                                                              "value": {
+                                                                "#variant": {
+                                                                  "tag": "array",
+                                                                  "payload": {
+                                                                    "#some": {
+                                                                      "#call": {
+                                                                        "function": {
+                                                                          "#part_reference": {
+                                                                            "part_definition_event_hash": {
+                                                                              "$part": "definy.branch-items-json"
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        "arguments": [
+                                                                          {
+                                                                            "name": "branches",
+                                                                            "value": {
+                                                                              "#variable": {
+                                                                                "variable_id": 2
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "name": "events",
+                                                                            "value": {
+                                                                              "#variable": {
+                                                                                "variable_id": 3
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "name": "index",
+                                                                            "value": {
+                                                                              "#number": 0
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "type_part": {
+                                                                    "#some": {
+                                                                      "$part": "definy.json"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "definy.json"
+                                                    }
+                                                  }
+                                                }
                                               }
                                             }
                                           ]
                                         }
                                       }
-                                    },
-                                    {
-                                      "name": "then",
-                                      "value": {
-                                        "#function": {
-                                          "parameters": [
-                                            {
-                                              "parameter_id": 3,
-                                              "parameter_name": "events"
-                                            }
-                                          ],
-                                          "body": {
-                                            "#call": {
-                                              "function": {
-                                                "#part_reference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "definy.json-response"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "status",
-                                                  "value": {
-                                                    "#number": 200
-                                                  }
-                                                },
-                                                {
-                                                  "name": "body",
-                                                  "value": {
-                                                    "#variant": {
-                                                      "tag": "object",
-                                                      "payload": {
-                                                        "#some": {
-                                                          "#list": [
-                                                            {
-                                                              "#record": [
-                                                                {
-                                                                  "key": "key",
-                                                                  "value": {
-                                                                    "#string": "branches"
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "value",
-                                                                  "value": {
-                                                                    "#variant": {
-                                                                      "tag": "array",
-                                                                      "payload": {
-                                                                        "#some": {
-                                                                          "#call": {
-                                                                            "function": {
-                                                                              "#part_reference": {
-                                                                                "part_definition_event_hash": {
-                                                                                  "$part": "definy.branch-items-json"
-                                                                                }
-                                                                              }
-                                                                            },
-                                                                            "arguments": [
-                                                                              {
-                                                                                "name": "branches",
-                                                                                "value": {
-                                                                                  "#variable": {
-                                                                                    "variable_id": 2
-                                                                                  }
-                                                                                }
-                                                                              },
-                                                                              {
-                                                                                "name": "events",
-                                                                                "value": {
-                                                                                  "#variable": {
-                                                                                    "variable_id": 3
-                                                                                  }
-                                                                                }
-                                                                              },
-                                                                              {
-                                                                                "name": "index",
-                                                                                "value": {
-                                                                                  "#number": 0
-                                                                                }
-                                                                              }
-                                                                            ]
-                                                                          }
-                                                                        }
-                                                                      },
-                                                                      "type_part": {
-                                                                        "#some": {
-                                                                          "$part": "definy.json"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          ]
-                                                        }
-                                                      },
-                                                      "type_part": {
-                                                        "#some": {
-                                                          "$part": "definy.json"
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
                                     }
-                                  ]
+                                  }
                                 }
-                              }
+                              ]
                             }
                           }
                         }
                       }
                     }
-                  ]
+                  }
                 }
-              },
-              "type_part": {
-                "#some": {
-                  "$part": "definy.service-io"
-                }
-              }
+              ]
             }
           }
         }
@@ -34175,6 +34227,2574 @@
       }
     },
     {
+      "name": "commit-cache-entry",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A stored event read as a project commit (none if it is not one). The host remembers these per isolate (read_cached_commits / write_cached_commits)"
+        },
+        {
+          "language": "ja",
+          "text": "プロジェクトのコミットとして読んだ保存しているイベント (コミットでなければ none)。ホストが isolate ごとに覚える (read_cached_commits / write_cached_commits)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "event_hash",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "commit",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "definy.stored-commit"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "event-commit",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "An accepted project commit and its event hash"
+        },
+        {
+          "language": "ja",
+          "text": "受け付けたプロジェクトのコミットとそのイベントハッシュ"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "event_hash",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "commit",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "definy.stored-commit"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "commit-cache-resolution",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The entries of a page of events (all) and the ones newly read (fresh)"
+        },
+        {
+          "language": "ja",
+          "text": "イベントの 1 ページの読んだもの (all) と, そのうち新しく読んだもの (fresh)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "all",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.commit-cache-entry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "key": "fresh",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.commit-cache-entry"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "commit-cache-find",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "entries",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "event_hash",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The entry of the event hash from index"
+        },
+        {
+          "language": "ja",
+          "text": "index 番目から探した, そのイベントハッシュの読んだもの"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "entries"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "event_hash"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 3,
+                          "variable_name": "entry"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.equal"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "key": "event_hash"
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#boolean": true
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#some": {
+                                  "#variable": {
+                                    "variable_id": 3
+                                  }
+                                }
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#boolean": false
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.commit-cache-find"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "entries",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "event_hash",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#none": null
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "commit-cache-resolve",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "events",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.stored-event"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "cached",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "all",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "fresh",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.commit-cache-resolution"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Read the events from index as project commits, using the cached ones and decoding the others (definy.decode-stored-commit)"
+        },
+        {
+          "language": "ja",
+          "text": "index 番目からのイベントをプロジェクトのコミットとして読む. 覚えてあるものは使い, 他は definy.decode-stored-commit で読む"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "events"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "cached"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "all"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "fresh"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#record": [
+                      {
+                        "key": "all",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 3
+                          }
+                        }
+                      },
+                      {
+                        "key": "fresh",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 4
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 5,
+                          "variable_name": "event"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.commit-cache-find"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "entries",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "event_hash",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 5
+                                    }
+                                  },
+                                  "key": "event_hash"
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "#number": 0
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 6,
+                                  "variable_name": "entry"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.commit-cache-resolve"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "events",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "cached",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "all",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-append"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "list",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "item",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 6
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "fresh",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#any": null
+                              }
+                            }
+                          },
+                          "body": {
+                            "#let": {
+                              "variable_id": 7,
+                              "variable_name": "entry",
+                              "value": {
+                                "#record": [
+                                  {
+                                    "key": "event_hash",
+                                    "value": {
+                                      "#record_get": {
+                                        "record": {
+                                          "#variable": {
+                                            "variable_id": 5
+                                          }
+                                        },
+                                        "key": "event_hash"
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "key": "commit",
+                                    "value": {
+                                      "#call": {
+                                        "function": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "definy.decode-stored-commit"
+                                            }
+                                          }
+                                        },
+                                        "arguments": [
+                                          {
+                                            "name": "signed_event_bytes",
+                                            "value": {
+                                              "#record_get": {
+                                                "record": {
+                                                  "#variable": {
+                                                    "variable_id": 5
+                                                  }
+                                                },
+                                                "key": "signed_event_bytes"
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.commit-cache-resolve"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "events",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "cached",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "all",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-append"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "list",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "item",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 7
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "fresh",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-append"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "list",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 4
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "item",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 7
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "event-commits-of",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "entries",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.commit-cache-entry"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "result",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.event-commit"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.event-commit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "result followed by the project commits of the entries from index"
+        },
+        {
+          "language": "ja",
+          "text": "result に, index 番目からの読んだもののうちプロジェクトのコミットを足したもの"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "entries"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "result"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 2
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 3,
+                          "variable_name": "entry"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.event-commits-of"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "entries",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "index",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 1
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "result",
+                          "value": {
+                            "#match": {
+                              "target": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "key": "commit"
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "some",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 4,
+                                          "variable_name": "commit"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-append"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "list",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "item",
+                                          "value": {
+                                            "#record": [
+                                              {
+                                                "key": "event_hash",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#variable": {
+                                                        "variable_id": 3
+                                                      }
+                                                    },
+                                                    "key": "event_hash"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "commit",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 4
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "none",
+                                      "payload": {
+                                        "#any": null
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read-commits-next",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "count",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "offset",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.event-commit"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "then",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "commits",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.event-commit"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.service-io"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Read the next page if the page at offset had 500 events, otherwise finish with acc"
+        },
+        {
+          "language": "ja",
+          "text": "offset のページが 500 件なら次のページを読み, そうでなければ acc で終える"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "count"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "offset"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "acc"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "then"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 500
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#boolean": true
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "commits",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#boolean": false
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.read-commits-from"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "offset",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 500
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "acc",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "then",
+                          "value": {
+                            "#function": {
+                              "parameters": [
+                                {
+                                  "parameter_id": 4,
+                                  "parameter_name": "commits"
+                                }
+                              ],
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "commits",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read-commits-from",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "offset",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.event-commit"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "then",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "commits",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.event-commit"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.service-io"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "acc followed by the accepted project commits from offset (500 at a time)"
+        },
+        {
+          "language": "ja",
+          "text": "acc に, offset 番目からの受け付けたプロジェクトのコミットを足したもの (500 件ずつ)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "offset"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "acc"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "then"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.store-read-events-page"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "event_type",
+                  "value": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#string": "project_commit"
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "limit",
+                  "value": {
+                    "#number": 500
+                  }
+                },
+                {
+                  "name": "offset",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "then",
+                  "value": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 3,
+                          "parameter_name": "events"
+                        }
+                      ],
+                      "body": {
+                        "#variant": {
+                          "tag": "read_cached_commits",
+                          "payload": {
+                            "#some": {
+                              "#record": [
+                                {
+                                  "key": "event_hashes",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-map"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "T",
+                                          "value": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "definy.stored-event"
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "U",
+                                          "value": {
+                                            "#type_string": null
+                                          }
+                                        },
+                                        {
+                                          "name": "f",
+                                          "value": {
+                                            "#function": {
+                                              "parameters": [
+                                                {
+                                                  "parameter_id": 4,
+                                                  "parameter_name": "item"
+                                                }
+                                              ],
+                                              "body": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  },
+                                                  "key": "event_hash"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "xs",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "then",
+                                  "value": {
+                                    "#function": {
+                                      "parameters": [
+                                        {
+                                          "parameter_id": 5,
+                                          "parameter_name": "cached"
+                                        }
+                                      ],
+                                      "body": {
+                                        "#let": {
+                                          "variable_id": 6,
+                                          "variable_name": "resolved",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "definy.commit-cache-resolve"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "events",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "cached",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                },
+                                                {
+                                                  "name": "all",
+                                                  "value": {
+                                                    "#list": []
+                                                  }
+                                                },
+                                                {
+                                                  "name": "fresh",
+                                                  "value": {
+                                                    "#list": []
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "body": {
+                                            "#let": {
+                                              "variable_id": 7,
+                                              "variable_name": "acc",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.list-concat"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "definy.event-commits-of"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "entries",
+                                                              "value": {
+                                                                "#record_get": {
+                                                                  "record": {
+                                                                    "#variable": {
+                                                                      "variable_id": 6
+                                                                    }
+                                                                  },
+                                                                  "key": "all"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "#number": 0
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "result",
+                                                              "value": {
+                                                                "#list": []
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "body": {
+                                                "#let": {
+                                                  "variable_id": 8,
+                                                  "variable_name": "count",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.list-length"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "value",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "body": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.equal"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.list-length"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "value",
+                                                                      "value": {
+                                                                        "#record_get": {
+                                                                          "record": {
+                                                                            "#variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          },
+                                                                          "key": "fresh"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "#number": 0
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": true
+                                                          },
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.read-commits-next"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "count",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 8
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "offset",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 0
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "acc",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "then",
+                                                                  "value": {
+                                                                    "#function": {
+                                                                      "parameters": [
+                                                                        {
+                                                                          "parameter_id": 9,
+                                                                          "parameter_name": "commits"
+                                                                        }
+                                                                      ],
+                                                                      "body": {
+                                                                        "#call": {
+                                                                          "function": {
+                                                                            "#variable": {
+                                                                              "variable_id": 2
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "commits",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 9
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": false
+                                                          },
+                                                          "body": {
+                                                            "#variant": {
+                                                              "tag": "write_cached_commits",
+                                                              "payload": {
+                                                                "#some": {
+                                                                  "#record": [
+                                                                    {
+                                                                      "key": "entries",
+                                                                      "value": {
+                                                                        "#record_get": {
+                                                                          "record": {
+                                                                            "#variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          },
+                                                                          "key": "fresh"
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "key": "then",
+                                                                      "value": {
+                                                                        "#function": {
+                                                                          "parameters": [
+                                                                            {
+                                                                              "parameter_id": 10,
+                                                                              "parameter_name": "written"
+                                                                            }
+                                                                          ],
+                                                                          "body": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "definy.read-commits-next"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "count",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 8
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "offset",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 0
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "acc",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 7
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "then",
+                                                                                  "value": {
+                                                                                    "#function": {
+                                                                                      "parameters": [
+                                                                                        {
+                                                                                          "parameter_id": 11,
+                                                                                          "parameter_name": "commits"
+                                                                                        }
+                                                                                      ],
+                                                                                      "body": {
+                                                                                        "#call": {
+                                                                                          "function": {
+                                                                                            "#variable": {
+                                                                                              "variable_id": 2
+                                                                                            }
+                                                                                          },
+                                                                                          "arguments": [
+                                                                                            {
+                                                                                              "name": "commits",
+                                                                                              "value": {
+                                                                                                "#variable": {
+                                                                                                  "variable_id": 11
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "type_part": {
+                                                                "#some": {
+                                                                  "$part": "definy.service-io"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "type_part": {
+                            "#some": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read-commits",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "then",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "commits",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.event-commit"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.service-io"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The accepted project commits in the order of the store (newest first). Each event is decoded once per isolate (the host caches it)"
+        },
+        {
+          "language": "ja",
+          "text": "受け付けたプロジェクトのコミット (ストアの順. 新しい順)。各イベントは isolate ごとに 1 回だけ読む (ホストが覚える)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "then"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.read-commits-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "offset",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "acc",
+                  "value": {
+                    "#list": []
+                  }
+                },
+                {
+                  "name": "then",
+                  "value": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 1,
+                          "parameter_name": "commits"
+                        }
+                      ],
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "commits",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read-commit-summaries",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "then",
+              "type": {
+                "#type_function": {
+                  "parameters": [
+                    {
+                      "name": "commits",
+                      "type": {
+                        "#type_list": {
+                          "item_type": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.commit-summary"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "return_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.service-io"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The accepted project commits as core.commit-summary (the facts the rules core.check-event and core.project-branches use)"
+        },
+        {
+          "language": "ja",
+          "text": "受け付けたプロジェクトのコミットの core.commit-summary (規則 core.check-event と core.project-branches が使う事実)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "then"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.read-commits"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "then",
+                  "value": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 1,
+                          "parameter_name": "commits"
+                        }
+                      ],
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "commits",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.list-map"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "T",
+                                      "value": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.event-commit"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "U",
+                                      "value": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.commit-summary"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "f",
+                                      "value": {
+                                        "#function": {
+                                          "parameters": [
+                                            {
+                                              "parameter_id": 2,
+                                              "parameter_name": "item"
+                                            }
+                                          ],
+                                          "body": {
+                                            "#record": [
+                                              {
+                                                "key": "event_hash",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#variable": {
+                                                        "variable_id": 2
+                                                      }
+                                                    },
+                                                    "key": "event_hash"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "account_id",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#record_get": {
+                                                        "record": {
+                                                          "#variable": {
+                                                            "variable_id": 2
+                                                          }
+                                                        },
+                                                        "key": "commit"
+                                                      }
+                                                    },
+                                                    "key": "account_id"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "project_name",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#record_get": {
+                                                        "record": {
+                                                          "#variable": {
+                                                            "variable_id": 2
+                                                          }
+                                                        },
+                                                        "key": "commit"
+                                                      }
+                                                    },
+                                                    "key": "project_name"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "branch",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#record_get": {
+                                                        "record": {
+                                                          "#variable": {
+                                                            "variable_id": 2
+                                                          }
+                                                        },
+                                                        "key": "commit"
+                                                      }
+                                                    },
+                                                    "key": "branch"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "time",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#record_get": {
+                                                        "record": {
+                                                          "#variable": {
+                                                            "variable_id": 2
+                                                          }
+                                                        },
+                                                        "key": "commit"
+                                                      }
+                                                    },
+                                                    "key": "time_ms"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "module_names",
+                                                "value": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.list-map"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "T",
+                                                        "value": {
+                                                          "#part_reference": {
+                                                            "part_definition_event_hash": {
+                                                              "$part": "definy.stored-commit-module"
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "U",
+                                                        "value": {
+                                                          "#type_string": null
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "f",
+                                                        "value": {
+                                                          "#function": {
+                                                            "parameters": [
+                                                              {
+                                                                "parameter_id": 3,
+                                                                "parameter_name": "item"
+                                                              }
+                                                            ],
+                                                            "body": {
+                                                              "#record_get": {
+                                                                "record": {
+                                                                  "#variable": {
+                                                                    "variable_id": 3
+                                                                  }
+                                                                },
+                                                                "key": "name"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "xs",
+                                                        "value": {
+                                                          "#record_get": {
+                                                            "record": {
+                                                              "#record_get": {
+                                                                "record": {
+                                                                  "#variable": {
+                                                                    "variable_id": 2
+                                                                  }
+                                                                },
+                                                                "key": "commit"
+                                                              }
+                                                            },
+                                                            "key": "modules"
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "xs",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "handle-rpc",
       "part_type": {
         "#type_function": {
@@ -63453,97 +66073,94 @@
                                                                 }
                                                               },
                                                               "body": {
-                                                                "#variant": {
-                                                                  "tag": "read_commits",
-                                                                  "payload": {
-                                                                    "#some": {
-                                                                      "#record": [
-                                                                        {
-                                                                          "key": "then",
-                                                                          "value": {
-                                                                            "#function": {
-                                                                              "parameters": [
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "definy.read-commit-summaries"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "then",
+                                                                      "value": {
+                                                                        "#function": {
+                                                                          "parameters": [
+                                                                            {
+                                                                              "parameter_id": 1024,
+                                                                              "parameter_name": "commits"
+                                                                            }
+                                                                          ],
+                                                                          "body": {
+                                                                            "#call": {
+                                                                              "function": {
+                                                                                "#part_reference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "definy.submit-verified-event"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
                                                                                 {
-                                                                                  "parameter_id": 1024,
-                                                                                  "parameter_name": "commits"
-                                                                                }
-                                                                              ],
-                                                                              "body": {
-                                                                                "#call": {
-                                                                                  "function": {
-                                                                                    "#part_reference": {
-                                                                                      "part_definition_event_hash": {
-                                                                                        "$part": "definy.submit-verified-event"
-                                                                                      }
+                                                                                  "name": "signed_event_bytes",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 1019
                                                                                     }
-                                                                                  },
-                                                                                  "arguments": [
-                                                                                    {
-                                                                                      "name": "signed_event_bytes",
-                                                                                      "value": {
-                                                                                        "#variable": {
-                                                                                          "variable_id": 1019
-                                                                                        }
-                                                                                      }
-                                                                                    },
-                                                                                    {
-                                                                                      "name": "event",
-                                                                                      "value": {
-                                                                                        "#variable": {
-                                                                                          "variable_id": 1022
-                                                                                        }
-                                                                                      }
-                                                                                    },
-                                                                                    {
-                                                                                      "name": "facts",
-                                                                                      "value": {
-                                                                                        "#record": [
-                                                                                          {
-                                                                                            "key": "account_id",
-                                                                                            "value": {
-                                                                                              "#record_get": {
-                                                                                                "record": {
-                                                                                                  "#variable": {
-                                                                                                    "variable_id": 1022
-                                                                                                  }
-                                                                                                },
-                                                                                                "key": "account_id"
-                                                                                              }
-                                                                                            }
-                                                                                          },
-                                                                                          {
-                                                                                            "key": "account_created",
-                                                                                            "value": {
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "event",
+                                                                                  "value": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 1022
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "name": "facts",
+                                                                                  "value": {
+                                                                                    "#record": [
+                                                                                      {
+                                                                                        "key": "account_id",
+                                                                                        "value": {
+                                                                                          "#record_get": {
+                                                                                            "record": {
                                                                                               "#variable": {
-                                                                                                "variable_id": 1023
+                                                                                                "variable_id": 1022
                                                                                               }
-                                                                                            }
-                                                                                          },
-                                                                                          {
-                                                                                            "key": "commits",
-                                                                                            "value": {
-                                                                                              "#variable": {
-                                                                                                "variable_id": 1024
-                                                                                              }
-                                                                                            }
+                                                                                            },
+                                                                                            "key": "account_id"
                                                                                           }
-                                                                                        ]
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "account_created",
+                                                                                        "value": {
+                                                                                          "#variable": {
+                                                                                            "variable_id": 1023
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "commits",
+                                                                                        "value": {
+                                                                                          "#variable": {
+                                                                                            "variable_id": 1024
+                                                                                          }
+                                                                                        }
                                                                                       }
-                                                                                    }
-                                                                                  ]
+                                                                                    ]
+                                                                                  }
                                                                                 }
-                                                                              }
+                                                                              ]
                                                                             }
                                                                           }
                                                                         }
-                                                                      ]
+                                                                      }
                                                                     }
-                                                                  },
-                                                                  "type_part": {
-                                                                    "#some": {
-                                                                      "$part": "definy.service-io"
-                                                                    }
-                                                                  }
+                                                                  ]
                                                                 }
                                                               }
                                                             }

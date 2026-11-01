@@ -3,13 +3,9 @@
  *
  * `definy.handle-request` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
- * ストアの SQL (`sql`) やコミットの一覧 (`read_commits`) などの要求をホスト (ここ) が行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
+ * ストアの SQL (`sql`) や読んだコミットのキャッシュ (`read_cached_commits`) などの要求をホスト (ここ) が行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
 import { none, some, variant, variantOf } from "../src/definy_value.ts";
-import {
-  commitSummaryLiteral,
-  type CommitSummary,
-} from "../src/event_check.ts";
 import {
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
@@ -20,8 +16,17 @@ import type { SeedBundle } from "./types.ts";
 
 /** 処理がストアを読むときに使うもの */
 export type ServiceIoHost = {
-  /** 受け付けたプロジェクトのコミット (ストアの順) */
-  readonly readCommits: () => Promise<ReadonlyArray<CommitSummary>>;
+  /**
+   * この isolate が覚えている, イベントをプロジェクトのコミットとして読んだもの (`read_cached_commits`.
+   * `definy.commit-cache-entry` の値). 覚えていないイベントは入れない
+   */
+  readonly readCachedCommits: (
+    eventHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<CommitCacheEntry>>;
+  /** definy が読んだものを覚える (`write_cached_commits`) */
+  readonly writeCachedCommits: (
+    entries: ReadonlyArray<CommitCacheEntry>,
+  ) => Promise<void>;
   /**
    * SQL の文を順に実行し, それぞれの結果の行を返す (`sql`. 2 つ以上なら 1 つのトランザクション).
    * 行は列の名前から値 (文字列, 整数, `null`) で, 列は SELECT の順
@@ -81,6 +86,12 @@ export type ServiceIoHost = {
       }
     | { readonly failed: string }
   >;
+};
+
+/** `definy.commit-cache-entry` (`commit` は `option<definy.stored-commit>` の definy の値) */
+export type CommitCacheEntry = {
+  readonly event_hash: string;
+  readonly commit: unknown;
 };
 
 /** `definy.sql-value` */
@@ -293,10 +304,25 @@ async function runServiceIo(
         ]);
         break;
       }
-      case "read_commits": {
-        const commits = await host.readCommits();
+      case "read_cached_commits": {
+        const entries = await host.readCachedCommits(
+          readStrings(
+            instance.read(instance.recordField(payload, "event_hashes")),
+          ),
+        );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(commits.map(commitSummaryLiteral)),
+          instance.writeArgument(entries),
+        ]);
+        break;
+      }
+      case "write_cached_commits": {
+        await host.writeCachedCommits(
+          instance.read(
+            instance.recordField(payload, "entries"),
+          ) as ReadonlyArray<CommitCacheEntry>,
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(true),
         ]);
         break;
       }

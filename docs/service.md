@@ -33,7 +33,8 @@
 | `read_seed_bundle`        | `then: (bundle: option<definy.seed-bundle>) -> ...`                                            | seed バンドルを読む (`/__definy_seed_bundle.json`。指紋も付ける)                                                                                                                                               |
 | `mark_seeded`             | `then: (marked: boolean) -> ...`                                                               | この isolate が seed を入れたと覚える                                                                                                                                                                          |
 | `read_request_json`       | `then: (body: definy.request-json) -> ...`                                                     | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                                                                                                     |
-| `read_commits`            | `then: (commits: list<core.commit-summary>) -> definy.service-io`                              | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                                                                                           |
+| `read_cached_commits`     | `event_hashes`, `then: (cached: list<definy.commit-cache-entry>) -> ...`                       | この isolate が覚えている, イベントをプロジェクトのコミットとして読んだもの (覚えていないものは入れない)。読むのは definy の `definy.read-commits`                                                             |
+| `write_cached_commits`    | `entries: list<definy.commit-cache-entry>`, `then: (written: boolean) -> ...`                  | definy が読んだものを覚える (中身は変わらないので isolate の中で使い回す)                                                                                                                                      |
 | `sql`                     | `statements: list<definy.sql-statement>`, `then: (results: list<list<definy.sql-row>>) -> ...` | SQL の文を D1 で順に実行し, それぞれの結果の行を返す (2 つ以上なら `batch` で 1 つのトランザクション. `runD1Statements`)。どの SQL を流すかは definy の `definy.store-*` が決める ([database.md](database.md)) |
 | `verify_ed25519`          | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                          | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                                                                                               |
 | `read_time`               | `then: (now_ms: number) -> ...`                                                                | 今の時刻 (ミリ秒)                                                                                                                                                                                              |
@@ -73,7 +74,7 @@
     `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
     中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も
     ここで確かめ, 違えば `invalid`。規則が使う事実はアカウントを作ったか (`definy.read-account-created`. 下を参照) と, プロジェクトのコミットなら
-    受け付けたコミット (`read_commits`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
+    受け付けたコミット (`definy.read-commit-summaries`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
   - `UploadContent` (`definy.upload-content`): `items` を読み (`definy.json-content-items`), 中身の SHA-256 (`hash_contents`) が
     `contentHash` と違うものが 1 つでもあれば何も保存せずに `invalid_argument` にする (`definy.content-hash-mismatch`)。
     以前は Base64 でない中身や形の違う `items` が `internal` になっていたのを `invalid_argument` にした。

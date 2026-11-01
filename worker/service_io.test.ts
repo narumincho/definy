@@ -159,12 +159,25 @@ async function sqlStore(
   fixtures: {
     readonly events?: ReadonlyArray<EventItem>;
     readonly contents?: ReadonlyArray<ContentItem>;
+    /** プロジェクトのコミット. イベントを入れ, 読んだものはホストが覚えていることにする (`read_cached_commits`) */
+    readonly commits?: ReadonlyArray<CommitSummary>;
   } = {},
   log: Array<string> = [],
 ): Promise<{
   readonly db: D1Database;
-  readonly host: Pick<ServiceIoHost, "runSql">;
+  readonly host: Pick<ServiceIoHost, "runSql" | "readCachedCommits">;
 }> {
+  const commits = fixtures.commits ?? [];
+  fixtures = {
+    ...fixtures,
+    events: [
+      ...(fixtures.events ?? []),
+      ...commits.map((summary) => ({
+        ...event(summary.eventHash, summary.timeMs),
+        accountId: summary.accountId,
+      })),
+    ],
+  };
   const db = createSqliteD1Database();
   // テーブルは definy (definy.seed-store) が作る. 指紋の行は消しておく
   await new WorkerStore().seedD1(db, { events: [], contents: [] });
@@ -198,6 +211,27 @@ async function sqlStore(
       runSql: (statements) => {
         log.push(["sql", ...statements.map(sqlLabel)].join(" ").trim());
         return runD1Statements(db, statements);
+      },
+      readCachedCommits: (eventHashes) => {
+        log.push(`cached ${eventHashes.join(",")}`);
+        return Promise.resolve(
+          commits
+            .filter((summary) => eventHashes.includes(summary.eventHash))
+            .map((summary) => ({
+              event_hash: summary.eventHash,
+              commit: some({
+                account_id: summary.accountId,
+                project_name: summary.projectName,
+                branch: summary.branch,
+                time_ms: summary.timeMs,
+                modules: summary.moduleNames.map((name) => ({
+                  name,
+                  id: `module-${name}`,
+                  parts: [],
+                })),
+              }),
+            })),
+        );
       },
     },
   };
@@ -236,7 +270,8 @@ const verifyingHost = (eventHash: string): Partial<ServiceIoHost> => ({
 
 /** 読まないはずのホスト. `overrides` で読むものだけ与える */
 const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
-  readCommits: () => Promise.reject(new Error("not read")),
+  readCachedCommits: () => Promise.reject(new Error("not read")),
+  writeCachedCommits: () => Promise.reject(new Error("not written")),
   runSql: () => Promise.reject(new Error("not read")),
   verifyEd25519: () => Promise.reject(new Error("not verified")),
   now: () => {
@@ -260,22 +295,19 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
 });
 
 describe("handleRpcInDefiny", () => {
-  it("GetProjectBranches はブランチと最新のイベントを返す. 見つからないイベントのブランチは除く", async () => {
+  it("GetProjectBranches はブランチと最新のイベントを返す", async () => {
     const reads: Array<string> = [];
     const store = await sqlStore(
-      { events: [event("m2", 300), event("b1", 200)] },
-      reads,
-    );
-    const branchesHost = host({
-      ...store.host,
-      readCommits: () =>
-        Promise.resolve([
+      {
+        commits: [
           commit("m1", "alice", "main", 100),
           commit("b1", "bob", "bob", 200),
           commit("m2", "alice", "main", 300),
-          commit("g1", "carol", "gone", 400),
-        ]),
-    });
+        ],
+      },
+      reads,
+    );
+    const branchesHost = host(store.host);
     expect(
       await handleRpcInDefiny(
         service,
@@ -299,12 +331,17 @@ describe("handleRpcInDefiny", () => {
             branch: "bob",
             creatorAccountId: "bob",
             commitCount: 1,
-            latestEvent: event("b1", 200),
+            latestEvent: { ...event("b1", 200), accountId: "bob" },
           },
         ],
       },
     });
-    expect(reads).toEqual(["sql SELECT events m2,b1,g1"]);
+    // コミットは definy が読む (読んだものはホストが覚えている)
+    expect(reads).toEqual([
+      "sql SELECT events project_commit,500,0",
+      "cached m2,b1,m1",
+      "sql SELECT events m2,b1",
+    ]);
   });
 
   it("無いメソッドは unimplemented で, 本文を読まない", async () => {
@@ -346,10 +383,6 @@ describe("handleRpcInDefiny", () => {
         verifyEd25519: (publicKey, _signature, message) => {
           steps.push(`verify ${publicKey.length} ${message.length}`);
           return Promise.resolve(true);
-        },
-        readCommits: () => {
-          steps.push("commits");
-          return Promise.resolve([commit("m1", alice, "main", 100)]);
         },
         readCommitCheckInput: () => {
           steps.push("type check");
@@ -494,14 +527,14 @@ describe("handleRpcInDefiny", () => {
           ...verifyingHost("e2"),
           ...(
             await sqlStore(
-              { events: createdAccounts([alice]), contents },
+              {
+                events: createdAccounts([alice]),
+                contents,
+                commits: [commit("m1", alice, "main", 100)],
+              },
               reads,
             )
           ).host,
-          readCommits: () => {
-            reads.push("commits");
-            return Promise.resolve([commit("m1", alice, "main", 100)]);
-          },
           readCommitCheckInput: () => Promise.resolve(null),
         }),
       );
@@ -527,7 +560,8 @@ describe("handleRpcInDefiny", () => {
     });
     expect(reads).toEqual([
       "sql SELECT events create_account,500,0",
-      "commits",
+      "sql SELECT events project_commit,500,0",
+      "cached m1",
       "sql SELECT cas_contents hash-x,hash-x2",
     ]);
 
@@ -546,7 +580,8 @@ describe("handleRpcInDefiny", () => {
     });
     expect(reads).toEqual([
       "sql SELECT events create_account,500,0",
-      "commits",
+      "sql SELECT events project_commit,500,0",
+      "cached m1",
       "sql SELECT cas_contents hash-x,hash-x2",
       "sql INSERT events e2,…,…,project_commit,1000000,1000000",
     ]);

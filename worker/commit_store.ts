@@ -2,7 +2,7 @@
  * ストアのイベントを読む. 受け付けたプロジェクトのコミットを definy 製の `definy.decode-stored-commit`
  * (`wasm/commit_decoder.wasm`) で読んで (isolate の中で使い回す),
  * ブランチの最新のコミットを definy 製の `core.project-branches` (`wasm/branch_summarizer.wasm`) で求める.
- * `SubmitEvent` の検査 (worker/type_check.ts) と `read_commits` が使う
+ * `SubmitEvent` の検査 (worker/type_check.ts) が使う. definy の `definy.read-commits` が読んだものを覚える能力もここ
  */
 import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import commitDecoderModule from "../wasm/commit_decoder.wasm?module";
@@ -11,7 +11,7 @@ import { variantOf } from "../src/definy_value.ts";
 import type { VisibilityTarget } from "../src/visibility.ts";
 import { MAIN_BRANCH, type Visibility } from "../src/event_content.ts";
 import type { ContentItem } from "../src/content_store.ts";
-import type { CommitSummary } from "../src/event_check.ts";
+import type { CommitCacheEntry, ServiceIoHost } from "./service_io.ts";
 import { instantiateCompiledFunction } from "../src/stage1_compiler.ts";
 import type { LatestPart } from "../src/self_hosted_type_check.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -204,17 +204,28 @@ export async function latestCommitHashOf(
   );
 }
 
-/** ストアのプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
-export async function loadCommitSummaries(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<CommitSummary>> {
-  return (await loadCommits(store, env)).map((commit) => ({
-    eventHash: commit.eventHash,
-    accountId: commit.accountId,
-    projectName: commit.projectName,
-    branch: commit.branch,
-    timeMs: commit.timeMs,
-    moduleNames: commit.moduleNames,
-  }));
-}
+/**
+ * definy (`definy.read-commits`) がイベントをプロジェクトのコミットとして読んだもの (キーはイベントハッシュ).
+ * 中身は変わらないので isolate の中で使い回す (`read_cached_commits` / `write_cached_commits`)
+ */
+const definyCommitCache = new Map<string, CommitCacheEntry>();
+
+/** {@link definyCommitCache} を読み書きする能力 */
+export const commitCacheHost: Pick<
+  ServiceIoHost,
+  "readCachedCommits" | "writeCachedCommits"
+> = {
+  readCachedCommits: (eventHashes) =>
+    Promise.resolve(
+      eventHashes.flatMap((eventHash) => {
+        const entry = definyCommitCache.get(eventHash);
+        return entry === undefined ? [] : [entry];
+      }),
+    ),
+  writeCachedCommits: (entries) => {
+    for (const entry of entries) {
+      definyCommitCache.set(entry.event_hash, entry);
+    }
+    return Promise.resolve();
+  },
+};

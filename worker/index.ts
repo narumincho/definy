@@ -3,7 +3,7 @@ import {
   readCommitCheckInput,
   readExternalPartDefinitions,
 } from "./type_check.ts";
-import { loadCommitSummaries } from "./commit_store.ts";
+import { commitCacheHost } from "./commit_store.ts";
 import {
   handleRequestInDefiny,
   type HttpFetchRequest,
@@ -120,7 +120,7 @@ export async function handleWorkerRequest(
         hasAssets: serveAsset !== undefined,
       },
       {
-        readCommits: () => loadCommitSummaries(store, env),
+        ...commitCacheHost,
         runSql: (statements) => runD1Statements(requireDb(env), statements),
         verifyEd25519,
         now: Date.now,
