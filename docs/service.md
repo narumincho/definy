@@ -25,7 +25,6 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 | `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                     |
 | `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                       |
 | `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                   |
-| `read_account_created`        | `account_id`, `then: (created: boolean) -> ...`                                                     | そのアカウントの `create_account` を受け付けたか (`isAccountCreated`)             |
 | `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
 | `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)       |
 | `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                  |
@@ -59,11 +58,17 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
   - (2026-10-30) 規則 `core.check-event` は `definy.submit-verified-event` の中で呼ぶ。`verify_signed_event` は
     `definy.verified-event` (イベントハッシュ, アカウント, 中身 `core.event-content`, 参照する content hash) を返し,
     中身は規則が見ない説明・メッセージ・パーツの中身の content hash を除いてある (`contentForCheck`)。中身の形 (`core.value-conforms`) も
-    ここで確かめ, 違えば `invalid`。規則が使う事実はアカウントを作ったか (`read_account_created`) と, プロジェクトのコミットなら
+    ここで確かめ, 違えば `invalid`。規則が使う事実はアカウントを作ったか (`definy.read-account-created`. 下を参照) と, プロジェクトのコミットなら
     受け付けたコミット (`read_commits`) を読む。理由のメッセージは `definy.event-rejection-message` (以前は TypeScript の `eventRejectionMessage`)。
   - `UploadContent` (`definy.upload-content`): `items` を読み (`definy.json-content-items`), 中身の SHA-256 (`hash_contents`) が
     `contentHash` と違うものが 1 つでもあれば何も保存せずに `invalid_argument` にする (`definy.content-hash-mismatch`)。
     以前は Base64 でない中身や形の違う `items` が `internal` になっていたのを `invalid_argument` にした。
+
+### アカウントを作ったか (`definy.read-account-created`, 2026-11-01)
+
+以前はホスト (`isAccountCreated`) に `read_account_created` で頼み, ホストが `create_account` のイベントを 500 件ずつ読んで探していた。
+今は definy が `read_events_page` (`event_type: some("create_account")`, `limit: 500`) で 1 ページずつ読み, そのアカウントのイベントがあれば
+`true`, ページが 500 件より少なければ `false`, そうでなければ次のページを読む。ホストに残るのは 1 ページを読むことだけ。
 
 ## 型検査 (`definy.check-commit`, 2026-10-31)
 

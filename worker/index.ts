@@ -1,5 +1,5 @@
 import { InvalidSignedEventError } from "../src/signed_event.ts";
-import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
+import { verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   readCommitCheckInput,
@@ -320,8 +320,6 @@ async function handleRpc(
           contentsInOrder(hashes, await store.getContentItems(hashes, env)),
         readMissingContentHashes: (hashes) =>
           store.checkMissingHashes(hashes, env),
-        readAccountCreated: (accountId) =>
-          isAccountCreated(accountId, store, env),
         // 署名と中身の形を確かめる. 規則 (core.check-event) は definy.submit-event の中で呼ぶ
         verifySignedEvent: verifySubmittedEvent,
         // 型チェッカー

@@ -40,8 +40,6 @@ export type ServiceIoHost = {
   readonly readMissingContentHashes: (
     contentHashes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<string>>;
-  /** そのアカウントの `create_account` を受け付けたか */
-  readonly readAccountCreated: (accountId: string) => Promise<boolean>;
   /**
    * 署名済みイベント (Base64) の Ed25519 署名を確かめて読む. 不正なら理由 (中身が `core.event-content` の形でないときも).
    * `content` は規則 (`core.check-event`) に渡す中身 (`contentForCheck`)
@@ -213,15 +211,6 @@ export async function handleRpcInDefiny(
                   referenced_content_hashes: result.referencedContentHashes,
                 }),
           ),
-        ]);
-        break;
-      }
-      case "read_account_created": {
-        const created = await host.readAccountCreated(
-          String(instance.read(instance.recordField(payload, "account_id"))),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(created),
         ]);
         break;
       }
