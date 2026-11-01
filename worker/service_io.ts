@@ -47,15 +47,8 @@ export type ServiceIoHost = {
   readonly hashContents: (
     contentsBytes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<string | undefined>>;
-  /**
-   * 処理しているリクエストの `Authorization` ヘッダーの署名を確かめる (docs/rpc-authorization.md).
-   * 無ければ `anonymous`, 署名が違えば `invalid` (理由), 正しければ `account` (アカウント ID)
-   */
-  readonly readAuthorization: () => Promise<
-    | { readonly type: "anonymous" }
-    | { readonly type: "invalid"; readonly message: string }
-    | { readonly type: "account"; readonly accountId: string }
-  >;
+  /** リクエストの本文 (UTF-8 の文字列. `read_request_text`). 署名を確かめるのは definy (`definy.read-rpc-authorization`) */
+  readonly readRequestText: () => Promise<string>;
   /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
   readonly readAdminAccountIds: () => string;
   /** ストアに seed を入れておく (入れてあれば何もしない) */
@@ -276,16 +269,9 @@ export async function handleRequestInDefiny(
         ]);
         break;
       }
-      case "read_authorization": {
-        const authorization = await host.readAuthorization();
+      case "read_request_text": {
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            authorization.type === "anonymous"
-              ? variant("anonymous")
-              : authorization.type === "invalid"
-                ? variant("invalid", authorization.message)
-                : variant("account", authorization.accountId),
-          ),
+          instance.writeArgument(await host.readRequestText()),
         ]);
         break;
       }

@@ -38,7 +38,7 @@
 | `read_commit_check_input` | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`               | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                                                                                                    |
 | `read_part_definitions`   | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                        | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                                                                                               |
 | `hash_contents`           | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                                                                                             |
-| `read_authorization`      | `then: (authorization: definy.rpc-authorization) -> ...`                                       | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`)                                                                                                                  |
+| `read_request_text`       | `then: (body: string) -> ...`                                                                  | リクエストの本文を文字列で読む (`Authorization` の署名を確かめるのは definy の `definy.read-rpc-authorization`. [rpc-authorization.md](rpc-authorization.md))                                                  |
 | `read_admin_account_ids`  | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                            |
 | `http_fetch`              | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                    |
 
@@ -92,7 +92,7 @@
 
 CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は TypeScript の `proxyFetch` / `requireAccount` / `isAdminAccount`。
 
-1. `read_authorization` で署名を確かめる。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
+1. `definy.read-rpc-authorization` で署名を確かめる (`definy.handle-rpc` が HTTP リクエストを渡す)。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
    署名が違えばその理由で `unauthenticated`
 2. `read_admin_account_ids` を `definy.split-account-ids` でカンマ・セミコロン・空白で区切り, アカウント ID が無ければ `permission_denied`
    (大文字小文字を区別する)
