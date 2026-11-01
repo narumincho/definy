@@ -12,7 +12,7 @@ seed やコンパイラから作れるものはコミットせず、`npm run dev
 
 ## stage1.wasm の配信
 
-- ブラウザ: `src/stage1_browser.ts` が `new URL("../wasm/stage1.wasm", import.meta.url)` で参照し、Vite がハッシュ付きの静的アセット (`/assets/stage1-<hash>.wasm`) として出力する。
+- ブラウザ: `src/wasm_browser.ts` が `new URL("../wasm/stage1.wasm", import.meta.url)` で参照し、Vite がハッシュ付きの静的アセット (`/assets/stage1-<hash>.wasm`) として出力する。
   `import url from "../wasm/stage1.wasm?url"` は Void の dev サーバーがその JS モジュールを `Content-Type: application/wasm` で返し、ブラウザが読み込めないので使わない
 - Worker: 使わない (以前は `DeployService` のために `?module` でバンドルに入れていた。デプロイはブラウザで動かすようにした, [cloudflare-workers.md](cloudflare-workers.md))
 

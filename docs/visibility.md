@@ -37,7 +37,7 @@ issue #624 の後半。モジュールとパーツは公開 (`public`) か非公
 - 他のプロジェクトが参照しているパーツを非公開にしても, そのコミットは拒否しない (パーツの削除と同じ)。参照している側は,
   次のコミットで直すまで拒否される。
 - UI: 変更ページのコミット前の検査 (`checkCommitTypes`, `src/state/useTypeCheck.ts`) も同じ Wasm で確かめ, 型エラーと同じ所に出す
-  (`src/visibility_checker_browser.ts` が読み込む)。参照される側は表示しているブランチのパーツ (`visibilityTargets`, `src/state/useEvents.ts`)。
+  (`src/wasm_browser.ts` が読み込む)。参照される側は表示しているブランチのパーツ (`visibilityTargets`, `src/state/useEvents.ts`)。
 - `core.check-event` はイベントから式を除いたものを見るので, 式の中の参照はこの検査 (式と型を渡す) で見る。
 - (2026-10-26) TypeScript から definy に移した。そのとき, パーツの型 (`core.type-ast`) の参照 (`#reference`) も見るようにした
   (以前は式の `#part_reference` だけを見ていた)。379 パーツのコミットで 200ms ほど。

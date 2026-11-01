@@ -44,7 +44,7 @@ import {
 } from "../../src/part_definition.ts";
 import { cachedDefinition } from "../../src/content_store.ts";
 import { evaluateDefinition } from "../../src/definition_evaluator.ts";
-import { loadDefinitionEvaluator } from "../../src/definition_evaluator_browser.ts";
+import { loadDefinitionEvaluator } from "../../src/wasm_browser.ts";
 import {
   isPartContent,
   partContentFromValue,

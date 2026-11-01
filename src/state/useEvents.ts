@@ -3,7 +3,7 @@ import type { VisibilityTarget } from "../visibility.ts";
 import {
   loadDefinitionEvaluator,
   loadedDefinitionEvaluator,
-} from "../definition_evaluator_browser.ts";
+} from "../wasm_browser.ts";
 import { evaluateDefinition } from "../definition_evaluator.ts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {

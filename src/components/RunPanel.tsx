@@ -10,7 +10,7 @@ import { useRouter } from "@void/react";
 import { CloseIcon, PlayIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
-import { loadStage1Compiler } from "../stage1_browser.ts";
+import { loadStage1Compiler } from "../wasm_browser.ts";
 import { CompilerRebuild } from "./CompilerRebuild.tsx";
 import {
   formatRunValue,

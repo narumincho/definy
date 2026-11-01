@@ -136,7 +136,7 @@ URL は `/project/{名前}`, `/module/{名前}`, `/part/{モジュール.パー�
 型エラーの判定は, サーバーの `SubmitEvent` と同じ definy 製の型チェッカー (`core.type-check-against`. 型環境も definy 製の `core.build-type-env` で作る) で行う
 (`src/self_hosted_type_check.ts`. [self-hosting.md](self-hosting.md) の「definy 製型チェッカーの実行」).
 
-- 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が
+- 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/wasm_browser.ts` が
   ハッシュ付きアセットとして読み込んでコンパイルする (1 度だけ). サーバーと同じものなので, UI で通ればサーバーでも通る
 - パーツ一覧の「変更のみ表示」 (`/parts?changes=only`, 以下「変更ページ」) はコミットする前に `checkCommitTypes` (`src/state.tsx`) で検査する.
   コミットと同じパーツ (プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの, `buildCommitModules`) を,

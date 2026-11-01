@@ -18,8 +18,7 @@ import {
   type TypeCheckSession,
 } from "../self_hosted_type_check.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
-import { loadTypeChecker } from "../type_checker_browser.ts";
-import { loadVisibilityChecker } from "../visibility_checker_browser.ts";
+import { loadTypeChecker, loadVisibilityChecker } from "../wasm_browser.ts";
 import { onRebuiltCompilerChange } from "../rebuilt_compiler.ts";
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import {

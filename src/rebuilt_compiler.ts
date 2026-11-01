@@ -1,7 +1,7 @@
 /**
  * 実行パネルで作り直したコンパイラと型チェッカー (docs/run-panel.md「コンパイラを作り直す」).
  * このブラウザの localStorage にだけ保存し, あれば同梱の `wasm/stage1.wasm` と `wasm/type_checker.wasm` の代わりに使う
- * (stage1_browser.ts, type_checker_browser.ts)
+ * (src/wasm_browser.ts)
  */
 import { base64ToBytes, bytesToBase64 } from "./cbor.ts";
 
