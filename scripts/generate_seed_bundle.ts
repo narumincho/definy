@@ -424,7 +424,7 @@ export const BRANCH_SUMMARIZER_WASM_PATH = "wasm/branch_summarizer.wasm";
 export const VISIBILITY_CHECKER_WASM_PATH = "wasm/visibility_checker.wasm";
 
 /**
- * seed の `definy.handle-rpc` (サーバーが RPC をどう処理するか) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
+ * seed の `definy.handle-request` (サーバーが HTTP リクエストをどう処理するか) を stage1 でコンパイルした Wasm を書き出すファイル (コミットしない).
  * Worker が `?module` で取り込み, worker/service_io.ts で動かす
  */
 export const SERVICE_WASM_PATH = "wasm/service.wasm";
@@ -469,7 +469,7 @@ export async function generateEventCheckerWasm(): Promise<Uint8Array> {
 /**
  * {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に,
  * `core.project-branches` を {@link BRANCH_SUMMARIZER_WASM_PATH} に, `core.check-reference-visibility` を {@link VISIBILITY_CHECKER_WASM_PATH} に,
- * `definy.handle-rpc` を {@link SERVICE_WASM_PATH} に, `core.eval-value` を {@link DEFINITION_EVALUATOR_WASM_PATH} に,
+ * `definy.handle-request` を {@link SERVICE_WASM_PATH} に, `core.eval-value` を {@link DEFINITION_EVALUATOR_WASM_PATH} に,
  * `core.module-part-ids` を {@link PART_ID_DERIVER_WASM_PATH} に書き出す
  */
 export async function writeEventCheckerWasm(): Promise<void> {
@@ -491,7 +491,7 @@ export async function writeEventCheckerWasm(): Promise<void> {
   );
   await writeFile(
     resolve(SERVICE_WASM_PATH),
-    await compileSeedPart("definy", "handle-rpc"),
+    await compileSeedPart("definy", "handle-request"),
   );
   await writeFile(
     resolve(DEFINITION_EVALUATOR_WASM_PATH),

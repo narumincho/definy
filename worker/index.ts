@@ -6,287 +6,71 @@ import {
   readExternalPartDefinitions,
 } from "./type_check.ts";
 import { loadCommitSummaries } from "./commit_store.ts";
-import { handleRpcInDefiny } from "./service_io.ts";
+import {
+  handleRequestInDefiny,
+  type HttpFetchRequest,
+  type HttpHeader,
+  type ServiceResult,
+} from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import type {
-  ContentItem,
-  Env,
-  HttpProxyFetchRequest,
-  HttpProxyFetchResponse,
-  HttpProxyHeader,
-} from "./types.ts";
+import type { ContentItem, Env } from "./types.ts";
 
 export type { Env } from "./types.ts";
 export { defaultStore, WorkerStore } from "./store.ts";
 
-const WORKER_ROUTE_PREFIXES: ReadonlyArray<string> = [
-  "/definy.v1.",
-  "/virtual/",
-  "/healthz",
-];
-
-const CORS_HEADERS: Readonly<Record<string, string>> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Connect-Protocol-Version, Connect-Timeout-Ms, Authorization",
-};
-
-/**
- * リクエストパスが Worker 内で直接処理する API / 動的エンドポイントかどうかを判定する
- */
-export function isWorkerFirstPath(pathname: string): boolean {
-  return WORKER_ROUTE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(prefix),
-  );
-}
-
-/** カンマ・空白区切りのアカウント ID の一覧に含まれるか. アカウント ID は Base64URL なので大文字小文字を区別する */
-function isListedAccount(
-  accountId: string | undefined | null,
-  list: string | undefined,
-): boolean {
-  const normalized = accountId?.trim() ?? "";
-  if (normalized.length === 0) {
-    return false;
-  }
-  return (list ?? "")
-    .split(/[,;\s]+/)
-    .some((s) => s.length > 0 && s === normalized);
-}
-
-/**
- * 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS`（カンマ・空白区切り）と照合し、
- * アカウントが管理者権限を持つか判定する。アカウント ID は Base64URL なので大文字小文字を区別する。
- * 未設定時は全員拒否する。
- */
-export function isAdminAccount(
-  accountId: string | undefined | null,
-  env: Env,
-): boolean {
-  return isListedAccount(accountId, env.DEFINY_ADMIN_ACCOUNT_IDS);
-}
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...CORS_HEADERS,
-    },
-  });
-}
-
-type ConnectErrorCode =
-  | "invalid_argument"
-  | "not_found"
-  | "unauthenticated"
-  | "permission_denied"
-  | "unimplemented"
-  | "resource_exhausted"
-  | "internal";
+type ConnectErrorCode = "invalid_argument" | "internal";
 
 const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
   invalid_argument: 400,
-  unauthenticated: 401,
-  permission_denied: 403,
-  not_found: 404,
-  unimplemented: 404,
-  resource_exhausted: 429,
   internal: 500,
 };
 
-/** Connect-RPC のエラーとしてクライアントに返す例外 */
-class ConnectError extends Error {
-  constructor(
-    readonly code: ConnectErrorCode,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-
-function connectErrorResponse(error: ConnectError): Response {
-  return jsonResponse(
-    { code: error.code, message: error.message },
-    CONNECT_ERROR_STATUS[error.code],
+/**
+ * ホストの能力 (ストアなど) が例外を投げたときのレスポンス. 処理が決めるレスポンスではないので, CORS のヘッダーだけ付ける.
+ * 署名や中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
+ */
+function hostErrorResponse(error: unknown): Response {
+  const code: ConnectErrorCode =
+    error instanceof InvalidSignedEventError ||
+    error instanceof InvalidContentError
+      ? "invalid_argument"
+      : "internal";
+  return new Response(
+    JSON.stringify({
+      code,
+      message: error instanceof Error ? error.message : String(error),
+    }),
+    {
+      status: CONNECT_ERROR_STATUS[code],
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
   );
 }
 
-function parseJsonBody<T>(text: string): T {
+/** リクエストの本文を JSON のオブジェクトとして読む (空なら `{}`) */
+function parseJsonObject(
+  text: string,
+): { readonly json: unknown } | { readonly invalid: string } {
   if (text.trim().length === 0) {
-    return {} as T;
+    return { json: {} };
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new ConnectError("invalid_argument", "request body must be JSON");
+    return { invalid: "request body must be JSON" };
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new ConnectError(
-      "invalid_argument",
-      "request body must be an object",
-    );
+    return { invalid: "request body must be an object" };
   }
-  return parsed as T;
+  return { json: parsed };
 }
-
-/**
- * `Authorization` ヘッダーの署名を検証し、`isAllowed` が許すアカウントでなければ例外を投げる
- */
-async function requireAccount(
-  request: Request,
-  pathname: string,
-  body: string,
-  reason: string,
-  isAllowed: (accountId: string) => boolean,
-): Promise<void> {
-  let accountId: string | null;
-  try {
-    accountId = await verifyRpcAuthorization(
-      request.headers.get("Authorization"),
-      request.method,
-      pathname,
-      body,
-    );
-  } catch (e) {
-    throw new ConnectError(
-      "unauthenticated",
-      e instanceof Error ? e.message : String(e),
-    );
-  }
-  if (accountId === null) {
-    throw new ConnectError(
-      "unauthenticated",
-      `${reason} requires an Authorization header`,
-    );
-  }
-  if (!isAllowed(accountId)) {
-    throw new ConnectError(
-      "permission_denied",
-      `${reason} is not allowed for this account`,
-    );
-  }
-}
-
-export type ClientIpVersion = "ipv4" | "ipv6" | "unknown";
-
-/**
- * Cloudflare が付ける接続元 IP ヘッダーから、クライアントが IPv4 / IPv6 のどちらで接続してきたかを判定する。
- * Pseudo IPv4 が有効なゾーンでは `CF-Connecting-IP` が IPv4 に書き換わり、元の IPv6 は `Cf-Connecting-IPv6` に入る。
- * ローカルの dev サーバーなどヘッダーが無い場合は `unknown`。
- */
-export function clientIpVersion(request: Request): ClientIpVersion {
-  if (request.headers.get("Cf-Connecting-IPv6")) {
-    return "ipv6";
-  }
-  const ip = request.headers.get("CF-Connecting-IP") ?? "";
-  if (ip.includes(":")) {
-    return "ipv6";
-  }
-  if (ip.includes(".")) {
-    return "ipv4";
-  }
-  return "unknown";
-}
-
-/**
- * Worker リクエストハンドラー（テスト用にカスタム Store と Fetch 関数を注入可能）
- */
-export async function handleWorkerRequest(
-  request: Request,
-  env: Env,
-  store: WorkerStore = defaultStore,
-  fetchFn: typeof fetch = fetch,
-): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
-  }
-
-  const url = new URL(request.url);
-  const { pathname } = url;
-
-  // Health check
-  if (pathname === "/healthz") {
-    return jsonResponse({
-      status: "ok",
-      runtime: "cloudflare-workers",
-      storage: env.DB ? "cloudflare-d1" : "in-memory",
-      // IP アドレスそのものは返さず、IPv4 / IPv6 のどちらかだけを返す
-      ipVersion: clientIpVersion(request),
-    });
-  }
-
-  // Static assets fallback (/healthz や静的アセット取得時には D1 シード処理を実行しない)
-  if (!isWorkerFirstPath(pathname)) {
-    if (env.ASSETS) {
-      return env.ASSETS.fetch(request);
-    }
-    return new Response("Not Found", { status: 404 });
-  }
-
-  await store.ensureSeeded(env, url.origin);
-
-  // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
-  if (pathname.startsWith("/virtual/wasm/")) {
-    return serveVirtualWasm(pathname, env, store);
-  }
-
-  try {
-    const body = await request.text();
-    return await handleRpc(request, pathname, body, env, store, fetchFn);
-  } catch (e) {
-    if (e instanceof ConnectError) {
-      return connectErrorResponse(e);
-    }
-    if (
-      e instanceof InvalidSignedEventError ||
-      e instanceof InvalidContentError
-    ) {
-      return connectErrorResponse(
-        new ConnectError("invalid_argument", e.message),
-      );
-    }
-    return connectErrorResponse(
-      new ConnectError("internal", e instanceof Error ? e.message : String(e)),
-    );
-  }
-}
-
-async function serveVirtualWasm(
-  pathname: string,
-  env: Env,
-  store: WorkerStore,
-): Promise<Response> {
-  const rawHash = pathname
-    .slice("/virtual/wasm/".length)
-    .replace(/\.wasm$/, "");
-  const bytes = await store.getRawContentBytes(rawHash, env);
-  if (!bytes) {
-    return new Response("Wasm binary not found in CAS", {
-      status: 404,
-      headers: CORS_HEADERS,
-    });
-  }
-  // コンテンツハッシュで指定されたものだけ永続キャッシュする (名前付きのキーは更新されうる)
-  const isContentAddressed = (await sha256EventHashId(bytes)) === rawHash;
-  return new Response(new Uint8Array(bytes), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/wasm",
-      "Cache-Control": isContentAddressed
-        ? "public, max-age=31536000, immutable"
-        : "public, max-age=0, must-revalidate",
-      ...CORS_HEADERS,
-    },
-  });
-}
-
-const EVENT_SERVICE_PREFIX = "/definy.v1.EventService/";
 
 /** `hashes` の順に, 見つかった中身 (無ければ `undefined`) */
 function contentsInOrder(
@@ -297,20 +81,62 @@ function contentsInOrder(
   return hashes.map((hash) => byHash.get(hash));
 }
 
-async function handleRpc(
+/** definy の決めたレスポンスを HTTP のレスポンスにする */
+function toResponse(
+  result: Extract<ServiceResult, { readonly type: "respond" }>,
+): Response {
+  const headers = new Headers();
+  for (const header of result.headers) {
+    headers.append(header.name, header.value);
+  }
+  const { body } = result;
+  return new Response(
+    body.type === "empty"
+      ? null
+      : body.type === "text"
+        ? body.text
+        : body.type === "json"
+          ? JSON.stringify(body.json)
+          : (base64ToBytes(body.base64) as unknown as BodyInit),
+    { status: result.status, headers },
+  );
+}
+
+/**
+ * Worker のリクエストハンドラー. どう処理するか (ルーティング, `/healthz`, RPC, `/virtual/wasm/`) は definy の
+ * `definy.handle-request` (`wasm/service.wasm`) が決め, ここはストア・署名・HTTP などの能力を渡すだけ (docs/service.md).
+ * テスト用にストアと fetch を差し替えられる. `serveAsset` は静的アセットを返す
+ * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す)
+ */
+export async function handleWorkerRequest(
   request: Request,
-  pathname: string,
-  body: string,
   env: Env,
-  store: WorkerStore,
-  fetchFn: typeof fetch,
+  store: WorkerStore = defaultStore,
+  fetchFn: typeof fetch = fetch,
+  serveAsset: (() => Promise<Response>) | undefined = env.ASSETS
+    ? () => env.ASSETS!.fetch(request)
+    : undefined,
 ): Promise<Response> {
-  // definy 製の処理 (`definy.handle-rpc`) があるメソッドはそれで処理する (docs/service.md)
-  if (pathname.startsWith(EVENT_SERVICE_PREFIX)) {
-    const response = await handleRpcInDefiny(
+  const url = new URL(request.url);
+  const { pathname } = url;
+  const headers: HttpHeader[] = [];
+  request.headers.forEach((value, name) => {
+    headers.push({ name, value });
+  });
+  // 本文は definy が読むと決めたときに 1 度だけ読む (静的アセットのリクエストは読まない)
+  let bodyText: Promise<string> | undefined;
+  const readBody = () => (bodyText ??= request.text());
+  let result: ServiceResult;
+  try {
+    result = await handleRequestInDefiny(
       serviceModule,
-      pathname.slice(EVENT_SERVICE_PREFIX.length),
-      () => parseJsonBody<unknown>(body),
+      {
+        method: request.method,
+        path: pathname,
+        headers,
+        storage: env.DB ? "cloudflare-d1" : "in-memory",
+        hasAssets: serveAsset !== undefined,
+      },
       {
         readCommits: () => loadCommitSummaries(store, env),
         readEvents: (hashes) =>
@@ -340,89 +166,91 @@ async function handleRpc(
             }),
           ),
         writeContents: (items) => store.uploadContent(items, env),
+        readAuthorization: async () => {
+          try {
+            const accountId = await verifyRpcAuthorization(
+              request.headers.get("Authorization"),
+              request.method,
+              pathname,
+              await readBody(),
+            );
+            return accountId === null
+              ? { type: "anonymous" }
+              : { type: "account", accountId };
+          } catch (e) {
+            return {
+              type: "invalid",
+              message: e instanceof Error ? e.message : String(e),
+            };
+          }
+        },
+        readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
+        httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
+        ensureSeeded: () => store.ensureSeeded(env, url.origin),
+        readRequestJson: async () => parseJsonObject(await readBody()),
+        readRawContent: async (key) => {
+          const bytes = await store.getRawContentBytes(key, env);
+          return bytes
+            ? {
+                contentHash: await sha256EventHashId(bytes),
+                bytesBase64: bytesToBase64(new Uint8Array(bytes)),
+              }
+            : undefined;
+        },
       },
     );
-    if (response !== null) {
-      return jsonResponse(response.body, response.status);
-    }
+  } catch (e) {
+    return hostErrorResponse(e);
   }
-  switch (pathname) {
-    case "/definy.v1.HttpProxyService/Fetch": {
-      await requireAccount(
-        request,
-        pathname,
-        body,
-        "HttpProxyService/Fetch",
-        (accountId) => isAdminAccount(accountId, env),
-      );
-      return jsonResponse(
-        await proxyFetch(parseJsonBody<HttpProxyFetchRequest>(body), fetchFn),
-      );
+  if (result.type === "serve_asset") {
+    if (serveAsset === undefined) {
+      throw new Error("definy.handle-request served an asset without assets");
     }
-
-    default:
-      throw new ConnectError(
-        "unimplemented",
-        `Endpoint ${pathname} is not implemented`,
-      );
+    return serveAsset();
   }
+  return toResponse(result);
 }
 
-/** 仲介で送らないヘッダー (送り先とのつなぎ方は Worker の fetch が決める) */
-const PROXY_DROPPED_REQUEST_HEADERS: ReadonlySet<string> = new Set([
-  "host",
-  "content-length",
-  "connection",
-  "transfer-encoding",
-]);
-
 /**
- * ブラウザから CORS で直接送れない HTTP リクエストを Worker から送り, レスポンスをそのまま返す.
- * 送れなかったときは `internal` のエラーにする
+ * definy の `http_fetch` の HTTP リクエストを送る. どのリクエストを送るか (URL の検査, 送らないヘッダー) は
+ * definy (`definy.http-proxy-send`) が決める. 送れなかったときは理由を返す
  */
-async function proxyFetch(
-  req: HttpProxyFetchRequest,
+async function httpFetch(
+  request: HttpFetchRequest,
   fetchFn: typeof fetch,
-): Promise<HttpProxyFetchResponse> {
-  const rawUrl = req.url?.trim() ?? "";
-  let url: URL;
+): Promise<
+  | {
+      readonly status: number;
+      readonly headers: ReadonlyArray<HttpHeader>;
+      readonly bodyBase64: string;
+    }
+  | { readonly failed: string }
+> {
   try {
-    url = new URL(rawUrl);
-  } catch {
-    throw new ConnectError("invalid_argument", `invalid url '${rawUrl}'`);
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new ConnectError(
-      "invalid_argument",
-      "only http and https urls can be fetched",
-    );
-  }
-  const method = (req.method?.trim() || "GET").toUpperCase();
-  const headers = new Headers();
-  for (const header of req.headers ?? []) {
-    if (!PROXY_DROPPED_REQUEST_HEADERS.has(header.name.toLowerCase())) {
+    const headers = new Headers();
+    for (const header of request.headers) {
       headers.append(header.name, header.value);
     }
+    const response = await fetchFn(request.url, {
+      method: request.method,
+      headers,
+      body: (request.bodyBase64 === null
+        ? null
+        : base64ToBytes(request.bodyBase64)) as unknown as BodyInit | null,
+      redirect: "manual",
+    });
+    const responseHeaders: HttpHeader[] = [];
+    response.headers.forEach((value, name) => {
+      responseHeaders.push({ name, value });
+    });
+    return {
+      status: response.status,
+      headers: responseHeaders,
+      bodyBase64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
+    };
+  } catch (e) {
+    return { failed: e instanceof Error ? e.message : String(e) };
   }
-  const body =
-    method === "GET" || method === "HEAD" || !req.bodyBase64
-      ? null
-      : base64ToBytes(req.bodyBase64);
-  const response = await fetchFn(url.toString(), {
-    method,
-    headers,
-    body: body as unknown as BodyInit | null,
-    redirect: "manual",
-  });
-  const responseHeaders: HttpProxyHeader[] = [];
-  response.headers.forEach((value, name) => {
-    responseHeaders.push({ name, value });
-  });
-  return {
-    status: response.status,
-    headers: responseHeaders,
-    bodyBase64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
-  };
 }
 
 export default {

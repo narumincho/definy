@@ -1,13 +1,13 @@
 # 仮想 Wasm 配信 (`/virtual/wasm/{hash}`)
 
-Worker (`worker/index.ts` の `serveVirtualWasm`) は CAS (D1 の `cas_contents` テーブル) に入っているバイト列を
+Worker (definy の `definy.serve-virtual-wasm`. 読むのはホストの `read_raw_content`) は CAS (D1 の `cas_contents` テーブル) に入っているバイト列を
 `GET /virtual/wasm/{hash}` (末尾の `.wasm` は省略可) で `application/wasm` として返す。
 
 - `{hash}` は CAS のキー. 内容の SHA-256 (URL-safe Base64) と一致するときだけ
   `Cache-Control: public, max-age=31536000, immutable` を付ける. 名前付きのキーは更新されうるので
   `max-age=0, must-revalidate`
 - 見つからなければ `404`
-- SSR より先に Worker が処理するパス (`isWorkerFirstPath`) に入っている
+- SSR より先に Worker が処理するパス (`definy.is-worker-first-path`) に入っている
 
 ## 経緯
 

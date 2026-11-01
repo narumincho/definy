@@ -10,7 +10,7 @@ import {
 } from "../src/event_content.ts";
 import {
   definyToJson,
-  handleRpcInDefiny,
+  handleRequestInDefiny,
   jsonToDefiny,
   type ServiceIoHost,
 } from "./service_io.ts";
@@ -18,6 +18,34 @@ import { partDefinitionExpression } from "../src/part_definition.ts";
 import type { EventItem } from "./types.ts";
 
 const service = new WebAssembly.Module(await readFile("wasm/service.wasm"));
+
+/** RPC `/definy.v1.<method>` を本文 `request` で `definy.handle-request` に処理させ, JSON のレスポンスを返す */
+async function handleRpcInDefiny(
+  module: WebAssembly.Module,
+  method: string,
+  request: () => unknown,
+  rpcHost: ServiceIoHost,
+): Promise<{ readonly status: number; readonly body: unknown }> {
+  const result = await handleRequestInDefiny(
+    module,
+    {
+      method: "POST",
+      path: `/definy.v1.${method}`,
+      headers: [],
+      storage: "in-memory",
+      hasAssets: false,
+    },
+    {
+      ...rpcHost,
+      ensureSeeded: () => Promise.resolve(),
+      readRequestJson: () => Promise.resolve({ json: request() }),
+    },
+  );
+  if (result.type !== "respond" || result.body.type !== "json") {
+    throw new Error(`not a JSON response: ${JSON.stringify(result)}`);
+  }
+  return { status: result.status, body: result.body.json };
+}
 
 const commit = (
   eventHash: string,
@@ -52,13 +80,24 @@ const checkPart = (
 /** `definy.commit-check-source` */
 const checkInput = (input: {
   readonly parts: ReadonlyArray<unknown>;
-  readonly environment?: ReadonlyArray<unknown>;
+  /** 型環境にする各プロジェクトの main の最新のコミット (`definy.latest-commit-source`) */
+  readonly latestCommits?: ReadonlyArray<unknown>;
 }): unknown => ({
   project_name: "app",
   parts: input.parts,
-  environment: input.environment ?? [],
-  latest: [],
+  latest_commits: input.latestCommits ?? [],
   project_module_ids: [],
+});
+
+/** プロジェクト `lib` の main の最新のコミットのパーツ (`definy.commit-check-source-part`) */
+const libPart = (name: string, content: PartContent): unknown => ({
+  id: `id-${name}`,
+  name: `lib.${name}`,
+  module_name: "lib",
+  module_id: "module-lib",
+  module_visibility: variant("public"),
+  content_hash: `hash-lib-${name}`,
+  definition: some(partDefinitionExpression(content)),
 });
 
 const content = (partType: unknown, expression: unknown): PartContent => ({
@@ -106,6 +145,14 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
+  readAuthorization: () => Promise.reject(new Error("not read")),
+  readAdminAccountIds: () => {
+    throw new Error("not read");
+  },
+  httpFetch: () => Promise.reject(new Error("not fetched")),
+  ensureSeeded: () => Promise.reject(new Error("not seeded")),
+  readRequestJson: () => Promise.reject(new Error("not read")),
+  readRawContent: () => Promise.reject(new Error("not read")),
   ...overrides,
 });
 
@@ -136,7 +183,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetProjectBranches",
+        "EventService/GetProjectBranches",
         () => ({}),
         branchesHost,
       ),
@@ -164,17 +211,23 @@ describe("handleRpcInDefiny", () => {
     expect(reads).toEqual([["m2", "b1", "g1"]]);
   });
 
-  it("definy で処理しないメソッドは null で, 本文を読まない", async () => {
+  it("無いメソッドは unimplemented で, 本文を読まない", async () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "Unknown",
+        "EventService/Unknown",
         () => {
           throw new Error("not read");
         },
         host(),
       ),
-    ).toBeNull();
+    ).toEqual({
+      status: 404,
+      body: {
+        code: "unimplemented",
+        message: "Endpoint /definy.v1.EventService/Unknown is not implemented",
+      },
+    });
   });
 
   it("SubmitEvent は署名を確かめ, 規則・足りない中身・型チェッカーの順に見てから保存する", async () => {
@@ -224,7 +277,7 @@ describe("handleRpcInDefiny", () => {
         ...overrides,
       });
     const submit = (request: unknown, h: ServiceIoHost) =>
-      handleRpcInDefiny(service, "SubmitEvent", () => request, h);
+      handleRpcInDefiny(service, "EventService/SubmitEvent", () => request, h);
 
     expect(await submit({ signedEventBytes: " ok\n" }, submitHost())).toEqual({
       status: 200,
@@ -327,7 +380,7 @@ describe("handleRpcInDefiny", () => {
     const submitCommit = (content: EventContent) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -387,7 +440,7 @@ describe("handleRpcInDefiny", () => {
     const submitWith = (input: unknown) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -458,14 +511,15 @@ describe("handleRpcInDefiny", () => {
       await submitWith(
         checkInput({
           parts: [checkPart("x", content(number, reference("id-secret")))],
-          environment: [
+          latestCommits: [
             {
-              id: "id-secret",
-              name: "lib.secret",
-              module_name: "lib",
               project_name: "lib",
-              visibility: variant("private"),
-              module_visibility: variant("public"),
+              parts: [
+                libPart("secret", {
+                  ...content(number, { "#number": 1 }),
+                  visibility: "private",
+                }),
+              ],
             },
           ],
         }),
@@ -475,6 +529,35 @@ describe("handleRpcInDefiny", () => {
       body: {
         code: "invalid_argument",
         message: "part 'app.x': cannot reference the private part 'lib.secret'",
+      },
+    });
+
+    // 型環境 (main の最新のコミット) の定義の式も definy が読む
+    const lib = [
+      {
+        project_name: "lib",
+        parts: [libPart("n", content(number, { "#number": 1 }))],
+      },
+    ];
+    expect(
+      await submitWith(
+        checkInput({
+          parts: [
+            checkPart("x", content(number, reference("id-n"))),
+            checkPart(
+              "s",
+              content({ "#type_string": null }, reference("id-n")),
+            ),
+          ],
+          latestCommits: lib,
+        }),
+      ),
+    ).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message:
+          "part 'app.s': type error: type_mismatch (expected: string, actual: number)",
       },
     });
 
@@ -494,7 +577,7 @@ describe("handleRpcInDefiny", () => {
     const submitWith = (parts: ReadonlyArray<unknown>) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -599,7 +682,7 @@ describe("handleRpcInDefiny", () => {
     const submitCreateAccount = (accountIds: ReadonlyArray<string>) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -651,7 +734,12 @@ describe("handleRpcInDefiny", () => {
       },
     });
     const upload = (request: unknown) =>
-      handleRpcInDefiny(service, "UploadContent", () => request, uploadHost);
+      handleRpcInDefiny(
+        service,
+        "EventService/UploadContent",
+        () => request,
+        uploadHost,
+      );
     const item = (contentHash: string, contentBytes: string) => ({
       contentHash,
       contentBytes,
@@ -712,7 +800,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetEvent",
+        "EventService/GetEvent",
         () => ({ eventHash: " e1\n" }),
         eventHost,
       ),
@@ -720,7 +808,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetEvent",
+        "EventService/GetEvent",
         () => ({ eventHash: "e2" }),
         eventHost,
       ),
@@ -729,7 +817,12 @@ describe("handleRpcInDefiny", () => {
       body: { code: "not_found", message: "Event 'e2' not found" },
     });
     expect(
-      await handleRpcInDefiny(service, "GetEvent", () => ({}), host()),
+      await handleRpcInDefiny(
+        service,
+        "EventService/GetEvent",
+        () => ({}),
+        host(),
+      ),
     ).toEqual({
       status: 400,
       body: { code: "invalid_argument", message: "eventHash is required" },
@@ -750,7 +843,12 @@ describe("handleRpcInDefiny", () => {
       { eventType: "project_commit", limit: 0, offset: 7 },
     ]) {
       expect(
-        await handleRpcInDefiny(service, "GetEvents", () => request, pageHost),
+        await handleRpcInDefiny(
+          service,
+          "EventService/GetEvents",
+          () => request,
+          pageHost,
+        ),
       ).toEqual({ status: 200, body: { events: [event("e1")] } });
     }
     expect(pages).toEqual([
@@ -775,7 +873,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHash: "c1" }),
         contentHost,
       ),
@@ -783,7 +881,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHash: "c2" }),
         contentHost,
       ),
@@ -794,13 +892,18 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHashes: ["c2", "c1"] }),
         contentHost,
       ),
     ).toEqual({ status: 200, body: { items: [item] } });
     expect(
-      await handleRpcInDefiny(service, "GetContent", () => ({}), host()),
+      await handleRpcInDefiny(
+        service,
+        "EventService/GetContent",
+        () => ({}),
+        host(),
+      ),
     ).toEqual({
       status: 400,
       body: {
@@ -814,7 +917,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "CheckMissingHashes",
+        "EventService/CheckMissingHashes",
         () => ({ contentHashes: ["a", "b"] }),
         host({
           readMissingContentHashes: (hashes) =>
@@ -822,6 +925,117 @@ describe("handleRpcInDefiny", () => {
         }),
       ),
     ).toEqual({ status: 200, body: { missingContentHashes: ["b"] } });
+  });
+
+  it("HttpProxyService/Fetch は管理者の署名があるときだけ, 送らないヘッダーを除いて送る", async () => {
+    const sent: Array<unknown> = [];
+    const proxyHost = (
+      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>>,
+    ) =>
+      host({
+        readAuthorization: () => Promise.resolve(authorization),
+        readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
+        httpFetch: (request) => {
+          sent.push(request);
+          return Promise.resolve({
+            status: 201,
+            headers: [{ name: "x-test", value: "1" }],
+            bodyBase64: "AGFzbQ",
+          });
+        },
+      });
+    const fetchWith = (
+      request: unknown,
+      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>> = {
+        type: "account",
+        accountId: "FEEDBEEF-cafe_babe",
+      },
+    ) =>
+      handleRpcInDefiny(
+        service,
+        "HttpProxyService/Fetch",
+        () => request,
+        proxyHost(authorization),
+      );
+    const request = {
+      method: " put ",
+      url: " https://api.cloudflare.com/client/v4/x ",
+      headers: [
+        { name: "Authorization", value: "Bearer cf-token" },
+        { name: "Content-Length", value: "4" },
+        { name: "HOST", value: "example.com" },
+        { name: "broken" },
+      ],
+      bodyBase64: "AGFzbQ",
+    };
+    expect(await fetchWith(request)).toEqual({
+      status: 200,
+      body: {
+        status: 201,
+        headers: [{ name: "x-test", value: "1" }],
+        bodyBase64: "AGFzbQ",
+      },
+    });
+    expect(sent).toEqual([
+      {
+        url: "https://api.cloudflare.com/client/v4/x",
+        method: "PUT",
+        headers: [{ name: "Authorization", value: "Bearer cf-token" }],
+        bodyBase64: "AGFzbQ",
+      },
+    ]);
+
+    // GET は本文を送らない. method が無ければ GET
+    sent.length = 0;
+    await fetchWith({ url: "http://example.com", bodyBase64: "AGFzbQ" });
+    expect(sent).toEqual([
+      {
+        url: "http://example.com",
+        method: "GET",
+        headers: [],
+        bodyBase64: null,
+      },
+    ]);
+
+    sent.length = 0;
+    expect(await fetchWith({ url: "file:///etc/passwd" })).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "only http and https urls can be fetched",
+      },
+    });
+    expect(await fetchWith({ url: "not a url" })).toEqual({
+      status: 400,
+      body: { code: "invalid_argument", message: "invalid url 'not a url'" },
+    });
+    // アカウント ID は大文字小文字を区別する
+    expect(
+      await fetchWith(request, {
+        type: "account",
+        accountId: "feedbeef-cafe_babe",
+      }),
+    ).toEqual({
+      status: 403,
+      body: {
+        code: "permission_denied",
+        message: "HttpProxyService/Fetch is not allowed for this account",
+      },
+    });
+    expect(await fetchWith(request, { type: "anonymous" })).toEqual({
+      status: 401,
+      body: {
+        code: "unauthenticated",
+        message: "HttpProxyService/Fetch requires an Authorization header",
+      },
+    });
+    expect(
+      await fetchWith(request, { type: "invalid", message: "bad signature" }),
+    ).toEqual({
+      status: 401,
+      body: { code: "unauthenticated", message: "bad signature" },
+    });
+    expect(sent).toEqual([]);
   });
 });
 
