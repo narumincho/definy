@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import type { Env } from "./types.ts";
+import { createSqliteD1Database } from "./test_helpers.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
 
 const origin = "https://definy.workers.dev";
@@ -9,7 +10,7 @@ const origin = "https://definy.workers.dev";
 async function route(
   path: string,
   init?: RequestInit,
-  env: Env = {},
+  env: Env = { DB: createSqliteD1Database() },
   store: WorkerStore = new WorkerStore(),
 ): Promise<{ readonly response: Response; readonly assets: string[] }> {
   const assets: string[] = [];
@@ -87,7 +88,7 @@ describe("definy.handle-request のルーティング", () => {
     expect(await response.json()).toEqual({
       status: "ok",
       runtime: "cloudflare-workers",
-      storage: "in-memory",
+      storage: "cloudflare-d1",
       ipVersion: "ipv6",
     });
     expect(response.headers.get("Content-Type")).toBe(
@@ -132,8 +133,9 @@ describe("definy.handle-request のルーティング", () => {
     store.getRawContentBytes = (key: string) =>
       Promise.resolve(key === hash || key === "named" ? bytes : undefined);
 
-    const byHash = (await route(`/virtual/wasm/${hash}.wasm`, {}, {}, store))
-      .response;
+    const byHash = (
+      await route(`/virtual/wasm/${hash}.wasm`, {}, undefined, store)
+    ).response;
     expect(byHash.status).toBe(200);
     expect(byHash.headers.get("Content-Type")).toBe("application/wasm");
     expect(byHash.headers.get("Cache-Control")).toBe(
@@ -141,13 +143,15 @@ describe("definy.handle-request のルーティング", () => {
     );
     expect(new Uint8Array(await byHash.arrayBuffer())).toEqual(bytes);
 
-    const named = (await route("/virtual/wasm/named", {}, {}, store)).response;
+    const named = (await route("/virtual/wasm/named", {}, undefined, store))
+      .response;
     expect(named.headers.get("Cache-Control")).toBe(
       "public, max-age=0, must-revalidate",
     );
 
-    const missing = (await route("/virtual/wasm/missing.wasm", {}, {}, store))
-      .response;
+    const missing = (
+      await route("/virtual/wasm/missing.wasm", {}, undefined, store)
+    ).response;
     expect(missing.status).toBe(404);
     expect(await missing.text()).toBe("Wasm binary not found in CAS");
   });

@@ -6,7 +6,11 @@ import {
   invalidSignatureSampleContents,
 } from "../src/invalid_signature_samples.ts";
 import type { Env, SeedBundle } from "./types.ts";
-import { casItem, newSignedAccountEvent } from "./test_helpers.ts";
+import {
+  casItem,
+  createSqliteD1Database,
+  newSignedAccountEvent,
+} from "./test_helpers.ts";
 
 it("handleWorkerRequest loads seed bundle and serves EventService RPCs", async () => {
   const store = new WorkerStore();
@@ -38,6 +42,7 @@ it("handleWorkerRequest loads seed bundle and serves EventService RPCs", async (
   };
 
   const env: Env = {
+    DB: createSqliteD1Database(),
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
         const url =
@@ -231,7 +236,8 @@ it("署名が不正なイベントは SubmitEvent で常に拒否し, 署名を�
     });
 
   const store = new WorkerStore();
-  store.loadSeedBundle({
+  const env: Env = { DB: createSqliteD1Database() };
+  await store.seedD1(env.DB!, {
     events: [],
     contents: [...invalidSignatureSampleContents()],
   });
@@ -239,7 +245,7 @@ it("署名が不正なイベントは SubmitEvent で常に拒否し, 署名を�
   for (const sample of samples) {
     const res = await handleWorkerRequest(
       post("EventService/SubmitEvent", sample.signedEventBytes),
-      {},
+      env,
       store,
     );
     expect(res.status).toBe(400);
@@ -247,7 +253,7 @@ it("署名が不正なイベントは SubmitEvent で常に拒否し, 署名を�
   // 以前のデバッグ用エンドポイント (DebugService/SubmitUnverifiedEvent) も受け付けない
   const debugRes = await handleWorkerRequest(
     post("DebugService/SubmitUnverifiedEvent", samples[0]!.signedEventBytes),
-    {},
+    env,
     store,
   );
   expect(debugRes.ok).toBe(false);
@@ -257,7 +263,7 @@ it("署名が不正なイベントは SubmitEvent で常に拒否し, 署名を�
       method: "POST",
       body: JSON.stringify({}),
     }),
-    {},
+    env,
     store,
   );
   const { events } = (await eventsRes.json()) as {

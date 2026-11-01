@@ -153,7 +153,7 @@ export async function handleWorkerRequest(
         method: request.method,
         path: pathname,
         headers,
-        storage: env.DB ? "cloudflare-d1" : "in-memory",
+        storage: env.DB ? "cloudflare-d1" : "none",
         hasAssets: serveAsset !== undefined,
       },
       {

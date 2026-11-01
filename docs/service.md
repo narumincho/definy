@@ -6,7 +6,7 @@
 ## 仕組み
 
 - 入口は `definy.handle-request(request: definy.http-request)` (2026-11-01。以前は TypeScript の `handleWorkerRequest` が振り分けていた)。
-  `request` はメソッド, パス, 全てのヘッダー, `storage` (`cloudflare-d1` / `in-memory`), `has_assets` (静的アセットがあるか)。本文は `read_request_json` で読む
+  `request` はメソッド, パス, 全てのヘッダー, `storage` (`cloudflare-d1` / `none`), `has_assets` (静的アセットがあるか)。本文は `read_request_json` で読む
   1. `OPTIONS` は CORS のヘッダー (`definy.cors-headers`) で `204`
   2. `/healthz` ([healthz.md](healthz.md)。IP のバージョンは `definy.client-ip-version`)
   3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まる) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)

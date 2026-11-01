@@ -24,3 +24,12 @@ Worker の初回リクエスト時（コールドスタート時）に `store.en
 2. **シードデータの自動投入**: イベント件数が 0 件の場合、組み込みシードバンドル（`/__definy_seed_bundle.json`。ビルド時に `seeds/*.json` から生成する）をロードして自動同期します。イベントが既に存在する場合は再シードはスキップされます。
 
 以前 (Rust 版) はデプロイ時にシード SQL を生成して `wrangler d1 execute` で投入していたが, `ensureSeeded` に一本化した。スキーマの SQL ファイル (`migrations/`) と D1 を作って wrangler.toml に UUID を書き込むシェルスクリプト (`scripts/ensure-d1.sh`) も, 中身が `D1_SCHEMA_STATEMENTS` と固定の `database_id` に重なっていたので削除した。
+
+## インメモリストアを無くした (2026-11-01)
+
+サーバーのストア (`worker/store.ts` の `WorkerStore`) は常に D1 (`env.DB`) に保存する。以前は D1 の binding が無ければ isolate のメモリの
+配列と Map に保存していたが, SQL を definy で書くため (保存先の実装を 1 つにするため) 無くした (ユーザーの決定)。
+
+- D1 の binding が無いと, ストアを使う処理は `the D1 binding DB is required` で失敗する (`/healthz` の `storage` は `none`)
+- テストは `createSqliteD1Database()` (`worker/test_helpers.ts`. node:sqlite の D1 互換) を `env.DB` に渡す
+- seed は `store.seedD1(db, bundle)` で D1 に入れる (`loadSeedBundle` だけではストアから読めない)
