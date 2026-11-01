@@ -69,6 +69,20 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "list",
   },
   {
+    value: "expr:record",
+    name: "record",
+    detail: "{ key: □ }",
+    category: "Literal",
+    returnType: "any",
+  },
+  {
+    value: "expr:record_get",
+    name: "get-field",
+    detail: "□.key",
+    category: "Syntax",
+    returnType: "any",
+  },
+  {
     value: "expr:secret",
     name: "secret",
     detail: "API トークンなど",
@@ -288,6 +302,24 @@ export function variableSelectorOptions(
   }));
 }
 
+/** フィールドを取り出す選択肢の value の頭. 後ろに `変数 ID:フィールド名` が付く */
+export const RECORD_FIELD_OPTION_PREFIX = "ref:field:";
+
+/** レコード型の変数のフィールドを取り出す選択肢 (`p.key`) */
+function recordFieldSelectorOptionsOf(
+  scopeVariables: ReadonlyMap<number, string>,
+  recordFieldsOf: (variableId: number) => ReadonlyArray<string> | undefined,
+): ReadonlyArray<SelectorOption> {
+  return [...scopeVariables].flatMap(([id, name]) =>
+    (recordFieldsOf(id) ?? []).map((key): SelectorOption => ({
+      value: `${RECORD_FIELD_OPTION_PREFIX}${id}:${key}`,
+      name: `${name}.${key}`,
+      category: "Field",
+      returnType: "any",
+    })),
+  );
+}
+
 /** 期待型に合わない選択肢か. 合わないものは区切りの下に薄く出す */
 export function isTypeMismatch(
   option: SelectorOption,
@@ -380,9 +412,13 @@ export function buildSelectorOptions({
   typeParameters = [],
   partOptions,
   variantOptions = [],
+  recordFieldsOfVariable = () => undefined,
 }: {
   readonly mode: "expression" | "type";
   readonly scopeVariables?: ReadonlyMap<number, string> | undefined;
+  /** レコード型の変数のフィールド名. 変数の後にフィールドを取り出す選択肢 (`p.key`) を出す */
+  readonly recordFieldsOfVariable?:
+    ((variableId: number) => ReadonlyArray<string> | undefined) | undefined;
   /** 型のツリーエディタで, その位置から参照できる型引数の名前 */
   readonly typeParameters?: ReadonlyArray<string> | undefined;
   readonly partOptions: ReadonlyArray<SelectorOption>;
@@ -403,6 +439,10 @@ export function buildSelectorOptions({
   }
   return [
     ...variableSelectorOptions(scopeVariables ?? new Map()),
+    ...recordFieldSelectorOptionsOf(
+      scopeVariables ?? new Map(),
+      recordFieldsOfVariable,
+    ),
     ...BASE_SELECTOR_OPTIONS,
     ...variantOptions,
     ...partOptions,

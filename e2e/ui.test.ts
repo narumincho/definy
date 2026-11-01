@@ -375,6 +375,80 @@ test.describe("definy UI E2E", () => {
     await expect(page.locator(".part-grid .part-card")).toContainText("square");
   });
 
+  test("edits record type fields and reads a field of a record parameter", async ({
+    page,
+    request,
+  }) => {
+    const credentials = await generateAccountCredentials(
+      `recorder_${Date.now().toString().slice(-6)}`,
+    );
+    const created = await request.post("/definy.v1.EventService/SubmitEvent", {
+      data: {
+        signedEventBytes: (await createSignedAccountEvent(credentials))
+          .signedEventBytes,
+      },
+    });
+    expect(created.ok()).toBe(true);
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, credentials);
+    const moduleName = `records_${Date.now().toString().slice(-6)}`;
+    await page.goto(`/new-part?module=${moduleName}`);
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.locator("#new-part-module").fill(moduleName);
+    await page.locator("#new-part-name").fill("get-y");
+    await page.locator("#new-part-parameters").fill("p");
+    await page.locator(".new-part-form button[type='submit']").click();
+    await expect(page).toHaveURL(new RegExp(`/part/${moduleName}\\.get-y`));
+    const typeTree = page.locator("#part-def-type-tree");
+    const valueTree = page.locator("#part-def-value-tree");
+    await expect(typeTree).toBeVisible({ timeout: 15000 });
+
+    // 引数 p の型をレコードにし, フィールドを足して名前を変える
+    await typeTree
+      .locator(".tree-badge", { hasText: /^number$/ })
+      .first()
+      .click();
+    await page
+      .locator(".dropdown-option", { hasText: /^record/ })
+      .first()
+      .click();
+    await typeTree.locator(".tree-badge", { hasText: /^record$/ }).click();
+    await page.locator(".dropdown-option", { hasText: /^add-field/ }).click();
+    await typeTree.locator(".tree-badge", { hasText: /^field$/ }).click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("y");
+    await page.keyboard.press("Enter");
+    await expect(typeTree).toContainText("recordkeystringynumber");
+
+    // 本体はフィールドを取り出す選択肢 p.y
+    await valueTree.locator(".tree-badge", { hasText: /^□$/ }).click();
+    await page.locator(".dropdown-search-input").fill("p.y");
+    await page
+      .locator(".dropdown-option", { hasText: /^p\.y/ })
+      .first()
+      .click();
+    await expect(valueTree).toContainText("p.y");
+
+    await page.goto("/parts?changes=only");
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.locator("#commit-message-input").fill("get-y");
+    await expect(page.locator(".commit-type-check .alert-danger")).toHaveCount(
+      0,
+      { timeout: 15000 },
+    );
+    await page
+      .locator("button[type='submit']", { hasText: /Sign & Commit/ })
+      .click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+  });
+
   test("refers to and runs uncommitted parts, and keeps references when a part is renamed", async ({
     page,
     request,

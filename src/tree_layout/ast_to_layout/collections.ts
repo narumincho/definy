@@ -1,4 +1,4 @@
-import type { LayoutMode, LayoutNode, NodeKind, PathStep } from "../types.ts";
+import type { LayoutNode, PathStep } from "../types.ts";
 import {
   type BuildLayoutNodeFn,
   childPath,
@@ -75,8 +75,8 @@ export function tryBuildCollectionNode(
       readonly key?: unknown;
       readonly value?: unknown;
     }> = Array.isArray(payload) ? payload : [];
-    const children = items.map((field, idx) => {
-      const k = String(field.key ?? "");
+    // フィールド名を選ぶとその場で名前を変えられる (let の変数名と同じ)
+    const children = items.map((field, idx): LayoutNode => {
       const fPath = childPath(currentPath, {
         kind: "recordItemValue",
         index: idx,
@@ -87,15 +87,25 @@ export function tryBuildCollectionNode(
         fPath,
         context,
       );
+      const keyChild: LayoutNode = {
+        id: `${idPrefix}.field_${idx}.key`,
+        path: childPath(currentPath, { kind: "recordItemKey", index: idx }),
+        label: String(field.key ?? ""),
+        kind: "parameterName",
+        children: [],
+        computedWidth: 0,
+        computedHeight: 0,
+        layoutMode: "inline",
+      };
       return {
         id: `${idPrefix}.field_${idx}`,
         path: fPath,
-        label: k,
-        kind: "identifier" as NodeKind,
-        children: [valChild],
+        label: "",
+        kind: "group",
+        children: [keyChild, valChild],
         computedWidth: 0,
         computedHeight: 0,
-        layoutMode: "inline" as LayoutMode,
+        layoutMode: "inline",
       };
     });
 
@@ -122,13 +132,34 @@ export function tryBuildCollectionNode(
       childPath(currentPath, "record"),
       context,
     );
-    const key = String(getRec.key ?? "");
+    // フィールド名を選ぶとその場で名前を変えられる
+    const keyChild: LayoutNode = {
+      id: `${idPrefix}.key`,
+      path: childPath(currentPath, "recordGetKey"),
+      label: String(getRec.key ?? ""),
+      kind: "parameterName",
+      children: [],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
+    // `p.key` のように並べる
+    const dot: LayoutNode = {
+      id: `${idPrefix}.dot`,
+      path: currentPath,
+      label: ".",
+      kind: "delimiter",
+      children: [],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
     return {
       id: idPrefix,
       path: currentPath,
-      label: `.${key}`,
-      kind: "identifier",
-      children: [recChild],
+      label: "",
+      kind: "group",
+      children: [recChild, dot, keyChild],
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "inline",

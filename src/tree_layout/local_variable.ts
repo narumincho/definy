@@ -17,6 +17,11 @@ import {
   renameTypeFunctionParameter,
   typeFunctionParameterNameIndex,
 } from "./function_parameters.ts";
+import {
+  isRecordGetKeyPath,
+  recordItemKeyIndex,
+  renameRecordKeyAt,
+} from "./record_fields.ts";
 import { field, variantPayload } from "../definy_value.ts";
 import {
   armBindsVariable,
@@ -39,6 +44,7 @@ export function letBindingNameIndex(
 
 /**
  * `path` が変数の名前 (関数の引数名・let の変数名・match で束縛する変数の名前) か.
+ * レコードのフィールド名・フィールドの取り出しのフィールド名も同じく名前として扱う.
  * 名前は式ではないので, 選ぶと置換メニューではなく名前の入力欄になる
  */
 export function isVariableNamePath(path: ReadonlyArray<PathStep>): boolean {
@@ -46,7 +52,9 @@ export function isVariableNamePath(path: ReadonlyArray<PathStep>): boolean {
     functionParameterIndex(path) !== null ||
     letBindingNameIndex(path) !== null ||
     matchArmVariableIndex(path) !== null ||
-    typeFunctionParameterNameIndex(path) !== null
+    typeFunctionParameterNameIndex(path) !== null ||
+    recordItemKeyIndex(path) !== null ||
+    isRecordGetKeyPath(path)
   );
 }
 
@@ -91,6 +99,9 @@ export function renameVariableAt(
   }
   if (typeFunctionParameterNameIndex(path) !== null) {
     return renameTypeFunctionParameter(expr, path, name);
+  }
+  if (recordItemKeyIndex(path) !== null || isRecordGetKeyPath(path)) {
+    return renameRecordKeyAt(expr, path, name);
   }
   return expr;
 }

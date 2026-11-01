@@ -32,6 +32,7 @@ import { isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
 import { letBindingSelectorOptions } from "./let_bindings.ts";
 import { functionParameterSelectorOptions } from "./function_parameters.ts";
+import { recordFieldSelectorOptions } from "./record_fields.ts";
 import { clipboardSelectorOptions } from "./clipboard.ts";
 import {
   typePartVariantOptions,
@@ -69,6 +70,10 @@ export type UseSelectorMenuParams = {
    * (type_argument_inference.ts)
    */
   readonly inferredTypeArguments?: ReadonlyMap<string, string>;
+  /** レコード型の変数のフィールド名. フィールドを取り出す選択肢 (`p.key`) を出すのに使う */
+  readonly recordFieldsOfVariable?: (
+    variableId: number,
+  ) => ReadonlyArray<string> | undefined;
 };
 
 export type SelectorMenuState = {
@@ -106,6 +111,7 @@ export function useSelectorMenu({
   setSelectedPath,
   setInlineEdit,
   inferredTypeArguments,
+  recordFieldsOfVariable,
 }: UseSelectorMenuParams): SelectorMenuState {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuOpenCount, setMenuOpenCount] = useState(0);
@@ -145,6 +151,7 @@ export function useSelectorMenu({
       const options = buildSelectorOptions({
         mode,
         scopeVariables: expressionNode?.scopeVariables,
+        recordFieldsOfVariable,
         typeParameters: expressionNode?.typeParameters,
         partOptions,
         variantOptions,
@@ -153,6 +160,7 @@ export function useSelectorMenu({
       if (mode === "type") {
         return [
           ...functionParameterSelectorOptions(expression, path),
+          ...recordFieldSelectorOptions(expression, path),
           ...options,
           ...clipboardSelectorOptions(),
         ];
@@ -168,6 +176,7 @@ export function useSelectorMenu({
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
         ...functionParameterSelectorOptions(expression, path),
+        ...recordFieldSelectorOptions(expression, path),
         // 型引数の位置では型の式 (`number`, `List` など) を先に出す
         ...(expectsType ? TYPE_EXPRESSION_SELECTOR_OPTIONS : []),
         ...options,
@@ -181,6 +190,7 @@ export function useSelectorMenu({
       layoutRoot,
       mode,
       partOptions,
+      recordFieldsOfVariable,
       patternVariants,
       variantOptions,
     ],

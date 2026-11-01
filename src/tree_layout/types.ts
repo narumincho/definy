@@ -26,6 +26,10 @@ export type PathStep =
   | "letBody"
   | { readonly kind: "listItemValue"; readonly index: number }
   | { readonly kind: "recordItemValue"; readonly index: number }
+  /** レコード (`record` / `type_record`) の i 番目のフィールドの名前. 式ではない */
+  | { readonly kind: "recordItemKey"; readonly index: number }
+  /** フィールドの取り出し (`record_get`) のフィールドの名前. 式ではない */
+  | "recordGetKey"
   | "typeListItem"
   /** `Code<T>` の型の T */
   | "typeCodeValue"
