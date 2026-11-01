@@ -1,4 +1,3 @@
-import { InvalidSignedEventError } from "../src/signed_event.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   readCommitCheckInput,
@@ -29,14 +28,11 @@ const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
 
 /**
  * ホストの能力 (ストアなど) が例外を投げたときのレスポンス. 処理が決めるレスポンスではないので, CORS のヘッダーだけ付ける.
- * 署名や中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
+ * 中身が不正なもの (ストアが保存のときに見つける) は `invalid_argument`, それ以外は `internal`
  */
 function hostErrorResponse(error: unknown): Response {
   const code: ConnectErrorCode =
-    error instanceof InvalidSignedEventError ||
-    error instanceof InvalidContentError
-      ? "invalid_argument"
-      : "internal";
+    error instanceof InvalidContentError ? "invalid_argument" : "internal";
   return new Response(
     JSON.stringify({
       code,
@@ -177,8 +173,7 @@ export async function handleWorkerRequest(
           readCommitCheckInput(signedEventBytes, store, env),
         readPartDefinitions: (partIds) =>
           readExternalPartDefinitions(partIds, store, env),
-        writeEvent: async (signedEventBytes) =>
-          (await store.submitEvent(signedEventBytes, env)).eventHash,
+        writeEvent: (event) => store.writeEvent(event, env),
         hashContents: (contentsBytes) =>
           Promise.all(
             contentsBytes.map(async (contentBytes) => {

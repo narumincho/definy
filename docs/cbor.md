@@ -39,6 +39,16 @@ definy の文字列は UTF-8 のバイト列なので, バイト列から文字�
 - 規則 (`core.check-event`) には中身をそのまま渡す (以前の `contentForCheck` のように説明を除かない。Wasm の中で渡すだけなので軽い)
 - 余分なレコードのキーは無視する (`core.value-conforms` は見ていた)
 
+## ストアのコミット (`definy.decode-stored-commit`, 2026-11-01)
+
+ストアのプロジェクトのコミットも definy が読む (`npm run build:seeds` が `wasm/commit_decoder.wasm` にコンパイルし, `worker/commit_store.ts` が使う)。
+
+- 署名は確かめない。ストアに入るのは definy が確かめたイベント (`write_event`) と seed だけなので, 以前の TypeScript のように読むたびに確かめるのはやめた
+- モジュールとパーツの ID も `core.module-part-ids` で付ける (`definy.stored-commit`)。読んだ結果はホストがイベントハッシュごとに isolate の中で使い回す
+  (Wasm の値は呼び出しごとに作り直すので, 使い回すのは JavaScript に読み出した値)
+- `SubmitEvent` の型検査の入力 (`read_commit_check_input`) も, 受け取ったイベントを同じ関数で読む
+- `write_event` は definy が読んだメタデータ (イベントハッシュ, アカウント, 種類, 時刻) も渡すので, ストアは保存のときに署名を確かめ直さない
+
 ## TypeScript の CBOR エンコーダーの修正
 
 `encodeCborItem` は 2^32 以上の整数を 4 バイトに切り詰めていた。seed のパーツの式の数のリテラル (`4503599627370495` など) が

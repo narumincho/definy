@@ -56,8 +56,14 @@ export type ServiceIoHost = {
   readonly readPartDefinitions: (
     partIds: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<unknown>>;
-  /** イベントを保存し, イベントハッシュを返す */
-  readonly writeEvent: (signedEventBytes: string) => Promise<string>;
+  /** definy が確かめたイベントを, definy が読んだメタデータと一緒に保存する (`write_event`) */
+  readonly writeEvent: (event: {
+    readonly signedEventBytes: string;
+    readonly eventHash: string;
+    readonly accountId: string;
+    readonly eventType: string;
+    readonly timeMs: number;
+  }) => Promise<void>;
   /** Base64 の中身の SHA-256 (URL-safe Base64. 同じ順. Base64 でなければ `undefined`) */
   readonly hashContents: (
     contentsBytes: ReadonlyArray<string>,
@@ -337,11 +343,16 @@ export async function handleRequestInDefiny(
         break;
       }
       case "write_event": {
-        const eventHash = await host.writeEvent(
-          String(
-            instance.read(instance.recordField(payload, "signed_event_bytes")),
-          ),
-        );
+        const field = (key: string): unknown =>
+          instance.read(instance.recordField(payload, key));
+        const eventHash = String(field("event_hash"));
+        await host.writeEvent({
+          signedEventBytes: String(field("signed_event_bytes")),
+          eventHash,
+          accountId: String(field("account_id")),
+          eventType: String(field("event_type")),
+          timeMs: Number(field("time_ms")),
+        });
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(eventHash),
         ]);

@@ -299,9 +299,11 @@ describe("handleRpcInDefiny", () => {
           steps.push("type check");
           return Promise.resolve(null);
         },
-        writeEvent: (bytes) => {
-          steps.push(`write ${bytes === signed}`);
-          return Promise.resolve("e1");
+        writeEvent: (event) => {
+          steps.push(
+            `write ${event.signedEventBytes === signed} ${event.eventHash} ${event.accountId === alice} ${event.eventType} ${event.timeMs}`,
+          );
+          return Promise.resolve();
         },
         ...overrides,
       });
@@ -320,7 +322,7 @@ describe("handleRpcInDefiny", () => {
       "events create_account 0",
       "missing ",
       "type check",
-      "write true",
+      "write true e1 true create_account 1000000",
     ]);
 
     steps.length = 0;
@@ -441,7 +443,7 @@ describe("handleRpcInDefiny", () => {
             return Promise.resolve([]);
           },
           readCommitCheckInput: () => Promise.resolve(null),
-          writeEvent: () => Promise.resolve("e2"),
+          writeEvent: () => Promise.resolve(),
         }),
       );
 
@@ -496,7 +498,7 @@ describe("handleRpcInDefiny", () => {
           readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(input),
-          writeEvent: () => Promise.resolve("e3"),
+          writeEvent: () => Promise.resolve(),
         }),
       );
     const number = { "#type_number": null };
@@ -632,7 +634,7 @@ describe("handleRpcInDefiny", () => {
           readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
-          writeEvent: () => Promise.resolve("e4"),
+          writeEvent: () => Promise.resolve(),
         }),
       );
     // core.define-part / core.define-type の呼び出しは評価器を使わずに読む
@@ -739,7 +741,7 @@ describe("handleRpcInDefiny", () => {
           },
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(null),
-          writeEvent: () => Promise.resolve("e5"),
+          writeEvent: () => Promise.resolve(),
         }),
       );
     const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);

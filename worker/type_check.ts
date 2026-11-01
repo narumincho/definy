@@ -7,11 +7,10 @@ import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import { base64ToBytes } from "../src/base64.ts";
 import { decodeCborItem } from "../src/cbor.ts";
 import { none, some, variant } from "../src/definy_value.ts";
-import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import { conformsInDefiny } from "../src/event_check.ts";
 import type { Env } from "./types.ts";
 import {
-  commitParts,
+  decodeStoredCommit,
   loadCommits,
   loadLatestMainCommits,
   type CommitPartRef,
@@ -107,7 +106,7 @@ function sourcePartValue(
  * `SubmitEvent` で受け取ったイベント (Base64) がプロジェクトのコミットなら, definy の `definy.check-commit` が検査に使うもの
  * (`definy.commit-check-source` の値) を読む (`read_commit_check_input`. docs/service.md).
  * コミットと, 型環境にする各プロジェクトの main の最新のコミットのパーツは定義の式のまま渡し, 中身は definy が求める.
- * プロジェクトのコミット以外・署名や形式が不正なもの・CAS に足りない内容があるもの
+ * プロジェクトのコミット以外・形式が不正なもの・CAS に足りない内容があるもの
  * (式を読めないので検査できない. `definy.submit-event` が先に `missing_content` を返す) は `null`
  */
 export async function readCommitCheckInput(
@@ -120,23 +119,22 @@ export async function readCommitCheckInput(
   },
   env: Env | undefined,
 ): Promise<unknown> {
-  let decoded: Awaited<ReturnType<typeof decodeVerifiedSignedEvent>>;
-  try {
-    decoded = await decodeVerifiedSignedEvent(base64ToBytes(signedEventBase64));
-  } catch {
+  // 署名は definy (definy.verify-signed-event) が先に確かめてある
+  const commit = decodeStoredCommit(signedEventBase64);
+  if (commit === null) {
     return null;
   }
-  if (decoded.content.type !== "project_commit") {
-    return null;
-  }
-  const { commit } = decoded.content;
+  const refs = commit.parts;
   if (
-    (await store.checkMissingHashes(decoded.meta.referencedContentHashes, env))
-      .length > 0
+    (
+      await store.checkMissingHashes(
+        [...new Set(refs.map((part) => part.contentHash))],
+        env,
+      )
+    ).length > 0
   ) {
     return null;
   }
-  const refs = commitParts(commit.modules);
   const latestCommits = await loadLatestMainCommits(store, env);
   const latestDefinitions = await readAcceptedDefinitions(
     [...latestCommits.values()].flatMap((latest) =>

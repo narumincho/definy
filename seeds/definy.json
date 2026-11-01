@@ -3293,6 +3293,30 @@
                     }
                   },
                   {
+                    "key": "event_hash",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "account_id",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "event_type",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "time_ms",
+                    "value": {
+                      "#type_number": null
+                    }
+                  },
+                  {
                     "key": "then",
                     "value": {
                       "#type_function": {
@@ -20885,6 +20909,19 @@
                                                                                                               }
                                                                                                             },
                                                                                                             {
+                                                                                                              "key": "time_ms",
+                                                                                                              "value": {
+                                                                                                                "#record_get": {
+                                                                                                                  "record": {
+                                                                                                                    "#variable": {
+                                                                                                                      "variable_id": 4
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  "key": "time_ms"
+                                                                                                                }
+                                                                                                              }
+                                                                                                            },
+                                                                                                            {
                                                                                                               "key": "content",
                                                                                                               "value": {
                                                                                                                 "#record_get": {
@@ -21027,6 +21064,1474 @@
                                 "#some": {
                                   "$part": "definy.service-io"
                                 }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "stored-commit-part",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A part of a stored project commit with its ID (core.module-part-ids). name is module.part"
+        },
+        {
+          "language": "ja",
+          "text": "ID (core.module-part-ids) を付けた, 保存したプロジェクトのコミットのパーツ。name は モジュール名.パーツ名"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "module_name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "module_id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "module_visibility",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.visibility"
+                }
+              }
+            }
+          },
+          {
+            "key": "content_hash",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stored-commit-module",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A module of a stored project commit with its ID"
+        },
+        {
+          "language": "ja",
+          "text": "ID を付けた, 保存したプロジェクトのコミットのモジュール"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "parts",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.stored-commit-part"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stored-commit",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A project commit read from the store by definy.decode-stored-commit"
+        },
+        {
+          "language": "ja",
+          "text": "definy.decode-stored-commit がストアから読んだプロジェクトのコミット"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "account_id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "project_name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "branch",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "time_ms",
+            "value": {
+              "#type_number": null
+            }
+          },
+          {
+            "key": "modules",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.stored-commit-module"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stored-commit-parts",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "module",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.project-commit-module"
+                  }
+                }
+              }
+            },
+            {
+              "name": "module_id",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "part_ids",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "end",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.stored-commit-part"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The parts of the module from start to end (exclusive) with their IDs, concatenating halves"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールの start 番目から end 番目の手前までのパーツに ID を付ける (半分ずつ結合する)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "module"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "module_id"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "part_ids"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "end"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 5,
+              "variable_name": "count",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.minus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 4
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 5
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 2
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 5
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 1
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#boolean": true
+                              },
+                              "body": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-get"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "list",
+                                          "value": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              },
+                                              "key": "parts"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "pattern": {
+                                        "#variant": {
+                                          "tag": "some",
+                                          "payload": {
+                                            "#bind": {
+                                              "variable_id": 6,
+                                              "variable_name": "part"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "body": {
+                                        "#list": [
+                                          {
+                                            "#record": [
+                                              {
+                                                "key": "id",
+                                                "value": {
+                                                  "#match": {
+                                                    "target": {
+                                                      "#call": {
+                                                        "function": {
+                                                          "#part_reference": {
+                                                            "part_definition_event_hash": {
+                                                              "$part": "core.list-get"
+                                                            }
+                                                          }
+                                                        },
+                                                        "arguments": [
+                                                          {
+                                                            "name": "list",
+                                                            "value": {
+                                                              "#variable": {
+                                                                "variable_id": 2
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "name": "index",
+                                                            "value": {
+                                                              "#variable": {
+                                                                "variable_id": 3
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    "arms": [
+                                                      {
+                                                        "pattern": {
+                                                          "#variant": {
+                                                            "tag": "some",
+                                                            "payload": {
+                                                              "#bind": {
+                                                                "variable_id": 7,
+                                                                "variable_name": "id"
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        "body": {
+                                                          "#variable": {
+                                                            "variable_id": 7
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "pattern": {
+                                                          "#variant": {
+                                                            "tag": "none",
+                                                            "payload": {
+                                                              "#any": null
+                                                            }
+                                                          }
+                                                        },
+                                                        "body": {
+                                                          "#string": ""
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "name",
+                                                "value": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.string-concat"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "left",
+                                                        "value": {
+                                                          "#call": {
+                                                            "function": {
+                                                              "#part_reference": {
+                                                                "part_definition_event_hash": {
+                                                                  "$part": "core.string-concat"
+                                                                }
+                                                              }
+                                                            },
+                                                            "arguments": [
+                                                              {
+                                                                "name": "left",
+                                                                "value": {
+                                                                  "#record_get": {
+                                                                    "record": {
+                                                                      "#variable": {
+                                                                        "variable_id": 0
+                                                                      }
+                                                                    },
+                                                                    "key": "name"
+                                                                  }
+                                                                }
+                                                              },
+                                                              {
+                                                                "name": "right",
+                                                                "value": {
+                                                                  "#string": "."
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "right",
+                                                        "value": {
+                                                          "#record_get": {
+                                                            "record": {
+                                                              "#variable": {
+                                                                "variable_id": 6
+                                                              }
+                                                            },
+                                                            "key": "name"
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "module_name",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#variable": {
+                                                        "variable_id": 0
+                                                      }
+                                                    },
+                                                    "key": "name"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "module_id",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "module_visibility",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#variable": {
+                                                        "variable_id": 0
+                                                      }
+                                                    },
+                                                    "key": "visibility"
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "key": "content_hash",
+                                                "value": {
+                                                  "#record_get": {
+                                                    "record": {
+                                                      "#variable": {
+                                                        "variable_id": 6
+                                                      }
+                                                    },
+                                                    "key": "content_hash"
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "pattern": {
+                                        "#variant": {
+                                          "tag": "none",
+                                          "payload": {
+                                            "#any": null
+                                          }
+                                        }
+                                      },
+                                      "body": {
+                                        "#list": []
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#boolean": false
+                              },
+                              "body": {
+                                "#list": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 8,
+                          "variable_name": "middle",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.divide"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 5
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 2
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.stored-commit-parts"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "module",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "module_id",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "part_ids",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 8
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.stored-commit-parts"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "module",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "module_id",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "part_ids",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 8
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "stored-commit-module-of",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "module",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.project-commit-module"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.stored-commit-module"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The module of a commit with the IDs of it and its parts"
+        },
+        {
+          "language": "ja",
+          "text": "コミットのモジュールに, モジュールとパーツの ID を付ける"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "module"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 1,
+              "variable_name": "ids",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.module-part-ids"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "module_name",
+                      "value": {
+                        "#record_get": {
+                          "record": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          },
+                          "key": "name"
+                        }
+                      }
+                    },
+                    {
+                      "name": "part_names",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-map"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "T",
+                              "value": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.module-commit-part"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "name": "U",
+                              "value": {
+                                "#type_string": null
+                              }
+                            },
+                            {
+                              "name": "f",
+                              "value": {
+                                "#function": {
+                                  "parameters": [
+                                    {
+                                      "parameter_id": 2,
+                                      "parameter_name": "item"
+                                    }
+                                  ],
+                                  "body": {
+                                    "#record_get": {
+                                      "record": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      },
+                                      "key": "name"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "name": "xs",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "key": "parts"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#record": [
+                  {
+                    "key": "name",
+                    "value": {
+                      "#record_get": {
+                        "record": {
+                          "#variable": {
+                            "variable_id": 0
+                          }
+                        },
+                        "key": "name"
+                      }
+                    }
+                  },
+                  {
+                    "key": "id",
+                    "value": {
+                      "#record_get": {
+                        "record": {
+                          "#variable": {
+                            "variable_id": 1
+                          }
+                        },
+                        "key": "module_id"
+                      }
+                    }
+                  },
+                  {
+                    "key": "parts",
+                    "value": {
+                      "#call": {
+                        "function": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.stored-commit-parts"
+                            }
+                          }
+                        },
+                        "arguments": [
+                          {
+                            "name": "module",
+                            "value": {
+                              "#variable": {
+                                "variable_id": 0
+                              }
+                            }
+                          },
+                          {
+                            "name": "module_id",
+                            "value": {
+                              "#record_get": {
+                                "record": {
+                                  "#variable": {
+                                    "variable_id": 1
+                                  }
+                                },
+                                "key": "module_id"
+                              }
+                            }
+                          },
+                          {
+                            "name": "part_ids",
+                            "value": {
+                              "#record_get": {
+                                "record": {
+                                  "#variable": {
+                                    "variable_id": 1
+                                  }
+                                },
+                                "key": "part_ids"
+                              }
+                            }
+                          },
+                          {
+                            "name": "start",
+                            "value": {
+                              "#number": 0
+                            }
+                          },
+                          {
+                            "name": "end",
+                            "value": {
+                              "#call": {
+                                "function": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "core.list-length"
+                                    }
+                                  }
+                                },
+                                "arguments": [
+                                  {
+                                    "name": "value",
+                                    "value": {
+                                      "#record_get": {
+                                        "record": {
+                                          "#variable": {
+                                            "variable_id": 0
+                                          }
+                                        },
+                                        "key": "parts"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "decode-stored-commit",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "signed_event_bytes",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.stored-commit"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Read a stored SignedEvent (Base64) as a project commit. none if it is not a project commit. Does not verify the signature (the store has only verified events). The server compiles this to wasm/commit_decoder.wasm"
+        },
+        {
+          "language": "ja",
+          "text": "保存した SignedEvent (Base64) をプロジェクトのコミットとして読む。プロジェクトのコミットでなければ none。署名は確かめない (ストアには確かめたイベントしか無い)。サーバーは wasm/commit_decoder.wasm にコンパイルする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "signed_event_bytes"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "std.base64-to-bytes"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#none": null
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 1,
+                          "variable_name": "bytes"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.decode-signed-event"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "bytes",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "decoded",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 2,
+                                  "variable_name": "decoded"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  },
+                                  "key": "content"
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "project_commit",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 3,
+                                          "variable_name": "commit"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "some",
+                                      "payload": {
+                                        "#some": {
+                                          "#record": [
+                                            {
+                                              "key": "account_id",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.bytes-to-base64url"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "bytes",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          },
+                                                          "key": "account_id_bytes"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "project_name",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  },
+                                                  "key": "project_name"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "branch",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  },
+                                                  "key": "branch"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "time_ms",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  },
+                                                  "key": "time_ms"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "modules",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.list-map"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "T",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.project-commit-module"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "U",
+                                                      "value": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.stored-commit-module"
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "f",
+                                                      "value": {
+                                                        "#function": {
+                                                          "parameters": [
+                                                            {
+                                                              "parameter_id": 4,
+                                                              "parameter_name": "item"
+                                                            }
+                                                          ],
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.stored-commit-module-of"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "module",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "xs",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "key": "modules"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#any": null
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "none",
+                                      "payload": {
+                                        "#none": null
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "invalid",
+                              "payload": {
+                                "#any": null
+                              }
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
                               }
                             }
                           }
@@ -26854,11 +28359,11 @@
       "description": [
         {
           "language": "en",
-          "text": "A signed event whose signature the host verified (valid of definy.signed-event-verification): the event hash, the account, the content and the content hashes the event references. The content leaves out what the rules do not look at (descriptions, the commit message and the content hashes of the parts)"
+          "text": "A signed event definy.verify-signed-event read and verified: the event hash, the account, the time in milliseconds, the content and the content hashes the event references (may repeat)"
         },
         {
           "language": "ja",
-          "text": "ホストが署名を確かめた署名済みイベント (definy.signed-event-verification の valid): イベントハッシュ, アカウント, 中身, イベントが参照する content hash. 中身は規則が見ないもの (説明, コミットのメッセージ, パーツの中身の content hash) を除いてある"
+          "text": "definy.verify-signed-event が読んで署名を確かめた署名済みイベント: イベントハッシュ, アカウント, 時刻 (ミリ秒), 中身, イベントが参照する content hash (重複することがある)"
         }
       ],
       "expression": {
@@ -26873,6 +28378,12 @@
             "key": "account_id",
             "value": {
               "#type_string": null
+            }
+          },
+          {
+            "key": "time_ms",
+            "value": {
+              "#type_number": null
             }
           },
           {
@@ -50885,6 +52396,90 @@
                                                                               "value": {
                                                                                 "#variable": {
                                                                                   "variable_id": 0
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "key": "event_hash",
+                                                                              "value": {
+                                                                                "#record_get": {
+                                                                                  "record": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 1
+                                                                                    }
+                                                                                  },
+                                                                                  "key": "event_hash"
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "key": "account_id",
+                                                                              "value": {
+                                                                                "#record_get": {
+                                                                                  "record": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 1
+                                                                                    }
+                                                                                  },
+                                                                                  "key": "account_id"
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "key": "event_type",
+                                                                              "value": {
+                                                                                "#match": {
+                                                                                  "target": {
+                                                                                    "#record_get": {
+                                                                                      "record": {
+                                                                                        "#variable": {
+                                                                                          "variable_id": 1
+                                                                                        }
+                                                                                      },
+                                                                                      "key": "content"
+                                                                                    }
+                                                                                  },
+                                                                                  "arms": [
+                                                                                    {
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "create_account",
+                                                                                          "payload": {
+                                                                                            "#any": null
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "body": {
+                                                                                        "#string": "create_account"
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "pattern": {
+                                                                                        "#variant": {
+                                                                                          "tag": "project_commit",
+                                                                                          "payload": {
+                                                                                            "#any": null
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "body": {
+                                                                                        "#string": "project_commit"
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "key": "time_ms",
+                                                                              "value": {
+                                                                                "#record_get": {
+                                                                                  "record": {
+                                                                                    "#variable": {
+                                                                                      "variable_id": 1
+                                                                                    }
+                                                                                  },
+                                                                                  "key": "time_ms"
                                                                                 }
                                                                               }
                                                                             },

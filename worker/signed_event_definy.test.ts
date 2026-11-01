@@ -3,16 +3,23 @@ import { describe, expect, it } from "vitest";
 import { base64ToBytes } from "../src/base64.ts";
 import { encodeCborItem } from "../src/cbor.ts";
 import { compileSeedFunction } from "../src/event_check.ts";
-import { encodeEventContent } from "../src/event_content.ts";
-import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
+import {
+  decodeEventContent,
+  encodeEventContent,
+} from "../src/event_content.ts";
+import {
+  deriveModuleIdBytes,
+  deriveModulePartId,
+  derivePartIds,
+} from "../src/part_ids.ts";
 import { loadSeedPartExpressions } from "../src/seed_parts.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
-import { decodeEventContent } from "../src/event_content.ts";
 import {
   createStage1Compiler,
   instantiateCompiledFunction,
 } from "../src/stage1_compiler.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
+import { decodeStoredCommit } from "./commit_store.ts";
 
 const seedExpressions = await loadSeedPartExpressions();
 const decodeModule = new WebAssembly.Module(
@@ -159,5 +166,59 @@ describe("definy.decode-signed-event", () => {
         ),
       ),
     ).toEqual(invalid("content must be a value of core.event-content"));
+  });
+});
+
+describe("definy.decode-stored-commit (decodeStoredCommit)", () => {
+  it("seed のコミットを TypeScript と同じに読み, パーツに core.module-part-ids の ID を付ける", async () => {
+    const deriver = new WebAssembly.Module(
+      readFileSync("wasm/part_id_deriver.wasm"),
+    );
+    let commits = 0;
+    for (const event of (await loadTestSeedBundle()).events) {
+      const decoded = decodeStoredCommit(event.signedEventBytes);
+      const meta = parseSignedEventMetadata(
+        base64ToBytes(event.signedEventBytes),
+      );
+      const content = decodeEventContent(
+        (
+          decodeInDefiny(base64ToBytes(event.signedEventBytes)) as {
+            readonly "#decoded": { readonly content: unknown };
+          }
+        )["#decoded"].content,
+      );
+      if (content?.type !== "project_commit") {
+        expect(decoded).toBeNull();
+        continue;
+      }
+      commits += 1;
+      const ids = derivePartIds(
+        deriver,
+        content.commit.modules.map((module) => ({
+          moduleName: module.name,
+          partNames: module.parts.map((part) => part.name),
+        })),
+      );
+      expect(decoded).toEqual({
+        accountId: meta.accountId,
+        projectName: content.commit.projectName,
+        moduleNames: content.commit.modules.map((module) => module.name),
+        moduleIds: ids.map((id) => id.moduleId),
+        branch: content.commit.branch,
+        timeMs: meta.timeMs,
+        parts: content.commit.modules.flatMap((module, i) =>
+          module.parts.map((part, j) => ({
+            partId: ids[i]!.partIds[j]!,
+            moduleId: ids[i]!.moduleId,
+            name: `${module.name}.${part.name}`,
+            moduleName: module.name,
+            moduleVisibility: module.visibility,
+            contentHash: part.contentHash,
+          })),
+        ),
+      });
+    }
+    expect(commits).toBeGreaterThan(0);
+    expect(decodeStoredCommit("not base64!")).toBeNull();
   });
 });
