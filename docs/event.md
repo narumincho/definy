@@ -149,8 +149,8 @@ core.event-check-state = {
   コミット先のブランチと親を決める (`commitTarget`, `src/branches.ts`. [branch.md](branch.md))
 - 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerProject`)。同じ秒の 2 つのコミットは先のものが最新のままになる
 - 規則はサーバーの `definy.submit-event` (`wasm/service.wasm`. [service.md](service.md)) の中で呼ぶ (2026-10-30)。
-  ホストは署名と中身の形を確かめ (`verify_signed_event`. `worker/event_check.ts`), 規則が使う事実 (アカウントを作ったか `read_account_created`,
-  受け付けたコミットの一覧 `read_commits`) を読むだけ。理由の英語のメッセージも definy (`definy.event-rejection-message`) が作る。
+  ホストは署名と中身の形を確かめ (`verify_signed_event`. `worker/event_check.ts`), 規則が使う事実 (アカウントを作ったか. definy の `definy.read-account-created` が
+  `read_events_page` で読む. 受け付けたコミットの一覧 `read_commits`) を読むだけ。理由の英語のメッセージも definy (`definy.event-rejection-message`) が作る。
   拒否は Connect-RPC の `invalid_argument` (400)。`wasm/event_checker.wasm` (`core.check-event` だけをコンパイルしたもの) はテストで規則を試すのに使う
 - ブランチの最新のコミット・作成者・他のプロジェクトのモジュールなどの状態も definy (`core.event-check-state-of`) が求める
   (以前は TypeScript の `branchStateOf` が求めていた)。全コミットを毎回渡し, 各コミットについて最新かを調べるので O(コミット数²)
