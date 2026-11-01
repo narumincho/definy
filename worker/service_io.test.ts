@@ -48,7 +48,8 @@ async function handleRpcInDefiny(
     },
     {
       ...rpcHost,
-      ensureSeeded: () => Promise.resolve(),
+      readSeedStatus: () =>
+        Promise.resolve({ seeded: true, expectedFingerprint: "" }),
       readRequestJson: () => Promise.resolve({ json: request() }),
       readRequestText: () => Promise.resolve(JSON.stringify(request())),
     },
@@ -165,7 +166,9 @@ async function sqlStore(
   readonly host: Pick<ServiceIoHost, "runSql">;
 }> {
   const db = createSqliteD1Database();
-  await new WorkerStore().ensureD1Schema(db);
+  // テーブルは definy (definy.seed-store) が作る. 指紋の行は消しておく
+  await new WorkerStore().seedD1(db, { events: [], contents: [] });
+  await db.prepare("DELETE FROM cas_contents").run();
   for (const item of fixtures.events ?? []) {
     await db
       .prepare(
@@ -247,7 +250,11 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
     throw new Error("not read");
   },
   httpFetch: () => Promise.reject(new Error("not fetched")),
-  ensureSeeded: () => Promise.reject(new Error("not seeded")),
+  readSeedStatus: () => Promise.reject(new Error("not read")),
+  readSeedBundle: () => Promise.reject(new Error("not read")),
+  markSeeded: () => {
+    throw new Error("not seeded");
+  },
   readRequestJson: () => Promise.reject(new Error("not read")),
   ...overrides,
 });

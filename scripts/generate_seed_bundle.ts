@@ -447,6 +447,12 @@ export const PART_ID_DERIVER_WASM_PATH = "wasm/part_id_deriver.wasm";
  */
 export const COMMIT_DECODER_WASM_PATH = "wasm/commit_decoder.wasm";
 
+/**
+ * seed の `definy.seed-store` (ストアのテーブルを作り seed を入れる) を stage1 でコンパイルした Wasm を
+ * 書き出すファイル (コミットしない). テストなどで D1 に seed を入れる `WorkerStore.seedD1` が使う (worker/store.ts)
+ */
+export const SEEDER_WASM_PATH = "wasm/seeder.wasm";
+
 /** seed の core の関数のパーツ `partName` を stage1 でコンパイルする */
 async function compileCorePart(partName: string): Promise<Uint8Array> {
   return compileSeedPart("core", partName);
@@ -476,7 +482,7 @@ export async function generateEventCheckerWasm(): Promise<Uint8Array> {
  * {@link generateEventCheckerWasm} の結果を {@link EVENT_CHECKER_WASM_PATH} に, `core.value-conforms` を {@link SHAPE_CHECKER_WASM_PATH} に,
  * `core.project-branches` を {@link BRANCH_SUMMARIZER_WASM_PATH} に, `core.check-reference-visibility` を {@link VISIBILITY_CHECKER_WASM_PATH} に,
  * `definy.handle-request` を {@link SERVICE_WASM_PATH} に, `core.eval-value` を {@link DEFINITION_EVALUATOR_WASM_PATH} に,
- * `core.module-part-ids` を {@link PART_ID_DERIVER_WASM_PATH} に, `definy.decode-stored-commit` を {@link COMMIT_DECODER_WASM_PATH} に書き出す
+ * `core.module-part-ids` を {@link PART_ID_DERIVER_WASM_PATH} に, `definy.decode-stored-commit` を {@link COMMIT_DECODER_WASM_PATH} に, `definy.seed-store` を {@link SEEDER_WASM_PATH} に書き出す
  */
 export async function writeEventCheckerWasm(): Promise<void> {
   await writeFile(
@@ -511,6 +517,10 @@ export async function writeEventCheckerWasm(): Promise<void> {
     resolve(COMMIT_DECODER_WASM_PATH),
     await compileSeedPart("definy", "decode-stored-commit"),
   );
+  await writeFile(
+    resolve(SEEDER_WASM_PATH),
+    await compileSeedPart("definy", "seed-store"),
+  );
 }
 
 /** {@link generateTypeCheckerWasm} の結果を {@link TYPE_CHECKER_WASM_PATH} に書き出す */
@@ -538,6 +548,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}, seeder -> ${SEEDER_WASM_PATH}`,
   );
 }

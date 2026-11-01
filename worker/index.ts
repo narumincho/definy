@@ -108,6 +108,7 @@ export async function handleWorkerRequest(
   let bodyText: Promise<string> | undefined;
   const readBody = () => (bodyText ??= request.text());
   let result: ServiceResult;
+  const seed = store.seedHost(env, url.origin);
   try {
     result = await handleRequestInDefiny(
       serviceModule,
@@ -141,12 +142,16 @@ export async function handleWorkerRequest(
         readRequestText: readBody,
         readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
         httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
-        ensureSeeded: () => store.ensureSeeded(env, url.origin),
+        readSeedStatus: seed.readSeedStatus,
+        readSeedBundle: seed.readSeedBundle,
+        markSeeded: seed.markSeeded,
         readRequestJson: async () => parseJsonObject(await readBody()),
       },
     );
   } catch (e) {
     return hostErrorResponse(e);
+  } finally {
+    seed.release();
   }
   if (result.type === "serve_asset") {
     if (serveAsset === undefined) {

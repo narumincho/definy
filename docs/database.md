@@ -7,7 +7,7 @@
 - **ローカル開発**: Wrangler CLI (`wrangler d1 execute definy-db --local` / `vite` 実行時) によるローカル D1 または Worker の自動初期化
 - **単体テスト**: `worker/test_helpers.ts` の `node:sqlite` (`:memory:`) による D1 互換アダプターを使う
 
-## Cloudflare D1 スキーマ (`worker/store.ts` の `D1_SCHEMA_STATEMENTS`)
+## Cloudflare D1 スキーマ (definy の `definy.store-schema-statements`)
 
 definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシュ（`EventHashId` / `ContentHash`）によるイミュータブルな構造であるため、フラットな SQLite テーブルとインデックスで高速に永続化・検索できます。
 
@@ -18,12 +18,17 @@ definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシ�
 
 ## スキーマ初期化とシードデータ投入
 
-Worker の初回リクエスト時（コールドスタート時）に `store.ensureSeeded(env)` が実行されます。
+Worker 自身が処理するリクエスト (RPC と `/virtual/wasm/`) の前に, definy の `definy.ensure-seeded` が次を行う (2026-11-01 から definy。以前は TypeScript の `store.ensureSeeded`)。
 
-1. **自動 DDL 適用**: `events` テーブルが存在しない場合、`worker/store.ts` の `D1_SCHEMA_STATEMENTS` を適用してテーブルを作成します。ローカル D1 も同じ仕組みで初期化されるので, 手で SQL を流す必要はありません。
-2. **シードデータの自動投入**: イベント件数が 0 件の場合、組み込みシードバンドル（`/__definy_seed_bundle.json`。ビルド時に `seeds/*.json` から生成する）をロードして自動同期します。イベントが既に存在する場合は再シードはスキップされます。
+1. この isolate がもう seed を入れていれば何もしない (`read_seed_status`。入れている途中なら, 他のリクエストはホストが待たせる)
+2. `sqlite_master` で `events` と `cas_contents` が無ければ `definy.store-schema-statements` (CREATE TABLE / INDEX) を流す。ローカル D1 も同じ仕組みで初期化されるので, 手で SQL を流す必要はない
+3. D1 に記録した seed の指紋 (`cas_contents` のキー `definy.seed-fingerprint-key` = `seed-bundle-fingerprint`) がビルド時の指紋と同じなら終わり (コールドスタートでも seed バンドルは読まない)
+4. 違えば seed バンドル (`read_seed_bundle`。ホストが `/__definy_seed_bundle.json` を読み, 指紋を付ける) を `definy.store-seed-statements` の SQL で入れ替え, 最後に指紋を書く (`definy.sql-run-chunks` で 50 文ずつ batch)
+5. `mark_seeded` でこの isolate が入れたことをホストに伝える
 
-以前 (Rust 版) はデプロイ時にシード SQL を生成して `wrangler d1 execute` で投入していたが, `ensureSeeded` に一本化した。スキーマの SQL ファイル (`migrations/`) と D1 を作って wrangler.toml に UUID を書き込むシェルスクリプト (`scripts/ensure-d1.sh`) も, 中身が `D1_SCHEMA_STATEMENTS` と固定の `database_id` に重なっていたので削除した。
+テストの `WorkerStore.seedD1(db, bundle)` も同じ definy (`definy.seed-store` をコンパイルした `wasm/seeder.wasm`) で入れる。
+
+以前 (Rust 版) はデプロイ時にシード SQL を生成して `wrangler d1 execute` で投入していたが, `ensureSeeded` に一本化した。スキーマの SQL ファイル (`migrations/`) と D1 を作って wrangler.toml に UUID を書き込むシェルスクリプト (`scripts/ensure-d1.sh`) も, 中身がスキーマの SQL と固定の `database_id` に重なっていたので削除した。
 
 ## インメモリストアを無くした (2026-11-01)
 
@@ -52,7 +57,7 @@ RPC が読み書きする SQL は definy の `definy.store-*` (`seeds/definy.jso
 | `definy.store-read-raw-content`            | `SELECT content_bytes FROM cas_contents WHERE content_hash = ?` のあと `hash_contents` で SHA-256                 |
 
 - D1 は 1 つの文のパラメーターの数に上限があるので, `IN` は `definy.sql-in-statements` で 50 個ずつの文に分ける
-- スキーマの作成と seed の投入 (`ensure_seeded`), 型チェッカー用のコミットの読み取り (`read_commits` など. isolate のキャッシュがある) はまだホスト (TypeScript)
+- 型チェッカー用のコミットの読み取り (`read_commits` など. isolate のキャッシュがある) はまだホスト (TypeScript)
 - 以前の TypeScript は保存のときに Base64 を標準の形にそろえていたが, 今は definy が受け取った文字列をそのまま保存する
   (中身のハッシュは `hash_contents` で前もって確かめるので, 違う形の Base64 でもバイト列は同じ)
 - テスト (`worker/service_io.test.ts`) は sqlite の D1 に行を入れて, definy が流した SQL を `sql SELECT events ...` のように記録して確かめる

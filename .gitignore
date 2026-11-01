@@ -13,6 +13,7 @@ playwright-report/
 /wasm/shape_checker.wasm
 /wasm/branch_summarizer.wasm
 /wasm/commit_decoder.wasm
+/wasm/seeder.wasm
 /wasm/visibility_checker.wasm
 /wasm/service.wasm
 /wasm/definition_evaluator.wasm
