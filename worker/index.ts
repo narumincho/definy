@@ -3,10 +3,10 @@ import { isAccountCreated, verifySubmittedEvent } from "./event_check.ts";
 import serviceModule from "../wasm/service.wasm?module";
 import {
   decodeEvaluatedPartContents,
-  loadCommitSummaries,
   readCommitCheckInput,
   readExternalPartDefinitions,
 } from "./type_check.ts";
+import { loadCommitSummaries } from "./commit_store.ts";
 import { handleRpcInDefiny } from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";

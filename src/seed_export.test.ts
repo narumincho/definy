@@ -23,7 +23,7 @@ import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/test_helpers.ts";
 import { loadTestSeedBundle } from "../worker/test_runtime.ts";
-import { latestCommitHashOf } from "../worker/type_check.ts";
+import { latestCommitHashOf } from "../worker/commit_store.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
 import { createSignedSingleModuleCommitEvent } from "./test_commit.ts";
 import { partContentItem } from "./content_store.ts";

@@ -11,7 +11,7 @@ import { MALFORMED_CONTENT_MESSAGE } from "./event_check.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
-import { latestCommitHashOf } from "./type_check.ts";
+import { latestCommitHashOf } from "./commit_store.ts";
 import type { Env, GetProjectBranchesResponse } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 

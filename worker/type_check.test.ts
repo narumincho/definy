@@ -22,7 +22,7 @@ import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
-import { latestCommitHashOf } from "./type_check.ts";
+import { latestCommitHashOf } from "./commit_store.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";

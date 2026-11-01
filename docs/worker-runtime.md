@@ -9,13 +9,14 @@ Cloudflare Worker (`definy`) で definy の Wasm を動かすときの仕組み�
 
 ## 構成
 
-| ファイル                 | 役割                                                                                            |
-| ------------------------ | ----------------------------------------------------------------------------------------------- |
-| `worker/type_check.ts`   | `SubmitEvent` のパーツを definy 製の型チェッカー (`wasm/type_checker.wasm`) で調べる            |
-| `src/stage1_compiler.ts` | `stage1.wasm` を動かして式をコンパイルする, コンパイル結果を動かす (ブラウザ・Node.js 共通)     |
-| `src/wasi_io.ts`         | `wasi.io` のプログラムを動かすホスト ([wasi-io.md](wasi-io.md))                                 |
-| `src/cbor.ts`            | CBOR、URL-safe Base64、SHA-256、Module ID / Part ID 導出 (ブラウザ・Node.js・Worker 共通)       |
-| `wasm/stage1.wasm`       | definy 自己記述コンパイラ。再生成は `npm run build:stage1` ([self-hosting.md](self-hosting.md)) |
+| ファイル                 | 役割                                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `worker/type_check.ts`   | `SubmitEvent` のコミットの検査 (`definy.check-commit`) の入力を作る, 評価した値をパーツの中身にする            |
+| `worker/commit_store.ts` | ストアのイベントを 500 件ずつ読む, 受け付けたコミットを読む (isolate の中で使い回す), ブランチの最新のコミット |
+| `src/stage1_compiler.ts` | `stage1.wasm` を動かして式をコンパイルする, コンパイル結果を動かす (ブラウザ・Node.js 共通)                    |
+| `src/wasi_io.ts`         | `wasi.io` のプログラムを動かすホスト ([wasi-io.md](wasi-io.md))                                                |
+| `src/cbor.ts`            | CBOR、URL-safe Base64、SHA-256、Module ID / Part ID 導出 (ブラウザ・Node.js・Worker 共通)                      |
+| `wasm/stage1.wasm`       | definy 自己記述コンパイラ。再生成は `npm run build:stage1` ([self-hosting.md](self-hosting.md))                |
 
 ### Workers の制約
 

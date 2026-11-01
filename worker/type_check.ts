@@ -5,17 +5,13 @@
  * 型環境 (各プロジェクトの main の最新のコミット) の中身を求めるのはまだここ (`commitContents`)
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
-import branchSummarizerModule from "../wasm/branch_summarizer.wasm?module";
 import definitionEvaluatorModule from "../wasm/definition_evaluator.wasm?module";
-import partIdDeriverModule from "../wasm/part_id_deriver.wasm?module";
 import { base64ToBytes, decodeCborItem } from "../src/cbor.ts";
 import {
   isTypePartType,
   latestPartsToModuleEntries,
-  type LatestPart,
 } from "../src/self_hosted_type_check.ts";
 import { none, some, variant } from "../src/definy_value.ts";
-import { summarizeBranches } from "../src/branches.ts";
 import { compilerBuiltinName } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
@@ -26,11 +22,8 @@ import {
   DEFAULT_VISIBILITY,
   encodePartContent,
   partContentFromValue,
-  MAIN_BRANCH,
-  type CommitModule,
   type PartContent,
 } from "../src/event_content.ts";
-import type { ContentItem } from "../src/content_store.ts";
 import {
   evaluatePartDefinition,
   resolveDefinitionsInCommit,
@@ -40,35 +33,17 @@ import {
   evaluateDefinition,
   evaluatedPartReferenceIds,
 } from "../src/definition_evaluator.ts";
-import { conformsInDefiny, type CommitSummary } from "../src/event_check.ts";
-import { derivePartIds } from "../src/part_ids.ts";
-import type { Env, EventItem, GetEventsRequest } from "./types.ts";
-
-/** 型検査でストアから読むもの */
-export type PartStoreReader = {
-  readonly getEvents: (
-    req: GetEventsRequest,
-    env?: Env,
-  ) => Promise<ReadonlyArray<EventItem>>;
-  readonly getContentItems: (
-    hashes: ReadonlyArray<string>,
-    env?: Env,
-  ) => Promise<ReadonlyArray<ContentItem>>;
-};
-
-const EVENTS_PAGE_SIZE = 500;
-
-/** 型環境に使う形のプロジェクトのコミットのパーツ. 公開/非公開の検査 (docs/visibility.md) に使う情報も持つ */
-type CommitLatestPart = LatestPart &
-  Omit<VisibilityTarget, "projectName" | "name"> & {
-    readonly contentHash: string;
-  };
-
-/** コミットのパーツのうち, 中身 (`core.part-content`) を読まなくても分かるもの */
-type CommitPartRef = Omit<
-  CommitLatestPart,
-  "visibility" | "partType" | "expression" | "expressionKey"
->;
+import { conformsInDefiny } from "../src/event_check.ts";
+import type { Env } from "./types.ts";
+import {
+  commitParts,
+  loadCommits,
+  loadLatestMainCommits,
+  type CommitLatestPart,
+  type CommitPartRef,
+  type PartStoreReader,
+  type StoredCommit,
+} from "./commit_store.ts";
 
 /**
  * パーツの中身の CBOR (Base64) を読む. 中身は定義の式で, 評価して `core.part-content` の形でなければ `undefined`
@@ -303,7 +278,7 @@ const evaluatedEnvironmentCache = new Map<
 
 /** 受け付けたコミットの, その場で評価できない定義のパーツの中身をコミットの中で評価する */
 async function evaluatedEnvironmentContents(
-  commit: CachedCommit,
+  commit: StoredCommit,
   externalContentHash: (partId: string) => string | undefined,
   store: PartStoreReader,
   env: Env | undefined,
@@ -349,161 +324,6 @@ function withContent(
     expression: content?.expression ?? null,
     expressionKey: part.contentHash,
   };
-}
-
-/**
- * プロジェクトのコミットの全モジュールのパーツ (中身は読まない).
- * ID は definy 製の `core.module-part-ids` で求める (src/part_ids.ts).
- * `name` は型エラーのメッセージに使うので `モジュール名.パーツ名` にする
- */
-function commitParts(
-  modules: ReadonlyArray<CommitModule>,
-): ReadonlyArray<CommitPartRef> {
-  const ids = derivePartIds(
-    partIdDeriverModule,
-    modules.map((module) => ({
-      moduleName: module.name,
-      partNames: module.parts.map((part) => part.name),
-    })),
-  );
-  return modules.flatMap((module, i) =>
-    module.parts.map((part, j) => ({
-      partId: ids[i]!.partIds[j]!,
-      moduleId: ids[i]!.moduleId,
-      name: `${module.name}.${part.name}`,
-      moduleName: module.name,
-      moduleVisibility: module.visibility ?? DEFAULT_VISIBILITY,
-      contentHash: part.contentHash ?? "",
-    })),
-  );
-}
-
-type CachedCommit = {
-  readonly eventHash: string;
-  readonly accountId: string;
-  readonly projectName: string;
-  /** コミットのモジュールの名前 */
-  readonly moduleNames: ReadonlyArray<string>;
-  /** コミットのモジュールの ID */
-  readonly moduleIds: ReadonlyArray<string>;
-  readonly branch: string;
-  readonly timeMs: number;
-  /** パーツ. 中身は使うときに CAS から読む */
-  readonly parts: ReadonlyArray<CommitPartRef>;
-};
-
-/**
- * イベントハッシュごとの, 署名を検証してデコードしたプロジェクトのコミット (プロジェクトのコミットでなければ `null`).
- * イベントは変わらないので isolate の中で使い回す
- */
-const commitCache = new Map<string, CachedCommit | null>();
-
-async function decodeCommit(item: {
-  readonly eventHash: string;
-  readonly signedEventBytes: string;
-}): Promise<CachedCommit | null> {
-  const cached = commitCache.get(item.eventHash);
-  if (cached !== undefined) {
-    return cached;
-  }
-  const decoded = await decodeVerifiedSignedEvent(
-    base64ToBytes(item.signedEventBytes),
-  ).catch(() => undefined);
-  let result: CachedCommit | null = null;
-  if (decoded?.content.type === "project_commit") {
-    const { commit } = decoded.content;
-    result = {
-      eventHash: item.eventHash,
-      accountId: decoded.meta.accountId,
-      projectName: commit.projectName,
-      moduleNames: commit.modules.map((module) => module.name),
-      moduleIds: derivePartIds(
-        partIdDeriverModule,
-        commit.modules.map((module) => ({
-          moduleName: module.name,
-          partNames: [],
-        })),
-      ).map((ids) => ids.moduleId),
-      branch: commit.branch,
-      timeMs: decoded.meta.timeMs,
-      parts: commitParts(commit.modules),
-    };
-  }
-  commitCache.set(item.eventHash, result);
-  return result;
-}
-
-/** ストアの署名の正しいプロジェクトのコミットすべて */
-async function loadCommits(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<CachedCommit>> {
-  const commits: Array<CachedCommit> = [];
-  for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
-    const page = await store.getEvents(
-      { eventType: "project_commit", limit: EVENTS_PAGE_SIZE, offset },
-      env,
-    );
-    for (const item of page) {
-      const commit = await decodeCommit(item);
-      if (commit !== null) {
-        commits.push(commit);
-      }
-    }
-    if (page.length < EVENTS_PAGE_SIZE) {
-      break;
-    }
-  }
-  return commits;
-}
-
-/** プロジェクトごとの main ブランチの最新のコミット (キーはプロジェクト名). どれが最新かは definy の `core.project-branches` が決める */
-async function loadLatestMainCommits(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyMap<string, CachedCommit>> {
-  const commits = await loadCommits(store, env);
-  const byHash = new Map(commits.map((commit) => [commit.eventHash, commit]));
-  const latest = new Map<string, CachedCommit>();
-  for (const branch of summarizeBranches(branchSummarizerModule, commits)) {
-    const commit = byHash.get(branch.latestEventHash);
-    if (branch.name === MAIN_BRANCH && commit !== undefined) {
-      latest.set(branch.projectName, commit);
-    }
-  }
-  return latest;
-}
-
-/** プロジェクト `projectName` のブランチ (既定は main) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
-export async function latestCommitHashOf(
-  projectName: string,
-  store: PartStoreReader,
-  env: Env | undefined,
-  branch: string = MAIN_BRANCH,
-): Promise<string | null> {
-  return (
-    summarizeBranches(
-      branchSummarizerModule,
-      (await loadCommits(store, env)).filter(
-        (commit) => commit.projectName === projectName,
-      ),
-    ).find((summary) => summary.name === branch)?.latestEventHash ?? null
-  );
-}
-
-/** ストアの署名の正しいプロジェクトのコミット (ストアの順). 規則 (`core.check-event`) に渡す事実 */
-export async function loadCommitSummaries(
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<ReadonlyArray<CommitSummary>> {
-  return (await loadCommits(store, env)).map((commit) => ({
-    eventHash: commit.eventHash,
-    accountId: commit.accountId,
-    projectName: commit.projectName,
-    branch: commit.branch,
-    timeMs: commit.timeMs,
-    moduleNames: commit.moduleNames,
-  }));
 }
 
 /**
