@@ -1,7 +1,7 @@
 /**
- * サーバーの RPC の処理を definy 製の `definy.handle-rpc` で動かす (docs/service.md).
+ * サーバーの HTTP リクエストの処理を definy 製の `definy.handle-request` で動かす (docs/service.md).
  *
- * `definy.handle-rpc` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
+ * `definy.handle-request` は `npm run build:seeds` が stage1 でコンパイルした `wasm/service.wasm` を使う
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
  * ストアを読む要求 (`read_commits` / `read_events`) や書き込みの要求 (`write_event` / `write_contents`) をホスト (ここ) が
  * 行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
@@ -83,6 +83,18 @@ export type ServiceIoHost = {
   >;
   /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
   readonly readAdminAccountIds: () => string;
+  /** ストアに seed を入れておく (入れてあれば何もしない) */
+  readonly ensureSeeded: () => Promise<void>;
+  /** リクエストの本文を JSON として読む (空なら `{}`). JSON のオブジェクトでなければ理由 */
+  readonly readRequestJson: () => Promise<
+    { readonly json: unknown } | { readonly invalid: string }
+  >;
+  /** キー (content hash か名前) でストアの中身を読む. 無ければ `undefined`. `contentHash` はバイト列の SHA-256 */
+  readonly readRawContent: (
+    key: string,
+  ) => Promise<
+    { readonly contentHash: string; readonly bytesBase64: string } | undefined
+  >;
   /** HTTP リクエストを送る (リダイレクトはたどらない). 送れなければ理由 */
   readonly httpFetch: (request: HttpFetchRequest) => Promise<
     | {
@@ -105,42 +117,61 @@ export type HttpFetchRequest = {
   readonly bodyBase64: string | null;
 };
 
-/** `definy.service-response` */
-type ServiceResponse = {
-  readonly status: number;
-  /** JSON の値 */
-  readonly body: unknown;
+/** `definy.http-request`. 本文は `readRequestJson` で読む */
+export type HttpRequestInfo = {
+  readonly method: string;
+  readonly path: string;
+  readonly headers: ReadonlyArray<HttpHeader>;
+  /** `cloudflare-d1` / `in-memory` */
+  readonly storage: string;
+  /** 静的アセット (`env.ASSETS`) があるか */
+  readonly hasAssets: boolean;
 };
+
+/** `definy.http-body` */
+export type HttpBody =
+  | { readonly type: "empty" }
+  | { readonly type: "text"; readonly text: string }
+  | { readonly type: "json"; readonly json: unknown }
+  | { readonly type: "base64"; readonly base64: string };
+
+/** 処理の結果. `definy.service-response` か, 静的アセットを返す (`serve_asset`) */
+export type ServiceResult =
+  | {
+      readonly type: "respond";
+      readonly status: number;
+      readonly headers: ReadonlyArray<HttpHeader>;
+      readonly body: HttpBody;
+    }
+  | { readonly type: "serve_asset" };
 
 /** これだけストアを読んでも終わらなければ止める */
 const MAX_STEPS = 100;
 
 /**
- * RPC のメソッド `method` (`/definy.v1.` の後のパス. `EventService/GetEvent` など) を, リクエストの本文 (`request` が返す JSON の値) で, コンパイルした `definy.handle-rpc` (`service`) で処理する.
- * まだ TypeScript で処理するメソッドなら `null`
+ * HTTP リクエストを, コンパイルした `definy.handle-request` (`service`) で処理する (docs/service.md).
+ * 何を返すかは definy が決め, ここは `definy.service-io` の要求をホスト (`host`) で行って `then` に渡すだけ
  */
-export async function handleRpcInDefiny(
+export async function handleRequestInDefiny(
   service: WebAssembly.Module,
-  method: string,
-  request: () => unknown,
+  request: HttpRequestInfo,
   host: ServiceIoHost,
-): Promise<ServiceResponse | null> {
+): Promise<ServiceResult> {
   const instance = instantiateCompiledFunction(service);
-  const handler = instance.variant(
-    instance.call({ method: instance.writeArgument(method) }),
-  );
-  if (handler.tag === "none") {
-    return null;
-  }
-  if (handler.tag !== "some" || handler.payload === null) {
-    throw new Error(`definy.handle-rpc returned ${handler.tag}`);
-  }
-  // 本文は definy が処理するメソッドのときだけ読む
-  let pointer = instance.callClosure(handler.payload, [
-    instance.writeArgument(jsonToDefiny(request())),
-  ]);
+  let pointer = instance.call({
+    request: instance.writeArgument({
+      method: request.method,
+      path: request.path,
+      headers: request.headers,
+      storage: request.storage,
+      has_assets: request.hasAssets,
+    }),
+  });
   for (let step = 0; step < MAX_STEPS; step++) {
     const { tag, payload } = instance.variant(pointer);
+    if (tag === "serve_asset") {
+      return { type: "serve_asset" };
+    }
     if (payload === null) {
       throw new Error(`definy.service-io の ${tag} にペイロードがありません`);
     }
@@ -148,9 +179,49 @@ export async function handleRpcInDefiny(
       case "respond": {
         const response = instance.read(payload) as {
           readonly status: number;
+          readonly headers: ReadonlyArray<HttpHeader>;
           readonly body: DefinyValue;
         };
-        return { status: response.status, body: definyToJson(response.body) };
+        return {
+          type: "respond",
+          status: response.status,
+          headers: response.headers,
+          body: httpBody(response.body),
+        };
+      }
+      case "ensure_seeded": {
+        await host.ensureSeeded();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(true),
+        ]);
+        break;
+      }
+      case "read_request_json": {
+        const body = await host.readRequestJson();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            "invalid" in body
+              ? variant("invalid", body.invalid)
+              : variant("json", jsonToDefiny(body.json)),
+          ),
+        ]);
+        break;
+      }
+      case "read_raw_content": {
+        const content = await host.readRawContent(
+          String(instance.read(instance.recordField(payload, "key"))),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            content === undefined
+              ? none()
+              : some({
+                  content_hash: content.contentHash,
+                  bytes_base64: content.bytesBase64,
+                }),
+          ),
+        ]);
+        break;
       }
       case "read_commits": {
         const commits = await host.readCommits();
@@ -367,6 +438,25 @@ export async function handleRpcInDefiny(
     }
   }
   throw new Error(`${MAX_STEPS} 回ストアを読んでも終わりませんでした`);
+}
+
+/** `definy.http-body` を読む */
+function httpBody(value: DefinyValue): HttpBody {
+  const tagged = variantOf(value);
+  switch (tagged?.tag) {
+    case "empty":
+      return { type: "empty" };
+    case "text":
+      return { type: "text", text: String(tagged.payload) };
+    case "json":
+      return {
+        type: "json",
+        json: definyToJson(tagged.payload as DefinyValue),
+      };
+    case "base64":
+      return { type: "base64", base64: String(tagged.payload) };
+  }
+  throw new Error(`not a definy.http-body value: ${JSON.stringify(value)}`);
 }
 
 function readStrings(value: DefinyValue): ReadonlyArray<string> {

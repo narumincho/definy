@@ -10,7 +10,7 @@ import {
 } from "../src/event_content.ts";
 import {
   definyToJson,
-  handleRpcInDefiny,
+  handleRequestInDefiny,
   jsonToDefiny,
   type ServiceIoHost,
 } from "./service_io.ts";
@@ -18,6 +18,34 @@ import { partDefinitionExpression } from "../src/part_definition.ts";
 import type { EventItem } from "./types.ts";
 
 const service = new WebAssembly.Module(await readFile("wasm/service.wasm"));
+
+/** RPC `/definy.v1.<method>` を本文 `request` で `definy.handle-request` に処理させ, JSON のレスポンスを返す */
+async function handleRpcInDefiny(
+  module: WebAssembly.Module,
+  method: string,
+  request: () => unknown,
+  rpcHost: ServiceIoHost,
+): Promise<{ readonly status: number; readonly body: unknown }> {
+  const result = await handleRequestInDefiny(
+    module,
+    {
+      method: "POST",
+      path: `/definy.v1.${method}`,
+      headers: [],
+      storage: "in-memory",
+      hasAssets: false,
+    },
+    {
+      ...rpcHost,
+      ensureSeeded: () => Promise.resolve(),
+      readRequestJson: () => Promise.resolve({ json: request() }),
+    },
+  );
+  if (result.type !== "respond" || result.body.type !== "json") {
+    throw new Error(`not a JSON response: ${JSON.stringify(result)}`);
+  }
+  return { status: result.status, body: result.body.json };
+}
 
 const commit = (
   eventHash: string,
@@ -122,6 +150,9 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
     throw new Error("not read");
   },
   httpFetch: () => Promise.reject(new Error("not fetched")),
+  ensureSeeded: () => Promise.reject(new Error("not seeded")),
+  readRequestJson: () => Promise.reject(new Error("not read")),
+  readRawContent: () => Promise.reject(new Error("not read")),
   ...overrides,
 });
 
@@ -180,17 +211,23 @@ describe("handleRpcInDefiny", () => {
     expect(reads).toEqual([["m2", "b1", "g1"]]);
   });
 
-  it("definy で処理しないメソッドは null で, 本文を読まない", async () => {
+  it("無いメソッドは unimplemented で, 本文を読まない", async () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "Unknown",
+        "EventService/Unknown",
         () => {
           throw new Error("not read");
         },
         host(),
       ),
-    ).toBeNull();
+    ).toEqual({
+      status: 404,
+      body: {
+        code: "unimplemented",
+        message: "Endpoint /definy.v1.EventService/Unknown is not implemented",
+      },
+    });
   });
 
   it("SubmitEvent は署名を確かめ, 規則・足りない中身・型チェッカーの順に見てから保存する", async () => {

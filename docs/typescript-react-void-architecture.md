@@ -100,7 +100,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
 
 ### ミドルウェアによる Worker ルーティングの統合
 
-[middleware/01.definy.ts](../middleware/01.definy.ts) により、リクエストパスが API / 動的パス（`/healthz`、`/virtual/wasm/:hash`、`/definy.v1.*`）の場合は [worker/index.ts](../worker/index.ts) の `handleWorkerRequest(c.req.raw, c.env)` を直結して処理し、それ以外のパスは `await next()` で React の各ページに流れる設計になっています。
+[middleware/01.definy.ts](../middleware/01.definy.ts) は全てのリクエストを [worker/index.ts](../worker/index.ts) の `handleWorkerRequest` に渡します。どのパスをサーバーが処理するか (`/healthz`、`/virtual/wasm/:hash`、`/definy.v1.*`) は definy の `definy.handle-request` が決め ([service.md](service.md))、それ以外のパスは `serveAsset` (`await next()`) で React の各ページに流れます。
 
 ---
 

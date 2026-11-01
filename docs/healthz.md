@@ -1,6 +1,6 @@
 # `/healthz` と接続元の IP バージョン
 
-`GET /healthz` は D1 のシード処理を行わずにすぐ返すヘルスチェック (`worker/index.ts`)。
+`GET /healthz` は D1 のシード処理を行わずにすぐ返すヘルスチェック (definy の `definy.handle-request`. [service.md](service.md))。
 
 ```json
 {
@@ -17,7 +17,7 @@
 
 ## `ipVersion` の判定
 
-`clientIpVersion` が Cloudflare の付けるヘッダーを見る。IP アドレスそのものはレスポンスに含めない。
+`definy.client-ip-version` が Cloudflare の付けるヘッダーを見る (ヘッダーの名前は大文字小文字を区別しない)。IP アドレスそのものはレスポンスに含めない。
 
 1. `Cf-Connecting-IPv6` があれば `ipv6` (ゾーンで Pseudo IPv4 が有効だと `CF-Connecting-IP` は IPv4 に書き換わり、元の IPv6 はこちらに入る)
 2. `CF-Connecting-IP` に `:` があれば `ipv6`、`.` があれば `ipv4`

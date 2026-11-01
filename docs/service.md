@@ -1,39 +1,51 @@
-# サーバーの RPC を definy で処理する
+# サーバーのリクエストを definy で処理する
 
-[self-hosting.md](self-hosting.md) の「service host 境界」の一歩。サーバー (Cloudflare Workers) の RPC のうち,
-definy 製の処理があるものは TypeScript ではなく definy の関数で処理する。
+[self-hosting.md](self-hosting.md) の「service host 境界」の一歩。サーバー (Cloudflare Workers) が HTTP リクエストを
+どう処理するかは TypeScript ではなく definy の関数が決める。TypeScript (ホスト) はストア・署名・HTTP などの能力を渡すだけ。
 
 ## 仕組み
 
-- 入口は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
+- 入口は `definy.handle-request(request: definy.http-request)` (2026-11-01。以前は TypeScript の `handleWorkerRequest` が振り分けていた)。
+  `request` はメソッド, パス, 全てのヘッダー, `storage` (`cloudflare-d1` / `in-memory`), `has_assets` (静的アセットがあるか)。本文は `read_request_json` で読む
+  1. `OPTIONS` は CORS のヘッダー (`definy.cors-headers`) で `204`
+  2. `/healthz` ([healthz.md](healthz.md)。IP のバージョンは `definy.client-ip-version`)
+  3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まる) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)
+  4. `ensure_seeded` でストアに seed を入れてから, `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
+     `/definy.v1.` は `definy.handle-rpc`。無いメソッドは `unimplemented` (`Endpoint <パス> is not implemented`)
+- RPC は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
   definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, 無いメソッドは `#none` (`unimplemented`)。
 - `npm run build:seeds` が stage1 で `wasm/service.wasm` (コミットしない) にコンパイルし, Worker が `?module` で取り込む
   (Workers は実行時に Wasm をコンパイルできない)。
-- `worker/index.ts` の `handleRpc` は, `/definy.v1.` のパスを `handleRpcInDefiny` (`worker/service_io.ts`) に渡し,
-  `null` (definy で処理しない) なら `unimplemented` にする。2026-11-01 から TypeScript で処理するメソッドは無い。
+- `worker/index.ts` の `handleWorkerRequest` は全てのリクエストを `handleRequestInDefiny` (`worker/service_io.ts`) に渡す。
+  Void の middleware (`middleware/01.definy.ts`) も全てのリクエストを渡し, `serve_asset` のときはページ (`next()`) を返す。
+  ホストの能力が例外を投げたとき (ストアの失敗など) だけ, ホストが `internal` (署名や中身が不正なら `invalid_argument`) の JSON を返す
 
 ## `definy.service-io`
 
 処理は I/O をせず, 何を読みたいかを値で返す ([wasi-io.md](wasi-io.md) の `wasi.io` と同じ考え方)。ホスト
-(`handleRpcInDefiny`) が読んで `then` に渡し, `respond` が返るまで続ける。
+(`handleRequestInDefiny`) が読んで `then` に渡し, `respond` か `serve_asset` が返るまで続ける。
 
-| タグ                          | ペイロード                                                                                          | ホストがすること                                                                              |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| `respond`                     | `definy.service-response` (`status`, `body: definy.json`)                                           | `body` を JSON にしてレスポンスにする                                                         |
-| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                          |
-| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                                          |
-| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                                 |
-| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                                   |
-| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                               |
-| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)`             |
-| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                   |
-| `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                              |
-| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                                      |
-| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                            |
-| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                                 |
-| `read_authorization`          | `then: (authorization: definy.rpc-authorization) -> ...`                                            | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`) |
-| `read_admin_account_ids`      | `then: (admin_account_ids: string) -> ...`                                                          | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                           |
-| `http_fetch`                  | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`             | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                   |
+| タグ                          | ペイロード                                                                                          | ホストがすること                                                                                                                         |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `respond`                     | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                           | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る |
+| `serve_asset`                 | なし                                                                                                | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                      |
+| `ensure_seeded`               | `then: (seeded: boolean) -> ...`                                                                    | ストアに seed を入れておく (入れてあれば何もしない)                                                                                      |
+| `read_request_json`           | `then: (body: definy.request-json) -> ...`                                                          | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                               |
+| `read_raw_content`            | `key`, `then: (content: option<definy.raw-content>) -> ...`                                         | キーでストアの中身を読み, バイト列の SHA-256 と Base64 にする                                                                            |
+| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                     |
+| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                                                                                     |
+| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                                                                            |
+| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                                                                              |
+| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                                                                          |
+| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)`                                                        |
+| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                              |
+| `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                         |
+| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                                                                                 |
+| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                       |
+| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                                                                            |
+| `read_authorization`          | `then: (authorization: definy.rpc-authorization) -> ...`                                            | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`)                                            |
+| `read_admin_account_ids`      | `then: (admin_account_ids: string) -> ...`                                                          | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                      |
+| `http_fetch`                  | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`             | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                              |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。
@@ -72,6 +84,12 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 以前はホスト (`isAccountCreated`) に `read_account_created` で頼み, ホストが `create_account` のイベントを 500 件ずつ読んで探していた。
 今は definy が `read_events_page` (`event_type: some("create_account")`, `limit: 500`) で 1 ページずつ読み, そのアカウントのイベントがあれば
 `true`, ページが 500 件より少なければ `false`, そうでなければ次のページを読む。ホストに残るのは 1 ページを読むことだけ。
+
+### ルーティングで以前と違うところ (2026-11-01)
+
+- JSON でない本文の `invalid_argument` も definy (`definy.rpc-error`) が返すので, CORS の全てのヘッダーが付く
+- `/virtual/wasm/` の Wasm も definy の値 (Base64) を通る。ストアの読み出しの失敗は以前は Worker の例外だったのを `internal` にした
+- ページへのリクエストも毎回 service.wasm のインスタンスを作る (ルーティングを決めるため)
 
 ## `HttpProxyService/Fetch` (`definy.http-proxy-fetch`, 2026-11-01)
 
@@ -178,4 +196,4 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 
 ## 今後
 
-- ルーティング (`worker/index.ts`) とストア (D1) を definy にし, Worker 自体を definy で生成する
+- ストア (D1) を能力として渡し, Worker 自体を definy で生成する
