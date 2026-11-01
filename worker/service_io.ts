@@ -72,6 +72,37 @@ export type ServiceIoHost = {
   readonly writeContents: (
     items: ReadonlyArray<ContentItem>,
   ) => Promise<ReadonlyArray<string>>;
+  /**
+   * 処理しているリクエストの `Authorization` ヘッダーの署名を確かめる (docs/rpc-authorization.md).
+   * 無ければ `anonymous`, 署名が違えば `invalid` (理由), 正しければ `account` (アカウント ID)
+   */
+  readonly readAuthorization: () => Promise<
+    | { readonly type: "anonymous" }
+    | { readonly type: "invalid"; readonly message: string }
+    | { readonly type: "account"; readonly accountId: string }
+  >;
+  /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
+  readonly readAdminAccountIds: () => string;
+  /** HTTP リクエストを送る (リダイレクトはたどらない). 送れなければ理由 */
+  readonly httpFetch: (request: HttpFetchRequest) => Promise<
+    | {
+        readonly status: number;
+        readonly headers: ReadonlyArray<HttpHeader>;
+        readonly bodyBase64: string;
+      }
+    | { readonly failed: string }
+  >;
+};
+
+export type HttpHeader = { readonly name: string; readonly value: string };
+
+/** `definy.http-fetch-request` */
+export type HttpFetchRequest = {
+  readonly url: string;
+  readonly method: string;
+  readonly headers: ReadonlyArray<HttpHeader>;
+  /** 本文 (Base64). 無ければ `null` */
+  readonly bodyBase64: string | null;
 };
 
 /** `definy.service-response` */
@@ -85,7 +116,7 @@ type ServiceResponse = {
 const MAX_STEPS = 100;
 
 /**
- * RPC のメソッド `method` を, リクエストの本文 (`request` が返す JSON の値) で, コンパイルした `definy.handle-rpc` (`service`) で処理する.
+ * RPC のメソッド `method` (`/definy.v1.` の後のパス. `EventService/GetEvent` など) を, リクエストの本文 (`request` が返す JSON の値) で, コンパイルした `definy.handle-rpc` (`service`) で処理する.
  * まだ TypeScript で処理するメソッドなら `null`
  */
 export async function handleRpcInDefiny(
@@ -280,6 +311,54 @@ export async function handleRpcInDefiny(
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(stored),
+        ]);
+        break;
+      }
+      case "read_authorization": {
+        const authorization = await host.readAuthorization();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            authorization.type === "anonymous"
+              ? variant("anonymous")
+              : authorization.type === "invalid"
+                ? variant("invalid", authorization.message)
+                : variant("account", authorization.accountId),
+          ),
+        ]);
+        break;
+      }
+      case "read_admin_account_ids": {
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(host.readAdminAccountIds()),
+        ]);
+        break;
+      }
+      case "http_fetch": {
+        const request = instance.read(
+          instance.recordField(payload, "request"),
+        ) as {
+          readonly url: string;
+          readonly method: string;
+          readonly headers: ReadonlyArray<HttpHeader>;
+          readonly body_base64: DefinyValue;
+        };
+        const body = variantOf(request.body_base64);
+        const result = await host.httpFetch({
+          url: request.url,
+          method: request.method,
+          headers: request.headers,
+          bodyBase64: body?.tag === "some" ? String(body.payload) : null,
+        });
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            "failed" in result
+              ? variant("failed", result.failed)
+              : variant("response", {
+                  status: result.status,
+                  headers: result.headers,
+                  body_base64: result.bodyBase64,
+                }),
+          ),
         ]);
         break;
       }

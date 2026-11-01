@@ -117,6 +117,11 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   writeContents: () => Promise.reject(new Error("not written")),
+  readAuthorization: () => Promise.reject(new Error("not read")),
+  readAdminAccountIds: () => {
+    throw new Error("not read");
+  },
+  httpFetch: () => Promise.reject(new Error("not fetched")),
   ...overrides,
 });
 
@@ -147,7 +152,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetProjectBranches",
+        "EventService/GetProjectBranches",
         () => ({}),
         branchesHost,
       ),
@@ -235,7 +240,7 @@ describe("handleRpcInDefiny", () => {
         ...overrides,
       });
     const submit = (request: unknown, h: ServiceIoHost) =>
-      handleRpcInDefiny(service, "SubmitEvent", () => request, h);
+      handleRpcInDefiny(service, "EventService/SubmitEvent", () => request, h);
 
     expect(await submit({ signedEventBytes: " ok\n" }, submitHost())).toEqual({
       status: 200,
@@ -338,7 +343,7 @@ describe("handleRpcInDefiny", () => {
     const submitCommit = (content: EventContent) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -398,7 +403,7 @@ describe("handleRpcInDefiny", () => {
     const submitWith = (input: unknown) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -535,7 +540,7 @@ describe("handleRpcInDefiny", () => {
     const submitWith = (parts: ReadonlyArray<unknown>) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -640,7 +645,7 @@ describe("handleRpcInDefiny", () => {
     const submitCreateAccount = (accountIds: ReadonlyArray<string>) =>
       handleRpcInDefiny(
         service,
-        "SubmitEvent",
+        "EventService/SubmitEvent",
         () => ({ signedEventBytes: "ok" }),
         host({
           verifySignedEvent: () =>
@@ -692,7 +697,12 @@ describe("handleRpcInDefiny", () => {
       },
     });
     const upload = (request: unknown) =>
-      handleRpcInDefiny(service, "UploadContent", () => request, uploadHost);
+      handleRpcInDefiny(
+        service,
+        "EventService/UploadContent",
+        () => request,
+        uploadHost,
+      );
     const item = (contentHash: string, contentBytes: string) => ({
       contentHash,
       contentBytes,
@@ -753,7 +763,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetEvent",
+        "EventService/GetEvent",
         () => ({ eventHash: " e1\n" }),
         eventHost,
       ),
@@ -761,7 +771,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetEvent",
+        "EventService/GetEvent",
         () => ({ eventHash: "e2" }),
         eventHost,
       ),
@@ -770,7 +780,12 @@ describe("handleRpcInDefiny", () => {
       body: { code: "not_found", message: "Event 'e2' not found" },
     });
     expect(
-      await handleRpcInDefiny(service, "GetEvent", () => ({}), host()),
+      await handleRpcInDefiny(
+        service,
+        "EventService/GetEvent",
+        () => ({}),
+        host(),
+      ),
     ).toEqual({
       status: 400,
       body: { code: "invalid_argument", message: "eventHash is required" },
@@ -791,7 +806,12 @@ describe("handleRpcInDefiny", () => {
       { eventType: "project_commit", limit: 0, offset: 7 },
     ]) {
       expect(
-        await handleRpcInDefiny(service, "GetEvents", () => request, pageHost),
+        await handleRpcInDefiny(
+          service,
+          "EventService/GetEvents",
+          () => request,
+          pageHost,
+        ),
       ).toEqual({ status: 200, body: { events: [event("e1")] } });
     }
     expect(pages).toEqual([
@@ -816,7 +836,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHash: "c1" }),
         contentHost,
       ),
@@ -824,7 +844,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHash: "c2" }),
         contentHost,
       ),
@@ -835,13 +855,18 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "GetContent",
+        "EventService/GetContent",
         () => ({ contentHashes: ["c2", "c1"] }),
         contentHost,
       ),
     ).toEqual({ status: 200, body: { items: [item] } });
     expect(
-      await handleRpcInDefiny(service, "GetContent", () => ({}), host()),
+      await handleRpcInDefiny(
+        service,
+        "EventService/GetContent",
+        () => ({}),
+        host(),
+      ),
     ).toEqual({
       status: 400,
       body: {
@@ -855,7 +880,7 @@ describe("handleRpcInDefiny", () => {
     expect(
       await handleRpcInDefiny(
         service,
-        "CheckMissingHashes",
+        "EventService/CheckMissingHashes",
         () => ({ contentHashes: ["a", "b"] }),
         host({
           readMissingContentHashes: (hashes) =>
@@ -863,6 +888,117 @@ describe("handleRpcInDefiny", () => {
         }),
       ),
     ).toEqual({ status: 200, body: { missingContentHashes: ["b"] } });
+  });
+
+  it("HttpProxyService/Fetch は管理者の署名があるときだけ, 送らないヘッダーを除いて送る", async () => {
+    const sent: Array<unknown> = [];
+    const proxyHost = (
+      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>>,
+    ) =>
+      host({
+        readAuthorization: () => Promise.resolve(authorization),
+        readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
+        httpFetch: (request) => {
+          sent.push(request);
+          return Promise.resolve({
+            status: 201,
+            headers: [{ name: "x-test", value: "1" }],
+            bodyBase64: "AGFzbQ",
+          });
+        },
+      });
+    const fetchWith = (
+      request: unknown,
+      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>> = {
+        type: "account",
+        accountId: "FEEDBEEF-cafe_babe",
+      },
+    ) =>
+      handleRpcInDefiny(
+        service,
+        "HttpProxyService/Fetch",
+        () => request,
+        proxyHost(authorization),
+      );
+    const request = {
+      method: " put ",
+      url: " https://api.cloudflare.com/client/v4/x ",
+      headers: [
+        { name: "Authorization", value: "Bearer cf-token" },
+        { name: "Content-Length", value: "4" },
+        { name: "HOST", value: "example.com" },
+        { name: "broken" },
+      ],
+      bodyBase64: "AGFzbQ",
+    };
+    expect(await fetchWith(request)).toEqual({
+      status: 200,
+      body: {
+        status: 201,
+        headers: [{ name: "x-test", value: "1" }],
+        bodyBase64: "AGFzbQ",
+      },
+    });
+    expect(sent).toEqual([
+      {
+        url: "https://api.cloudflare.com/client/v4/x",
+        method: "PUT",
+        headers: [{ name: "Authorization", value: "Bearer cf-token" }],
+        bodyBase64: "AGFzbQ",
+      },
+    ]);
+
+    // GET は本文を送らない. method が無ければ GET
+    sent.length = 0;
+    await fetchWith({ url: "http://example.com", bodyBase64: "AGFzbQ" });
+    expect(sent).toEqual([
+      {
+        url: "http://example.com",
+        method: "GET",
+        headers: [],
+        bodyBase64: null,
+      },
+    ]);
+
+    sent.length = 0;
+    expect(await fetchWith({ url: "file:///etc/passwd" })).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "only http and https urls can be fetched",
+      },
+    });
+    expect(await fetchWith({ url: "not a url" })).toEqual({
+      status: 400,
+      body: { code: "invalid_argument", message: "invalid url 'not a url'" },
+    });
+    // アカウント ID は大文字小文字を区別する
+    expect(
+      await fetchWith(request, {
+        type: "account",
+        accountId: "feedbeef-cafe_babe",
+      }),
+    ).toEqual({
+      status: 403,
+      body: {
+        code: "permission_denied",
+        message: "HttpProxyService/Fetch is not allowed for this account",
+      },
+    });
+    expect(await fetchWith(request, { type: "anonymous" })).toEqual({
+      status: 401,
+      body: {
+        code: "unauthenticated",
+        message: "HttpProxyService/Fetch requires an Authorization header",
+      },
+    });
+    expect(
+      await fetchWith(request, { type: "invalid", message: "bad signature" }),
+    ).toEqual({
+      status: 401,
+      body: { code: "unauthenticated", message: "bad signature" },
+    });
+    expect(sent).toEqual([]);
   });
 });
 

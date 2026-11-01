@@ -5,32 +5,35 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 
 ## 仕組み
 
-- 入口は `definy.handle-rpc(method)`。`method` は `/definy.v1.EventService/` の後の名前 (`GetProjectBranches` など)。
-  definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, まだ TypeScript で処理するものは `#none`。
+- 入口は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
+  definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, 無いメソッドは `#none` (`unimplemented`)。
 - `npm run build:seeds` が stage1 で `wasm/service.wasm` (コミットしない) にコンパイルし, Worker が `?module` で取り込む
   (Workers は実行時に Wasm をコンパイルできない)。
-- `worker/index.ts` の `handleRpc` は, EventService のメソッドをまず `handleRpcInDefiny` (`worker/service_io.ts`) に渡し,
-  `null` (definy で処理しない) なら今までの TypeScript の `switch` で処理する。本文は definy で処理するときだけ読む。
+- `worker/index.ts` の `handleRpc` は, `/definy.v1.` のパスを `handleRpcInDefiny` (`worker/service_io.ts`) に渡し,
+  `null` (definy で処理しない) なら `unimplemented` にする。2026-11-01 から TypeScript で処理するメソッドは無い。
 
 ## `definy.service-io`
 
 処理は I/O をせず, 何を読みたいかを値で返す ([wasi-io.md](wasi-io.md) の `wasi.io` と同じ考え方)。ホスト
 (`handleRpcInDefiny`) が読んで `then` に渡し, `respond` が返るまで続ける。
 
-| タグ                          | ペイロード                                                                                          | ホストがすること                                                                  |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-| `respond`                     | `definy.service-response` (`status`, `body: definy.json`)                                           | `body` を JSON にしてレスポンスにする                                             |
-| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)              |
-| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                              |
-| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                     |
-| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                       |
-| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                   |
-| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)` |
-| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)       |
-| `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                  |
-| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                          |
-| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                |
-| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                     |
+| タグ                          | ペイロード                                                                                          | ホストがすること                                                                              |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| `respond`                     | `definy.service-response` (`status`, `body: definy.json`)                                           | `body` を JSON にしてレスポンスにする                                                         |
+| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                          |
+| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                                          |
+| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                                 |
+| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                                   |
+| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                               |
+| `verify_signed_event`         | `signed_event_bytes`, `then: (result: definy.signed-event-verification) -> ...`                     | Ed25519 署名と中身の形を確かめ, `valid(definy.verified-event)` か `invalid(理由)`             |
+| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                   |
+| `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                              |
+| `write_event`                 | `signed_event_bytes`, `then: (event_hash: string) -> ...`                                           | イベントを保存する (`store.submitEvent`)                                                      |
+| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                            |
+| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                                 |
+| `read_authorization`          | `then: (authorization: definy.rpc-authorization) -> ...`                                            | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`) |
+| `read_admin_account_ids`      | `then: (admin_account_ids: string) -> ...`                                                          | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                           |
+| `http_fetch`                  | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`             | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                   |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。
@@ -69,6 +72,22 @@ definy 製の処理があるものは TypeScript ではなく definy の関数�
 以前はホスト (`isAccountCreated`) に `read_account_created` で頼み, ホストが `create_account` のイベントを 500 件ずつ読んで探していた。
 今は definy が `read_events_page` (`event_type: some("create_account")`, `limit: 500`) で 1 ページずつ読み, そのアカウントのイベントがあれば
 `true`, ページが 500 件より少なければ `false`, そうでなければ次のページを読む。ホストに残るのは 1 ページを読むことだけ。
+
+## `HttpProxyService/Fetch` (`definy.http-proxy-fetch`, 2026-11-01)
+
+CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は TypeScript の `proxyFetch` / `requireAccount` / `isAdminAccount`。
+
+1. `read_authorization` で署名を確かめる。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
+   署名が違えばその理由で `unauthenticated`
+2. `read_admin_account_ids` を `definy.split-account-ids` でカンマ・セミコロン・空白で区切り, アカウント ID が無ければ `permission_denied`
+   (大文字小文字を区別する)
+3. `definy.http-proxy-send`: URL の両端の空白を除き, `:` の前 (スキームを `std.ascii-lowercase` したもの) が `http` / `https` でなければ
+   `invalid_argument`。`method` は大文字にし (`std.ascii-uppercase`) 空なら `GET`。ヘッダーは `name` と `value` が文字列のものだけで,
+   `host` / `content-length` / `connection` / `transfer-encoding` (大文字小文字を区別しない) は除く。`GET` / `HEAD` と空の `bodyBase64` は本文なし
+4. `http_fetch` で送り, レスポンス (`status`, `headers`, `bodyBase64`) をそのまま返す。送れなければ `internal`
+
+- 以前と違うところ: 本文の JSON はメソッドを処理する前に読むので, JSON でない本文は署名が無くても `invalid_argument` になる。
+  URL の検査は `new URL()` ではなく `:` の前を見るだけなので, `https://` のような不正な URL は送るときに失敗して `internal` になる
 
 ## 型検査 (`definy.check-commit`, 2026-10-31)
 
@@ -159,4 +178,4 @@ service.wasm の中で `core.type-checker` の計画と同じインスタンス�
 
 ## 今後
 
-- `HttpProxyService` は EventService ではないので, まだ TypeScript。
+- ルーティング (`worker/index.ts`) とストア (D1) を definy にし, Worker 自体を definy で生成する

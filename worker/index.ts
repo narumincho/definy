@@ -6,18 +6,16 @@ import {
   readExternalPartDefinitions,
 } from "./type_check.ts";
 import { loadCommitSummaries } from "./commit_store.ts";
-import { handleRpcInDefiny } from "./service_io.ts";
+import {
+  handleRpcInDefiny,
+  type HttpFetchRequest,
+  type HttpHeader,
+} from "./service_io.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import type {
-  ContentItem,
-  Env,
-  HttpProxyFetchRequest,
-  HttpProxyFetchResponse,
-  HttpProxyHeader,
-} from "./types.ts";
+import type { ContentItem, Env } from "./types.ts";
 
 export type { Env } from "./types.ts";
 export { defaultStore, WorkerStore } from "./store.ts";
@@ -42,32 +40,6 @@ export function isWorkerFirstPath(pathname: string): boolean {
   return WORKER_ROUTE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix),
   );
-}
-
-/** カンマ・空白区切りのアカウント ID の一覧に含まれるか. アカウント ID は Base64URL なので大文字小文字を区別する */
-function isListedAccount(
-  accountId: string | undefined | null,
-  list: string | undefined,
-): boolean {
-  const normalized = accountId?.trim() ?? "";
-  if (normalized.length === 0) {
-    return false;
-  }
-  return (list ?? "")
-    .split(/[,;\s]+/)
-    .some((s) => s.length > 0 && s === normalized);
-}
-
-/**
- * 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS`（カンマ・空白区切り）と照合し、
- * アカウントが管理者権限を持つか判定する。アカウント ID は Base64URL なので大文字小文字を区別する。
- * 未設定時は全員拒否する。
- */
-export function isAdminAccount(
-  accountId: string | undefined | null,
-  env: Env,
-): boolean {
-  return isListedAccount(accountId, env.DEFINY_ADMIN_ACCOUNT_IDS);
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -133,44 +105,6 @@ function parseJsonBody<T>(text: string): T {
     );
   }
   return parsed as T;
-}
-
-/**
- * `Authorization` ヘッダーの署名を検証し、`isAllowed` が許すアカウントでなければ例外を投げる
- */
-async function requireAccount(
-  request: Request,
-  pathname: string,
-  body: string,
-  reason: string,
-  isAllowed: (accountId: string) => boolean,
-): Promise<void> {
-  let accountId: string | null;
-  try {
-    accountId = await verifyRpcAuthorization(
-      request.headers.get("Authorization"),
-      request.method,
-      pathname,
-      body,
-    );
-  } catch (e) {
-    throw new ConnectError(
-      "unauthenticated",
-      e instanceof Error ? e.message : String(e),
-    );
-  }
-  if (accountId === null) {
-    throw new ConnectError(
-      "unauthenticated",
-      `${reason} requires an Authorization header`,
-    );
-  }
-  if (!isAllowed(accountId)) {
-    throw new ConnectError(
-      "permission_denied",
-      `${reason} is not allowed for this account`,
-    );
-  }
 }
 
 export type ClientIpVersion = "ipv4" | "ipv6" | "unknown";
@@ -286,7 +220,7 @@ async function serveVirtualWasm(
   });
 }
 
-const EVENT_SERVICE_PREFIX = "/definy.v1.EventService/";
+const RPC_PREFIX = "/definy.v1.";
 
 /** `hashes` の順に, 見つかった中身 (無ければ `undefined`) */
 function contentsInOrder(
@@ -306,10 +240,10 @@ async function handleRpc(
   fetchFn: typeof fetch,
 ): Promise<Response> {
   // definy 製の処理 (`definy.handle-rpc`) があるメソッドはそれで処理する (docs/service.md)
-  if (pathname.startsWith(EVENT_SERVICE_PREFIX)) {
+  if (pathname.startsWith(RPC_PREFIX)) {
     const response = await handleRpcInDefiny(
       serviceModule,
-      pathname.slice(EVENT_SERVICE_PREFIX.length),
+      pathname.slice(RPC_PREFIX.length),
       () => parseJsonBody<unknown>(body),
       {
         readCommits: () => loadCommitSummaries(store, env),
@@ -340,89 +274,77 @@ async function handleRpc(
             }),
           ),
         writeContents: (items) => store.uploadContent(items, env),
+        readAuthorization: async () => {
+          try {
+            const accountId = await verifyRpcAuthorization(
+              request.headers.get("Authorization"),
+              request.method,
+              pathname,
+              body,
+            );
+            return accountId === null
+              ? { type: "anonymous" }
+              : { type: "account", accountId };
+          } catch (e) {
+            return {
+              type: "invalid",
+              message: e instanceof Error ? e.message : String(e),
+            };
+          }
+        },
+        readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
+        httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
       },
     );
     if (response !== null) {
       return jsonResponse(response.body, response.status);
     }
   }
-  switch (pathname) {
-    case "/definy.v1.HttpProxyService/Fetch": {
-      await requireAccount(
-        request,
-        pathname,
-        body,
-        "HttpProxyService/Fetch",
-        (accountId) => isAdminAccount(accountId, env),
-      );
-      return jsonResponse(
-        await proxyFetch(parseJsonBody<HttpProxyFetchRequest>(body), fetchFn),
-      );
-    }
-
-    default:
-      throw new ConnectError(
-        "unimplemented",
-        `Endpoint ${pathname} is not implemented`,
-      );
-  }
+  throw new ConnectError(
+    "unimplemented",
+    `Endpoint ${pathname} is not implemented`,
+  );
 }
-
-/** 仲介で送らないヘッダー (送り先とのつなぎ方は Worker の fetch が決める) */
-const PROXY_DROPPED_REQUEST_HEADERS: ReadonlySet<string> = new Set([
-  "host",
-  "content-length",
-  "connection",
-  "transfer-encoding",
-]);
-
 /**
- * ブラウザから CORS で直接送れない HTTP リクエストを Worker から送り, レスポンスをそのまま返す.
- * 送れなかったときは `internal` のエラーにする
+ * definy の `http_fetch` の HTTP リクエストを送る. どのリクエストを送るか (URL の検査, 送らないヘッダー) は
+ * definy (`definy.http-proxy-send`) が決める. 送れなかったときは理由を返す
  */
-async function proxyFetch(
-  req: HttpProxyFetchRequest,
+async function httpFetch(
+  request: HttpFetchRequest,
   fetchFn: typeof fetch,
-): Promise<HttpProxyFetchResponse> {
-  const rawUrl = req.url?.trim() ?? "";
-  let url: URL;
+): Promise<
+  | {
+      readonly status: number;
+      readonly headers: ReadonlyArray<HttpHeader>;
+      readonly bodyBase64: string;
+    }
+  | { readonly failed: string }
+> {
   try {
-    url = new URL(rawUrl);
-  } catch {
-    throw new ConnectError("invalid_argument", `invalid url '${rawUrl}'`);
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw new ConnectError(
-      "invalid_argument",
-      "only http and https urls can be fetched",
-    );
-  }
-  const method = (req.method?.trim() || "GET").toUpperCase();
-  const headers = new Headers();
-  for (const header of req.headers ?? []) {
-    if (!PROXY_DROPPED_REQUEST_HEADERS.has(header.name.toLowerCase())) {
+    const headers = new Headers();
+    for (const header of request.headers) {
       headers.append(header.name, header.value);
     }
+    const response = await fetchFn(request.url, {
+      method: request.method,
+      headers,
+      body: (request.bodyBase64 === null
+        ? null
+        : base64ToBytes(request.bodyBase64)) as unknown as BodyInit | null,
+      redirect: "manual",
+    });
+    const responseHeaders: HttpHeader[] = [];
+    response.headers.forEach((value, name) => {
+      responseHeaders.push({ name, value });
+    });
+    return {
+      status: response.status,
+      headers: responseHeaders,
+      bodyBase64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
+    };
+  } catch (e) {
+    return { failed: e instanceof Error ? e.message : String(e) };
   }
-  const body =
-    method === "GET" || method === "HEAD" || !req.bodyBase64
-      ? null
-      : base64ToBytes(req.bodyBase64);
-  const response = await fetchFn(url.toString(), {
-    method,
-    headers,
-    body: body as unknown as BodyInit | null,
-    redirect: "manual",
-  });
-  const responseHeaders: HttpProxyHeader[] = [];
-  response.headers.forEach((value, name) => {
-    responseHeaders.push({ name, value });
-  });
-  return {
-    status: response.status,
-    headers: responseHeaders,
-    bodyBase64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
-  };
 }
 
 export default {

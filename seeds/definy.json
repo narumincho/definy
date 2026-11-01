@@ -3307,6 +3307,117 @@
                 ]
               }
             }
+          },
+          {
+            "tag": "read_authorization",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "authorization",
+                            "type": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "definy.rpc-authorization"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "read_admin_account_ids",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "admin_account_ids",
+                            "type": {
+                              "#type_string": null
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "http_fetch",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "request",
+                    "value": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "definy.http-fetch-request"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "result",
+                            "type": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "definy.http-fetch-result"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
           }
         ]
       }
@@ -4650,6 +4761,3178 @@
       }
     },
     {
+      "name": "http-header",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "An HTTP header"
+        },
+        {
+          "language": "ja",
+          "text": "HTTP のヘッダー"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "value",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "http-fetch-request",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "An HTTP request the server sends (http_fetch). body_base64 is the body in Base64"
+        },
+        {
+          "language": "ja",
+          "text": "サーバーが送る HTTP リクエスト (http_fetch)。body_base64 は本文の Base64"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "url",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "method",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "headers",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.http-header"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "key": "body_base64",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "http-fetch-response",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The HTTP response to http_fetch. Redirects are not followed"
+        },
+        {
+          "language": "ja",
+          "text": "http_fetch の HTTP レスポンス。リダイレクトはたどらない"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "status",
+            "value": {
+              "#type_number": null
+            }
+          },
+          {
+            "key": "headers",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "definy.http-header"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "key": "body_base64",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "http-fetch-result",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The result of http_fetch: response, or failed with the reason if it could not be sent"
+        },
+        {
+          "language": "ja",
+          "text": "http_fetch の結果: response か, 送れなかったら failed (理由)"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "response",
+            "payload_type": {
+              "#some": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.http-fetch-response"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "tag": "failed",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "rpc-authorization",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The Authorization header of the request (docs/rpc-authorization.md): anonymous if there is none, invalid with the reason if the signature is wrong, account with the account ID if it is right"
+        },
+        {
+          "language": "ja",
+          "text": "リクエストの Authorization ヘッダー (docs/rpc-authorization.md): 無ければ anonymous, 署名が違えば invalid (理由), 正しければ account (アカウント ID)"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "anonymous",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "invalid",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          },
+          {
+            "tag": "account",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "split-account-ids",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "current",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#type_string": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Split a list of account IDs separated by commas, semicolons or spaces (DEFINY_ADMIN_ACCOUNT_IDS) from index, appending to acc. current is the ID being read"
+        },
+        {
+          "language": "ja",
+          "text": "カンマ・セミコロン・空白で区切ったアカウント ID の一覧 (DEFINY_ADMIN_ACCOUNT_IDS) を index 番目から分けて acc に足す。current は読んでいる途中の ID"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "current"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "acc"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 4,
+              "variable_name": "flushed",
+              "value": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.equal"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#string": ""
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-append"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "list",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "name": "item",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-length"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#variable": {
+                          "variable_id": 4
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 5,
+                          "variable_name": "character",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-slice"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "start",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "end",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.plus"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 1
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.or"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "definy.is-space"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "character",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 5
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.or"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.equal"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#string": ","
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.equal"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#string": ";"
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.split-account-ids"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "text",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.plus"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#number": 1
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "current",
+                                          "value": {
+                                            "#string": ""
+                                          }
+                                        },
+                                        {
+                                          "name": "acc",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.split-account-ids"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "text",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.plus"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#number": 1
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "current",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-concat"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "acc",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "http-proxy-dropped-header",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "name",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_boolean": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether HttpProxyService/Fetch drops the request header (how to connect is decided by the server)"
+        },
+        {
+          "language": "ja",
+          "text": "HttpProxyService/Fetch が送らないリクエストのヘッダーか (送り先とのつなぎ方はサーバーが決める)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "name"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "std.ascii-lowercase"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "value",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#string": "host"
+                  },
+                  "body": {
+                    "#boolean": true
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "content-length"
+                  },
+                  "body": {
+                    "#boolean": true
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "connection"
+                  },
+                  "body": {
+                    "#boolean": true
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "transfer-encoding"
+                  },
+                  "body": {
+                    "#boolean": true
+                  }
+                },
+                {
+                  "pattern": {
+                    "#any": null
+                  },
+                  "body": {
+                    "#boolean": false
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "json-http-headers",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.json"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.http-header"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.http-header"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Read the headers ({name, value}) of the request of HttpProxyService/Fetch from index, appending to acc. Drops ones without a string name or value and definy.http-proxy-dropped-header"
+        },
+        {
+          "language": "ja",
+          "text": "HttpProxyService/Fetch のリクエストのヘッダー ({name, value}) を index 番目から読んで acc に足す。name か value が文字列でないものと definy.http-proxy-dropped-header は除く"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "acc"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.list-get"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "list",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "index",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#any": null
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 2
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 3,
+                          "variable_name": "item"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#let": {
+                      "variable_id": 4,
+                      "variable_name": "next",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.plus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 1
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.json-get-string"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "key",
+                                  "value": {
+                                    "#string": "name"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "none",
+                                  "payload": {
+                                    "#any": null
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.json-http-headers"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "items",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "acc",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 5,
+                                      "variable_name": "name"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.json-get-string"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "key",
+                                          "value": {
+                                            "#string": "value"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "pattern": {
+                                        "#variant": {
+                                          "tag": "none",
+                                          "payload": {
+                                            "#any": null
+                                          }
+                                        }
+                                      },
+                                      "body": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "definy.json-http-headers"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "items",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "index",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 4
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "acc",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "pattern": {
+                                        "#variant": {
+                                          "tag": "some",
+                                          "payload": {
+                                            "#bind": {
+                                              "variable_id": 6,
+                                              "variable_name": "value"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "body": {
+                                        "#match": {
+                                          "target": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "definy.http-proxy-dropped-header"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "name",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
+                                              "body": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "definy.json-http-headers"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "items",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 0
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "index",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 4
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "acc",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 2
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
+                                              "body": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "definy.json-http-headers"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "items",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 0
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "index",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 4
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "acc",
+                                                      "value": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.list-append"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "list",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 2
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "item",
+                                                              "value": {
+                                                                "#record": [
+                                                                  {
+                                                                    "key": "name",
+                                                                    "value": {
+                                                                      "#variable": {
+                                                                        "variable_id": 5
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "value",
+                                                                    "value": {
+                                                                      "#variable": {
+                                                                        "variable_id": 6
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "http-headers-json",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "headers",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.http-header"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.json"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Headers as JSON ([{name, value}])"
+        },
+        {
+          "language": "ja",
+          "text": "ヘッダーを JSON ([{name, value}]) にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "headers"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "array",
+              "payload": {
+                "#some": {
+                  "#call": {
+                    "function": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.list-map"
+                        }
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "name": "T",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.http-header"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "U",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.json"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "f",
+                        "value": {
+                          "#function": {
+                            "parameters": [
+                              {
+                                "parameter_id": 1,
+                                "parameter_name": "item"
+                              }
+                            ],
+                            "body": {
+                              "#variant": {
+                                "tag": "object",
+                                "payload": {
+                                  "#some": {
+                                    "#list": [
+                                      {
+                                        "#record": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "#string": "name"
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "#variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "#some": {
+                                                    "#record_get": {
+                                                      "record": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      },
+                                                      "key": "name"
+                                                    }
+                                                  }
+                                                },
+                                                "type_part": {
+                                                  "#some": {
+                                                    "$part": "definy.json"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "#record": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "#string": "value"
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "#variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "#some": {
+                                                    "#record_get": {
+                                                      "record": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      },
+                                                      "key": "value"
+                                                    }
+                                                  }
+                                                },
+                                                "type_part": {
+                                                  "#some": {
+                                                    "$part": "definy.json"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                },
+                                "type_part": {
+                                  "#some": {
+                                    "$part": "definy.json"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "xs",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "definy.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "http-proxy-send",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "request",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.json"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Send the HTTP request of HttpProxyService/Fetch (http_fetch) and respond with the response as it is. Only http / https urls"
+        },
+        {
+          "language": "ja",
+          "text": "HttpProxyService/Fetch の HTTP リクエストを送り (http_fetch), レスポンスをそのまま返す。http / https の URL だけ"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "request"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 1,
+              "variable_name": "url",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "definy.string-trim"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "value",
+                      "value": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.json-get-string"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "key",
+                                  "value": {
+                                    "#string": "url"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 10,
+                                      "variable_name": "url"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#variable": {
+                                  "variable_id": 10
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "none",
+                                  "payload": {
+                                    "#any": null
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#string": ""
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#let": {
+                  "variable_id": 12,
+                  "variable_name": "colon",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "std.string-index-of"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "target",
+                          "value": {
+                            "#string": ":"
+                          }
+                        },
+                        {
+                          "name": "startIndex",
+                          "value": {
+                            "#number": 0
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.less-than"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 12
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 1
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#boolean": true
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.rpc-error"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "code",
+                                  "value": {
+                                    "#string": "invalid_argument"
+                                  }
+                                },
+                                {
+                                  "name": "message",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-concat"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#string": "invalid url '"
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-concat"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#string": "'"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#boolean": false
+                          },
+                          "body": {
+                            "#let": {
+                              "variable_id": 2,
+                              "variable_name": "scheme",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "std.ascii-lowercase"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "value",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-slice"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "start",
+                                              "value": {
+                                                "#number": 0
+                                              }
+                                            },
+                                            {
+                                              "name": "end",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 12
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "body": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.or"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.equal"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#string": "https"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.equal"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#string": "http"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "pattern": {
+                                        "#boolean": false
+                                      },
+                                      "body": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "definy.rpc-error"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "code",
+                                              "value": {
+                                                "#string": "invalid_argument"
+                                              }
+                                            },
+                                            {
+                                              "name": "message",
+                                              "value": {
+                                                "#string": "only http and https urls can be fetched"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "pattern": {
+                                        "#boolean": true
+                                      },
+                                      "body": {
+                                        "#let": {
+                                          "variable_id": 3,
+                                          "variable_name": "trimmed_method",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "std.ascii-uppercase"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "definy.string-trim"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "value",
+                                                          "value": {
+                                                            "#match": {
+                                                              "target": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "definy.json-get-string"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "value",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 0
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "key",
+                                                                      "value": {
+                                                                        "#string": "method"
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "arms": [
+                                                                {
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "some",
+                                                                      "payload": {
+                                                                        "#bind": {
+                                                                          "variable_id": 11,
+                                                                          "variable_name": "method"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "body": {
+                                                                    "#variable": {
+                                                                      "variable_id": 11
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "pattern": {
+                                                                    "#variant": {
+                                                                      "tag": "none",
+                                                                      "payload": {
+                                                                        "#any": null
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "body": {
+                                                                    "#string": ""
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "body": {
+                                            "#let": {
+                                              "variable_id": 4,
+                                              "variable_name": "method",
+                                              "value": {
+                                                "#match": {
+                                                  "target": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.equal"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#string": ""
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "arms": [
+                                                    {
+                                                      "pattern": {
+                                                        "#boolean": true
+                                                      },
+                                                      "body": {
+                                                        "#string": "GET"
+                                                      }
+                                                    },
+                                                    {
+                                                      "pattern": {
+                                                        "#boolean": false
+                                                      },
+                                                      "body": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "body": {
+                                                "#variant": {
+                                                  "tag": "http_fetch",
+                                                  "payload": {
+                                                    "#some": {
+                                                      "#record": [
+                                                        {
+                                                          "key": "request",
+                                                          "value": {
+                                                            "#record": [
+                                                              {
+                                                                "key": "url",
+                                                                "value": {
+                                                                  "#variable": {
+                                                                    "variable_id": 1
+                                                                  }
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "method",
+                                                                "value": {
+                                                                  "#variable": {
+                                                                    "variable_id": 4
+                                                                  }
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "headers",
+                                                                "value": {
+                                                                  "#match": {
+                                                                    "target": {
+                                                                      "#call": {
+                                                                        "function": {
+                                                                          "#part_reference": {
+                                                                            "part_definition_event_hash": {
+                                                                              "$part": "definy.json-get"
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        "arguments": [
+                                                                          {
+                                                                            "name": "value",
+                                                                            "value": {
+                                                                              "#variable": {
+                                                                                "variable_id": 0
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "name": "key",
+                                                                            "value": {
+                                                                              "#string": "headers"
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    },
+                                                                    "arms": [
+                                                                      {
+                                                                        "pattern": {
+                                                                          "#variant": {
+                                                                            "tag": "some",
+                                                                            "payload": {
+                                                                              "#variant": {
+                                                                                "tag": "array",
+                                                                                "payload": {
+                                                                                  "#bind": {
+                                                                                    "variable_id": 5,
+                                                                                    "variable_name": "items"
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        "body": {
+                                                                          "#call": {
+                                                                            "function": {
+                                                                              "#part_reference": {
+                                                                                "part_definition_event_hash": {
+                                                                                  "$part": "definy.json-http-headers"
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            "arguments": [
+                                                                              {
+                                                                                "name": "items",
+                                                                                "value": {
+                                                                                  "#variable": {
+                                                                                    "variable_id": 5
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "name": "index",
+                                                                                "value": {
+                                                                                  "#number": 0
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "name": "acc",
+                                                                                "value": {
+                                                                                  "#list": []
+                                                                                }
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "pattern": {
+                                                                          "#any": null
+                                                                        },
+                                                                        "body": {
+                                                                          "#list": []
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "body_base64",
+                                                                "value": {
+                                                                  "#match": {
+                                                                    "target": {
+                                                                      "#call": {
+                                                                        "function": {
+                                                                          "#part_reference": {
+                                                                            "part_definition_event_hash": {
+                                                                              "$part": "core.or"
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        "arguments": [
+                                                                          {
+                                                                            "name": "left",
+                                                                            "value": {
+                                                                              "#call": {
+                                                                                "function": {
+                                                                                  "#part_reference": {
+                                                                                    "part_definition_event_hash": {
+                                                                                      "$part": "core.equal"
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                "arguments": [
+                                                                                  {
+                                                                                    "name": "left",
+                                                                                    "value": {
+                                                                                      "#variable": {
+                                                                                        "variable_id": 4
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "name": "right",
+                                                                                    "value": {
+                                                                                      "#string": "GET"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          {
+                                                                            "name": "right",
+                                                                            "value": {
+                                                                              "#call": {
+                                                                                "function": {
+                                                                                  "#part_reference": {
+                                                                                    "part_definition_event_hash": {
+                                                                                      "$part": "core.equal"
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                "arguments": [
+                                                                                  {
+                                                                                    "name": "left",
+                                                                                    "value": {
+                                                                                      "#variable": {
+                                                                                        "variable_id": 4
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "name": "right",
+                                                                                    "value": {
+                                                                                      "#string": "HEAD"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        ]
+                                                                      }
+                                                                    },
+                                                                    "arms": [
+                                                                      {
+                                                                        "pattern": {
+                                                                          "#boolean": true
+                                                                        },
+                                                                        "body": {
+                                                                          "#variant": {
+                                                                            "tag": "none",
+                                                                            "payload": {
+                                                                              "#none": null
+                                                                            },
+                                                                            "type_part": {
+                                                                              "#none": null
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      {
+                                                                        "pattern": {
+                                                                          "#boolean": false
+                                                                        },
+                                                                        "body": {
+                                                                          "#match": {
+                                                                            "target": {
+                                                                              "#call": {
+                                                                                "function": {
+                                                                                  "#part_reference": {
+                                                                                    "part_definition_event_hash": {
+                                                                                      "$part": "definy.json-get-string"
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                "arguments": [
+                                                                                  {
+                                                                                    "name": "value",
+                                                                                    "value": {
+                                                                                      "#variable": {
+                                                                                        "variable_id": 0
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "name": "key",
+                                                                                    "value": {
+                                                                                      "#string": "bodyBase64"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            },
+                                                                            "arms": [
+                                                                              {
+                                                                                "pattern": {
+                                                                                  "#variant": {
+                                                                                    "tag": "some",
+                                                                                    "payload": {
+                                                                                      "#bind": {
+                                                                                        "variable_id": 6,
+                                                                                        "variable_name": "body"
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                "body": {
+                                                                                  "#match": {
+                                                                                    "target": {
+                                                                                      "#call": {
+                                                                                        "function": {
+                                                                                          "#part_reference": {
+                                                                                            "part_definition_event_hash": {
+                                                                                              "$part": "core.equal"
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        "arguments": [
+                                                                                          {
+                                                                                            "name": "left",
+                                                                                            "value": {
+                                                                                              "#variable": {
+                                                                                                "variable_id": 6
+                                                                                              }
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "name": "right",
+                                                                                            "value": {
+                                                                                              "#string": ""
+                                                                                            }
+                                                                                          }
+                                                                                        ]
+                                                                                      }
+                                                                                    },
+                                                                                    "arms": [
+                                                                                      {
+                                                                                        "pattern": {
+                                                                                          "#boolean": true
+                                                                                        },
+                                                                                        "body": {
+                                                                                          "#variant": {
+                                                                                            "tag": "none",
+                                                                                            "payload": {
+                                                                                              "#none": null
+                                                                                            },
+                                                                                            "type_part": {
+                                                                                              "#none": null
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "pattern": {
+                                                                                          "#boolean": false
+                                                                                        },
+                                                                                        "body": {
+                                                                                          "#variant": {
+                                                                                            "tag": "some",
+                                                                                            "payload": {
+                                                                                              "#some": {
+                                                                                                "#variable": {
+                                                                                                  "variable_id": 6
+                                                                                                }
+                                                                                              }
+                                                                                            },
+                                                                                            "type_part": {
+                                                                                              "#none": null
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "pattern": {
+                                                                                  "#variant": {
+                                                                                    "tag": "none",
+                                                                                    "payload": {
+                                                                                      "#any": null
+                                                                                    }
+                                                                                  }
+                                                                                },
+                                                                                "body": {
+                                                                                  "#variant": {
+                                                                                    "tag": "none",
+                                                                                    "payload": {
+                                                                                      "#none": null
+                                                                                    },
+                                                                                    "type_part": {
+                                                                                      "#none": null
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    ]
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "then",
+                                                          "value": {
+                                                            "#function": {
+                                                              "parameters": [
+                                                                {
+                                                                  "parameter_id": 7,
+                                                                  "parameter_name": "result"
+                                                                }
+                                                              ],
+                                                              "body": {
+                                                                "#match": {
+                                                                  "target": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  },
+                                                                  "arms": [
+                                                                    {
+                                                                      "pattern": {
+                                                                        "#variant": {
+                                                                          "tag": "response",
+                                                                          "payload": {
+                                                                            "#bind": {
+                                                                              "variable_id": 8,
+                                                                              "variable_name": "response"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "body": {
+                                                                        "#variant": {
+                                                                          "tag": "respond",
+                                                                          "payload": {
+                                                                            "#some": {
+                                                                              "#record": [
+                                                                                {
+                                                                                  "key": "status",
+                                                                                  "value": {
+                                                                                    "#number": 200
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "key": "body",
+                                                                                  "value": {
+                                                                                    "#variant": {
+                                                                                      "tag": "object",
+                                                                                      "payload": {
+                                                                                        "#some": {
+                                                                                          "#list": [
+                                                                                            {
+                                                                                              "#record": [
+                                                                                                {
+                                                                                                  "key": "key",
+                                                                                                  "value": {
+                                                                                                    "#string": "status"
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "key": "value",
+                                                                                                  "value": {
+                                                                                                    "#variant": {
+                                                                                                      "tag": "number",
+                                                                                                      "payload": {
+                                                                                                        "#some": {
+                                                                                                          "#record_get": {
+                                                                                                            "record": {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 8
+                                                                                                              }
+                                                                                                            },
+                                                                                                            "key": "status"
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "type_part": {
+                                                                                                        "#some": {
+                                                                                                          "$part": "definy.json"
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
+                                                                                            },
+                                                                                            {
+                                                                                              "#record": [
+                                                                                                {
+                                                                                                  "key": "key",
+                                                                                                  "value": {
+                                                                                                    "#string": "headers"
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "key": "value",
+                                                                                                  "value": {
+                                                                                                    "#call": {
+                                                                                                      "function": {
+                                                                                                        "#part_reference": {
+                                                                                                          "part_definition_event_hash": {
+                                                                                                            "$part": "definy.http-headers-json"
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "arguments": [
+                                                                                                        {
+                                                                                                          "name": "headers",
+                                                                                                          "value": {
+                                                                                                            "#record_get": {
+                                                                                                              "record": {
+                                                                                                                "#variable": {
+                                                                                                                  "variable_id": 8
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "key": "headers"
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
+                                                                                            },
+                                                                                            {
+                                                                                              "#record": [
+                                                                                                {
+                                                                                                  "key": "key",
+                                                                                                  "value": {
+                                                                                                    "#string": "bodyBase64"
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "key": "value",
+                                                                                                  "value": {
+                                                                                                    "#variant": {
+                                                                                                      "tag": "string",
+                                                                                                      "payload": {
+                                                                                                        "#some": {
+                                                                                                          "#record_get": {
+                                                                                                            "record": {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 8
+                                                                                                              }
+                                                                                                            },
+                                                                                                            "key": "body_base64"
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "type_part": {
+                                                                                                        "#some": {
+                                                                                                          "$part": "definy.json"
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      },
+                                                                                      "type_part": {
+                                                                                        "#some": {
+                                                                                          "$part": "definy.json"
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          },
+                                                                          "type_part": {
+                                                                            "#some": {
+                                                                              "$part": "definy.service-io"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "pattern": {
+                                                                        "#variant": {
+                                                                          "tag": "failed",
+                                                                          "payload": {
+                                                                            "#bind": {
+                                                                              "variable_id": 9,
+                                                                              "variable_name": "message"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "body": {
+                                                                        "#call": {
+                                                                          "function": {
+                                                                            "#part_reference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "definy.rpc-error"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "code",
+                                                                              "value": {
+                                                                                "#string": "internal"
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "message",
+                                                                              "value": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 9
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "definy.service-io"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "http-proxy-fetch",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "request",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.json"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "HttpProxyService/Fetch: send an HTTP request the browser cannot send directly because of CORS (docs/cloudflare-workers.md). Only for the admin accounts (DEFINY_ADMIN_ACCOUNT_IDS) with the signature in the Authorization header"
+        },
+        {
+          "language": "ja",
+          "text": "HttpProxyService/Fetch: ブラウザから CORS で直接送れない HTTP リクエストを送る (docs/cloudflare-workers.md)。Authorization ヘッダーの署名が管理者のアカウント (DEFINY_ADMIN_ACCOUNT_IDS) のものだけ"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "request"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "read_authorization",
+              "payload": {
+                "#some": {
+                  "#record": [
+                    {
+                      "key": "then",
+                      "value": {
+                        "#function": {
+                          "parameters": [
+                            {
+                              "parameter_id": 1,
+                              "parameter_name": "authorization"
+                            }
+                          ],
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "anonymous",
+                                      "payload": {
+                                        "#any": null
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.rpc-error"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "code",
+                                          "value": {
+                                            "#string": "unauthenticated"
+                                          }
+                                        },
+                                        {
+                                          "name": "message",
+                                          "value": {
+                                            "#string": "HttpProxyService/Fetch requires an Authorization header"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "invalid",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 2,
+                                          "variable_name": "message"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.rpc-error"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "code",
+                                          "value": {
+                                            "#string": "unauthenticated"
+                                          }
+                                        },
+                                        {
+                                          "name": "message",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "account",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 3,
+                                          "variable_name": "account_id"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "read_admin_account_ids",
+                                      "payload": {
+                                        "#some": {
+                                          "#record": [
+                                            {
+                                              "key": "then",
+                                              "value": {
+                                                "#function": {
+                                                  "parameters": [
+                                                    {
+                                                      "parameter_id": 4,
+                                                      "parameter_name": "admin_account_ids"
+                                                    }
+                                                  ],
+                                                  "body": {
+                                                    "#match": {
+                                                      "target": {
+                                                        "#call": {
+                                                          "function": {
+                                                            "#part_reference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.list-contains-string"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "list",
+                                                              "value": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#part_reference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "definy.split-account-ids"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "text",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 4
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "index",
+                                                                      "value": {
+                                                                        "#number": 0
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "current",
+                                                                      "value": {
+                                                                        "#string": ""
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "acc",
+                                                                      "value": {
+                                                                        "#list": []
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "target",
+                                                              "value": {
+                                                                "#variable": {
+                                                                  "variable_id": 3
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "#number": 0
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": true
+                                                          },
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.http-proxy-send"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "request",
+                                                                  "value": {
+                                                                    "#variable": {
+                                                                      "variable_id": 0
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "pattern": {
+                                                            "#boolean": false
+                                                          },
+                                                          "body": {
+                                                            "#call": {
+                                                              "function": {
+                                                                "#part_reference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.rpc-error"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "code",
+                                                                  "value": {
+                                                                    "#string": "permission_denied"
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "message",
+                                                                  "value": {
+                                                                    "#string": "HttpProxyService/Fetch is not allowed for this account"
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#some": {
+                                          "$part": "definy.service-io"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "definy.service-io"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "handle-rpc",
       "part_type": {
         "#type_function": {
@@ -4704,11 +7987,11 @@
       "description": [
         {
           "language": "en",
-          "text": "How the server handles the RPC method (the name after /definy.v1.EventService/): a function from the request body. none for the methods still handled in TypeScript. The server compiles this at build time (wasm/service.wasm) and runs it with worker/service_io.ts. See docs/service.md"
+          "text": "How the server handles the RPC method (the path after /definy.v1., such as EventService/GetEvent or HttpProxyService/Fetch): a function from the request body. none for the methods still handled in TypeScript. The server compiles this at build time (wasm/service.wasm) and runs it with worker/service_io.ts. See docs/service.md"
         },
         {
           "language": "ja",
-          "text": "RPC のメソッド (/definy.v1.EventService/ の後の名前) をどう処理するか: リクエストの本文から処理を返す関数. まだ TypeScript で処理するメソッドは none. サーバーはビルド時にこれをコンパイルし (wasm/service.wasm), worker/service_io.ts で動かす. docs/service.md を参照"
+          "text": "RPC のメソッド (/definy.v1. の後のパス. EventService/GetEvent や HttpProxyService/Fetch) をどう処理するか: リクエストの本文から処理を返す関数. まだ TypeScript で処理するメソッドは none. サーバーはビルド時にこれをコンパイルし (wasm/service.wasm), worker/service_io.ts で動かす. docs/service.md を参照"
         }
       ],
       "expression": {
@@ -4729,7 +8012,7 @@
               "arms": [
                 {
                   "pattern": {
-                    "#string": "GetProjectBranches"
+                    "#string": "EventService/GetProjectBranches"
                   },
                   "body": {
                     "#variant": {
@@ -4775,7 +8058,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "GetEvent"
+                    "#string": "EventService/GetEvent"
                   },
                   "body": {
                     "#variant": {
@@ -4821,7 +8104,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "GetEvents"
+                    "#string": "EventService/GetEvents"
                   },
                   "body": {
                     "#variant": {
@@ -4867,7 +8150,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "GetContent"
+                    "#string": "EventService/GetContent"
                   },
                   "body": {
                     "#variant": {
@@ -4913,7 +8196,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "CheckMissingHashes"
+                    "#string": "EventService/CheckMissingHashes"
                   },
                   "body": {
                     "#variant": {
@@ -4959,7 +8242,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "SubmitEvent"
+                    "#string": "EventService/SubmitEvent"
                   },
                   "body": {
                     "#variant": {
@@ -5005,7 +8288,7 @@
                 },
                 {
                   "pattern": {
-                    "#string": "UploadContent"
+                    "#string": "EventService/UploadContent"
                   },
                   "body": {
                     "#variant": {
@@ -5034,6 +8317,52 @@
                                     "value": {
                                       "#variable": {
                                         "variable_id": 1039
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "HttpProxyService/Fetch"
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#function": {
+                            "parameters": [
+                              {
+                                "parameter_id": 1040,
+                                "parameter_name": "request"
+                              }
+                            ],
+                            "body": {
+                              "#call": {
+                                "function": {
+                                  "#part_reference": {
+                                    "part_definition_event_hash": {
+                                      "$part": "definy.http-proxy-fetch"
+                                    }
+                                  }
+                                },
+                                "arguments": [
+                                  {
+                                    "name": "request",
+                                    "value": {
+                                      "#variable": {
+                                        "variable_id": 1040
                                       }
                                     }
                                   }

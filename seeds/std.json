@@ -5496,6 +5496,707 @@
           }
         }
       }
+    },
+    {
+      "name": "ascii-change-case-char",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "character",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "from",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "to",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The character at the same index of to if character is in from, otherwise character as it is"
+        },
+        {
+          "language": "ja",
+          "text": "character が from にあれば to の同じ位置の文字, 無ければそのまま"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "character"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "from"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "to"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 3,
+              "variable_name": "index",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "std.string-index-of"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "startIndex",
+                      "value": {
+                        "#number": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 0
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-slice"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "start",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "name": "end",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.plus"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#number": 1
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "ascii-change-case-from",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "from",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "to",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Append the characters of value from index to acc, replacing those in from with to (std.ascii-change-case-char)"
+        },
+        {
+          "language": "ja",
+          "text": "value の index 番目からの文字を, from にあるものは to に置き換えて acc に足す (std.ascii-change-case-char)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "from"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "to"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "acc"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#boolean": false
+                  },
+                  "body": {
+                    "#variable": {
+                      "variable_id": 4
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#boolean": true
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "std.ascii-change-case-from"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "value",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "index",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 1
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "from",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "to",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        },
+                        {
+                          "name": "acc",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "std.ascii-change-case-char"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "character",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-slice"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "start",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "end",
+                                                  "value": {
+                                                    "#call": {
+                                                      "function": {
+                                                        "#part_reference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.plus"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "left",
+                                                          "value": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "right",
+                                                          "value": {
+                                                            "#number": 1
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "from",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "to",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "ascii-lowercase",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Replace A-Z with a-z"
+        },
+        {
+          "language": "ja",
+          "text": "A-Z を a-z にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.ascii-change-case-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "value",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "from",
+                  "value": {
+                    "#string": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                  }
+                },
+                {
+                  "name": "to",
+                  "value": {
+                    "#string": "abcdefghijklmnopqrstuvwxyz"
+                  }
+                },
+                {
+                  "name": "acc",
+                  "value": {
+                    "#string": ""
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "ascii-uppercase",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "value",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Replace a-z with A-Z"
+        },
+        {
+          "language": "ja",
+          "text": "a-z を A-Z にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "value"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "std.ascii-change-case-from"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "value",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "from",
+                  "value": {
+                    "#string": "abcdefghijklmnopqrstuvwxyz"
+                  }
+                },
+                {
+                  "name": "to",
+                  "value": {
+                    "#string": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                  }
+                },
+                {
+                  "name": "acc",
+                  "value": {
+                    "#string": ""
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   ]
 }

@@ -56,7 +56,7 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 ### CORS の仲介 (`definy.v1.HttpProxyService/Fetch`)
 
 Cloudflare の API などはブラウザからの CORS を許可していないので, サーバー (Worker) がリクエストを代わりに送る
-(`proto/definy/v1/http_proxy.proto`, `worker/index.ts` の `proxyFetch`)。
+(`proto/definy/v1/http_proxy.proto`。処理は definy の `definy.http-proxy-fetch`, 送るのはホストの `http_fetch`. [service.md](service.md))。
 
 - 誰でも使えるとオープンプロキシになるので, 署名付き `Authorization` ([rpc-authorization.md](rpc-authorization.md)) が要り,
   管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) だけが使える (他は 403, 署名無しは 401)
