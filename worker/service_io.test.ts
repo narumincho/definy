@@ -77,6 +77,22 @@ const event = (eventHash: string, timeMs?: number): EventItem => ({
   ...(timeMs === undefined ? {} : { timeMs }),
 });
 
+/** `accountIds` の `create_account` を受け付けたストアの `read_events_page` */
+const createdAccounts =
+  (accountIds: ReadonlyArray<string>): ServiceIoHost["readEventsPage"] =>
+  (page) =>
+    Promise.resolve(
+      page.eventType === "create_account"
+        ? accountIds
+            .slice(page.offset, page.offset + page.limit)
+            .map((accountId, i) => ({
+              ...event(`account-${page.offset + i}`),
+              accountId,
+              eventType: "create_account",
+            }))
+        : [],
+    );
+
 /** 読まないはずのホスト. `overrides` で読むものだけ与える */
 const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readCommits: () => Promise.reject(new Error("not read")),
@@ -84,7 +100,6 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readEventsPage: () => Promise.reject(new Error("not read")),
   readContents: () => Promise.reject(new Error("not read")),
   readMissingContentHashes: () => Promise.reject(new Error("not read")),
-  readAccountCreated: () => Promise.reject(new Error("not read")),
   verifySignedEvent: () => Promise.reject(new Error("not verified")),
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
   readPartDefinitions: () => Promise.reject(new Error("not read")),
@@ -186,9 +201,9 @@ describe("handleRpcInDefiny", () => {
                 },
           );
         },
-        readAccountCreated: (accountId) => {
-          steps.push(`account ${accountId}`);
-          return Promise.resolve(false);
+        readEventsPage: (page) => {
+          steps.push(`events ${page.eventType} ${page.offset}`);
+          return createdAccounts([])(page);
         },
         readCommits: () => {
           steps.push("commits");
@@ -217,7 +232,7 @@ describe("handleRpcInDefiny", () => {
     });
     expect(steps).toEqual([
       "verify ok",
-      "account alice",
+      "events create_account 0",
       "missing c1,c2",
       "type check",
       "write ok",
@@ -237,12 +252,12 @@ describe("handleRpcInDefiny", () => {
         missingContentHashes: ["c2"],
       },
     });
-    expect(steps).toEqual(["verify ok", "account alice"]);
+    expect(steps).toEqual(["verify ok", "events create_account 0"]);
 
     expect(
       await submit(
         { signedEventBytes: "ok" },
-        submitHost({ readAccountCreated: () => Promise.resolve(true) }),
+        submitHost({ readEventsPage: createdAccounts(["alice"]) }),
       ),
     ).toEqual({
       status: 400,
@@ -322,7 +337,7 @@ describe("handleRpcInDefiny", () => {
               content,
               referencedContentHashes: [],
             }),
-          readAccountCreated: () => Promise.resolve(true),
+          readEventsPage: createdAccounts(["alice"]),
           readCommits: () => {
             reads.push("commits");
             return Promise.resolve([commit("m1", "alice", "main", 100)]);
@@ -382,7 +397,7 @@ describe("handleRpcInDefiny", () => {
               content: { type: "create_account", accountName: "alice" },
               referencedContentHashes: [],
             }),
-          readAccountCreated: () => Promise.resolve(false),
+          readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(input),
           writeEvent: () => Promise.resolve("e3"),
@@ -489,7 +504,7 @@ describe("handleRpcInDefiny", () => {
               content: { type: "create_account", accountName: "alice" },
               referencedContentHashes: [],
             }),
-          readAccountCreated: () => Promise.resolve(false),
+          readEventsPage: createdAccounts([]),
           readMissingContentHashes: () => Promise.resolve([]),
           readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
           writeEvent: () => Promise.resolve("e4"),
@@ -577,6 +592,48 @@ describe("handleRpcInDefiny", () => {
         ].join("\n"),
       },
     });
+  });
+
+  it("SubmitEvent はアカウントを作ったかを create_account のイベントを 500 件ずつ読んで求める", async () => {
+    const offsets: Array<number> = [];
+    const submitCreateAccount = (accountIds: ReadonlyArray<string>) =>
+      handleRpcInDefiny(
+        service,
+        "SubmitEvent",
+        () => ({ signedEventBytes: "ok" }),
+        host({
+          verifySignedEvent: () =>
+            Promise.resolve({
+              eventHash: "e5",
+              accountId: "alice",
+              content: { type: "create_account", accountName: "alice" },
+              referencedContentHashes: [],
+            }),
+          readEventsPage: (page) => {
+            offsets.push(page.offset);
+            return createdAccounts(accountIds)(page);
+          },
+          readMissingContentHashes: () => Promise.resolve([]),
+          readCommitCheckInput: () => Promise.resolve(null),
+          writeEvent: () => Promise.resolve("e5"),
+        }),
+      );
+    const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);
+    expect(await submitCreateAccount([...others, "alice"])).toEqual({
+      status: 400,
+      body: {
+        code: "invalid_argument",
+        message: "the account has already been created",
+      },
+    });
+    expect(offsets).toEqual([0, 500]);
+
+    offsets.length = 0;
+    expect(await submitCreateAccount(others)).toEqual({
+      status: 200,
+      body: { eventHash: "e5", status: "accepted", missingContentHashes: [] },
+    });
+    expect(offsets).toEqual([0, 500]);
   });
 
   it("UploadContent は SHA-256 が content hash と一致するときだけ保存する", async () => {

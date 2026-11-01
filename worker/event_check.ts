@@ -2,8 +2,9 @@
  * `SubmitEvent` で受け取ったイベントを, 規則 (`core.check-event`. docs/event.md「受け付ける規則」) に渡せる形に読む.
  *
  * 規則そのものは `definy.submit-event` (`wasm/service.wasm`) の中で呼ぶ (docs/service.md). ここでは署名を確かめ,
- * 中身の形を definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめ, 規則が使う事実
- * (アカウントを作ったか) をストアから読むだけ. 規則が使う状態は definy の `core.event-check-state-of` が求める
+ * 中身の形を definy 製の `core.value-conforms` (`wasm/shape_checker.wasm`) で確かめるだけ.
+ * 規則が使う事実 (アカウントを作ったか) は definy の `definy.read-account-created` がストアのイベントを読んで求め,
+ * 規則が使う状態は definy の `core.event-check-state-of` が求める
  */
 import shapeCheckerModule from "../wasm/shape_checker.wasm?module";
 import { base64ToBytes } from "../src/base64.ts";
@@ -12,22 +13,6 @@ import { sha256EventHashId } from "../src/sha256.ts";
 import { conformsInDefiny, contentForCheck } from "../src/event_check.ts";
 import type { EventContent } from "../src/event_content.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
-import { storeEvents, type PartStoreReader } from "./commit_store.ts";
-import type { Env } from "./types.ts";
-
-/** そのアカウントの `create_account` をすでに受け付けたか */
-export async function isAccountCreated(
-  accountId: string,
-  store: PartStoreReader,
-  env: Env | undefined,
-): Promise<boolean> {
-  for await (const item of storeEvents(store, "create_account", env)) {
-    if (item.accountId === accountId) {
-      return true;
-    }
-  }
-  return false;
-}
 
 /** SignedEvent の内側のイベントの `content` (CBOR から読んだまま). 読めなければ `undefined` */
 function rawEventContent(bytes: Uint8Array): unknown {
