@@ -17,7 +17,7 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 - `event_binary` (tag 24 の中身のバイト列そのもの) に対する `signature` が、`account_id` を公開鍵とする Ed25519 署名として正しい
 - `time` がサーバー時刻より 10 分以上未来ではない
 
-ビルトインのシード (`npm run build:seeds` が作る `public/__definy_seed_bundle.json`) は信頼できる経路なので取り込み時には検証しないが、`src/rpc_auth.test.ts` で全イベントの署名が正しいことをテストしている。
+ビルトインのシード (`npm run build:seeds` が作る `public/__definy_seed_bundle.json`) は信頼できる経路なので取り込み時には検証しないが、`src/signed_event.test.ts` で全イベントの署名が正しいことをテストしている。
 
 ## ブラウザ側での検証
 
@@ -50,7 +50,10 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 
 ### Authorization ヘッダー
 
-`src/rpc_auth.ts` の `createRpcAuthorization` で作り、`verifyRpcAuthorization` で検証する。
+`src/rpc_auth.ts` の `createRpcAuthorization` で作り、サーバーの definy (`definy.read-rpc-authorization`. 2026-11-01 までは TypeScript の `verifyRpcAuthorization`) が検証する。
+ヘッダーは `definy.parse-rpc-authorization` で読み, 署名するバイト列は `definy.rpc-authorization-message` が作る (SHA-256 は `core.sha256`)。
+ホストが渡すのは本文の文字列 (`read_request_text`), 今の時刻 (`read_time`), Ed25519 の検証 (`verify_ed25519`) だけ。
+検証のテストは `worker/service_io.test.ts` の「Authorization の署名は definy が確かめる」。
 
 ```
 Authorization: Definy-Ed25519 <accountId>.<unix 秒>.<署名 (URL-safe Base64)>
@@ -66,7 +69,7 @@ definy-rpc-v1
 <リクエストボディの SHA-256 (URL-safe Base64)>
 ```
 
-時刻のずれが ±300 秒を超えるものは拒否する。ボディもパスも署名に含むので、別のリクエストへの使い回しはできない。
+時刻のずれが ±300 秒を超えるものは拒否する (サーバーの時刻はミリ秒を 1000 で割って切り捨てた秒)。ボディもパスも署名に含むので、別のリクエストへの使い回しはできない。
 ただし 300 秒以内に同じリクエストを再送すること (リプレイ) は防いでいない。
 
 ヘッダーが無ければ `unauthenticated` (401)、署名は正しいが管理者でなければ `permission_denied` (403) を返す。

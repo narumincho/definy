@@ -37,7 +37,7 @@ seed から作るイベントは時刻 `2019-01-31T04:36:01Z`（リポジトリ�
 `npm run build:seeds` は seed バンドルの指紋（全イベントのハッシュと全 CAS の内容の SHA-256, `src/seed_fingerprint.ts`）を
 `public/__definy_seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き、Worker はビルド時に後者を取り込みます。
 Worker は isolate ごとに 1 回、D1 に記録した指紋（`cas_contents` のキー `seed-bundle-fingerprint`）と比べ、
-違えば seed バンドルを読んで D1 を入れ替えます（`worker/store.ts` の `ensureSeeded` / `persistSeedToD1`）。
+違えば seed バンドルを読んで D1 を入れ替えます（definy の `definy.ensure-seeded`。[database.md](database.md)）。
 一致していればコールドスタートでも seed バンドルは読みません。
 
 入れ替えでは、**システムアカウントのイベントのうち新しい seed に無いものをすべて削除します**。古い seed の上で

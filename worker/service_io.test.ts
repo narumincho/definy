@@ -4,6 +4,9 @@ import type { CommitSummary } from "../src/event_check.ts";
 import { none, some, variant } from "../src/definy_value.ts";
 import { bytesToBase64, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
 import { encodeCborItem } from "../src/cbor.ts";
+import { generateAccountCredentials } from "../src/auth.ts";
+import { createRpcAuthorization } from "../src/rpc_auth.ts";
+import { verifyEd25519 } from "./ed25519.ts";
 import {
   encodeEventContent,
   type CommitModule,
@@ -15,6 +18,7 @@ import {
   definyToJson,
   handleRequestInDefiny,
   jsonToDefiny,
+  type HttpHeader,
   type ServiceIoHost,
   type SqlStatement,
 } from "./service_io.ts";
@@ -31,20 +35,23 @@ async function handleRpcInDefiny(
   method: string,
   request: () => unknown,
   rpcHost: ServiceIoHost,
+  headers: ReadonlyArray<HttpHeader> = [],
 ): Promise<{ readonly status: number; readonly body: unknown }> {
   const result = await handleRequestInDefiny(
     module,
     {
       method: "POST",
       path: `/definy.v1.${method}`,
-      headers: [],
+      headers,
       storage: "in-memory",
       hasAssets: false,
     },
     {
       ...rpcHost,
-      ensureSeeded: () => Promise.resolve(),
+      readSeedStatus: () =>
+        Promise.resolve({ seeded: true, expectedFingerprint: "" }),
       readRequestJson: () => Promise.resolve({ json: request() }),
+      readRequestText: () => Promise.resolve(JSON.stringify(request())),
     },
   );
   if (result.type !== "respond" || result.body.type !== "json") {
@@ -159,7 +166,9 @@ async function sqlStore(
   readonly host: Pick<ServiceIoHost, "runSql">;
 }> {
   const db = createSqliteD1Database();
-  await new WorkerStore().ensureD1Schema(db);
+  // テーブルは definy (definy.seed-store) が作る. 指紋の行は消しておく
+  await new WorkerStore().seedD1(db, { events: [], contents: [] });
+  await db.prepare("DELETE FROM cas_contents").run();
   for (const item of fixtures.events ?? []) {
     await db
       .prepare(
@@ -236,12 +245,16 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
   readPartDefinitions: () => Promise.reject(new Error("not read")),
   hashContents: () => Promise.reject(new Error("not hashed")),
-  readAuthorization: () => Promise.reject(new Error("not read")),
+  readRequestText: () => Promise.reject(new Error("not read")),
   readAdminAccountIds: () => {
     throw new Error("not read");
   },
   httpFetch: () => Promise.reject(new Error("not fetched")),
-  ensureSeeded: () => Promise.reject(new Error("not seeded")),
+  readSeedStatus: () => Promise.reject(new Error("not read")),
+  readSeedBundle: () => Promise.reject(new Error("not read")),
+  markSeeded: () => {
+    throw new Error("not seeded");
+  },
   readRequestJson: () => Promise.reject(new Error("not read")),
   ...overrides,
 });
@@ -1036,33 +1049,33 @@ describe("handleRpcInDefiny", () => {
 
   it("HttpProxyService/Fetch は管理者の署名があるときだけ, 送らないヘッダーを除いて送る", async () => {
     const sent: Array<unknown> = [];
-    const proxyHost = (
-      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>>,
-    ) =>
-      host({
-        readAuthorization: () => Promise.resolve(authorization),
-        readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
-        httpFetch: (request) => {
-          sent.push(request);
-          return Promise.resolve({
-            status: 201,
-            headers: [{ name: "x-test", value: "1" }],
-            bodyBase64: "AGFzbQ",
-          });
-        },
-      });
+    const proxyHost = host({
+      // 署名は正しいとする (署名を確かめるのは下の Authorization のテスト)
+      verifyEd25519: () => Promise.resolve(true),
+      now: () => 1_800_000_000_000,
+      readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
+      httpFetch: (request) => {
+        sent.push(request);
+        return Promise.resolve({
+          status: 201,
+          headers: [{ name: "x-test", value: "1" }],
+          bodyBase64: "AGFzbQ",
+        });
+      },
+    });
     const fetchWith = (
       request: unknown,
-      authorization: Awaited<ReturnType<ServiceIoHost["readAuthorization"]>> = {
-        type: "account",
-        accountId: "FEEDBEEF-cafe_babe",
-      },
+      authorization:
+        string | null = "Definy-Ed25519 FEEDBEEF-cafe_babe.1800000000.AAAA",
     ) =>
       handleRpcInDefiny(
         service,
         "HttpProxyService/Fetch",
         () => request,
-        proxyHost(authorization),
+        proxyHost,
+        authorization === null
+          ? []
+          : [{ name: "authorization", value: authorization }],
       );
     const request = {
       method: " put ",
@@ -1118,10 +1131,10 @@ describe("handleRpcInDefiny", () => {
     });
     // アカウント ID は大文字小文字を区別する
     expect(
-      await fetchWith(request, {
-        type: "account",
-        accountId: "feedbeef-cafe_babe",
-      }),
+      await fetchWith(
+        request,
+        "Definy-Ed25519 feedbeef-cafe_babe.1800000000.AAAA",
+      ),
     ).toEqual({
       status: 403,
       body: {
@@ -1129,20 +1142,106 @@ describe("handleRpcInDefiny", () => {
         message: "HttpProxyService/Fetch is not allowed for this account",
       },
     });
-    expect(await fetchWith(request, { type: "anonymous" })).toEqual({
+    expect(await fetchWith(request, null)).toEqual({
       status: 401,
       body: {
         code: "unauthenticated",
         message: "HttpProxyService/Fetch requires an Authorization header",
       },
     });
-    expect(
-      await fetchWith(request, { type: "invalid", message: "bad signature" }),
-    ).toEqual({
+    expect(await fetchWith(request, "Bearer x")).toEqual({
       status: 401,
-      body: { code: "unauthenticated", message: "bad signature" },
+      body: {
+        code: "unauthenticated",
+        message:
+          "Authorization must be 'Definy-Ed25519 <account>.<time>.<sig>'",
+      },
     });
     expect(sent).toEqual([]);
+  });
+
+  it("Authorization の署名は definy (definy.read-rpc-authorization) が確かめる", async () => {
+    const admin = await generateAccountCredentials("admin");
+    const other = await generateAccountCredentials("other");
+    const path = "/definy.v1.HttpProxyService/Fetch";
+    const body = { url: "file:///x" };
+    const now = 1_800_000_000;
+    /** 署名が正しければ url を検査して invalid_argument, 違えば unauthenticated (理由) */
+    const fetchWith = async (
+      authorization: string,
+      nowSeconds = now,
+      requestBody: unknown = body,
+    ) =>
+      (
+        await handleRpcInDefiny(
+          service,
+          "HttpProxyService/Fetch",
+          () => requestBody,
+          host({
+            verifyEd25519,
+            now: () => nowSeconds * 1000 + 999,
+            readAdminAccountIds: () => admin.accountId,
+          }),
+          [{ name: "Authorization", value: ` ${authorization} ` }],
+        )
+      ).body;
+    const sign = (
+      credentials = admin,
+      method = "post",
+      signedPath = path,
+      signedBody: unknown = body,
+      time = now,
+    ) =>
+      createRpcAuthorization(
+        credentials,
+        method,
+        signedPath,
+        JSON.stringify(signedBody),
+        time,
+      );
+    const invalid = (message: string) => ({ code: "unauthenticated", message });
+
+    expect(await fetchWith(await sign())).toEqual({
+      code: "invalid_argument",
+      message: "only http and https urls can be fetched",
+    });
+    expect(await fetchWith(await sign(other))).toEqual({
+      code: "permission_denied",
+      message: "HttpProxyService/Fetch is not allowed for this account",
+    });
+    // 時刻のずれは 300 秒まで
+    expect(await fetchWith(await sign(), now + 300)).toMatchObject({
+      code: "invalid_argument",
+    });
+    expect(await fetchWith(await sign(), now + 301)).toEqual(
+      invalid("Authorization time is out of the allowed range"),
+    );
+    // 本文, パス, メソッドが違う / 別のアカウントの ID に差し替えた
+    const failed = invalid("Authorization signature verification failed");
+    expect(await fetchWith(await sign(), now, { url: "file:///y" })).toEqual(
+      failed,
+    );
+    expect(await fetchWith(await sign(admin, "post", "/other"))).toEqual(
+      failed,
+    );
+    expect(await fetchWith(await sign(admin, "get"))).toEqual(failed);
+    expect(
+      await fetchWith((await sign()).replace(admin.accountId, other.accountId)),
+    ).toEqual(failed);
+    const malformed = invalid(
+      "Authorization must be 'Definy-Ed25519 <account>.<time>.<sig>'",
+    );
+    for (const header of [
+      "Definy-Ed25519",
+      "Definy-Ed25519 a.1",
+      "Definy-Ed25519 a.1.b.c",
+      "Definy-Ed25519 a.x1.b",
+      "Definy-Ed25519 a..b",
+      "Definy-Ed25519 a.1.b extra",
+      "Other a.1.b",
+    ]) {
+      expect(await fetchWith(header)).toEqual(malformed);
+    }
   });
 });
 

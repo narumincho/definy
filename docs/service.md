@@ -10,7 +10,7 @@
   1. `OPTIONS` は CORS のヘッダー (`definy.cors-headers`) で `204`
   2. `/healthz` ([healthz.md](healthz.md)。IP のバージョンは `definy.client-ip-version`)
   3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まる) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)
-  4. `ensure_seeded` でストアに seed を入れてから, `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
+  4. `definy.ensure-seeded` でストアに seed を入れてから ([database.md](database.md)), `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
      `/definy.v1.` は `definy.handle-rpc`。無いメソッドは `unimplemented` (`Endpoint <パス> is not implemented`)
 - RPC は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
   definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, 無いメソッドは `#none` (`unimplemented`)。
@@ -29,7 +29,9 @@
 | :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `respond`                 | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                      | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る                                                                       |
 | `serve_asset`             | なし                                                                                           | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                                                                                            |
-| `ensure_seeded`           | `then: (seeded: boolean) -> ...`                                                               | ストアに seed を入れておく (入れてあれば何もしない)                                                                                                                                                            |
+| `read_seed_status`        | `then: (status: definy.seed-status) -> ...`                                                    | この isolate がもう seed を入れたか (`seeded`) と期待する指紋。入れていなければ `mark_seeded` まで他のリクエストを待たせる                                                                                     |
+| `read_seed_bundle`        | `then: (bundle: option<definy.seed-bundle>) -> ...`                                            | seed バンドルを読む (`/__definy_seed_bundle.json`。指紋も付ける)                                                                                                                                               |
+| `mark_seeded`             | `then: (marked: boolean) -> ...`                                                               | この isolate が seed を入れたと覚える                                                                                                                                                                          |
 | `read_request_json`       | `then: (body: definy.request-json) -> ...`                                                     | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                                                                                                     |
 | `read_commits`            | `then: (commits: list<core.commit-summary>) -> definy.service-io`                              | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                                                                                           |
 | `sql`                     | `statements: list<definy.sql-statement>`, `then: (results: list<list<definy.sql-row>>) -> ...` | SQL の文を D1 で順に実行し, それぞれの結果の行を返す (2 つ以上なら `batch` で 1 つのトランザクション. `runD1Statements`)。どの SQL を流すかは definy の `definy.store-*` が決める ([database.md](database.md)) |
@@ -38,7 +40,7 @@
 | `read_commit_check_input` | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`               | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                                                                                                    |
 | `read_part_definitions`   | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                        | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                                                                                               |
 | `hash_contents`           | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                                                                                             |
-| `read_authorization`      | `then: (authorization: definy.rpc-authorization) -> ...`                                       | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`)                                                                                                                  |
+| `read_request_text`       | `then: (body: string) -> ...`                                                                  | リクエストの本文を文字列で読む (`Authorization` の署名を確かめるのは definy の `definy.read-rpc-authorization`. [rpc-authorization.md](rpc-authorization.md))                                                  |
 | `read_admin_account_ids`  | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                            |
 | `http_fetch`              | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                    |
 
@@ -92,7 +94,7 @@
 
 CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は TypeScript の `proxyFetch` / `requireAccount` / `isAdminAccount`。
 
-1. `read_authorization` で署名を確かめる。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
+1. `definy.read-rpc-authorization` で署名を確かめる (`definy.handle-rpc` が HTTP リクエストを渡す)。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
    署名が違えばその理由で `unauthenticated`
 2. `read_admin_account_ids` を `definy.split-account-ids` でカンマ・セミコロン・空白で区切り, アカウント ID が無ければ `permission_denied`
    (大文字小文字を区別する)

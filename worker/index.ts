@@ -16,7 +16,7 @@ import {
   runD1Statements,
   WorkerStore,
 } from "./store.ts";
-import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
+import { verifyEd25519 } from "./ed25519.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
 import type { Env } from "./types.ts";
@@ -60,30 +60,6 @@ function parseJsonObject(
     return { invalid: "request body must be an object" };
   }
   return { json: parsed };
-}
-
-/** Ed25519 の署名を確かめる (`verify_ed25519`). 公開鍵として読めなければ `false` */
-async function verifyEd25519(
-  publicKey: Uint8Array,
-  signature: Uint8Array,
-  message: Uint8Array,
-): Promise<boolean> {
-  try {
-    return await crypto.subtle.verify(
-      { name: "Ed25519" },
-      await crypto.subtle.importKey(
-        "raw",
-        publicKey as Uint8Array<ArrayBuffer>,
-        { name: "Ed25519" },
-        false,
-        ["verify"],
-      ),
-      signature as Uint8Array<ArrayBuffer>,
-      message as Uint8Array<ArrayBuffer>,
-    );
-  } catch {
-    return false;
-  }
 }
 
 /** definy の決めたレスポンスを HTTP のレスポンスにする */
@@ -132,6 +108,7 @@ export async function handleWorkerRequest(
   let bodyText: Promise<string> | undefined;
   const readBody = () => (bodyText ??= request.text());
   let result: ServiceResult;
+  const seed = store.seedHost(env, url.origin);
   try {
     result = await handleRequestInDefiny(
       serviceModule,
@@ -162,32 +139,19 @@ export async function handleWorkerRequest(
               }
             }),
           ),
-        readAuthorization: async () => {
-          try {
-            const accountId = await verifyRpcAuthorization(
-              request.headers.get("Authorization"),
-              request.method,
-              pathname,
-              await readBody(),
-            );
-            return accountId === null
-              ? { type: "anonymous" }
-              : { type: "account", accountId };
-          } catch (e) {
-            return {
-              type: "invalid",
-              message: e instanceof Error ? e.message : String(e),
-            };
-          }
-        },
+        readRequestText: readBody,
         readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
         httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
-        ensureSeeded: () => store.ensureSeeded(env, url.origin),
+        readSeedStatus: seed.readSeedStatus,
+        readSeedBundle: seed.readSeedBundle,
+        markSeeded: seed.markSeeded,
         readRequestJson: async () => parseJsonObject(await readBody()),
       },
     );
   } catch (e) {
     return hostErrorResponse(e);
+  } finally {
+    seed.release();
   }
   if (result.type === "serve_asset") {
     if (serveAsset === undefined) {

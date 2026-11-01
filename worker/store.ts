@@ -8,46 +8,15 @@ import type {
   SeedBundle,
   SeedEventEntry,
 } from "./types.ts";
-import type { SqlRow, SqlStatement } from "./service_io.ts";
+import {
+  seedStoreInDefiny,
+  type SeedHost,
+  type SqlRow,
+  type SqlStatement,
+} from "./service_io.ts";
+import seederModule from "../wasm/seeder.wasm?module";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import seedFingerprintFile from "../seeds/seed_bundle_fingerprint.json" with { type: "json" };
-
-/** D1 に入っている seed の指紋を記録する cas_contents のキー */
-const SEED_FINGERPRINT_KEY = "seed-bundle-fingerprint";
-
-/** D1 に記録された seed の指紋. 無ければ null */
-async function readSeedFingerprint(db: D1Database): Promise<string | null> {
-  try {
-    return (
-      (await db
-        .prepare(
-          "SELECT content_bytes FROM cas_contents WHERE content_hash = ?",
-        )
-        .bind(SEED_FINGERPRINT_KEY)
-        .first<string>("content_bytes")) ?? null
-    );
-  } catch {
-    return null;
-  }
-}
-
-const D1_SCHEMA_STATEMENTS: ReadonlyArray<string> = [
-  `CREATE TABLE IF NOT EXISTS events (
-    event_hash TEXT PRIMARY KEY,
-    signed_event_bytes TEXT NOT NULL,
-    account_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    created_at_rfc3339 TEXT NOT NULL,
-    time_ms INTEGER NOT NULL
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_events_time_ms ON events(time_ms DESC)`,
-  `CREATE INDEX IF NOT EXISTS idx_events_type_time ON events(event_type, time_ms DESC)`,
-  `CREATE INDEX IF NOT EXISTS idx_events_account_time ON events(account_id, time_ms DESC)`,
-  `CREATE TABLE IF NOT EXISTS cas_contents (
-    content_hash TEXT PRIMARY KEY,
-    content_bytes TEXT NOT NULL
-  )`,
-];
 
 const D1_BATCH_CHUNK_SIZE = 50;
 
@@ -136,13 +105,13 @@ export function requireDb(env: Env | undefined): D1Database {
 export class WorkerStore {
   /** D1 の seed がこの指紋なら最新とみなす. 既定はビルド時の seed バンドルの指紋 */
   private readonly expectedSeedFingerprint: string;
-  /** 読み込んだ seed バンドルの指紋 (バンドルに無ければ D1 に書くときに計算する) */
+  /** 読み込んだ seed バンドルの指紋 (バンドルに無ければ使うときに計算する) */
   private seedFingerprint: string | undefined;
   private seeded = false;
-  private d1SchemaInitialized = false;
+  /** この isolate がもう D1 に seed を入れたか (definy の `mark_seeded`) */
   private d1Seeded = false;
-  private schemaInitPromise: Promise<void> | null = null;
-  private seedPromise: Promise<void> | null = null;
+  /** seed を入れているリクエストが終わるまで, 他のリクエストが待つもの */
+  private seeding: Promise<void> | null = null;
   private seedEvents: ReadonlyArray<SeedEventEntry> = [];
   private seedContents: ReadonlyMap<string, string> = new Map<string, string>();
 
@@ -152,166 +121,96 @@ export class WorkerStore {
   }
 
   /**
-   * D1 テーブルとインデックスを冪等に初期化する。
-   * Cloudflare Workers (`workerd`) ではリクエストごとに `env.DB` ラッパーオブジェクトが新規生成されるため、
-   * `WeakSet<D1Database>` ではなくインスタンスフラグと in-flight Promise で 1 回のみ初期化する。
-   */
-  async ensureD1Schema(db: D1Database): Promise<void> {
-    if (this.d1SchemaInitialized) {
-      return;
-    }
-    if (!this.schemaInitPromise) {
-      this.schemaInitPromise = (async () => {
-        try {
-          const test = await db.prepare("SELECT 1 FROM events LIMIT 1").first();
-          if (test !== undefined) {
-            this.d1SchemaInitialized = true;
-            return;
-          }
-        } catch {
-          // Table does not exist, run schema statements
-        }
-        const stmts = D1_SCHEMA_STATEMENTS.map((sql) => db.prepare(sql));
-        await db.batch(stmts);
-        this.d1SchemaInitialized = true;
-      })().finally(() => {
-        this.schemaInitPromise = null;
-      });
-    }
-    await this.schemaInitPromise;
-  }
-
-  /**
-   * デプロイ処理（またはテスト初期化）の一環として D1 スキーマ初期化とシードデータ投入を実行する
+   * テーブルを作り seed を入れる (definy の `definy.seed-store`. wasm/seeder.wasm).
+   * `bundle` があればそれを入れる. 指紋が D1 と同じなら何もしない
    */
   async seedD1(db: D1Database, bundle?: SeedBundle): Promise<void> {
     if (bundle) {
       this.loadSeedBundle(bundle);
     }
-    await this.persistSeedToD1(db);
-    this.d1Seeded = true;
+    this.d1Seeded = false;
+    const host = this.seedHost({ DB: db });
+    try {
+      await seedStoreInDefiny(seederModule, host);
+    } finally {
+      host.release();
+    }
   }
 
   /**
-   * D1 にシードデータを投入する。D1 スキーマを確実に適用し、未投入時のみシードデータを同期する。
+   * definy の `definy.ensure-seeded` が使う能力 (docs/database.md).
+   * 処理が終わったら `release` を呼ぶ (seed を入れ終える前に失敗しても, 待っている他のリクエストを進める)
    */
-  async ensureSeeded(env: Env, requestOrigin?: string): Promise<void> {
-    const db = requireDb(env);
-    await this.ensureD1Schema(db);
-    if (this.d1Seeded) {
-      return;
-    }
-    if (!this.seedPromise) {
-      this.seedPromise = (async () => {
-        // D1 の seed が最新なら何もしない (コールドスタートのたびに seed バンドルを取りに行かない)
-        if ((await readSeedFingerprint(db)) !== this.expectedSeedFingerprint) {
-          if (!this.seeded) {
-            const bundle = await fetchSeedBundle(env, requestOrigin);
-            if (bundle) {
-              this.loadSeedBundle(bundle);
-            }
-          }
-          if (this.seeded) {
-            await this.persistSeedToD1(db);
+  seedHost(
+    env: Env,
+    requestOrigin?: string,
+  ): SeedHost & { readonly release: () => void } {
+    let release: (() => void) | undefined;
+    return {
+      runSql: (statements) => runD1Statements(requireDb(env), statements),
+      readSeedStatus: async () => {
+        while (this.seeding !== null) {
+          await this.seeding;
+        }
+        if (this.d1Seeded) {
+          return { seeded: true, expectedFingerprint: "" };
+        }
+        this.seeding = new Promise((resolve) => {
+          release = () => {
+            release = undefined;
+            this.seeding = null;
+            resolve();
+          };
+        });
+        return {
+          seeded: false,
+          expectedFingerprint: this.seeded
+            ? await this.loadedSeedFingerprint()
+            : this.expectedSeedFingerprint,
+        };
+      },
+      readSeedBundle: async () => {
+        if (!this.seeded) {
+          const bundle = await fetchSeedBundle(env, requestOrigin);
+          if (bundle) {
+            this.loadSeedBundle(bundle);
           }
         }
+        return this.seeded
+          ? {
+              fingerprint: await this.loadedSeedFingerprint(),
+              events: this.seedEvents,
+              contents: Array.from(
+                this.seedContents,
+                ([contentHash, contentBytes]) => ({
+                  contentHash,
+                  contentBytes,
+                }),
+              ),
+            }
+          : null;
+      },
+      markSeeded: () => {
         this.d1Seeded = true;
-      })().finally(() => {
-        this.seedPromise = null;
-      });
-    }
-    await this.seedPromise;
+        release?.();
+      },
+      release: () => release?.(),
+    };
   }
 
-  private async persistSeedToD1(db: D1Database): Promise<void> {
-    await this.ensureD1Schema(db);
-
-    const seedAccounts = new Set<string>();
-    for (const ev of this.seedEvents) {
-      if (ev.accountId) {
-        seedAccounts.add(ev.accountId);
-      }
-    }
-
-    // D1 側が既に最新シードと一致していれば DELETE / INSERT バッチをスキップする
-    const fingerprint =
-      this.seedFingerprint ??
-      (await seedBundleFingerprint({
-        events: this.seedEvents,
-        contents: Array.from(
-          this.seedContents,
-          ([contentHash, contentBytes]) => ({ contentHash, contentBytes }),
-        ),
-      }));
-    if ((await readSeedFingerprint(db)) === fingerprint) {
-      return;
-    }
-
-    // seed が変わったら, seed のアカウント (システムアカウント) のイベントのうち最新のシードに無いものを
-    // すべて削除する. 古いシードの上の編集も消える (古いシードとの互換性は保たない. 残したい編集は
-    // npm run export:seeds で seeds/*.json に書き戻しておく)
-    const deleteStatements: ReadonlyArray<D1PreparedStatement> =
-      seedAccounts.size > 0 && this.seedEvents.length > 0
-        ? (() => {
-            const hashPlaceholders = this.seedEvents.map(() => "?").join(", ");
-            const hashValues = this.seedEvents.map((ev) => ev.eventHash);
-            return Array.from(seedAccounts).map((accountId) =>
-              db
-                .prepare(
-                  `DELETE FROM events WHERE account_id = ? AND event_hash NOT IN (${hashPlaceholders})`,
-                )
-                .bind(accountId, ...hashValues),
-            );
-          })()
-        : [];
-
-    const insertEventStatements: ReadonlyArray<D1PreparedStatement> =
-      this.seedEvents.map((ev) =>
-        db
-          .prepare(
-            `INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-          )
-          .bind(
-            ev.eventHash,
-            ev.signedEventBytes,
-            ev.accountId,
-            ev.eventType,
-            ev.createdAtRfc3339,
-            ev.timeMs,
-          ),
-      );
-
-    const insertContentStatements: ReadonlyArray<D1PreparedStatement> =
-      Array.from(this.seedContents.entries()).map(
-        ([contentHash, contentBytes]) =>
-          db
-            .prepare(
-              `INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes)
-             VALUES (?, ?)`,
-            )
-            .bind(contentHash, contentBytes),
-      );
-
-    // 指紋は最後に書く (途中で失敗したら次の起動で同期し直す)
-    const statements: ReadonlyArray<D1PreparedStatement> = [
-      ...deleteStatements,
-      ...insertEventStatements,
-      ...insertContentStatements,
-      db
-        .prepare(
-          `INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes)
-           VALUES (?, ?)`,
-        )
-        .bind(SEED_FINGERPRINT_KEY, fingerprint),
-    ];
-
-    for (let i = 0; i < statements.length; i += D1_BATCH_CHUNK_SIZE) {
-      const chunk = statements.slice(i, i + D1_BATCH_CHUNK_SIZE);
-      if (chunk.length > 0) {
-        await db.batch(chunk);
-      }
-    }
+  /** 読み込んだ seed バンドルの指紋 */
+  private async loadedSeedFingerprint(): Promise<string> {
+    this.seedFingerprint ??= await seedBundleFingerprint({
+      events: this.seedEvents,
+      contents: Array.from(
+        this.seedContents,
+        ([contentHash, contentBytes]) => ({
+          contentHash,
+          contentBytes,
+        }),
+      ),
+    });
+    return this.seedFingerprint;
   }
 
   /**
@@ -349,7 +248,6 @@ export class WorkerStore {
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
 
     const db = requireDb(env);
-    await this.ensureD1Schema(db);
     let stmt: D1PreparedStatement;
     if (requestedType) {
       const normalized = requestedType.toLowerCase().replace(/_/g, "");

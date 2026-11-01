@@ -12,8 +12,11 @@ import {
 } from "../src/event_check.ts";
 import {
   instantiateCompiledFunction,
+  type CompiledFunctionInstance,
   type DefinyValue,
+  type ValueRef,
 } from "../src/stage1_compiler.ts";
+import type { SeedBundle } from "./types.ts";
 
 /** 処理がストアを読むときに使うもの */
 export type ServiceIoHost = {
@@ -47,19 +50,24 @@ export type ServiceIoHost = {
   readonly hashContents: (
     contentsBytes: ReadonlyArray<string>,
   ) => Promise<ReadonlyArray<string | undefined>>;
-  /**
-   * 処理しているリクエストの `Authorization` ヘッダーの署名を確かめる (docs/rpc-authorization.md).
-   * 無ければ `anonymous`, 署名が違えば `invalid` (理由), 正しければ `account` (アカウント ID)
-   */
-  readonly readAuthorization: () => Promise<
-    | { readonly type: "anonymous" }
-    | { readonly type: "invalid"; readonly message: string }
-    | { readonly type: "account"; readonly accountId: string }
-  >;
+  /** リクエストの本文 (UTF-8 の文字列. `read_request_text`). 署名を確かめるのは definy (`definy.read-rpc-authorization`) */
+  readonly readRequestText: () => Promise<string>;
   /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
   readonly readAdminAccountIds: () => string;
-  /** ストアに seed を入れておく (入れてあれば何もしない) */
-  readonly ensureSeeded: () => Promise<void>;
+  /**
+   * この isolate がもうストアに seed を入れたか (`read_seed_status`) と, 期待する seed の指紋.
+   * 入れていなければ, 入れ終わる (`markSeeded`) まで他のリクエストを待たせる
+   */
+  readonly readSeedStatus: () => Promise<{
+    readonly seeded: boolean;
+    readonly expectedFingerprint: string;
+  }>;
+  /** seed バンドル (`read_seed_bundle`. 指紋も付ける). 読めなければ `null` */
+  readonly readSeedBundle: () => Promise<
+    (SeedBundle & { readonly fingerprint: string }) | null
+  >;
+  /** この isolate がストアに seed を入れた (`mark_seeded`) */
+  readonly markSeeded: () => void;
   /** リクエストの本文を JSON として読む (空なら `{}`). JSON のオブジェクトでなければ理由 */
   readonly readRequestJson: () => Promise<
     { readonly json: unknown } | { readonly invalid: string }
@@ -127,7 +135,7 @@ export type ServiceResult =
   | { readonly type: "serve_asset" };
 
 /** これだけストアを読んでも終わらなければ止める */
-const MAX_STEPS = 100;
+const MAX_STEPS = 1000;
 
 /**
  * HTTP リクエストを, コンパイルした `definy.handle-request` (`service`) で処理する (docs/service.md).
@@ -139,15 +147,57 @@ export async function handleRequestInDefiny(
   host: ServiceIoHost,
 ): Promise<ServiceResult> {
   const instance = instantiateCompiledFunction(service);
-  let pointer = instance.call({
-    request: instance.writeArgument({
-      method: request.method,
-      path: request.path,
-      headers: request.headers,
-      storage: request.storage,
-      has_assets: request.hasAssets,
+  return runServiceIo(
+    instance,
+    instance.call({
+      request: instance.writeArgument({
+        method: request.method,
+        path: request.path,
+        headers: request.headers,
+        storage: request.storage,
+        has_assets: request.hasAssets,
+      }),
     }),
-  });
+    host,
+  );
+}
+
+/** ストアの seed を入れる能力 (`definy.ensure-seeded`) */
+export type SeedHost = Pick<
+  ServiceIoHost,
+  "runSql" | "readSeedStatus" | "readSeedBundle" | "markSeeded"
+>;
+
+/**
+ * コンパイルした `definy.seed-store` (`seeder`. wasm/seeder.wasm) でストアに seed を入れる (docs/database.md).
+ * 渡すのは seed に使う能力だけ (他の要求は例外)
+ */
+export async function seedStoreInDefiny(
+  seeder: WebAssembly.Module,
+  host: SeedHost,
+): Promise<void> {
+  const instance = instantiateCompiledFunction(seeder);
+  await runServiceIo(
+    instance,
+    instance.call({ status: instance.writeArgument(204) }),
+    new Proxy(host as ServiceIoHost, {
+      get: (target, name) =>
+        name in target
+          ? target[name as keyof ServiceIoHost]
+          : () => {
+              throw new Error(`the seed host has no ${String(name)}`);
+            },
+    }),
+  );
+}
+
+/** `definy.service-io` の要求をホストで行って `then` に渡し, 結果が出るまで続ける */
+async function runServiceIo(
+  instance: CompiledFunctionInstance,
+  start: ValueRef,
+  host: ServiceIoHost,
+): Promise<ServiceResult> {
+  let pointer = start;
   for (let step = 0; step < MAX_STEPS; step++) {
     const { tag, payload } = instance.variant(pointer);
     if (tag === "serve_asset") {
@@ -170,8 +220,43 @@ export async function handleRequestInDefiny(
           body: httpBody(response.body),
         };
       }
-      case "ensure_seeded": {
-        await host.ensureSeeded();
+      case "read_seed_status": {
+        const status = await host.readSeedStatus();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument({
+            seeded: status.seeded,
+            expected_fingerprint: status.expectedFingerprint,
+          }),
+        ]);
+        break;
+      }
+      case "read_seed_bundle": {
+        const bundle = await host.readSeedBundle();
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            bundle === null
+              ? none()
+              : some({
+                  fingerprint: bundle.fingerprint,
+                  events: bundle.events.map((event) => ({
+                    event_hash: event.eventHash,
+                    signed_event_bytes: event.signedEventBytes,
+                    account_id: event.accountId,
+                    event_type: event.eventType,
+                    created_at_rfc3339: event.createdAtRfc3339,
+                    time_ms: event.timeMs,
+                  })),
+                  contents: bundle.contents.map((item) => ({
+                    content_hash: item.contentHash,
+                    content_bytes: item.contentBytes,
+                  })),
+                }),
+          ),
+        ]);
+        break;
+      }
+      case "mark_seeded": {
+        host.markSeeded();
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(true),
         ]);
@@ -276,16 +361,9 @@ export async function handleRequestInDefiny(
         ]);
         break;
       }
-      case "read_authorization": {
-        const authorization = await host.readAuthorization();
+      case "read_request_text": {
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            authorization.type === "anonymous"
-              ? variant("anonymous")
-              : authorization.type === "invalid"
-                ? variant("invalid", authorization.message)
-                : variant("account", authorization.accountId),
-          ),
+          instance.writeArgument(await host.readRequestText()),
         ]);
         break;
       }

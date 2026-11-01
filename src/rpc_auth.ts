@@ -5,10 +5,11 @@
  *
  * 署名対象は `rpcAuthorizationMessage` が返す UTF-8 文字列
  * （メソッド・パス・時刻・ボディの SHA-256 を改行で連結したもの）。
- * 時刻のずれが `RPC_AUTHORIZATION_MAX_SKEW_SECONDS` を超えるものは拒否する。
+ * 検証はサーバーの definy (`definy.read-rpc-authorization`) が行い, 時刻のずれが 300 秒を超えるものは拒否する
+ * (docs/rpc-authorization.md)。
  */
 
-import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
 import { sha256EventHashId } from "./sha256.ts";
 import {
   type AccountCredentials,
@@ -16,8 +17,6 @@ import {
 } from "./auth.ts";
 
 const SCHEME = "Definy-Ed25519";
-export const RPC_AUTHORIZATION_MAX_SKEW_SECONDS = 300;
-
 async function rpcAuthorizationMessage(
   method: string,
   pathname: string,
@@ -53,56 +52,4 @@ export async function createRpcAuthorization(
     await crypto.subtle.sign({ name: "Ed25519" }, key, message),
   );
   return `${SCHEME} ${credentials.accountId}.${timeSeconds}.${bytesToUrlSafeBase64NoPad(signature)}`;
-}
-
-/**
- * `Authorization` ヘッダーを検証し、署名したアカウント ID を返す。
- * ヘッダーが無ければ `null`、形式・署名・時刻が不正なら例外を投げる。
- */
-export async function verifyRpcAuthorization(
-  header: string | null,
-  method: string,
-  pathname: string,
-  body: string,
-  nowSeconds: number = Math.floor(Date.now() / 1000),
-): Promise<string | null> {
-  if (header === null || header.trim().length === 0) {
-    return null;
-  }
-  const [scheme, credential, ...rest] = header.trim().split(/\s+/);
-  const [accountId, timeText, signatureText, ...extra] = (
-    credential ?? ""
-  ).split(".");
-  if (
-    scheme !== SCHEME ||
-    rest.length > 0 ||
-    extra.length > 0 ||
-    !accountId ||
-    !timeText ||
-    !signatureText ||
-    !/^\d+$/.test(timeText)
-  ) {
-    throw new Error(`Authorization must be '${SCHEME} <account>.<time>.<sig>'`);
-  }
-  const timeSeconds = Number(timeText);
-  if (Math.abs(nowSeconds - timeSeconds) > RPC_AUTHORIZATION_MAX_SKEW_SECONDS) {
-    throw new Error("Authorization time is out of the allowed range");
-  }
-  const publicKey = await crypto.subtle.importKey(
-    "raw",
-    new Uint8Array(base64ToBytes(accountId)),
-    { name: "Ed25519" },
-    false,
-    ["verify"],
-  );
-  const valid = await crypto.subtle.verify(
-    { name: "Ed25519" },
-    publicKey,
-    new Uint8Array(base64ToBytes(signatureText)),
-    await rpcAuthorizationMessage(method, pathname, timeSeconds, body),
-  );
-  if (!valid) {
-    throw new Error("Authorization signature verification failed");
-  }
-  return accountId;
 }
