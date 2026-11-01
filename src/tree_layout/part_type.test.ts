@@ -151,4 +151,58 @@ describe("syncPartTypeParameterNames", () => {
       ),
     ).toBeUndefined();
   });
+
+  it("式の根の関数の引数を足した・消したら, 型の引数も変数 ID で引き継いで揃える", () => {
+    const fnWith = (
+      parameters: ReadonlyArray<readonly [number, string]>,
+    ): unknown => ({
+      "#function": {
+        parameters: parameters.map(([id, name]) => ({
+          parameter_id: id,
+          parameter_name: name,
+        })),
+        body: { "#variable": { variable_id: 0 } },
+      },
+    });
+    const before = fnWith([
+      [0, "a"],
+      [1, "b"],
+    ]);
+    // 足す
+    expect(
+      syncPartTypeParameterNames(
+        partType,
+        before,
+        fnWith([
+          [0, "a"],
+          [1, "b"],
+          [2, "c"],
+        ]),
+      ),
+    ).toEqual({
+      "#type_function": {
+        parameters: [
+          { name: "a", type: { "#type_number": null } },
+          { name: "b", type: { "#type_string": null } },
+          { name: "c", type: { "#type_number": null } },
+        ],
+        return_type: { "#type_number": null },
+      },
+    });
+    // 先頭を消す
+    expect(
+      syncPartTypeParameterNames(partType, before, fnWith([[1, "b"]])),
+    ).toEqual({
+      "#type_function": {
+        parameters: [{ name: "b", type: { "#type_string": null } }],
+        return_type: { "#type_number": null },
+      },
+    });
+  });
+
+  it("変更前の式と型の引数の数が合わなければ undefined", () => {
+    expect(
+      syncPartTypeParameterNames(partType, fn(["a"]), fn(["a", "b", "c"])),
+    ).toBeUndefined();
+  });
 });

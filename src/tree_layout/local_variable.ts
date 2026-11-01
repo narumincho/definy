@@ -14,6 +14,10 @@ import {
 } from "./match_pattern.ts";
 import type { PathStep } from "./types.ts";
 import {
+  renameTypeFunctionParameter,
+  typeFunctionParameterNameIndex,
+} from "./function_parameters.ts";
+import {
   isRecordGetKeyPath,
   recordItemKeyIndex,
   renameRecordKeyAt,
@@ -48,6 +52,7 @@ export function isVariableNamePath(path: ReadonlyArray<PathStep>): boolean {
     functionParameterIndex(path) !== null ||
     letBindingNameIndex(path) !== null ||
     matchArmVariableIndex(path) !== null ||
+    typeFunctionParameterNameIndex(path) !== null ||
     recordItemKeyIndex(path) !== null ||
     isRecordGetKeyPath(path)
   );
@@ -91,6 +96,9 @@ export function renameVariableAt(
   }
   if (matchArmVariableIndex(path) !== null) {
     return renameMatchArmVariable(expr, path, name);
+  }
+  if (typeFunctionParameterNameIndex(path) !== null) {
+    return renameTypeFunctionParameter(expr, path, name);
   }
   if (recordItemKeyIndex(path) !== null || isRecordGetKeyPath(path)) {
     return renameRecordKeyAt(expr, path, name);

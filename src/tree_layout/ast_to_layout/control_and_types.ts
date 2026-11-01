@@ -151,12 +151,36 @@ export function tryBuildControlOrTypeNode(
           kind: "typeFunctionParameter",
           index,
         });
+        // 引数名を選ぶとその場で名前を変えられる (式の関数の引数名と同じ)
         return {
           id: `${idPrefix}.p_${index}`,
           path: parameterPath,
-          label: `${String(parameter.name ?? "")}:`,
-          kind: "identifier",
+          label: "",
+          kind: "group",
           children: [
+            {
+              id: `${idPrefix}.p_${index}.name`,
+              path: childPath(currentPath, {
+                kind: "typeFunctionParameterName",
+                index,
+              }),
+              label: String(parameter.name ?? ""),
+              kind: "parameterName",
+              children: [],
+              computedWidth: 0,
+              computedHeight: 0,
+              layoutMode: "inline",
+            },
+            {
+              id: `${idPrefix}.p_${index}.colon`,
+              path: parameterPath,
+              label: ":",
+              kind: "delimiter",
+              children: [],
+              computedWidth: 0,
+              computedHeight: 0,
+              layoutMode: "inline",
+            },
             buildLayoutNode(
               parameter.type,
               `${idPrefix}.p_${index}.type`,

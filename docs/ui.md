@@ -268,6 +268,18 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   - 自分自身の再帰呼び出しはこのパーツの変更に, 他のパーツの呼び出しはそのパーツの作業中の変更に入れる (`renameCallersOf`).
     作業中の変更がすでにあるパーツはその式を直す. 他のパーツの変更はこのページの Undo では戻らない
   - 実装は [src/tree_layout/rename_arguments.ts](../src/tree_layout/rename_arguments.ts) と `pages/part/[id].tsx` の `editPart`
+- 関数の引数の追加・削除: 値の関数 (`fn`) か型の関数 (`function`) を選ぶと, 置換メニューに `add-parameter` (末尾に足す) と
+  引数ごとの `delete-parameter <名前>` が出る. 足す引数の名前は使われていない `x`, `y`, `z`, `x1`, ... の順で選び,
+  足した後はその名前を選ぶ (続けて名前を変えられる). 値の関数の新しい引数には新しい変数 ID を, 型の関数の新しい引数には
+  `number` 型を付ける. 消した引数を本体で参照していた変数は未定義の変数として型エラーになる.
+  実装は [src/tree_layout/function_parameters.ts](../src/tree_layout/function_parameters.ts)
+  - 型の関数の引数名は `typeFunctionParameterName` のパス (式ではない) で, 値の関数の引数名と同じくその場で変えられる
+  - 関数のパーツでは, 式の根の関数とパーツの型の引数をいつも揃える. 根の関数の引数を足した・消したら型の引数を変数 ID で
+    引き継いで並べ直し (`syncPartTypeParameterNames`, [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts)),
+    型の引数を足した・消したら根の関数の引数を名前で引き継いで並べ直す (`syncRootParameters`)
+  - そのパーツを呼び出している式は, 引数を型の引数名に合わせる. 型に無い引数は消し, 足りない引数は未入力で足す
+    (`syncCallArguments` / `syncCallersOf`). 名前の変更と同じく, 他のパーツ (コミットしていない新しいパーツも含む) の
+    作業中の変更にする
 - 関数の型を期待する位置 (`core.list-map` の `f:` など) で置換メニューから選んだ式は, その型の引数を持つラムダ式の本体にする
   (関数は値として書けないため. [call-syntax.md](call-syntax.md)). 例えば `f:` で `std.abs` を選ぶと `(item) => std.abs(x: item)` になる.
   - 期待する型は選んだ位置で型チェッカーに聞いた型を `applySelection` に渡す. 型が届く前に選択肢を選んだときは届くのを待ってから置き換える

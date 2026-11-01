@@ -63,6 +63,10 @@ import {
 import { applyListAction, isListAction } from "./list_items.ts";
 import { applyLetAction, isLetAction } from "./let_bindings.ts";
 import {
+  applyParameterAction,
+  isParameterAction,
+} from "./function_parameters.ts";
+import {
   applyRecordAction,
   isRecordAction,
   recordFieldNamesOfType,
@@ -840,13 +844,16 @@ export function ExpressionTreeEditor({
       if (
         isListAction(optionValue) ||
         isLetAction(optionValue) ||
+        isParameterAction(optionValue) ||
         isRecordAction(optionValue)
       ) {
         const result = isListAction(optionValue)
           ? applyListAction(expression, selectedPath, optionValue)
           : isLetAction(optionValue)
             ? applyLetAction(expression, selectedPath, optionValue)
-            : applyRecordAction(expression, selectedPath, optionValue);
+            : isParameterAction(optionValue)
+              ? applyParameterAction(expression, selectedPath, optionValue)
+              : applyRecordAction(expression, selectedPath, optionValue);
         if (result !== null) {
           onChange(result.expression);
           keyboard.selectInTree(result.selectedPath);

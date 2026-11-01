@@ -38,6 +38,8 @@ export type PathStep =
   | "functionBody"
   | { readonly kind: "callArgument"; readonly index: number }
   | { readonly kind: "typeFunctionParameter"; readonly index: number }
+  /** 型の関数 (`type_function`) の i 番目の引数の名前. 式ではない */
+  | { readonly kind: "typeFunctionParameterName"; readonly index: number }
   /** 関数 (`function`) の引数の名前. 式ではない */
   | { readonly kind: "functionParameter"; readonly index: number }
   | "typeFunctionReturn"

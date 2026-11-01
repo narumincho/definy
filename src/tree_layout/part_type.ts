@@ -10,22 +10,27 @@ export {
   typeAstToExpression,
 } from "../type_ast_expression.ts";
 
-/** 式の根が関数なら, その引数名の一覧 */
-function rootParameterNames(
-  expression: unknown,
-): ReadonlyArray<unknown> | null {
+/** 式の根が関数なら, その引数 (変数 ID と名前) の一覧 */
+function rootParameters(expression: unknown): ReadonlyArray<{
+  readonly id: unknown;
+  readonly name: unknown;
+}> | null {
   const parameters = field(
     variantPayload(expression, "function"),
     "parameters",
   );
   return Array.isArray(parameters)
-    ? parameters.map((parameter) => field(parameter, "parameter_name"))
+    ? parameters.map((parameter) => ({
+        id: field(parameter, "parameter_id"),
+        name: field(parameter, "parameter_name"),
+      }))
     : null;
 }
 
 /**
- * 式の根の関数の引数名が `before` から `after` で変わったら, 関数のパーツの型の同じ位置の引数名も変えた型を返す.
- * 呼び出し側は引数をパーツの型の引数名で渡すので, 型の引数名と式の引数名を揃えておく.
+ * 式の根の関数の引数が `before` から `after` で変わったら (名前の変更・追加・削除・並び替え),
+ * 関数のパーツの型の引数も同じ並びにした型を返す. 型の引数は式の引数と同じ位置のものを変数 ID で引き継ぎ,
+ * 新しい引数の型は `number` にする. 呼び出し側は引数をパーツの型の引数名で渡すので, 型の引数名と式の引数名を揃えておく.
  * 変わっていなければ `undefined`
  */
 export function syncPartTypeParameterNames(
@@ -33,29 +38,41 @@ export function syncPartTypeParameterNames(
   before: unknown,
   after: unknown,
 ): unknown {
-  const beforeNames = rootParameterNames(before);
-  const afterNames = rootParameterNames(after);
+  const beforeParameters = rootParameters(before);
+  const afterParameters = rootParameters(after);
   const fn = variantPayload(partType, "type_function") as
     | {
         readonly parameters?: ReadonlyArray<Readonly<Record<string, unknown>>>;
       }
     | undefined;
   if (
-    beforeNames === null ||
-    afterNames === null ||
+    beforeParameters === null ||
+    afterParameters === null ||
     fn?.parameters === undefined ||
-    beforeNames.length !== afterNames.length ||
-    beforeNames.every((name, i) => name === afterNames[i])
+    beforeParameters.length !== fn.parameters.length ||
+    (beforeParameters.length === afterParameters.length &&
+      beforeParameters.every(
+        (p, i) =>
+          p.id === afterParameters[i]?.id &&
+          p.name === afterParameters[i]?.name,
+      ))
   ) {
     return undefined;
   }
+  const typeParameters = fn.parameters;
   return variant("type_function", {
     ...fn,
-    parameters: fn.parameters.map((parameter, i) =>
-      beforeNames[i] !== afterNames[i] && typeof afterNames[i] === "string"
-        ? { ...parameter, name: afterNames[i] }
-        : parameter,
-    ),
+    parameters: afterParameters.map((parameter) => {
+      const index = beforeParameters.findIndex((p) => p.id === parameter.id);
+      const typeParameter = index < 0 ? undefined : typeParameters[index];
+      const name =
+        typeof parameter.name === "string"
+          ? parameter.name
+          : String(typeParameter?.["name"] ?? "");
+      return typeParameter === undefined
+        ? { name, type: variant("type_number") }
+        : { ...typeParameter, name };
+    }),
   });
 }
 

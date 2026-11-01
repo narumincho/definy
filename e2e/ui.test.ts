@@ -1303,9 +1303,9 @@ test.describe("definy UI E2E", () => {
     ).toBeVisible({ timeout: 15000 });
     await page.keyboard.press("Escape");
 
-    // 引数名 x を選ぶとその場で名前を変えられ, 本体の変数の表示も変わる
-    const parameter = valueTree
-      .locator(".tree-badge", { hasText: /^x$/ })
+    // 式の根の関数の引数名 x を選ぶとその場で名前を変えられ, 本体の変数の表示も変わる
+    const parameter = page
+      .locator("#part-def-value-tree .tree-badge", { hasText: /^x$/ })
       .first();
     await parameter.click();
     const input = valueTree.locator(".tree-badge input[type=text]");
@@ -1313,11 +1313,11 @@ test.describe("definy UI E2E", () => {
     await input.fill("value");
     // 本体の 3 か所の変数 (引数名の入力欄は文字を持たない)
     await expect(
-      valueTree.locator(".tree-badge", { hasText: /^value$/ }),
+      page.locator("#part-def-value-tree .tree-badge", { hasText: /^value$/ }),
     ).toHaveCount(3);
     // パーツの型の引数名も合わせて変わる
     await expect(
-      valueTree.locator(".tree-badge", { hasText: /^value:$/ }),
+      page.locator("#part-def-type-tree .tree-badge", { hasText: /^value$/ }),
     ).toHaveCount(1);
   });
 
@@ -1340,10 +1340,10 @@ test.describe("definy UI E2E", () => {
     await expect(
       valueTree.locator('[data-node-id$=".fn"]', { hasText: /^f$/ }),
     ).toHaveCount(2);
-    // (パーツの型の行の f の引数名 item: もあるので 3 つ)
+    // (パーツの型の行の f の引数名 item は名前の欄なので数えない)
     await expect(
-      valueTree.locator(".tree-badge", { hasText: /^item:$/ }),
-    ).toHaveCount(3);
+      page.locator("#part-def-value-tree .tree-badge", { hasText: /^item:$/ }),
+    ).toHaveCount(2);
   });
 
   test("expression tree editor shows the inferred type argument in an empty slot and fixes it with Enter", async ({
@@ -1399,7 +1399,7 @@ test.describe("definy UI E2E", () => {
       valueTree.locator('[data-node-id$=".fn"]', { hasText: /^std\.abs$/ }),
     ).toHaveCount(1);
     await expect(
-      valueTree.locator(".tree-badge", { hasText: /^item$/ }),
+      page.locator("#part-def-value-tree .tree-badge", { hasText: /^item$/ }),
     ).toHaveCount(2);
     await expect(valueTree.locator(".tree-type-error")).toHaveCount(0);
   });
@@ -1461,15 +1461,17 @@ test.describe("definy UI E2E", () => {
       .locator("#part-definition-value-tree, .part-definition-tree")
       .first();
     await expect(valueTree).toBeVisible({ timeout: 15000 });
-    await valueTree
-      .locator(".tree-badge", { hasText: /^url$/ })
+    await page
+      .locator("#part-def-value-tree .tree-badge", { hasText: /^url$/ })
       .first()
       .click();
     const input = valueTree.locator(".tree-badge input[type=text]");
     await expect(input).toBeVisible();
     await input.fill("address");
     await expect(
-      valueTree.locator(".tree-badge", { hasText: /^address:$/ }),
+      page.locator("#part-def-type-tree .tree-badge", {
+        hasText: /^address$/,
+      }),
     ).toHaveCount(1);
 
     // std.url-path を呼び出している sample.self-hosted-definy-server の引数名も変わる (std.url-query の url: はそのまま)
@@ -1487,6 +1489,72 @@ test.describe("definy UI E2E", () => {
       callCapsule(callerTree, "std.url-query").locator(".tree-badge", {
         hasText: /^url:$/,
       }),
+    ).toHaveCount(1);
+  });
+
+  test("adds and deletes function parameters, keeping the part type and the callers in sync", async ({
+    page,
+  }) => {
+    const option = (name: string) =>
+      page
+        .locator(".dropdown-option", {
+          has: page.locator(".dropdown-option-name", {
+            hasText: new RegExp(`^${name}$`),
+          }),
+        })
+        .locator("button");
+    const typeTree = page.locator("#part-def-type-tree");
+    const valueTree = page.locator("#part-def-value-tree");
+    const callerArguments = async () => {
+      await page.goto("/part/sample.self-hosted-definy-server");
+      const callerTree = page.locator("#part-def-value-tree");
+      await expect(callerTree).toBeVisible({ timeout: 15000 });
+      return callCapsule(callerTree, "std.url-path");
+    };
+
+    // 式の根の関数に引数を足すと, パーツの型にも同じ名前の number 型の引数が増える
+    await page.goto("/part/std.url-path");
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await valueTree.locator(".tree-badge", { hasText: /^fn$/ }).click();
+    await option("add-parameter").click();
+    await expect(
+      typeTree.locator(".tree-badge", { hasText: /^x$/ }),
+    ).toHaveCount(1);
+    // 呼び出し側には未入力の引数が増える
+    await expect(
+      (await callerArguments()).locator(".tree-badge", { hasText: /^x:$/ }),
+    ).toHaveCount(1);
+
+    // 型の関数の引数名はその場で変えられ, 式の引数名と呼び出し側も変わる
+    await page.goto("/part/std.url-path");
+    await expect(typeTree).toBeVisible({ timeout: 15000 });
+    await typeTree.locator(".tree-badge", { hasText: /^x$/ }).click();
+    const input = typeTree.locator(".tree-badge input[type=text]");
+    await expect(input).toBeVisible();
+    await input.fill("base");
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^base$/ }),
+    ).toHaveCount(1);
+    await expect(
+      (await callerArguments()).locator(".tree-badge", {
+        hasText: /^base:$/,
+      }),
+    ).toHaveCount(1);
+
+    // 型の関数から引数を消すと, 式の引数と呼び出し側の引数も消える
+    await page.goto("/part/std.url-path");
+    await expect(typeTree).toBeVisible({ timeout: 15000 });
+    await typeTree.locator(".tree-badge", { hasText: /^function$/ }).click();
+    await option("delete-parameter base").click();
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^base$/ }),
+    ).toHaveCount(0);
+    const caller = await callerArguments();
+    await expect(
+      caller.locator(".tree-badge", { hasText: /^base:$/ }),
+    ).toHaveCount(0);
+    await expect(
+      caller.locator(".tree-badge", { hasText: /^url:$/ }),
     ).toHaveCount(1);
   });
 
@@ -1513,7 +1581,10 @@ test.describe("definy UI E2E", () => {
     ).toHaveText("number");
 
     // 変数は名前と型 (definy 製の型チェッカーが推論した型)
-    await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).hover();
+    await page
+      .locator("#part-def-value-tree .tree-badge", { hasText: /^x$/ })
+      .nth(1)
+      .hover();
     await expect(card.locator(".tree-hover-card-title")).toContainText("x");
     await expect(card.locator(".tree-hover-card-type")).toContainText("number");
 
@@ -1534,7 +1605,10 @@ test.describe("definy UI E2E", () => {
     }
 
     // 置換メニューを開いている間は出さない. メニューには期待する型をツリーで出す
-    await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).click();
+    await page
+      .locator("#part-def-value-tree .tree-badge", { hasText: /^x$/ })
+      .nth(1)
+      .click();
     await expect(card).toHaveCount(0);
     await expect(
       page.locator(".dropdown-expected-type .type-tree-view"),

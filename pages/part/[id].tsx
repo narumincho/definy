@@ -31,6 +31,10 @@ import {
   renameCallArguments,
   renameCallersOf,
   renameRootParameters,
+  partTypeParameterNames,
+  syncCallArguments,
+  syncCallersOf,
+  syncRootParameters,
 } from "../../src/tree_layout/rename_arguments.ts";
 import type { DefinitionView } from "../../src/tree_layout/definition_rows.ts";
 import {
@@ -305,17 +309,48 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         updateWorkingPart(caller.partDefinitionEventHash, caller);
       }
     }
+    // 引数を足した・消したら, 呼び出しの引数も合わせる (足した引数は未入力, 消した引数は外す).
+    // 型の行で変えたときは式の根の関数の引数も同じ並びにする
+    const beforeNames = partTypeParameterNames(currentPartType)?.map(
+      (name) => renames.get(name) ?? name,
+    );
+    const afterNames =
+      fields.partType === undefined
+        ? undefined
+        : partTypeParameterNames(fields.partType);
+    const parametersChanged =
+      beforeNames !== undefined &&
+      afterNames !== undefined &&
+      (beforeNames.length !== afterNames.length ||
+        beforeNames.some((name, i) => name !== afterNames[i]));
+    if (parametersChanged) {
+      for (const caller of syncCallersOf(
+        parts,
+        workingChanges,
+        partIdHash,
+        afterNames,
+        part.partId,
+      )) {
+        updateWorkingPart(caller.partDefinitionEventHash, caller);
+      }
+    }
+    // 型の行で引数名を変えたときは, 式の根の関数の引数名も合わせる
+    const rootSynced =
+      fields.expression === undefined
+        ? syncRootParameters(
+            renameRootParameters(next.expression, renames),
+            currentPartType,
+            fields.partType,
+          )
+        : next.expression;
+    const renamedCalls = renameCallArguments(rootSynced, partIdHash, renames);
     changePart(
       {
         ...next,
-        expression: renameCallArguments(
-          // 型の行で引数名を変えたときは, 式の根の関数の引数名も合わせる
-          fields.expression === undefined
-            ? renameRootParameters(next.expression, renames)
-            : next.expression,
-          partIdHash,
-          renames,
-        ),
+        expression:
+          parametersChanged && afterNames !== undefined
+            ? syncCallArguments(renamedCalls, partIdHash, afterNames)
+            : renamedCalls,
       },
       mergeKey,
     );
