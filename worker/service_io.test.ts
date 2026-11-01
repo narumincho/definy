@@ -16,9 +16,12 @@ import {
   handleRequestInDefiny,
   jsonToDefiny,
   type ServiceIoHost,
+  type SqlStatement,
 } from "./service_io.ts";
+import { runD1Statements, WorkerStore } from "./store.ts";
+import { createSqliteD1Database } from "./test_helpers.ts";
 import { partDefinitionExpression } from "../src/part_definition.ts";
-import type { EventItem } from "./types.ts";
+import type { ContentItem, D1Database, EventItem } from "./types.ts";
 
 const service = new WebAssembly.Module(await readFile("wasm/service.wasm"));
 
@@ -110,30 +113,86 @@ const content = (partType: unknown, expression: unknown): PartContent => ({
   expression,
 });
 
-const event = (eventHash: string, timeMs?: number): EventItem => ({
+const event = (eventHash: string, timeMs = 0): EventItem => ({
   eventHash,
   signedEventBytes: `signed-${eventHash}`,
   accountId: "alice",
   eventType: "project_commit",
   createdAtRfc3339: "2026-10-27T00:00:00Z",
-  ...(timeMs === undefined ? {} : { timeMs }),
+  timeMs,
 });
 
-/** `accountIds` の `create_account` を受け付けたストアの `read_events_page` */
-const createdAccounts =
-  (accountIds: ReadonlyArray<string>): ServiceIoHost["readEventsPage"] =>
-  (page) =>
-    Promise.resolve(
-      page.eventType === "create_account"
-        ? accountIds
-            .slice(page.offset, page.offset + page.limit)
-            .map((accountId, i) => ({
-              ...event(`account-${page.offset + i}`),
-              accountId,
-              eventType: "create_account",
-            }))
-        : [],
-    );
+/** `accountIds` の `create_account` のイベント (新しい順に `accountIds` の順) */
+const createdAccounts = (
+  accountIds: ReadonlyArray<string>,
+): ReadonlyArray<EventItem> =>
+  accountIds.map((accountId, i) => ({
+    ...event(`account-${i}`, accountIds.length - i),
+    accountId,
+    eventType: "create_account",
+  }));
+
+/** 実行した SQL の文の短い説明 (動詞, 表, パラメーター. 長い文字列は …) */
+const sqlLabel = (statement: SqlStatement): string =>
+  [
+    statement.sql.split(" ")[0],
+    /(?:FROM|INTO) (\w+)/.exec(statement.sql)?.[1],
+    statement.params
+      .map((param) =>
+        typeof param === "string" && param.length > 20 ? "…" : String(param),
+      )
+      .join(","),
+  ].join(" ");
+
+/**
+ * テストのストア (sqlite の D1. `events` と `contents` を入れておく).
+ * definy が `sql` で実行した文を `log` に `sql <文の説明>; ...` として足す
+ */
+async function sqlStore(
+  fixtures: {
+    readonly events?: ReadonlyArray<EventItem>;
+    readonly contents?: ReadonlyArray<ContentItem>;
+  } = {},
+  log: Array<string> = [],
+): Promise<{
+  readonly db: D1Database;
+  readonly host: Pick<ServiceIoHost, "runSql">;
+}> {
+  const db = createSqliteD1Database();
+  await new WorkerStore().ensureD1Schema(db);
+  for (const item of fixtures.events ?? []) {
+    await db
+      .prepare(
+        "INSERT INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .bind(
+        item.eventHash,
+        item.signedEventBytes,
+        item.accountId,
+        item.eventType,
+        item.createdAtRfc3339,
+        item.timeMs,
+      )
+      .run();
+  }
+  for (const item of fixtures.contents ?? []) {
+    await db
+      .prepare(
+        "INSERT INTO cas_contents (content_hash, content_bytes) VALUES (?, ?)",
+      )
+      .bind(item.contentHash, item.contentBytes)
+      .run();
+  }
+  return {
+    db,
+    host: {
+      runSql: (statements) => {
+        log.push(["sql", ...statements.map(sqlLabel)].join(" ").trim());
+        return runD1Statements(db, statements);
+      },
+    },
+  };
+}
 
 /** テストのイベントを出したアカウントの公開鍵 (署名は確かめないので何でも良い) */
 const ALICE_PUBLIC_KEY = new Uint8Array(32).fill(7);
@@ -169,19 +228,14 @@ const verifyingHost = (eventHash: string): Partial<ServiceIoHost> => ({
 /** 読まないはずのホスト. `overrides` で読むものだけ与える */
 const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   readCommits: () => Promise.reject(new Error("not read")),
-  readEvents: () => Promise.reject(new Error("not read")),
-  readEventsPage: () => Promise.reject(new Error("not read")),
-  readContents: () => Promise.reject(new Error("not read")),
-  readMissingContentHashes: () => Promise.reject(new Error("not read")),
+  runSql: () => Promise.reject(new Error("not read")),
   verifyEd25519: () => Promise.reject(new Error("not verified")),
   now: () => {
     throw new Error("not read");
   },
   readCommitCheckInput: () => Promise.reject(new Error("not read")),
   readPartDefinitions: () => Promise.reject(new Error("not read")),
-  writeEvent: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
-  writeContents: () => Promise.reject(new Error("not written")),
   readAuthorization: () => Promise.reject(new Error("not read")),
   readAdminAccountIds: () => {
     throw new Error("not read");
@@ -189,14 +243,18 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   httpFetch: () => Promise.reject(new Error("not fetched")),
   ensureSeeded: () => Promise.reject(new Error("not seeded")),
   readRequestJson: () => Promise.reject(new Error("not read")),
-  readRawContent: () => Promise.reject(new Error("not read")),
   ...overrides,
 });
 
 describe("handleRpcInDefiny", () => {
   it("GetProjectBranches はブランチと最新のイベントを返す. 見つからないイベントのブランチは除く", async () => {
-    const reads: Array<ReadonlyArray<string>> = [];
+    const reads: Array<string> = [];
+    const store = await sqlStore(
+      { events: [event("m2", 300), event("b1", 200)] },
+      reads,
+    );
     const branchesHost = host({
+      ...store.host,
       readCommits: () =>
         Promise.resolve([
           commit("m1", "alice", "main", 100),
@@ -204,18 +262,6 @@ describe("handleRpcInDefiny", () => {
           commit("m2", "alice", "main", 300),
           commit("g1", "carol", "gone", 400),
         ]),
-      readEvents: (hashes) => {
-        reads.push(hashes);
-        return Promise.resolve(
-          hashes.map((hash) =>
-            hash === "m2"
-              ? event(hash, 300)
-              : hash === "b1"
-                ? event(hash)
-                : undefined,
-          ),
-        );
-      },
     });
     expect(
       await handleRpcInDefiny(
@@ -240,12 +286,12 @@ describe("handleRpcInDefiny", () => {
             branch: "bob",
             creatorAccountId: "bob",
             commitCount: 1,
-            latestEvent: event("b1"),
+            latestEvent: event("b1", 200),
           },
         ],
       },
     });
-    expect(reads).toEqual([["m2", "b1", "g1"]]);
+    expect(reads).toEqual(["sql SELECT events m2,b1,g1"]);
   });
 
   it("無いメソッドは unimplemented で, 本文を読まない", async () => {
@@ -274,41 +320,41 @@ describe("handleRpcInDefiny", () => {
       accountName: "alice",
     };
     const signed = signedEvent(createAccount);
-    const submitHost = (
+    let db: D1Database | undefined;
+    const submitHost = async (
       overrides: Partial<ServiceIoHost> = {},
-    ): ServiceIoHost =>
-      host({
+      events: ReadonlyArray<EventItem> = [],
+    ): Promise<ServiceIoHost> => {
+      const store = await sqlStore({ events }, steps);
+      db = store.db;
+      return host({
         ...verifyingHost("e1"),
+        ...store.host,
         verifyEd25519: (publicKey, _signature, message) => {
           steps.push(`verify ${publicKey.length} ${message.length}`);
           return Promise.resolve(true);
-        },
-        readEventsPage: (page) => {
-          steps.push(`events ${page.eventType} ${page.offset}`);
-          return createdAccounts([])(page);
         },
         readCommits: () => {
           steps.push("commits");
           return Promise.resolve([commit("m1", alice, "main", 100)]);
         },
-        readMissingContentHashes: (hashes) => {
-          steps.push(`missing ${hashes.join(",")}`);
-          return Promise.resolve([]);
-        },
         readCommitCheckInput: () => {
           steps.push("type check");
           return Promise.resolve(null);
         },
-        writeEvent: (event) => {
-          steps.push(
-            `write ${event.signedEventBytes === signed} ${event.eventHash} ${event.accountId === alice} ${event.eventType} ${event.timeMs}`,
-          );
-          return Promise.resolve();
-        },
         ...overrides,
       });
-    const submit = (request: unknown, h: ServiceIoHost) =>
-      handleRpcInDefiny(service, "EventService/SubmitEvent", () => request, h);
+    };
+    const submit = async (
+      request: unknown,
+      h: ServiceIoHost | Promise<ServiceIoHost>,
+    ) =>
+      handleRpcInDefiny(
+        service,
+        "EventService/SubmitEvent",
+        () => request,
+        await h,
+      );
 
     expect(
       await submit({ signedEventBytes: ` ${signed}\n` }, submitHost()),
@@ -319,35 +365,32 @@ describe("handleRpcInDefiny", () => {
     const innerLength = signedEventInnerLength(createAccount);
     expect(steps).toEqual([
       `verify 32 ${innerLength}`,
-      "events create_account 0",
-      "missing ",
+      "sql SELECT events create_account,500,0",
+      // CAS に足りない中身 (create_account には中身が無いので文も無い)
+      "sql",
       "type check",
-      "write true e1 true create_account 1000000",
+      "sql INSERT events e1,…,…,create_account,1000000,1000000",
     ]);
-
-    steps.length = 0;
+    // created_at_rfc3339 は definy が SQL で time_ms から作る
     expect(
-      await submit(
-        { signedEventBytes: signed },
-        submitHost({ readMissingContentHashes: () => Promise.resolve(["c2"]) }),
-      ),
-    ).toEqual({
-      status: 200,
-      body: {
-        eventHash: "e1",
-        status: "missing_content",
-        missingContentHashes: ["c2"],
-      },
+      await db!.prepare("SELECT * FROM events").all<Record<string, unknown>>(),
+    ).toMatchObject({
+      results: [
+        {
+          event_hash: "e1",
+          signed_event_bytes: signed,
+          account_id: alice,
+          event_type: "create_account",
+          created_at_rfc3339: "1970-01-01T00:16:40.000Z",
+          time_ms: 1_000_000,
+        },
+      ],
     });
-    expect(steps).toEqual([
-      `verify 32 ${innerLength}`,
-      "events create_account 0",
-    ]);
 
     expect(
       await submit(
         { signedEventBytes: signed },
-        submitHost({ readEventsPage: createdAccounts([alice]) }),
+        submitHost({}, createdAccounts([alice])),
       ),
     ).toEqual({
       status: 400,
@@ -426,39 +469,74 @@ describe("handleRpcInDefiny", () => {
       },
     });
     const reads: Array<string> = [];
-    const submitCommit = (content: EventContent) =>
+    const submitCommit = async (
+      content: EventContent,
+      contents: ReadonlyArray<ContentItem> = [],
+    ) =>
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
         () => ({ signedEventBytes: signedEvent(content) }),
         host({
           ...verifyingHost("e2"),
-          readEventsPage: createdAccounts([alice]),
+          ...(
+            await sqlStore(
+              { events: createdAccounts([alice]), contents },
+              reads,
+            )
+          ).host,
           readCommits: () => {
             reads.push("commits");
             return Promise.resolve([commit("m1", alice, "main", 100)]);
           },
-          readMissingContentHashes: (hashes) => {
-            reads.push(`missing ${hashes.join(",")}`);
-            return Promise.resolve([]);
-          },
           readCommitCheckInput: () => Promise.resolve(null),
-          writeEvent: () => Promise.resolve(),
         }),
       );
+    const commitX = projectCommit({
+      parent: "m1",
+      modules: [
+        { name: "app", description: [], parts: [part("x"), part("x2")] },
+      ],
+    });
 
+    // CAS に無い中身があれば保存しない
+    expect(
+      await submitCommit(commitX, [
+        { contentHash: "hash-x2", contentBytes: "AA==" },
+      ]),
+    ).toEqual({
+      status: 200,
+      body: {
+        eventHash: "e2",
+        status: "missing_content",
+        missingContentHashes: ["hash-x"],
+      },
+    });
+    expect(reads).toEqual([
+      "sql SELECT events create_account,500,0",
+      "commits",
+      "sql SELECT cas_contents hash-x,hash-x2",
+    ]);
+
+    reads.length = 0;
     expect(
       await submitCommit(
-        projectCommit({
-          parent: "m1",
-          modules: [{ name: "app", description: [], parts: [part("x")] }],
-        }),
+        commitX,
+        ["hash-x", "hash-x2"].map((contentHash) => ({
+          contentHash,
+          contentBytes: "AA==",
+        })),
       ),
     ).toEqual({
       status: 200,
       body: { eventHash: "e2", status: "accepted", missingContentHashes: [] },
     });
-    expect(reads).toEqual(["commits", "missing hash-x"]);
+    expect(reads).toEqual([
+      "sql SELECT events create_account,500,0",
+      "commits",
+      "sql SELECT cas_contents hash-x,hash-x2",
+      "sql INSERT events e2,…,…,project_commit,1000000,1000000",
+    ]);
 
     expect(
       await submitCommit(
@@ -483,7 +561,7 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent の型検査は definy.check-commit が service.wasm の中で型チェッカーを呼んで行う", async () => {
-    const submitWith = (input: unknown) =>
+    const submitWith = async (input: unknown) =>
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
@@ -495,10 +573,8 @@ describe("handleRpcInDefiny", () => {
         }),
         host({
           ...verifyingHost("e3"),
-          readEventsPage: createdAccounts([]),
-          readMissingContentHashes: () => Promise.resolve([]),
+          ...(await sqlStore()).host,
           readCommitCheckInput: () => Promise.resolve(input),
-          writeEvent: () => Promise.resolve(),
         }),
       );
     const number = { "#type_number": null };
@@ -619,7 +695,7 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent はパーツの定義の式を definy がその場で読むか, 評価器 (core.eval-value) で評価して読む", async () => {
-    const submitWith = (parts: ReadonlyArray<unknown>) =>
+    const submitWith = async (parts: ReadonlyArray<unknown>) =>
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
@@ -631,10 +707,8 @@ describe("handleRpcInDefiny", () => {
         }),
         host({
           ...verifyingHost("e4"),
-          readEventsPage: createdAccounts([]),
-          readMissingContentHashes: () => Promise.resolve([]),
+          ...(await sqlStore()).host,
           readCommitCheckInput: () => Promise.resolve(checkInput({ parts })),
-          writeEvent: () => Promise.resolve(),
         }),
       );
     // core.define-part / core.define-type の呼び出しは評価器を使わずに読む
@@ -722,8 +796,8 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("SubmitEvent はアカウントを作ったかを create_account のイベントを 500 件ずつ読んで求める", async () => {
-    const offsets: Array<number> = [];
-    const submitCreateAccount = (accountIds: ReadonlyArray<string>) =>
+    const reads: Array<string> = [];
+    const submitCreateAccount = async (accountIds: ReadonlyArray<string>) =>
       handleRpcInDefiny(
         service,
         "EventService/SubmitEvent",
@@ -735,13 +809,9 @@ describe("handleRpcInDefiny", () => {
         }),
         host({
           ...verifyingHost("e5"),
-          readEventsPage: (page) => {
-            offsets.push(page.offset);
-            return createdAccounts(accountIds)(page);
-          },
-          readMissingContentHashes: () => Promise.resolve([]),
+          ...(await sqlStore({ events: createdAccounts(accountIds) }, reads))
+            .host,
           readCommitCheckInput: () => Promise.resolve(null),
-          writeEvent: () => Promise.resolve(),
         }),
       );
     const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);
@@ -752,30 +822,33 @@ describe("handleRpcInDefiny", () => {
         message: "the account has already been created",
       },
     });
-    expect(offsets).toEqual([0, 500]);
+    const pages = [
+      "sql SELECT events create_account,500,0",
+      "sql SELECT events create_account,500,500",
+    ];
+    expect(reads).toEqual(pages);
 
-    offsets.length = 0;
+    reads.length = 0;
     expect(await submitCreateAccount(others)).toEqual({
       status: 200,
       body: { eventHash: "e5", status: "accepted", missingContentHashes: [] },
     });
-    expect(offsets).toEqual([0, 500]);
+    expect(reads.slice(0, 2)).toEqual(pages);
   });
 
   it("UploadContent は SHA-256 が content hash と一致するときだけ保存する", async () => {
-    const written: Array<unknown> = [];
+    const store = await sqlStore();
     const uploadHost = host({
+      ...store.host,
       hashContents: (contents) =>
         Promise.resolve(
           contents.map((bytes) =>
             bytes === "not base64" ? undefined : `hash-of-${bytes}`,
           ),
         ),
-      writeContents: (items) => {
-        written.push(items);
-        return Promise.resolve(items.map((item) => item.contentHash));
-      },
     });
+    const written = async () =>
+      (await store.db.prepare("SELECT * FROM cas_contents").all()).results;
     const upload = (request: unknown) =>
       handleRpcInDefiny(
         service,
@@ -794,20 +867,18 @@ describe("handleRpcInDefiny", () => {
       status: 200,
       body: { storedContentHashes: ["hash-of-a", "hash-of-b"] },
     });
-    expect(written).toEqual([
-      [
-        { contentHash: "hash-of-a", contentBytes: "a" },
-        { contentHash: "hash-of-b", contentBytes: "b" },
-      ],
-    ]);
+    const stored = [
+      { content_hash: "hash-of-a", content_bytes: "a" },
+      { content_hash: "hash-of-b", content_bytes: "b" },
+    ];
+    expect(await written()).toEqual(stored);
     expect(await upload({})).toEqual({
       status: 200,
       body: { storedContentHashes: [] },
     });
 
-    written.length = 0;
     expect(
-      await upload({ items: [item("hash-of-a", "a"), item("x", "b")] }),
+      await upload({ items: [item("hash-of-c", "c"), item("x", "b")] }),
     ).toEqual({
       status: 400,
       body: {
@@ -830,16 +901,11 @@ describe("handleRpcInDefiny", () => {
         message: "items must be a list of {contentHash, contentBytes}",
       },
     });
-    expect(written).toEqual([]);
+    expect(await written()).toEqual(stored);
   });
 
   it("GetEvent は両端の空白を除いたハッシュのイベントを返し, 無ければ not_found, 空なら invalid_argument", async () => {
-    const eventHost = host({
-      readEvents: (hashes) =>
-        Promise.resolve(
-          hashes.map((hash) => (hash === "e1" ? event(hash, 5) : undefined)),
-        ),
-    });
+    const eventHost = host((await sqlStore({ events: [event("e1", 5)] })).host);
     expect(
       await handleRpcInDefiny(
         service,
@@ -873,18 +939,20 @@ describe("handleRpcInDefiny", () => {
   });
 
   it("GetEvents は limit を 1 から 500 に, offset を 0 以上にし, 空の eventType は指定しない", async () => {
-    const pages: Array<unknown> = [];
-    const pageHost = host({
-      readEventsPage: (page) => {
-        pages.push(page);
-        return Promise.resolve([event("e1")]);
-      },
-    });
-    for (const request of [
-      {},
-      { eventType: "", limit: 1000, offset: -3 },
-      { eventType: "project_commit", limit: 0, offset: 7 },
-    ]) {
+    const pages: Array<string> = [];
+    const pageHost = host(
+      (await sqlStore({ events: [event("e1"), event("e2", 1)] }, pages)).host,
+    );
+    for (const [request, events] of [
+      [{}, [event("e2", 1), event("e1")]],
+      [
+        { eventType: "", limit: 1000, offset: -3 },
+        [event("e2", 1), event("e1")],
+      ],
+      [{ eventType: "project_commit", limit: 0, offset: 1 }, [event("e1")]],
+      [{ eventType: "projectCommit", offset: 1 }, [event("e1")]],
+      [{ eventType: "create_account" }, []],
+    ] as const) {
       expect(
         await handleRpcInDefiny(
           service,
@@ -892,27 +960,20 @@ describe("handleRpcInDefiny", () => {
           () => request,
           pageHost,
         ),
-      ).toEqual({ status: 200, body: { events: [event("e1")] } });
+      ).toEqual({ status: 200, body: { events } });
     }
     expect(pages).toEqual([
-      { eventType: null, limit: 50, offset: 0 },
-      { eventType: null, limit: 500, offset: 0 },
-      { eventType: "project_commit", limit: 1, offset: 7 },
+      "sql SELECT events 50,0",
+      "sql SELECT events 500,0",
+      "sql SELECT events project_commit,1,1",
+      "sql SELECT events projectCommit,50,1",
+      "sql SELECT events create_account,50,0",
     ]);
   });
 
   it("GetContent は contentHash の中身か, contentHashes のうち見つかった中身を返す", async () => {
-    const contentHost = host({
-      readContents: (hashes) =>
-        Promise.resolve(
-          hashes.map((hash) =>
-            hash === "c1"
-              ? { contentHash: hash, contentBytes: "AAEC" }
-              : undefined,
-          ),
-        ),
-    });
     const item = { contentHash: "c1", contentBytes: "AAEC" };
+    const contentHost = host((await sqlStore({ contents: [item] })).host);
     expect(
       await handleRpcInDefiny(
         service,
@@ -961,13 +1022,16 @@ describe("handleRpcInDefiny", () => {
       await handleRpcInDefiny(
         service,
         "EventService/CheckMissingHashes",
-        () => ({ contentHashes: ["a", "b"] }),
-        host({
-          readMissingContentHashes: (hashes) =>
-            Promise.resolve(hashes.filter((hash) => hash === "b")),
-        }),
+        () => ({ contentHashes: ["a", "b", "c", "b"] }),
+        host(
+          (
+            await sqlStore({
+              contents: [{ contentHash: "a", contentBytes: "AA==" }],
+            })
+          ).host,
+        ),
       ),
-    ).toEqual({ status: 200, body: { missingContentHashes: ["b"] } });
+    ).toEqual({ status: 200, body: { missingContentHashes: ["b", "c"] } });
   });
 
   it("HttpProxyService/Fetch は管理者の署名があるときだけ, 送らないヘッダーを除いて送る", async () => {

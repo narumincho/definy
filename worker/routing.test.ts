@@ -3,6 +3,7 @@ import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import type { Env } from "./types.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
+import { bytesToBase64 } from "../src/base64.ts";
 
 const origin = "https://definy.workers.dev";
 
@@ -130,12 +131,17 @@ describe("definy.handle-request のルーティング", () => {
     const bytes = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]);
     const hash = await sha256EventHashId(bytes);
     const store = new WorkerStore();
-    store.getRawContentBytes = (key: string) =>
-      Promise.resolve(key === hash || key === "named" ? bytes : undefined);
+    const env: Env = { DB: createSqliteD1Database() };
+    await store.seedD1(env.DB!, {
+      events: [],
+      contents: [hash, "named"].map((contentHash) => ({
+        contentHash,
+        contentBytes: bytesToBase64(bytes),
+      })),
+    });
 
-    const byHash = (
-      await route(`/virtual/wasm/${hash}.wasm`, {}, undefined, store)
-    ).response;
+    const byHash = (await route(`/virtual/wasm/${hash}.wasm`, {}, env, store))
+      .response;
     expect(byHash.status).toBe(200);
     expect(byHash.headers.get("Content-Type")).toBe("application/wasm");
     expect(byHash.headers.get("Cache-Control")).toBe(
@@ -143,15 +149,13 @@ describe("definy.handle-request のルーティング", () => {
     );
     expect(new Uint8Array(await byHash.arrayBuffer())).toEqual(bytes);
 
-    const named = (await route("/virtual/wasm/named", {}, undefined, store))
-      .response;
+    const named = (await route("/virtual/wasm/named", {}, env, store)).response;
     expect(named.headers.get("Cache-Control")).toBe(
       "public, max-age=0, must-revalidate",
     );
 
-    const missing = (
-      await route("/virtual/wasm/missing.wasm", {}, undefined, store)
-    ).response;
+    const missing = (await route("/virtual/wasm/missing.wasm", {}, env, store))
+      .response;
     expect(missing.status).toBe(404);
     expect(await missing.text()).toBe("Wasm binary not found in CAS");
   });

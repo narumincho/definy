@@ -18,35 +18,29 @@
   (Workers は実行時に Wasm をコンパイルできない)。
 - `worker/index.ts` の `handleWorkerRequest` は全てのリクエストを `handleRequestInDefiny` (`worker/service_io.ts`) に渡す。
   Void の middleware (`middleware/01.definy.ts`) も全てのリクエストを渡し, `serve_asset` のときはページ (`next()`) を返す。
-  ホストの能力が例外を投げたとき (ストアの失敗など) だけ, ホストが `internal` (署名や中身が不正なら `invalid_argument`) の JSON を返す
+  ホストの能力が例外を投げたとき (ストアの失敗など) だけ, ホストが `internal` の JSON を返す (署名や中身が不正なものは definy が先に `invalid_argument` で返す)
 
 ## `definy.service-io`
 
 処理は I/O をせず, 何を読みたいかを値で返す ([wasi-io.md](wasi-io.md) の `wasi.io` と同じ考え方)。ホスト
 (`handleRequestInDefiny`) が読んで `then` に渡し, `respond` か `serve_asset` が返るまで続ける。
 
-| タグ                          | ペイロード                                                                                          | ホストがすること                                                                                                                         |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `respond`                     | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                           | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る |
-| `serve_asset`                 | なし                                                                                                | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                      |
-| `ensure_seeded`               | `then: (seeded: boolean) -> ...`                                                                    | ストアに seed を入れておく (入れてあれば何もしない)                                                                                      |
-| `read_request_json`           | `then: (body: definy.request-json) -> ...`                                                          | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                               |
-| `read_raw_content`            | `key`, `then: (content: option<definy.raw-content>) -> ...`                                         | キーでストアの中身を読み, バイト列の SHA-256 と Base64 にする                                                                            |
-| `read_commits`                | `then: (commits: list<core.commit-summary>) -> definy.service-io`                                   | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                     |
-| `read_events`                 | `event_hashes`, `then: (events: list<option<definy.stored-event>>) -> ...`                          | そのハッシュの保存しているイベント (無ければ `none`)                                                                                     |
-| `read_events_page`            | `event_type: option<string>`, `limit`, `offset`, `then: (events: list<definy.stored-event>) -> ...` | 保存しているイベントの 1 ページ (新しい順. `store.getEvents`)                                                                            |
-| `read_contents`               | `content_hashes`, `then: (items: list<option<definy.content-item>>) -> ...`                         | そのハッシュの CAS の中身 (無ければ `none`)                                                                                              |
-| `read_missing_content_hashes` | `content_hashes`, `then: (missing: list<string>) -> ...`                                            | CAS に無いハッシュ (`store.checkMissingHashes`)                                                                                          |
-| `verify_ed25519`              | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                               | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                         |
-| `read_time`                   | `then: (now_ms: number) -> ...`                                                                     | 今の時刻 (ミリ秒)                                                                                                                        |
-| `read_commit_check_input`     | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`                    | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                              |
-| `read_part_definitions`       | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                             | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                         |
-| `write_event`                 | `signed_event_bytes`, `event_hash`, `account_id`, `event_type`, `time_ms`, `then`                   | definy が確かめたイベントを, definy が読んだメタデータと保存する (`store.writeEvent`. もう確かめない)                                    |
-| `hash_contents`               | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                     | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                       |
-| `write_contents`              | `items`, `then: (stored: list<string>) -> ...`                                                      | 中身を CAS に保存する (`store.uploadContent`)                                                                                            |
-| `read_authorization`          | `then: (authorization: definy.rpc-authorization) -> ...`                                            | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`)                                            |
-| `read_admin_account_ids`      | `then: (admin_account_ids: string) -> ...`                                                          | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                      |
-| `http_fetch`                  | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`             | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                              |
+| タグ                      | ペイロード                                                                                     | ホストがすること                                                                                                                                                                                               |
+| :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `respond`                 | `definy.service-response` (`status`, `headers`, `body: definy.http-body`)                      | そのままレスポンスにする (`body` は `empty` / `text` / `json` / `base64`)。JSON は `definy.json-response` が CORS のヘッダーを付けて作る                                                                       |
+| `serve_asset`             | なし                                                                                           | 静的アセット (`env.ASSETS`, Void ではページ) を返す                                                                                                                                                            |
+| `ensure_seeded`           | `then: (seeded: boolean) -> ...`                                                               | ストアに seed を入れておく (入れてあれば何もしない)                                                                                                                                                            |
+| `read_request_json`       | `then: (body: definy.request-json) -> ...`                                                     | 本文を JSON のオブジェクトとして読む (空なら `{}`)。違えば `invalid(理由)`                                                                                                                                     |
+| `read_commits`            | `then: (commits: list<core.commit-summary>) -> definy.service-io`                              | 受け付けたプロジェクトのコミット (ストアの順. `loadCommitSummaries`)                                                                                                                                           |
+| `sql`                     | `statements: list<definy.sql-statement>`, `then: (results: list<list<definy.sql-row>>) -> ...` | SQL の文を D1 で順に実行し, それぞれの結果の行を返す (2 つ以上なら `batch` で 1 つのトランザクション. `runD1Statements`)。どの SQL を流すかは definy の `definy.store-*` が決める ([database.md](database.md)) |
+| `verify_ed25519`          | `public_key`, `signature`, `message`, `then: (valid: boolean) -> ...`                          | Ed25519 の署名を確かめる (署名済みイベントを読むのは definy. [cbor.md](cbor.md))                                                                                                                               |
+| `read_time`               | `then: (now_ms: number) -> ...`                                                                | 今の時刻 (ミリ秒)                                                                                                                                                                                              |
+| `read_commit_check_input` | `signed_event_bytes`, `then: (input: option<definy.commit-check-source>) -> ...`               | プロジェクトのコミットの型検査に使うもの (`readCommitCheckInput`. 下を参照)                                                                                                                                    |
+| `read_part_definitions`   | `part_ids`, `then: (definitions: list<option<core.expression>>) -> ...`                        | コミットの外のパーツ (各プロジェクトの `main` の最新) の定義の式                                                                                                                                               |
+| `hash_contents`           | `contents_bytes`, `then: (hashes: list<option<string>>) -> ...`                                | Base64 の中身の SHA-256 (Base64 でなければ `none`)                                                                                                                                                             |
+| `read_authorization`      | `then: (authorization: definy.rpc-authorization) -> ...`                                       | リクエストの `Authorization` の署名を確かめる (`anonymous` / `invalid(理由)` / `account(ID)`)                                                                                                                  |
+| `read_admin_account_ids`  | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                            |
+| `http_fetch`              | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                    |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。
@@ -69,8 +63,8 @@
 
 - 書き込みの RPC (2026-10-29):
   - `SubmitEvent` (`definy.submit-event`): `signedEventBytes` の両端の空白を除き, 署名を確かめ (`definy.verify-signed-event`. [cbor.md](cbor.md)),
-    規則 (`core.check-event`), CAS に足りない中身 (`read_missing_content_hashes`. 足りなければ `missing_content` でそれを返す),
-    型検査 (`definy.check-commit`. 下を参照) の順に見てから保存する (`write_event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
+    規則 (`core.check-event`), CAS に足りない中身 (`definy.store-read-missing-content-hashes`. 足りなければ `missing_content` でそれを返す),
+    型検査 (`definy.check-commit`. 下を参照) の順に見てから保存する (`definy.store-write-event`)。理由が複数あれば改行でつないで `invalid_argument` にする。
   - (2026-11-01) SignedEvent の Base64・CBOR・中身の型は definy が読み (`definy.verify-signed-event`), ホストは Ed25519 の署名と時刻だけを渡す
     (`verify_ed25519`, `read_time`)。以前のホストの `verify_signed_event` (`worker/event_check.ts`) は無くした。
   - (2026-10-30) 規則 `core.check-event` は `definy.submit-verified-event` の中で呼ぶ。`verify_signed_event` は
@@ -85,7 +79,7 @@
 ### アカウントを作ったか (`definy.read-account-created`, 2026-11-01)
 
 以前はホスト (`isAccountCreated`) に `read_account_created` で頼み, ホストが `create_account` のイベントを 500 件ずつ読んで探していた。
-今は definy が `read_events_page` (`event_type: some("create_account")`, `limit: 500`) で 1 ページずつ読み, そのアカウントのイベントがあれば
+今は definy が `definy.store-read-events-page` (`event_type: some("create_account")`, `limit: 500`) で 1 ページずつ読み, そのアカウントのイベントがあれば
 `true`, ページが 500 件より少なければ `false`, そうでなければ次のページを読む。ホストに残るのは 1 ページを読むことだけ。
 
 ### ルーティングで以前と違うところ (2026-11-01)

@@ -1,6 +1,6 @@
 # 仮想 Wasm 配信 (`/virtual/wasm/{hash}`)
 
-Worker (definy の `definy.serve-virtual-wasm`. 読むのはホストの `read_raw_content`) は CAS (D1 の `cas_contents` テーブル) に入っているバイト列を
+Worker (definy の `definy.serve-virtual-wasm`. 読むのは `definy.store-read-raw-content` の SQL) は CAS (D1 の `cas_contents` テーブル) に入っているバイト列を
 `GET /virtual/wasm/{hash}` (末尾の `.wasm` は省略可) で `application/wasm` として返す。
 
 - `{hash}` は CAS のキー. 内容の SHA-256 (URL-safe Base64) と一致するときだけ

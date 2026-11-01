@@ -33,3 +33,26 @@ Worker の初回リクエスト時（コールドスタート時）に `store.en
 - D1 の binding が無いと, ストアを使う処理は `the D1 binding DB is required` で失敗する (`/healthz` の `storage` は `none`)
 - テストは `createSqliteD1Database()` (`worker/test_helpers.ts`. node:sqlite の D1 互換) を `env.DB` に渡す
 - seed は `store.seedD1(db, bundle)` で D1 に入れる (`loadSeedBundle` だけではストアから読めない)
+
+## RPC のストアの SQL は definy が書く (2026-11-01)
+
+RPC が読み書きする SQL は definy の `definy.store-*` (`seeds/definy.json`) が作り, `definy.service-io` の `sql`
+(`statements: list<definy.sql-statement>`) でホストに渡す。ホスト (`runD1Statements` in `worker/store.ts`) は文を
+`prepare(sql).bind(...params)` して実行するだけ (2 つ以上なら `batch` で 1 つのトランザクション) で, 結果の行を
+`definy.sql-row` (SELECT の順の `{name, value}`. 値は `definy.sql-value` = `null` / `integer` / `text`) にして返す。
+
+| definy の関数                              | SQL                                                                                                               |
+| :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| `definy.store-read-events`                 | `SELECT ... FROM events WHERE event_hash IN (?, ...)` (50 個ずつ)                                                 |
+| `definy.store-read-events-page`            | `ORDER BY time_ms DESC LIMIT ? OFFSET ?`。種類は両辺を `REPLACE(LOWER(...), '_', '')` して比べる                  |
+| `definy.store-read-contents`               | `SELECT content_hash, content_bytes FROM cas_contents WHERE content_hash IN (...)` (50 個ずつ)                    |
+| `definy.store-read-missing-content-hashes` | `SELECT content_hash ... IN (...)` で見つからなかったもの (重複を除く)                                            |
+| `definy.store-write-event`                 | `INSERT OR IGNORE INTO events`。`created_at_rfc3339` は `strftime('%Y-%m-%dT%H:%M:%fZ', ? / 1000.0, 'unixepoch')` |
+| `definy.store-write-contents`              | 中身ごとに `INSERT OR IGNORE INTO cas_contents` (空なら SQL を流さない)                                           |
+| `definy.store-read-raw-content`            | `SELECT content_bytes FROM cas_contents WHERE content_hash = ?` のあと `hash_contents` で SHA-256                 |
+
+- D1 は 1 つの文のパラメーターの数に上限があるので, `IN` は `definy.sql-in-statements` で 50 個ずつの文に分ける
+- スキーマの作成と seed の投入 (`ensure_seeded`), 型チェッカー用のコミットの読み取り (`read_commits` など. isolate のキャッシュがある) はまだホスト (TypeScript)
+- 以前の TypeScript は保存のときに Base64 を標準の形にそろえていたが, 今は definy が受け取った文字列をそのまま保存する
+  (中身のハッシュは `hash_contents` で前もって確かめるので, 違う形の Base64 でもバイト列は同じ)
+- テスト (`worker/service_io.test.ts`) は sqlite の D1 に行を入れて, definy が流した SQL を `sql SELECT events ...` のように記録して確かめる
