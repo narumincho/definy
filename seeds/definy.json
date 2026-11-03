@@ -50643,6 +50643,16 @@
             "value": {
               "#type_boolean": null
             }
+          },
+          {
+            "key": "references",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_string": null
+                }
+              }
+            }
           }
         ]
       }
@@ -51716,149 +51726,214 @@
             }
           ],
           "body": {
-            "#record": [
-              {
-                "key": "part_id",
-                "value": {
-                  "#variable": {
-                    "variable_id": 0
-                  }
-                }
-              },
-              {
-                "key": "module_id",
-                "value": {
-                  "#variable": {
-                    "variable_id": 1
-                  }
-                }
-              },
-              {
-                "key": "part_type",
-                "value": {
-                  "#match": {
-                    "target": {
-                      "#match": {
-                        "target": {
-                          "#record_get": {
-                            "record": {
-                              "#variable": {
-                                "variable_id": 3
-                              }
-                            },
-                            "key": "expression"
+            "#let": {
+              "variable_id": 4,
+              "variable_name": "refs_from_type",
+              "value": {
+                "#match": {
+                  "target": {
+                    "#record_get": {
+                      "record": {
+                        "#variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "key": "part_type"
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#variant": {
+                          "tag": "none",
+                          "payload": {
+                            "#any": null
                           }
-                        },
-                        "arms": [
-                          {
-                            "pattern": {
-                              "#variant": {
-                                "tag": "some",
-                                "payload": {
-                                  "#variant": {
-                                    "tag": "builtin",
-                                    "payload": {
-                                      "#any": null
-                                    }
-                                  }
+                        }
+                      },
+                      "body": {
+                        "#list": []
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#variant": {
+                          "tag": "some",
+                          "payload": {
+                            "#bind": {
+                              "variable_id": 6,
+                              "variable_name": "t"
+                            }
+                          }
+                        }
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.expression-part-references"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 6
                                 }
                               }
                             },
-                            "body": {
-                              "#boolean": true
+                            {
+                              "name": "ids",
+                              "value": {
+                                "#list": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#let": {
+                  "variable_id": 5,
+                  "variable_name": "refs_all",
+                  "value": {
+                    "#match": {
+                      "target": {
+                        "#record_get": {
+                          "record": {
+                            "#variable": {
+                              "variable_id": 3
                             }
                           },
-                          {
-                            "pattern": {
-                              "#any": null
-                            },
-                            "body": {
-                              "#boolean": false
+                          "key": "expression"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#any": null
+                              }
+                            }
+                          },
+                          "body": {
+                            "#variable": {
+                              "variable_id": 4
                             }
                           }
-                        ]
-                      }
-                    },
-                    "arms": [
-                      {
-                        "pattern": {
-                          "#boolean": true
                         },
-                        "body": {
-                          "#record_get": {
-                            "record": {
-                              "#variable": {
-                                "variable_id": 3
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 7,
+                                  "variable_name": "e"
+                                }
                               }
-                            },
-                            "key": "expression"
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.expression-part-references"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 7
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ids",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "body": {
+                    "#record": [
+                      {
+                        "key": "part_id",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 0
                           }
                         }
                       },
                       {
-                        "pattern": {
-                          "#boolean": false
-                        },
-                        "body": {
-                          "#record_get": {
-                            "record": {
-                              "#variable": {
-                                "variable_id": 3
-                              }
-                            },
-                            "key": "part_type"
+                        "key": "module_id",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 1
                           }
                         }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "key": "type_declaration",
-                "value": {
-                  "#match": {
-                    "target": {
-                      "#record_get": {
-                        "record": {
-                          "#variable": {
-                            "variable_id": 3
-                          }
-                        },
-                        "key": "part_type"
-                      }
-                    },
-                    "arms": [
+                      },
                       {
-                        "pattern": {
-                          "#variant": {
-                            "tag": "some",
-                            "payload": {
-                              "#bind": {
-                                "variable_id": 4,
-                                "variable_name": "part_type"
-                              }
-                            }
-                          }
-                        },
-                        "body": {
+                        "key": "part_type",
+                        "value": {
                           "#match": {
                             "target": {
-                              "#call": {
-                                "function": {
-                                  "#part_reference": {
-                                    "part_definition_event_hash": {
-                                      "$part": "core.is-type-part-type"
-                                    }
+                              "#match": {
+                                "target": {
+                                  "#record_get": {
+                                    "record": {
+                                      "#variable": {
+                                        "variable_id": 3
+                                      }
+                                    },
+                                    "key": "expression"
                                   }
                                 },
-                                "arguments": [
+                                "arms": [
                                   {
-                                    "name": "part_type",
-                                    "value": {
-                                      "#variable": {
-                                        "variable_id": 4
+                                    "pattern": {
+                                      "#variant": {
+                                        "tag": "some",
+                                        "payload": {
+                                          "#variant": {
+                                            "tag": "builtin",
+                                            "payload": {
+                                              "#any": null
+                                            }
+                                          }
+                                        }
                                       }
+                                    },
+                                    "body": {
+                                      "#boolean": true
+                                    }
+                                  },
+                                  {
+                                    "pattern": {
+                                      "#any": null
+                                    },
+                                    "body": {
+                                      "#boolean": false
                                     }
                                   }
                                 ]
@@ -51885,6 +51960,116 @@
                                   "#boolean": false
                                 },
                                 "body": {
+                                  "#record_get": {
+                                    "record": {
+                                      "#variable": {
+                                        "variable_id": 3
+                                      }
+                                    },
+                                    "key": "part_type"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "type_declaration",
+                        "value": {
+                          "#match": {
+                            "target": {
+                              "#record_get": {
+                                "record": {
+                                  "#variable": {
+                                    "variable_id": 3
+                                  }
+                                },
+                                "key": "part_type"
+                              }
+                            },
+                            "arms": [
+                              {
+                                "pattern": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#bind": {
+                                        "variable_id": 4,
+                                        "variable_name": "part_type"
+                                      }
+                                    }
+                                  }
+                                },
+                                "body": {
+                                  "#match": {
+                                    "target": {
+                                      "#call": {
+                                        "function": {
+                                          "#part_reference": {
+                                            "part_definition_event_hash": {
+                                              "$part": "core.is-type-part-type"
+                                            }
+                                          }
+                                        },
+                                        "arguments": [
+                                          {
+                                            "name": "part_type",
+                                            "value": {
+                                              "#variable": {
+                                                "variable_id": 4
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "arms": [
+                                      {
+                                        "pattern": {
+                                          "#boolean": true
+                                        },
+                                        "body": {
+                                          "#record_get": {
+                                            "record": {
+                                              "#variable": {
+                                                "variable_id": 3
+                                              }
+                                            },
+                                            "key": "expression"
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "pattern": {
+                                          "#boolean": false
+                                        },
+                                        "body": {
+                                          "#variant": {
+                                            "tag": "none",
+                                            "payload": {
+                                              "#none": null
+                                            },
+                                            "type_part": {
+                                              "#none": null
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "pattern": {
+                                  "#variant": {
+                                    "tag": "none",
+                                    "payload": {
+                                      "#any": null
+                                    }
+                                  }
+                                },
+                                "body": {
                                   "#variant": {
                                     "tag": "none",
                                     "payload": {
@@ -51901,94 +52086,81 @@
                         }
                       },
                       {
-                        "pattern": {
+                        "key": "expression_key",
+                        "value": {
                           "#variant": {
-                            "tag": "none",
+                            "tag": "some",
                             "payload": {
-                              "#any": null
-                            }
-                          }
-                        },
-                        "body": {
-                          "#variant": {
-                            "tag": "none",
-                            "payload": {
-                              "#none": null
+                              "#some": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
                             },
                             "type_part": {
                               "#none": null
                             }
                           }
                         }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "key": "expression_key",
-                "value": {
-                  "#variant": {
-                    "tag": "some",
-                    "payload": {
-                      "#some": {
-                        "#variable": {
-                          "variable_id": 2
-                        }
-                      }
-                    },
-                    "type_part": {
-                      "#none": null
-                    }
-                  }
-                }
-              },
-              {
-                "key": "has_expression",
-                "value": {
-                  "#match": {
-                    "target": {
-                      "#record_get": {
-                        "record": {
-                          "#variable": {
-                            "variable_id": 3
-                          }
-                        },
-                        "key": "expression"
-                      }
-                    },
-                    "arms": [
+                      },
                       {
-                        "pattern": {
-                          "#variant": {
-                            "tag": "some",
-                            "payload": {
-                              "#any": null
-                            }
+                        "key": "has_expression",
+                        "value": {
+                          "#match": {
+                            "target": {
+                              "#record_get": {
+                                "record": {
+                                  "#variable": {
+                                    "variable_id": 3
+                                  }
+                                },
+                                "key": "expression"
+                              }
+                            },
+                            "arms": [
+                              {
+                                "pattern": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#any": null
+                                    }
+                                  }
+                                },
+                                "body": {
+                                  "#boolean": true
+                                }
+                              },
+                              {
+                                "pattern": {
+                                  "#variant": {
+                                    "tag": "none",
+                                    "payload": {
+                                      "#any": null
+                                    }
+                                  }
+                                },
+                                "body": {
+                                  "#boolean": false
+                                }
+                              }
+                            ]
                           }
-                        },
-                        "body": {
-                          "#boolean": true
                         }
                       },
                       {
-                        "pattern": {
-                          "#variant": {
-                            "tag": "none",
-                            "payload": {
-                              "#any": null
-                            }
+                        "key": "references",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 5
                           }
-                        },
-                        "body": {
-                          "#boolean": false
                         }
                       }
                     ]
                   }
                 }
               }
-            ]
+            }
           }
         }
       }
@@ -52458,6 +52630,12 @@
                         "value": {
                           "#boolean": false
                         }
+                      },
+                      {
+                        "key": "references",
+                        "value": {
+                          "#list": []
+                        }
                       }
                     ]
                   }
@@ -52895,6 +53073,12 @@
                                 },
                                 "key": "has_expression"
                               }
+                            }
+                          },
+                          {
+                            "key": "references",
+                            "value": {
+                              "#list": []
                             }
                           }
                         ]

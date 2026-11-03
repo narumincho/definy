@@ -20,6 +20,7 @@ import {
   type ValueRef,
 } from "./stage1_compiler.ts";
 import { bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { evaluatedPartReferenceIds } from "./definition_evaluator.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
 import { encodeCborItem } from "./cbor.ts";
 import { sha256BytesSync } from "./sha256.ts";
@@ -161,6 +162,8 @@ type ModuleEntry = {
   readonly hasExpression: boolean;
   /** {@link PartTypeEntry.builtin} */
   readonly builtin?: string | undefined;
+  /** 型と式が参照するパーツの ID (quote の外). 型の変更の影響範囲を決めるのに使う */
+  readonly references: ReadonlyArray<string>;
 };
 
 /**
@@ -177,7 +180,7 @@ const REPLACED_MODULE = "#replaced";
 
 /**
  * `core.type-checker` に渡すパーツの一覧
- * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
+ * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression, references }]` を作る式.
  * パーツの型は型の式のまま渡す (型チェッカーが `core.type-ast` にし, できなければ型環境に入れない).
  * コンパイラ組み込みのパーツの型は `builtin` (名前) にする
  */
@@ -196,6 +199,7 @@ function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
     expression_key:
       entry.expressionKey === null ? none() : some(entry.expressionKey),
     has_expression: entry.hasExpression,
+    references: [...entry.references],
   }));
 }
 
@@ -210,6 +214,16 @@ function latestPartToModuleEntry(part: LatestPart): ModuleEntry {
     expressionKey: part.expressionKey,
     hasExpression: part.expression != null,
     builtin: compilerBuiltinName(part.expression),
+    references: [
+      ...new Set([
+        ...(part.partType == null
+          ? []
+          : evaluatedPartReferenceIds(part.partType)),
+        ...(part.expression == null
+          ? []
+          : evaluatedPartReferenceIds(part.expression)),
+      ]),
+    ],
   };
 }
 
@@ -320,6 +334,7 @@ export function createTypeCheckSession(options: {
       expressionKey: null,
       hasExpression: false,
       builtin: entry.builtin,
+      references: [],
     })),
     committed: [],
     moduleId: NO_MODULE,
