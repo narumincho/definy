@@ -336,6 +336,15 @@ describe("createWriteTools", () => {
         parts: [],
       }),
     ).rejects.toThrow("definy_create_branch");
+
+    // 存在しないプロジェクトへのブランチ作成は、検証失敗と区別して
+    // 「見つからない」と既存のプロジェクト一覧を返す
+    await expect(
+      call("definy_create_branch", {
+        project: "no-such-project",
+        branch: "b",
+      }),
+    ).rejects.toThrow("Project no-such-project was not found");
   });
 
   it("loadAccountFromEnv は秘密鍵と名前が揃ったときだけ有効", async () => {

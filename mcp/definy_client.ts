@@ -143,9 +143,9 @@ export class DefinyClient {
 
   /** イベントの一覧 (新しい順)。それぞれ検証状態付き */
   async listEvents(params: {
-    readonly eventType?: string;
-    readonly limit?: number;
-    readonly offset?: number;
+    readonly eventType?: string | undefined;
+    readonly limit?: number | undefined;
+    readonly offset?: number | undefined;
   }): Promise<ReadonlyArray<VerifiedEvent>> {
     const res = await this.#rpc<{ readonly events?: ReadonlyArray<EventItem> }>(
       "GetEvents",

@@ -94,7 +94,8 @@ async function makeFixture(): Promise<Fixture> {
 
   // 署名済みバイト列を 1 バイト書き換えたもの (署名もハッシュも一致しない)
   const tamperedBytes = base64ToBytes(signed.signedEventBytes);
-  tamperedBytes[tamperedBytes.length - 1] ^= 0xff;
+  const lastIndex = tamperedBytes.length - 1;
+  tamperedBytes[lastIndex] = (tamperedBytes[lastIndex] ?? 0) ^ 0xff;
   const tamperedItem = {
     ...item,
     signedEventBytes: bytesToBase64(tamperedBytes),

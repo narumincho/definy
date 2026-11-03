@@ -77,6 +77,8 @@ function snapshotToModules(
       return {
         name: p.name,
         description: [],
+        // 中身をデコードしていないので型は分からない (src の unresolvedPart と同じ扱い)
+        partType: null,
         unresolved: true,
         contentHash: p.contentHash,
       };
@@ -154,8 +156,15 @@ export function createWriteTools(
         typeof args.fromBranch === "string" ? args.fromBranch : "main";
       const snapshot = await client.getProjectSnapshot(project, fromBranch);
       if (snapshot === null) {
+        if (await client.projectExists(project)) {
+          throw new Error(
+            `The latest commit of project ${project} (branch ${fromBranch}) did not verify`,
+          );
+        }
+        const branches = await client.listBranches();
+        const names = [...new Set(branches.map((b) => b.projectName))].sort();
         throw new Error(
-          `Project ${project} (branch ${fromBranch}) was not found, or its latest commit did not verify`,
+          `Project ${project} was not found. Existing projects: ${names.join(", ")}`,
         );
       }
       const result = await client.submitCommit({

@@ -166,9 +166,19 @@ export function createTools(
           project,
           stringArg(args, "branch"),
         );
-        return jsonResult(
-          snapshot === null ? null : snapshotSummary(snapshot, false),
-        );
+        if (snapshot === null) {
+          if (await client.projectExists(project)) {
+            return errorResult(
+              `The latest commit of project ${project} did not verify, so its contents cannot be shown`,
+            );
+          }
+          const branches = await client.listBranches();
+          const names = [...new Set(branches.map((b) => b.projectName))].sort();
+          return errorResult(
+            `Project ${project} was not found. Existing projects: ${names.join(", ")}`,
+          );
+        }
+        return jsonResult(snapshotSummary(snapshot, false));
       },
     },
     {

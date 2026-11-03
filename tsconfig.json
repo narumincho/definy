@@ -17,5 +17,13 @@
     "noEmit": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src", "pages", "middleware", "worker", "e2e", "*.config.ts"]
+  "include": [
+    "src",
+    "pages",
+    "middleware",
+    "worker",
+    "e2e",
+    "mcp",
+    "*.config.ts"
+  ]
 }
