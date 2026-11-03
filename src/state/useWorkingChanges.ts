@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   AccountState,
   ModuleSnapshot,
@@ -6,10 +6,7 @@ import type {
   ProjectSnapshot,
   WorkingChanges,
 } from "../types.ts";
-import {
-  deserializeWorkingChanges,
-  serializeWorkingChanges,
-} from "../working_changes_storage.ts";
+import { deserializeWorkingChanges } from "../working_changes_storage.ts";
 import {
   createSignedProjectCommitEvent,
   submitProjectCommitEvent,
@@ -17,6 +14,7 @@ import {
 } from "../auth.ts";
 import {
   commitTarget,
+  unusedBranchName,
   type BranchSummary,
   type CommitTarget,
 } from "../branches.ts";
@@ -26,23 +24,68 @@ import {
   type Visibility,
 } from "../event_content.ts";
 import { moduleOfPartId, overlayWorkingChanges } from "../new_part.ts";
+import {
+  combineActiveDraftChanges,
+  draftKey,
+  emptyWorkingChanges,
+  hasDraftContent,
+  isActiveDraft,
+  isEmptyWorkingChanges,
+  mergeWorkingChanges,
+  splitWorkingChanges,
+  type DraftCommit,
+} from "../draft_commits.ts";
+import {
+  deserializeDraftStore,
+  serializeDraftStore,
+} from "../draft_commit_storage.ts";
 
-const STORAGE_KEY_CHANGES = "definy.working_changes.v5";
+const STORAGE_KEY_DRAFTS = "definy.draft_commits.v1";
+/** ドラフトコミット導入前の, ブランチに属さない作業中の変更 (移行元) */
+const STORAGE_KEY_LEGACY = "definy.working_changes.v5";
 
-function loadStoredChanges(): WorkingChanges {
+type DraftStore = {
+  readonly drafts: ReadonlyMap<string, DraftCommit>;
+  readonly legacy: WorkingChanges | null;
+};
+
+function loadDraftStore(): DraftStore {
   if (typeof window === "undefined") {
-    return { parts: new Map<string, PartChange>() };
+    return { drafts: new Map(), legacy: null };
   }
-  const raw = localStorage.getItem(STORAGE_KEY_CHANGES);
-  if (!raw) {
-    return { parts: new Map<string, PartChange>() };
+  const raw = localStorage.getItem(STORAGE_KEY_DRAFTS);
+  if (raw) {
+    const data = deserializeDraftStore(raw);
+    return {
+      drafts: new Map(
+        data.drafts.map((d) => [
+          draftKey(d.accountId, d.projectName, d.branch),
+          d,
+        ]),
+      ),
+      legacy: data.legacy,
+    };
   }
-  return deserializeWorkingChanges(raw);
+  // v5 の変更は属するブランチが記録されていないので, 旧下書きとして引き継ぐ
+  const legacyRaw = localStorage.getItem(STORAGE_KEY_LEGACY);
+  if (legacyRaw) {
+    const legacy = deserializeWorkingChanges(legacyRaw);
+    if (!isEmptyWorkingChanges(legacy)) {
+      return { drafts: new Map(), legacy };
+    }
+  }
+  return { drafts: new Map(), legacy: null };
 }
 
-function saveStoredChanges(changes: WorkingChanges): void {
+function saveDraftStore(store: DraftStore): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY_CHANGES, serializeWorkingChanges(changes));
+  localStorage.setItem(
+    STORAGE_KEY_DRAFTS,
+    serializeDraftStore({
+      drafts: [...store.drafts.values()],
+      legacy: store.legacy,
+    }),
+  );
 }
 
 export type CommitWorkingChangesParams = {
@@ -51,11 +94,26 @@ export type CommitWorkingChangesParams = {
   /** 表示しているブランチが他のアカウントのものなら, 作る新しいブランチの名前 (docs/branch.md) */
   readonly newBranchName?: string;
   /**
-   * 自分のブランチを表示していても `newBranchName` の新しいブランチを作ってコミットする
-   * (エクスプローラーの「ブランチの追加」. docs/branch.md「ブランチの作成」)
+   * 新しいブランチを作ってコミットする (エクスプローラーの「ブランチの追加」. docs/branch.md「ブランチの作成」).
+   * 今のブランチのドラフトは元のブランチに残るので, このコミットには変更を含めない
    */
   readonly createBranch?: boolean;
 };
+
+/** プロジェクトのブランチで編集できるかどうか (docs/branch.md「ドラフトコミット」) */
+export type BranchEditState =
+  /** ログインしていない. 編集にはアカウントが要る */
+  | { readonly kind: "no_account" }
+  /** まだコミットが無いプロジェクト. 最初のコミットで `main` ができる */
+  | { readonly kind: "new_project"; readonly branch: string }
+  /** 表示しているブランチは自分が作ったもの. そのまま編集できる */
+  | { readonly kind: "own_branch"; readonly branch: string }
+  /** 表示しているブランチは他のアカウントのもの. 自分のブランチを作るまで編集できない */
+  | {
+      readonly kind: "other_branch";
+      readonly branch: string;
+      readonly suggestedName: string;
+    };
 
 type WorkingChangesParams = {
   readonly currentAccount: AccountState | null;
@@ -63,29 +121,35 @@ type WorkingChangesParams = {
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   /** プロジェクト名 → ブランチ. コミット先のブランチと親を決めるのに使う */
   readonly branchesByProject: ReadonlyMap<string, ReadonlyArray<BranchSummary>>;
-  /** プロジェクト名 → 表示しているブランチ. 変更はこのブランチに重ねる */
+  /** プロジェクト名 → 表示しているブランチ. ドラフトはこのブランチのものだけが有効になる */
   readonly displayedBranches: ReadonlyMap<string, string>;
   /** 新しいブランチにコミットしたら, そのブランチを表示する */
   readonly selectBranch: (projectName: string, branch: string) => void;
   readonly refreshEvents: () => Promise<void>;
 };
 
-/** プロジェクトにコミットするモジュール (今のモジュールに作業中の変更を重ねたもの) */
+/** プロジェクトにコミットするモジュール (今のモジュールに変更を重ねたもの) */
 export type CommitModulesResult = {
   readonly project: ProjectSnapshot | undefined;
   readonly modules: ReadonlyArray<CommitModuleParams>;
-  /** コミットに入れた作業中の変更のキー (コミットしたら消す) */
+  /** コミットに入れた変更のキー (コミットしたら消す) */
   readonly committedPartIds: ReadonlySet<string>;
   /** コミットに入れたモジュールの公開/非公開の変更のモジュール名 (コミットしたら消す) */
   readonly committedModuleVisibilities: ReadonlySet<string>;
-  /** 作業中の変更のあるモジュールの名前 */
+  /** 変更のあるモジュールの名前 */
   readonly changedModuleNames: ReadonlySet<string>;
 };
 
 type WorkingChangesOperations = {
+  /** 有効なドラフト (今のアカウントの, 表示しているブランチのもの) の変更を合成したもの */
   readonly workingChanges: WorkingChanges;
+  /** ブランチに属していない旧下書き (v5 からの移行分). 移すまでは有効にならない */
+  readonly legacyChanges: WorkingChanges | null;
+  /** 今のアカウントの, 表示していないブランチに保留されているドラフト */
+  readonly suspendedDrafts: ReadonlyArray<DraftCommit>;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
+  /** 有効なドラフトをすべて破棄する (保留中のドラフトは残る) */
   readonly discardAllWorkingChanges: () => void;
   /** 新しいモジュール `moduleName` を入れるプロジェクトを決める (docs/project.md) */
   readonly setNewModuleProject: (
@@ -105,6 +169,31 @@ type WorkingChangesOperations = {
   ) => Promise<string>;
   /** `projectName` へコミットする先 (docs/branch.md). ログインしていなければ `null` */
   readonly commitTargetFor: (projectName: string) => CommitTarget | null;
+  /** `projectName` の表示しているブランチで編集できるかどうか */
+  readonly editStateFor: (projectName: string) => BranchEditState;
+  /** プロジェクト・ブランチのドラフト. 無ければ `null` */
+  readonly draftForBranch: (
+    projectName: string,
+    branch: string,
+  ) => DraftCommit | null;
+  /** `projectName` の表示しているブランチのドラフト. 無ければ `null` */
+  readonly activeDraftFor: (projectName: string) => DraftCommit | null;
+  /**
+   * 表示しているブランチから自分のブランチを作る (初期コミットを送る. docs/branch.md).
+   * 作ったブランチを表示し, その名前を返す
+   */
+  readonly createEditingBranch: (
+    projectName: string,
+    branchName?: string,
+  ) => Promise<string>;
+  /** ドラフトのコミットメッセージを保存する */
+  readonly setDraftMessage: (projectName: string, message: string) => void;
+  /** 保留中のドラフトを破棄する */
+  readonly discardDraft: (projectName: string, branch: string) => void;
+  /** 旧下書きのうち `projectName` のものを, 表示している自分のブランチのドラフトへ移す */
+  readonly assignLegacyChanges: (projectName: string) => void;
+  /** 旧下書きを破棄する (プロジェクトを省くとすべて) */
+  readonly discardLegacyChanges: (projectName?: string) => void;
   readonly startMerge: (
     projectName: string,
     mergedCommitHash: string,
@@ -114,7 +203,7 @@ type WorkingChangesOperations = {
 };
 
 /**
- * 作業中の変更 `workingChanges` を, プロジェクト `projectName` のモジュールに重ねる.
+ * 変更 `workingChanges` を, プロジェクト `projectName` のモジュールに重ねる.
  * `projectOf` はモジュール名から入っているプロジェクトを返す. パーツの無くなったモジュールはコミットに入れない
  */
 function overlayProjectChanges(
@@ -181,50 +270,215 @@ export function useWorkingChanges({
   selectBranch,
   refreshEvents,
 }: WorkingChangesParams): WorkingChangesOperations {
-  const [workingChanges, setWorkingChanges] = useState<WorkingChanges>(() => ({
-    parts: new Map<string, PartChange>(),
+  const [store, setStore] = useState<DraftStore>(() => ({
+    drafts: new Map(),
+    legacy: null,
   }));
 
   useEffect(() => {
-    setWorkingChanges(loadStoredChanges());
+    setStore(loadDraftStore());
   }, []);
 
-  const update = useCallback((f: (prev: WorkingChanges) => WorkingChanges) => {
-    setWorkingChanges((prev) => {
+  const updateStore = useCallback((f: (prev: DraftStore) => DraftStore) => {
+    setStore((prev) => {
       const next = f(prev);
-      saveStoredChanges(next);
+      saveDraftStore(next);
       return next;
     });
   }, []);
 
+  const accountId = currentAccount?.accountId ?? null;
+
+  /** 有効なドラフトの変更の合成 (表示しているブランチのものだけ) */
+  const workingChanges = useMemo(
+    () =>
+      combineActiveDraftChanges(
+        store.drafts.values(),
+        accountId,
+        displayedBranches,
+      ),
+    [store.drafts, accountId, displayedBranches],
+  );
+
+  const suspendedDrafts = useMemo(
+    () =>
+      [...store.drafts.values()].filter(
+        (draft) =>
+          draft.accountId === accountId &&
+          hasDraftContent(draft) &&
+          !isActiveDraft(draft, accountId, displayedBranches),
+      ),
+    [store.drafts, accountId, displayedBranches],
+  );
+
+  const projectOfModule = useCallback(
+    (moduleName: string): string | undefined => {
+      const committed = modules.find((m) => m.name === moduleName)?.projectName;
+      if (committed !== undefined) return committed;
+      const active = workingChanges.newModuleProjects?.get(moduleName);
+      if (active !== undefined) return active;
+      if (accountId !== null) {
+        for (const draft of store.drafts.values()) {
+          if (draft.accountId !== accountId) continue;
+          const project = draft.changes.newModuleProjects?.get(moduleName);
+          if (project !== undefined) return project;
+        }
+      }
+      return undefined;
+    },
+    [modules, workingChanges, store.drafts, accountId],
+  );
+
+  const draftForBranch = useCallback(
+    (projectName: string, branch: string): DraftCommit | null =>
+      accountId === null
+        ? null
+        : (store.drafts.get(draftKey(accountId, projectName, branch)) ?? null),
+    [store.drafts, accountId],
+  );
+
+  const activeDraftFor = useCallback(
+    (projectName: string): DraftCommit | null =>
+      draftForBranch(
+        projectName,
+        displayedBranches.get(projectName) ?? MAIN_BRANCH,
+      ),
+    [draftForBranch, displayedBranches],
+  );
+
+  const editStateFor = useCallback(
+    (projectName: string): BranchEditState => {
+      if (currentAccount === null) return { kind: "no_account" };
+      const branches = branchesByProject.get(projectName) ?? [];
+      if (branches.length === 0) {
+        return { kind: "new_project", branch: MAIN_BRANCH };
+      }
+      const displayed = displayedBranches.get(projectName) ?? MAIN_BRANCH;
+      const summary =
+        branches.find((b) => b.name === displayed) ?? branches[0]!;
+      if (summary.creatorAccountId === currentAccount.accountId) {
+        return { kind: "own_branch", branch: summary.name };
+      }
+      return {
+        kind: "other_branch",
+        branch: summary.name,
+        suggestedName: unusedBranchName(branches, currentAccount.accountName),
+      };
+    },
+    [currentAccount, branchesByProject, displayedBranches],
+  );
+
+  /** ドラフトを書き換える. 中身が無くなったドラフトは消す */
+  const mutateDraft = useCallback(
+    (
+      projectName: string,
+      branch: string,
+      baseCommitHash: string | null,
+      f: (draft: DraftCommit) => DraftCommit,
+    ) => {
+      if (accountId === null) return;
+      updateStore((prev) => {
+        const key = draftKey(accountId, projectName, branch);
+        const existing = prev.drafts.get(key);
+        const base: DraftCommit = existing ?? {
+          accountId,
+          projectName,
+          branch,
+          baseCommitHash,
+          changes: emptyWorkingChanges(),
+          message: "",
+          updatedAtMs: 0,
+        };
+        const next = f(base);
+        const nextDrafts = new Map(prev.drafts);
+        if (!hasDraftContent(next)) {
+          nextDrafts.delete(key);
+        } else {
+          nextDrafts.set(key, { ...next, updatedAtMs: Date.now() });
+        }
+        return { ...prev, drafts: nextDrafts };
+      });
+    },
+    [accountId, updateStore],
+  );
+
+  /**
+   * `projectName` の表示しているブランチのドラフトの変更を書き換える.
+   * 自分のブランチ (または新しいプロジェクト) でなければ書き換えず `false` を返す
+   */
+  const updateActiveChanges = useCallback(
+    (
+      projectName: string,
+      f: (changes: WorkingChanges) => WorkingChanges,
+    ): boolean => {
+      const state = editStateFor(projectName);
+      if (state.kind !== "own_branch" && state.kind !== "new_project") {
+        return false;
+      }
+      const branches = branchesByProject.get(projectName) ?? [];
+      const summary = branches.find((b) => b.name === state.branch);
+      mutateDraft(
+        projectName,
+        state.branch,
+        summary?.latestEventHash ?? null,
+        (draft) => ({ ...draft, changes: f(draft.changes) }),
+      );
+      return true;
+    },
+    [editStateFor, branchesByProject, mutateDraft],
+  );
+
   const updateWorkingPart = useCallback(
     (partId: string, change: PartChange) => {
-      update((prev) => ({
+      const projectName =
+        projectOfModule(moduleOfPartId(partId)) ?? moduleOfPartId(partId);
+      updateActiveChanges(projectName, (prev) => ({
         ...prev,
         parts: new Map(prev.parts).set(partId, change),
       }));
     },
-    [update],
+    [projectOfModule, updateActiveChanges],
   );
 
   const discardWorkingPart = useCallback(
     (partId: string) => {
-      update((prev) => {
-        const nextParts = new Map<string, PartChange>(prev.parts);
+      const projectName =
+        projectOfModule(moduleOfPartId(partId)) ?? moduleOfPartId(partId);
+      updateActiveChanges(projectName, (prev) => {
+        const nextParts = new Map(prev.parts);
         nextParts.delete(partId);
         return { ...prev, parts: nextParts };
       });
     },
-    [update],
+    [projectOfModule, updateActiveChanges],
   );
 
   const discardAllWorkingChanges = useCallback(() => {
-    update(() => ({ parts: new Map<string, PartChange>() }));
-  }, [update]);
+    updateStore((prev) => ({
+      ...prev,
+      drafts: new Map(
+        [...prev.drafts].filter(
+          ([, draft]) => !isActiveDraft(draft, accountId, displayedBranches),
+        ),
+      ),
+    }));
+  }, [updateStore, accountId, displayedBranches]);
+
+  const discardDraft = useCallback(
+    (projectName: string, branch: string) => {
+      if (accountId === null) return;
+      updateStore((prev) => {
+        const nextDrafts = new Map(prev.drafts);
+        nextDrafts.delete(draftKey(accountId, projectName, branch));
+        return { ...prev, drafts: nextDrafts };
+      });
+    },
+    [accountId, updateStore],
+  );
 
   const setNewModuleProject = useCallback(
     (moduleName: string, projectName: string) => {
-      update((prev) => ({
+      updateActiveChanges(projectName, (prev) => ({
         ...prev,
         newModuleProjects: new Map(prev.newModuleProjects).set(
           moduleName,
@@ -232,15 +486,17 @@ export function useWorkingChanges({
         ),
       }));
     },
-    [update],
+    [updateActiveChanges],
   );
 
   const setModuleVisibility = useCallback(
     (moduleName: string, visibility: Visibility) => {
+      const projectName = projectOfModule(moduleName);
+      if (projectName === undefined) return;
       const committed =
         modules.find((m) => m.name === moduleName)?.visibility ??
         DEFAULT_VISIBILITY;
-      update((prev) => {
+      updateActiveChanges(projectName, (prev) => {
         const next = new Map(prev.moduleVisibilities);
         if (visibility === committed) {
           next.delete(moduleName);
@@ -250,27 +506,36 @@ export function useWorkingChanges({
         return { ...prev, moduleVisibilities: next };
       });
     },
-    [modules, update],
+    [modules, projectOfModule, updateActiveChanges],
   );
 
-  const projectOfModule = useCallback(
-    (moduleName: string): string | undefined =>
-      modules.find((m) => m.name === moduleName)?.projectName ??
-      workingChanges.newModuleProjects?.get(moduleName),
-    [modules, workingChanges],
+  const setDraftMessage = useCallback(
+    (projectName: string, message: string) => {
+      const state = editStateFor(projectName);
+      if (state.kind !== "own_branch" && state.kind !== "new_project") return;
+      const branches = branchesByProject.get(projectName) ?? [];
+      const summary = branches.find((b) => b.name === state.branch);
+      mutateDraft(
+        projectName,
+        state.branch,
+        summary?.latestEventHash ?? null,
+        (draft) => ({ ...draft, message }),
+      );
+    },
+    [editStateFor, branchesByProject, mutateDraft],
   );
 
-  /** `projectName` に作業中の変更をコミットするときのモジュール (今のモジュールに変更を重ねたもの) */
+  /** `projectName` にドラフトをコミットするときのモジュール (今のモジュールにドラフトの変更を重ねたもの) */
   const buildCommitModules = useCallback(
     (projectName: string): CommitModulesResult =>
       overlayProjectChanges(
         projectName,
         projects.find((p) => p.name === projectName),
         modules,
-        workingChanges,
+        activeDraftFor(projectName)?.changes ?? emptyWorkingChanges(),
         projectOfModule,
       ),
-    [projects, modules, workingChanges, projectOfModule],
+    [projects, modules, activeDraftFor, projectOfModule],
   );
 
   const commitTargetFor = useCallback(
@@ -297,12 +562,15 @@ export function useWorkingChanges({
         throw new Error("You must be logged in to commit changes");
       }
 
-      const {
-        project,
-        modules: commitModules,
-        committedPartIds,
-        committedModuleVisibilities,
-      } = buildCommitModules(projectName);
+      // ブランチ作成のコミットには今のブランチのドラフトを含めない (ドラフトは元のブランチに残る)
+      const committedDraft = createBranch ? null : activeDraftFor(projectName);
+      const { project, modules: commitModules } = overlayProjectChanges(
+        projectName,
+        projects.find((p) => p.name === projectName),
+        modules,
+        committedDraft?.changes ?? emptyWorkingChanges(),
+        projectOfModule,
+      );
       if (commitModules.length === 0) {
         throw new Error(
           `No parts found to commit for project '${projectName}'`,
@@ -359,7 +627,7 @@ export function useWorkingChanges({
           // 取り込みは自分のブランチへのコミットだけ (新しいブランチ・プロジェクトには入れない)
           mergedCommitHash:
             target.kind === "own_branch"
-              ? (workingChanges.merges?.get(projectName) ?? null)
+              ? (committedDraft?.changes.merges?.get(projectName) ?? null)
               : null,
           modules: commitModules,
         });
@@ -372,31 +640,20 @@ export function useWorkingChanges({
         throw new Error(`Commit rejected with status: ${submitRes.status}`);
       }
 
-      const committedModuleNames = new Set(commitModules.map((m) => m.name));
-      update((prev) => {
-        const nextParts = new Map<string, PartChange>(prev.parts);
-        for (const id of committedPartIds) {
-          nextParts.delete(id);
-        }
-        const nextMerges = new Map(prev.merges);
-        nextMerges.delete(projectName);
-        const nextNewModuleProjects = new Map(prev.newModuleProjects);
-        for (const [name, p] of prev.newModuleProjects ?? []) {
-          if (p === projectName && committedModuleNames.has(name)) {
-            nextNewModuleProjects.delete(name);
-          }
-        }
-        const nextModuleVisibilities = new Map(prev.moduleVisibilities);
-        for (const name of committedModuleVisibilities) {
-          nextModuleVisibilities.delete(name);
-        }
-        return {
-          parts: nextParts,
-          merges: nextMerges,
-          newModuleProjects: nextNewModuleProjects,
-          moduleVisibilities: nextModuleVisibilities,
-        };
-      });
+      // コミットしたドラフトは消える (ブランチ作成のときは元のブランチに残る)
+      if (committedDraft !== null) {
+        updateStore((prev) => {
+          const nextDrafts = new Map(prev.drafts);
+          nextDrafts.delete(
+            draftKey(
+              committedDraft.accountId,
+              committedDraft.projectName,
+              committedDraft.branch,
+            ),
+          );
+          return { ...prev, drafts: nextDrafts };
+        });
+      }
 
       if (target.kind === "new_branch") {
         selectBranch(projectName, branch);
@@ -406,19 +663,96 @@ export function useWorkingChanges({
     },
     [
       currentAccount,
-      buildCommitModules,
+      activeDraftFor,
+      projects,
+      modules,
+      projectOfModule,
       commitTargetFor,
       branchesByProject,
       selectBranch,
       refreshEvents,
-      workingChanges,
-      update,
+      updateStore,
     ],
   );
 
+  const createEditingBranch = useCallback(
+    async (projectName: string, branchName?: string): Promise<string> => {
+      if (!currentAccount) {
+        throw new Error("You must be logged in to create a branch");
+      }
+      const branches = branchesByProject.get(projectName) ?? [];
+      const name = (
+        branchName ?? unusedBranchName(branches, currentAccount.accountName)
+      ).trim();
+      if (name === "") {
+        throw new Error("The branch name is empty");
+      }
+      const displayed = displayedBranches.get(projectName) ?? MAIN_BRANCH;
+      await commitWorkingChanges({
+        projectName,
+        message: `Create branch ${name} from ${displayed}`,
+        newBranchName: name,
+        createBranch: true,
+      });
+      return name;
+    },
+    [
+      currentAccount,
+      branchesByProject,
+      displayedBranches,
+      commitWorkingChanges,
+    ],
+  );
+
+  const assignLegacyChanges = useCallback(
+    (projectName: string) => {
+      const legacy = store.legacy;
+      if (legacy === null) return;
+      const projectOf = (moduleName: string): string | undefined =>
+        modules.find((m) => m.name === moduleName)?.projectName ??
+        legacy.newModuleProjects?.get(moduleName);
+      const { inProject, rest } = splitWorkingChanges(
+        legacy,
+        projectName,
+        projectOf,
+      );
+      if (isEmptyWorkingChanges(inProject)) return;
+      // 既にあるドラフト側を優先して合成する (旧下書きのほうが古い)
+      const assigned = updateActiveChanges(projectName, (prev) =>
+        mergeWorkingChanges(inProject, prev),
+      );
+      if (!assigned) return;
+      updateStore((prev) => ({
+        ...prev,
+        legacy: isEmptyWorkingChanges(rest) ? null : rest,
+      }));
+    },
+    [store.legacy, modules, updateActiveChanges, updateStore],
+  );
+
+  const discardLegacyChanges = useCallback(
+    (projectName?: string) => {
+      if (projectName === undefined) {
+        updateStore((prev) => ({ ...prev, legacy: null }));
+        return;
+      }
+      const legacy = store.legacy;
+      if (legacy === null) return;
+      const projectOf = (moduleName: string): string | undefined =>
+        modules.find((m) => m.name === moduleName)?.projectName ??
+        legacy.newModuleProjects?.get(moduleName);
+      const { rest } = splitWorkingChanges(legacy, projectName, projectOf);
+      updateStore((prev) => ({
+        ...prev,
+        legacy: isEmptyWorkingChanges(rest) ? null : rest,
+      }));
+    },
+    [store.legacy, modules, updateStore],
+  );
+
   /**
-   * 他のブランチのコミット `mergedCommitHash` の取り込みを始める: 取り込んだ後のパーツへの変更 (`changes`) を作業中の変更にし,
-   * 次のコミットで `merged_commit_hash` に入れる. 取り込むブランチにだけあるモジュールはこのプロジェクトの新しいモジュールにする
+   * 他のブランチのコミット `mergedCommitHash` の取り込みを始める: 取り込んだ後のパーツへの変更を
+   * main のドラフトにし, 次の main へのコミットで `merged_commit_hash` に入れる
    */
   const startMerge = useCallback(
     (
@@ -426,56 +760,52 @@ export function useWorkingChanges({
       mergedCommitHash: string,
       changes: ReadonlyMap<string, PartChange>,
     ) => {
-      const knownModules = new Set(modules.map((m) => m.name));
-      update((prev) => {
-        const newModuleProjects = new Map(prev.newModuleProjects);
-        for (const partId of changes.keys()) {
-          const name = moduleOfPartId(partId);
-          if (!knownModules.has(name)) {
-            newModuleProjects.set(name, projectName);
+      const main = (branchesByProject.get(projectName) ?? []).find(
+        (b) => b.name === MAIN_BRANCH,
+      );
+      mutateDraft(
+        projectName,
+        MAIN_BRANCH,
+        main?.latestEventHash ?? null,
+        (draft) => {
+          const knownModules = new Set(modules.map((m) => m.name));
+          const newModuleProjects = new Map(draft.changes.newModuleProjects);
+          for (const partId of changes.keys()) {
+            const name = moduleOfPartId(partId);
+            if (!knownModules.has(name)) {
+              newModuleProjects.set(name, projectName);
+            }
           }
-        }
-        return {
-          ...prev,
-          parts: new Map([...prev.parts, ...changes]),
-          merges: new Map(prev.merges).set(projectName, mergedCommitHash),
-          newModuleProjects,
-        };
-      });
+          return {
+            ...draft,
+            changes: {
+              ...draft.changes,
+              parts: new Map([...draft.changes.parts, ...changes]),
+              merges: new Map(draft.changes.merges).set(
+                projectName,
+                mergedCommitHash,
+              ),
+              newModuleProjects,
+            },
+          };
+        },
+      );
     },
-    [modules, update],
+    [branchesByProject, modules, mutateDraft],
   );
 
-  /** 取り込みをやめる (そのプロジェクトの作業中の変更も捨てる) */
+  /** 取り込みをやめる (main のドラフトを捨てる) */
   const cancelMerge = useCallback(
     (projectName: string) => {
-      update((prev) => {
-        const nextMerges = new Map(prev.merges);
-        nextMerges.delete(projectName);
-        const inProject = (moduleName: string): boolean =>
-          (modules.find((m) => m.name === moduleName)?.projectName ??
-            prev.newModuleProjects?.get(moduleName)) === projectName;
-        return {
-          ...prev,
-          parts: new Map(
-            [...prev.parts].filter(
-              ([partId]) => !inProject(moduleOfPartId(partId)),
-            ),
-          ),
-          merges: nextMerges,
-          newModuleProjects: new Map(
-            [...(prev.newModuleProjects ?? [])].filter(
-              ([, p]) => p !== projectName,
-            ),
-          ),
-        };
-      });
+      discardDraft(projectName, MAIN_BRANCH);
     },
-    [modules, update],
+    [discardDraft],
   );
 
   return {
     workingChanges,
+    legacyChanges: store.legacy,
+    suspendedDrafts,
     updateWorkingPart,
     discardWorkingPart,
     discardAllWorkingChanges,
@@ -485,6 +815,14 @@ export function useWorkingChanges({
     buildCommitModules,
     commitWorkingChanges,
     commitTargetFor,
+    editStateFor,
+    draftForBranch,
+    activeDraftFor,
+    createEditingBranch,
+    setDraftMessage,
+    discardDraft,
+    assignLegacyChanges,
+    discardLegacyChanges,
     startMerge,
     cancelMerge,
   };

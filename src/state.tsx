@@ -28,8 +28,12 @@ import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
 import { useAccount } from "./state/useAccount.ts";
 import {
   useWorkingChanges,
+  type BranchEditState,
   type CommitWorkingChangesParams,
 } from "./state/useWorkingChanges.ts";
+import type { DraftCommit } from "./draft_commits.ts";
+
+export type { BranchEditState };
 import { useTypeCheck, type CommitTypeError } from "./state/useTypeCheck.ts";
 import {
   workingLatestParts,
@@ -68,6 +72,32 @@ type DefinyContextValue = {
   /** 署名の正しいプロジェクトのコミットのイベントと, デコードした中身 */
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
   readonly workingChanges: WorkingChanges;
+  /** ブランチに属していない旧下書き (移行分). 移すまでは有効にならない (docs/branch.md「ドラフトコミット」) */
+  readonly legacyChanges: WorkingChanges | null;
+  /** 今のアカウントの, 表示していないブランチに保留されているドラフト */
+  readonly suspendedDrafts: ReadonlyArray<DraftCommit>;
+  /** `projectName` の表示しているブランチで編集できるかどうか (docs/branch.md「ドラフトコミット」) */
+  readonly editStateFor: (projectName: string) => BranchEditState;
+  /** プロジェクト・ブランチのドラフト. 無ければ `null` */
+  readonly draftForBranch: (
+    projectName: string,
+    branch: string,
+  ) => DraftCommit | null;
+  /** `projectName` の表示しているブランチのドラフト. 無ければ `null` */
+  readonly activeDraftFor: (projectName: string) => DraftCommit | null;
+  /** 表示しているブランチから自分のブランチを作る (初期コミットを送る). 作ったブランチの名前を返す */
+  readonly createEditingBranch: (
+    projectName: string,
+    branchName?: string,
+  ) => Promise<string>;
+  /** ドラフトのコミットメッセージを保存する */
+  readonly setDraftMessage: (projectName: string, message: string) => void;
+  /** 保留中のドラフトを破棄する */
+  readonly discardDraft: (projectName: string, branch: string) => void;
+  /** 旧下書きのうち `projectName` のものを, 表示している自分のブランチのドラフトへ移す */
+  readonly assignLegacyChanges: (projectName: string) => void;
+  /** 旧下書きを破棄する (プロジェクトを省くとすべて) */
+  readonly discardLegacyChanges: (projectName?: string) => void;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
   readonly discardAllWorkingChanges: () => void;
@@ -274,6 +304,16 @@ export function DefinyProvider({
       accountNames: events.accountNames,
       decodedCommits: events.decodedCommits,
       workingChanges: working.workingChanges,
+      legacyChanges: working.legacyChanges,
+      suspendedDrafts: working.suspendedDrafts,
+      editStateFor: working.editStateFor,
+      draftForBranch: working.draftForBranch,
+      activeDraftFor: working.activeDraftFor,
+      createEditingBranch: working.createEditingBranch,
+      setDraftMessage: working.setDraftMessage,
+      discardDraft: working.discardDraft,
+      assignLegacyChanges: working.assignLegacyChanges,
+      discardLegacyChanges: working.discardLegacyChanges,
       updateWorkingPart: working.updateWorkingPart,
       discardWorkingPart: working.discardWorkingPart,
       discardAllWorkingChanges: working.discardAllWorkingChanges,
@@ -356,6 +396,16 @@ export function DefinyProvider({
       account.createAccountAndLogin,
       account.logout,
       working.workingChanges,
+      working.legacyChanges,
+      working.suspendedDrafts,
+      working.editStateFor,
+      working.draftForBranch,
+      working.activeDraftFor,
+      working.createEditingBranch,
+      working.setDraftMessage,
+      working.discardDraft,
+      working.assignLegacyChanges,
+      working.discardLegacyChanges,
       working.updateWorkingPart,
       working.discardWorkingPart,
       working.discardAllWorkingChanges,
