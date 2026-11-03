@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  deserializeDraftStore,
-  serializeDraftStore,
-} from "./draft_commit_storage.ts";
+import { deserializeDrafts, serializeDrafts } from "./draft_commit_storage.ts";
 import type { DraftCommit } from "./draft_commits.ts";
-import type { PartChange, WorkingChanges } from "./types.ts";
+import type { PartChange } from "./types.ts";
 
 function change(name: string): PartChange {
   return {
@@ -32,26 +29,11 @@ const draft: DraftCommit = {
   },
 };
 
-const legacy: WorkingChanges = {
-  parts: new Map([
-    [
-      "lib.b",
-      {
-        ...change("b"),
-        moduleDefinitionEventHash: "lib",
-        partDefinitionEventHash: "lib.b",
-      },
-    ],
-  ]),
-};
-
 describe("draft_commit_storage", () => {
-  it("ドラフトと旧下書きを往復できる", () => {
-    const restored = deserializeDraftStore(
-      serializeDraftStore({ drafts: [draft], legacy }),
-    );
-    expect(restored.drafts).toHaveLength(1);
-    const d = restored.drafts[0]!;
+  it("ドラフトを往復できる", () => {
+    const restored = deserializeDrafts(serializeDrafts([draft]));
+    expect(restored).toHaveLength(1);
+    const d = restored[0]!;
     expect(d.accountId).toBe("alice");
     expect(d.projectName).toBe("app");
     expect(d.branch).toBe("alice");
@@ -64,32 +46,22 @@ describe("draft_commit_storage", () => {
     expect(d.changes.merges?.get("app")).toBe("mergehash");
     expect(d.changes.newModuleProjects?.get("fresh")).toBe("app");
     expect(d.changes.moduleVisibilities?.get("app")).toBe("private");
-    expect(restored.legacy?.parts.get("lib.b")?.name).toBe("b");
   });
 
-  it("旧下書きが無ければ null", () => {
-    const restored = deserializeDraftStore(
-      serializeDraftStore({ drafts: [], legacy: null }),
-    );
-    expect(restored).toEqual({ drafts: [], legacy: null });
+  it("空なら空", () => {
+    expect(deserializeDrafts(serializeDrafts([]))).toEqual([]);
   });
 
   it("壊れた JSON は空になる", () => {
-    expect(deserializeDraftStore("not json {")).toEqual({
-      drafts: [],
-      legacy: null,
-    });
-    expect(deserializeDraftStore("[]")).toEqual({ drafts: [], legacy: null });
+    expect(deserializeDrafts("not json {")).toEqual([]);
+    expect(deserializeDrafts("[]")).toEqual([]);
   });
 
   it("キーが重なるドラフトは先のものだけ残る", () => {
-    const restored = deserializeDraftStore(
-      serializeDraftStore({
-        drafts: [draft, { ...draft, message: "後" }],
-        legacy: null,
-      }),
+    const restored = deserializeDrafts(
+      serializeDrafts([draft, { ...draft, message: "後" }]),
     );
-    expect(restored.drafts).toHaveLength(1);
-    expect(restored.drafts[0]?.message).toBe("作業中");
+    expect(restored).toHaveLength(1);
+    expect(restored[0]?.message).toBe("作業中");
   });
 });

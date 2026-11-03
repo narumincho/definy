@@ -72,8 +72,6 @@ type DefinyContextValue = {
   /** 署名の正しいプロジェクトのコミットのイベントと, デコードした中身 */
   readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
   readonly workingChanges: WorkingChanges;
-  /** ブランチに属していない旧下書き (移行分). 移すまでは有効にならない (docs/branch.md「ドラフトコミット」) */
-  readonly legacyChanges: WorkingChanges | null;
   /** 今のアカウントの, 表示していないブランチに保留されているドラフト */
   readonly suspendedDrafts: ReadonlyArray<DraftCommit>;
   /** `projectName` の表示しているブランチで編集できるかどうか (docs/branch.md「ドラフトコミット」) */
@@ -94,10 +92,6 @@ type DefinyContextValue = {
   readonly setDraftMessage: (projectName: string, message: string) => void;
   /** 保留中のドラフトを破棄する */
   readonly discardDraft: (projectName: string, branch: string) => void;
-  /** 旧下書きのうち `projectName` のものを, 表示している自分のブランチのドラフトへ移す */
-  readonly assignLegacyChanges: (projectName: string) => void;
-  /** 旧下書きを破棄する (プロジェクトを省くとすべて) */
-  readonly discardLegacyChanges: (projectName?: string) => void;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
   readonly discardAllWorkingChanges: () => void;
@@ -304,7 +298,6 @@ export function DefinyProvider({
       accountNames: events.accountNames,
       decodedCommits: events.decodedCommits,
       workingChanges: working.workingChanges,
-      legacyChanges: working.legacyChanges,
       suspendedDrafts: working.suspendedDrafts,
       editStateFor: working.editStateFor,
       draftForBranch: working.draftForBranch,
@@ -312,8 +305,6 @@ export function DefinyProvider({
       createEditingBranch: working.createEditingBranch,
       setDraftMessage: working.setDraftMessage,
       discardDraft: working.discardDraft,
-      assignLegacyChanges: working.assignLegacyChanges,
-      discardLegacyChanges: working.discardLegacyChanges,
       updateWorkingPart: working.updateWorkingPart,
       discardWorkingPart: working.discardWorkingPart,
       discardAllWorkingChanges: working.discardAllWorkingChanges,
@@ -396,7 +387,6 @@ export function DefinyProvider({
       account.createAccountAndLogin,
       account.logout,
       working.workingChanges,
-      working.legacyChanges,
       working.suspendedDrafts,
       working.editStateFor,
       working.draftForBranch,
@@ -404,8 +394,6 @@ export function DefinyProvider({
       working.createEditingBranch,
       working.setDraftMessage,
       working.discardDraft,
-      working.assignLegacyChanges,
-      working.discardLegacyChanges,
       working.updateWorkingPart,
       working.discardWorkingPart,
       working.discardAllWorkingChanges,

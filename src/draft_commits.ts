@@ -4,7 +4,6 @@
  * ドラフトはアカウント × プロジェクト × ブランチに最大 1 つで, ブランチを切り替えると
  * そのブランチのドラフトだけが有効になり, 他のブランチのドラフトは保留されたまま残る
  */
-import { moduleOfPartId } from "./new_part.ts";
 import type { Visibility } from "./event_content.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
 
@@ -97,76 +96,4 @@ export function isActiveDraft(
   if (accountId === null || draft.accountId !== accountId) return false;
   const displayed = displayedBranches.get(draft.projectName);
   return displayed === undefined || displayed === draft.branch;
-}
-
-/**
- * 変更をプロジェクト `projectName` に属するものとそれ以外に分ける.
- * `projectOf` はモジュール名からプロジェクトを返す (新しいモジュールは変更自身の
- * `newModuleProjects` も見ること)
- */
-export function splitWorkingChanges(
-  changes: WorkingChanges,
-  projectName: string,
-  projectOf: (moduleName: string) => string | undefined,
-): { readonly inProject: WorkingChanges; readonly rest: WorkingChanges } {
-  const pick = <K, V>(
-    map: ReadonlyMap<K, V> | undefined,
-    belongs: (key: K, value: V) => boolean,
-  ): readonly [Map<K, V>, Map<K, V>] => {
-    const inside = new Map<K, V>();
-    const outside = new Map<K, V>();
-    for (const [k, v] of map ?? []) {
-      (belongs(k, v) ? inside : outside).set(k, v);
-    }
-    return [inside, outside] as const;
-  };
-  const [partsIn, partsRest] = pick(
-    changes.parts,
-    (partId) => projectOf(moduleOfPartId(partId)) === projectName,
-  );
-  const [mergesIn, mergesRest] = pick(
-    changes.merges,
-    (project) => project === projectName,
-  );
-  const [newModulesIn, newModulesRest] = pick(
-    changes.newModuleProjects,
-    (_module, project) => project === projectName,
-  );
-  const [visIn, visRest] = pick(
-    changes.moduleVisibilities,
-    (module) => projectOf(module) === projectName,
-  );
-  return {
-    inProject: {
-      parts: partsIn,
-      merges: mergesIn,
-      newModuleProjects: newModulesIn,
-      moduleVisibilities: visIn,
-    },
-    rest: {
-      parts: partsRest,
-      merges: mergesRest,
-      newModuleProjects: newModulesRest,
-      moduleVisibilities: visRest,
-    },
-  };
-}
-
-/** 2 つの変更を合成する (`overlay` 側が同じキーを上書きする) */
-export function mergeWorkingChanges(
-  base: WorkingChanges,
-  overlay: WorkingChanges,
-): WorkingChanges {
-  return {
-    parts: new Map([...base.parts, ...overlay.parts]),
-    merges: new Map([...(base.merges ?? []), ...(overlay.merges ?? [])]),
-    newModuleProjects: new Map([
-      ...(base.newModuleProjects ?? []),
-      ...(overlay.newModuleProjects ?? []),
-    ]),
-    moduleVisibilities: new Map([
-      ...(base.moduleVisibilities ?? []),
-      ...(overlay.moduleVisibilities ?? []),
-    ]),
-  };
 }

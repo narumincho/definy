@@ -13,15 +13,6 @@ import {
 } from "./draft_commits.ts";
 import type { WorkingChanges } from "./types.ts";
 
-export type DraftStoreData = {
-  readonly drafts: ReadonlyArray<DraftCommit>;
-  /**
-   * ブランチに属していなかった頃 (作業中の変更 v5) の下書き. 属するブランチが分からないので,
-   * ユーザーがプロジェクトごとにドラフトへ移すまでは有効な変更として扱わない
-   */
-  readonly legacy: WorkingChanges | null;
-};
-
 type PlainDraft = {
   readonly accountId: string;
   readonly projectName: string;
@@ -43,8 +34,8 @@ function changesFromPlain(plain: unknown): WorkingChanges {
   return deserializeWorkingChanges(JSON.stringify(plain));
 }
 
-export function serializeDraftStore(data: DraftStoreData): string {
-  const drafts: PlainDraft[] = data.drafts.map((draft) => ({
+export function serializeDrafts(drafts: ReadonlyArray<DraftCommit>): string {
+  const plain: PlainDraft[] = drafts.map((draft) => ({
     accountId: draft.accountId,
     projectName: draft.projectName,
     branch: draft.branch,
@@ -53,15 +44,11 @@ export function serializeDraftStore(data: DraftStoreData): string {
     updatedAtMs: draft.updatedAtMs,
     changes: changesToPlain(draft.changes),
   }));
-  return JSON.stringify({
-    drafts,
-    legacy: data.legacy === null ? null : changesToPlain(data.legacy),
-  });
+  return JSON.stringify({ drafts: plain });
 }
 
-/** `serializeDraftStore` の結果を復元する. 壊れた JSON のときは空の内容を返す */
-export function deserializeDraftStore(text: string): DraftStoreData {
-  const empty: DraftStoreData = { drafts: [], legacy: null };
+/** `serializeDrafts` の結果を復元する. 壊れた JSON のときは空の内容を返す */
+export function deserializeDrafts(text: string): ReadonlyArray<DraftCommit> {
   try {
     const parsed = JSON.parse(text) as unknown;
     if (
@@ -69,7 +56,7 @@ export function deserializeDraftStore(text: string): DraftStoreData {
       parsed === null ||
       Array.isArray(parsed)
     ) {
-      return empty;
+      return [];
     }
     const rawDrafts = (parsed as { readonly drafts?: unknown }).drafts;
     const drafts: DraftCommit[] = [];
@@ -100,15 +87,8 @@ export function deserializeDraftStore(text: string): DraftStoreData {
         });
       }
     }
-    const rawLegacy = (parsed as { readonly legacy?: unknown }).legacy;
-    return {
-      drafts,
-      legacy:
-        rawLegacy === null || rawLegacy === undefined
-          ? null
-          : changesFromPlain(rawLegacy),
-    };
+    return drafts;
   } catch {
-    return empty;
+    return [];
   }
 }

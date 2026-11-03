@@ -6,7 +6,6 @@ import type {
   ProjectSnapshot,
   WorkingChanges,
 } from "../types.ts";
-import { deserializeWorkingChanges } from "../working_changes_storage.ts";
 import {
   createSignedProjectCommitEvent,
   submitProjectCommitEvent,
@@ -30,61 +29,37 @@ import {
   emptyWorkingChanges,
   hasDraftContent,
   isActiveDraft,
-  isEmptyWorkingChanges,
-  mergeWorkingChanges,
-  splitWorkingChanges,
   type DraftCommit,
 } from "../draft_commits.ts";
-import {
-  deserializeDraftStore,
-  serializeDraftStore,
-} from "../draft_commit_storage.ts";
+import { deserializeDrafts, serializeDrafts } from "../draft_commit_storage.ts";
 
 const STORAGE_KEY_DRAFTS = "definy.draft_commits.v1";
-/** ドラフトコミット導入前の, ブランチに属さない作業中の変更 (移行元) */
-const STORAGE_KEY_LEGACY = "definy.working_changes.v5";
 
 type DraftStore = {
   readonly drafts: ReadonlyMap<string, DraftCommit>;
-  readonly legacy: WorkingChanges | null;
 };
 
 function loadDraftStore(): DraftStore {
   if (typeof window === "undefined") {
-    return { drafts: new Map(), legacy: null };
+    return { drafts: new Map() };
   }
   const raw = localStorage.getItem(STORAGE_KEY_DRAFTS);
-  if (raw) {
-    const data = deserializeDraftStore(raw);
-    return {
-      drafts: new Map(
-        data.drafts.map((d) => [
-          draftKey(d.accountId, d.projectName, d.branch),
-          d,
-        ]),
-      ),
-      legacy: data.legacy,
-    };
-  }
-  // v5 の変更は属するブランチが記録されていないので, 旧下書きとして引き継ぐ
-  const legacyRaw = localStorage.getItem(STORAGE_KEY_LEGACY);
-  if (legacyRaw) {
-    const legacy = deserializeWorkingChanges(legacyRaw);
-    if (!isEmptyWorkingChanges(legacy)) {
-      return { drafts: new Map(), legacy };
-    }
-  }
-  return { drafts: new Map(), legacy: null };
+  if (!raw) return { drafts: new Map() };
+  return {
+    drafts: new Map(
+      deserializeDrafts(raw).map((d) => [
+        draftKey(d.accountId, d.projectName, d.branch),
+        d,
+      ]),
+    ),
+  };
 }
 
 function saveDraftStore(store: DraftStore): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(
     STORAGE_KEY_DRAFTS,
-    serializeDraftStore({
-      drafts: [...store.drafts.values()],
-      legacy: store.legacy,
-    }),
+    serializeDrafts([...store.drafts.values()]),
   );
 }
 
@@ -143,8 +118,6 @@ export type CommitModulesResult = {
 type WorkingChangesOperations = {
   /** 有効なドラフト (今のアカウントの, 表示しているブランチのもの) の変更を合成したもの */
   readonly workingChanges: WorkingChanges;
-  /** ブランチに属していない旧下書き (v5 からの移行分). 移すまでは有効にならない */
-  readonly legacyChanges: WorkingChanges | null;
   /** 今のアカウントの, 表示していないブランチに保留されているドラフト */
   readonly suspendedDrafts: ReadonlyArray<DraftCommit>;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
@@ -190,10 +163,6 @@ type WorkingChangesOperations = {
   readonly setDraftMessage: (projectName: string, message: string) => void;
   /** 保留中のドラフトを破棄する */
   readonly discardDraft: (projectName: string, branch: string) => void;
-  /** 旧下書きのうち `projectName` のものを, 表示している自分のブランチのドラフトへ移す */
-  readonly assignLegacyChanges: (projectName: string) => void;
-  /** 旧下書きを破棄する (プロジェクトを省くとすべて) */
-  readonly discardLegacyChanges: (projectName?: string) => void;
   readonly startMerge: (
     projectName: string,
     mergedCommitHash: string,
@@ -272,7 +241,6 @@ export function useWorkingChanges({
 }: WorkingChangesParams): WorkingChangesOperations {
   const [store, setStore] = useState<DraftStore>(() => ({
     drafts: new Map(),
-    legacy: null,
   }));
 
   useEffect(() => {
@@ -704,52 +672,6 @@ export function useWorkingChanges({
     ],
   );
 
-  const assignLegacyChanges = useCallback(
-    (projectName: string) => {
-      const legacy = store.legacy;
-      if (legacy === null) return;
-      const projectOf = (moduleName: string): string | undefined =>
-        modules.find((m) => m.name === moduleName)?.projectName ??
-        legacy.newModuleProjects?.get(moduleName);
-      const { inProject, rest } = splitWorkingChanges(
-        legacy,
-        projectName,
-        projectOf,
-      );
-      if (isEmptyWorkingChanges(inProject)) return;
-      // 既にあるドラフト側を優先して合成する (旧下書きのほうが古い)
-      const assigned = updateActiveChanges(projectName, (prev) =>
-        mergeWorkingChanges(inProject, prev),
-      );
-      if (!assigned) return;
-      updateStore((prev) => ({
-        ...prev,
-        legacy: isEmptyWorkingChanges(rest) ? null : rest,
-      }));
-    },
-    [store.legacy, modules, updateActiveChanges, updateStore],
-  );
-
-  const discardLegacyChanges = useCallback(
-    (projectName?: string) => {
-      if (projectName === undefined) {
-        updateStore((prev) => ({ ...prev, legacy: null }));
-        return;
-      }
-      const legacy = store.legacy;
-      if (legacy === null) return;
-      const projectOf = (moduleName: string): string | undefined =>
-        modules.find((m) => m.name === moduleName)?.projectName ??
-        legacy.newModuleProjects?.get(moduleName);
-      const { rest } = splitWorkingChanges(legacy, projectName, projectOf);
-      updateStore((prev) => ({
-        ...prev,
-        legacy: isEmptyWorkingChanges(rest) ? null : rest,
-      }));
-    },
-    [store.legacy, modules, updateStore],
-  );
-
   /**
    * 他のブランチのコミット `mergedCommitHash` の取り込みを始める: 取り込んだ後のパーツへの変更を
    * main のドラフトにし, 次の main へのコミットで `merged_commit_hash` に入れる
@@ -804,7 +726,6 @@ export function useWorkingChanges({
 
   return {
     workingChanges,
-    legacyChanges: store.legacy,
     suspendedDrafts,
     updateWorkingPart,
     discardWorkingPart,
@@ -821,8 +742,6 @@ export function useWorkingChanges({
     createEditingBranch,
     setDraftMessage,
     discardDraft,
-    assignLegacyChanges,
-    discardLegacyChanges,
     startMerge,
     cancelMerge,
   };

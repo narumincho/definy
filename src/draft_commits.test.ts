@@ -5,8 +5,6 @@ import {
   draftKey,
   emptyWorkingChanges,
   isEmptyWorkingChanges,
-  mergeWorkingChanges,
-  splitWorkingChanges,
   type DraftCommit,
 } from "./draft_commits.ts";
 import type { PartChange, WorkingChanges } from "./types.ts";
@@ -98,51 +96,5 @@ describe("combineActiveDraftChanges", () => {
   it("ログインしていなければ何も有効にならない", () => {
     const combined = combineActiveDraftChanges(drafts, null, new Map());
     expect(combined.parts.size).toBe(0);
-  });
-});
-
-describe("splitWorkingChanges", () => {
-  it("プロジェクトに属するものとそれ以外に分ける", () => {
-    const changes: WorkingChanges = {
-      parts: new Map([
-        ["app.a", change("a")],
-        ["lib.b", change("b")],
-      ]),
-      merges: new Map([
-        ["app", "h1"],
-        ["lib", "h2"],
-      ]),
-      newModuleProjects: new Map([["fresh", "app"]]),
-      moduleVisibilities: new Map([
-        ["app", "private"],
-        ["lib", "public"],
-      ]),
-    };
-    const projectOf = (moduleName: string): string | undefined =>
-      moduleName === "fresh"
-        ? changes.newModuleProjects?.get(moduleName)
-        : moduleName;
-    const { inProject, rest } = splitWorkingChanges(changes, "app", projectOf);
-    expect([...inProject.parts.keys()]).toEqual(["app.a"]);
-    expect([...(inProject.merges?.keys() ?? [])]).toEqual(["app"]);
-    expect([...(inProject.newModuleProjects?.keys() ?? [])]).toEqual(["fresh"]);
-    expect([...inProject.moduleVisibilities!.keys()]).toEqual(["app"]);
-    expect([...rest.parts.keys()]).toEqual(["lib.b"]);
-    expect([...(rest.merges?.keys() ?? [])]).toEqual(["lib"]);
-    expect([...rest.moduleVisibilities!.keys()]).toEqual(["lib"]);
-  });
-});
-
-describe("mergeWorkingChanges", () => {
-  it("overlay 側が同じキーを上書きする", () => {
-    const merged = mergeWorkingChanges(
-      changesWith([
-        ["app.a", change("a")],
-        ["app.b", change("b")],
-      ]),
-      changesWith([["app.b", { ...change("b"), expression: 1 }]]),
-    );
-    expect(merged.parts.get("app.b")?.expression).toBe(1);
-    expect(merged.parts.get("app.a")?.name).toBe("a");
   });
 });
