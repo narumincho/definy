@@ -16,6 +16,7 @@ import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
 import { findSecretUsages, secretLiteralOf } from "../../src/secret.ts";
 import { SecretPanel } from "../../src/components/SecretPanel.tsx";
+import { BranchEditGate } from "../../src/components/BranchEditGate.tsx";
 import { VisibilitySelect } from "../../src/components/Visibility.tsx";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
@@ -122,10 +123,19 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
     typeCheckMessage,
     setPageUndo,
     projectOfModule,
+    editStateFor,
     partsByIdHash,
   } = useDefiny();
   const router = useRouter();
   const isNewPart = !parts.some((p) => p.partId === part.partId);
+  // 編集は表示しているブランチに属するドラフトとして持つ (docs/branch.md「ドラフトコミット」).
+  // 他のアカウントのブランチでは, 自分のブランチを作るまで編集できない
+  const projectName = projectOfModule(part.moduleName) ?? "";
+  const editState = projectName === "" ? null : editStateFor(projectName);
+  const canEdit =
+    editState === null ||
+    editState.kind === "own_branch" ||
+    editState.kind === "new_project";
 
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
@@ -624,7 +634,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
             id="part-visibility-select"
             language={language}
             value={currentVisibility}
-            disabled={isDeleted}
+            disabled={isDeleted || !canEdit}
             onChange={(visibility) => {
               editPart({ visibility }, null);
             }}
@@ -645,7 +655,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
               )}
             </button>
           )}
-          {!isDeleted && (
+          {canEdit && !isDeleted && (
             <button
               type="button"
               className="btn btn-danger btn-sm part-delete-button"
@@ -669,6 +679,10 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         </div>
       </div>
 
+      {!canEdit && projectName !== "" && (
+        <BranchEditGate projectName={projectName} />
+      )}
+
       {isDeleted && (
         <div className="alert alert-danger part-deleted-banner" role="status">
           {label(
@@ -689,7 +703,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         </div>
       )}
 
-      {secret !== null && (
+      {secret !== null && canEdit && (
         <SecretPanel
           key={secret.id}
           language={language}
@@ -711,7 +725,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         description={localizedText(currentDescription, language)}
         partType={currentPartType}
         expression={currentExpression}
-        editable={true}
+        editable={canEdit}
         typeError={typeError}
         view={view}
         onViewChange={setView}

@@ -9,6 +9,7 @@ import { Link } from "./Link.tsx";
 import { label, localizedText } from "../language.ts";
 import { useDefiny, type CommitTypeError } from "../state.tsx";
 import { moduleOfPartId } from "../new_part.ts";
+import { countWorkingChanges, splitWorkingChanges } from "../draft_commits.ts";
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import { visibilityLabel } from "./Visibility.tsx";
 
@@ -25,6 +26,16 @@ export function WorkingChanges(props: {
   const {
     language,
     workingChanges,
+    legacyChanges,
+    suspendedDrafts,
+    activeDraftFor,
+    setDraftMessage,
+    discardDraft,
+    assignLegacyChanges,
+    discardLegacyChanges,
+    editStateFor,
+    createEditingBranch,
+    selectBranch,
     discardWorkingPart,
     discardAllWorkingChanges,
     currentAccount,
@@ -42,6 +53,7 @@ export function WorkingChanges(props: {
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
+  const [legacyError, setLegacyError] = useState<string | null>(null);
   const [committedHash, setCommittedHash] = useState<string | null>(null);
 
   const allChangeEntries = Array.from(workingChanges.parts.entries());
@@ -89,6 +101,38 @@ export function WorkingChanges(props: {
     target?.kind === "new_branch"
       ? (newBranchName ?? target.suggestedName)
       : null;
+
+  // コミットメッセージはドラフトに保存する (対象プロジェクトを変えるとそのドラフトのものになる)
+  useEffect(() => {
+    setCommitMessage(activeDraftFor(selectedProject)?.message ?? "");
+    // 対象プロジェクトが変わったときだけ読み直す
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject]);
+
+  // ブランチに属していない旧下書き (移行分) のあるプロジェクト
+  const legacyProjectOf = (moduleName: string): string | undefined =>
+    projectOfModule(moduleName) ??
+    legacyChanges?.newModuleProjects?.get(moduleName);
+  const legacyProjects: ReadonlyArray<string> =
+    legacyChanges === null
+      ? []
+      : Array.from(
+          new Set([
+            ...[...legacyChanges.parts.keys()].map(
+              (partId) =>
+                legacyProjectOf(moduleOfPartId(partId)) ??
+                moduleOfPartId(partId),
+            ),
+            ...[...(legacyChanges.moduleVisibilities?.keys() ?? [])].map(
+              (moduleName) => legacyProjectOf(moduleName) ?? moduleName,
+            ),
+            ...(legacyChanges.merges?.keys() ?? []),
+            ...(legacyChanges.newModuleProjects?.values() ?? []),
+          ]),
+        );
+  const hasLegacy = legacyProjects.length > 0;
+  const nothingAtAll =
+    !hasChanges && suspendedDrafts.length === 0 && !hasLegacy;
 
   // コミットする前に, サーバーと同じ definy 製の型チェッカーで検査する.
   // 変更・対象モジュール・取得済みのイベントが変わったら 300ms 待ってから検査し直す
@@ -235,7 +279,191 @@ export function WorkingChanges(props: {
         </div>
       )}
 
-      {!hasChanges ? (
+      {hasLegacy && legacyChanges !== null && (
+        <div
+          className="card legacy-changes-panel"
+          style={{ marginBottom: "1rem" }}
+        >
+          <h3 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+            {label(
+              language,
+              "Changes not belonging to a branch (from the previous format)",
+              "ブランチに属していない変更 (以前の形式のもの)",
+              "Ŝanĝoj ne apartenantaj al branĉo (el la antaŭa formato)",
+            )}
+          </h3>
+          <p className="text-muted">
+            {label(
+              language,
+              "These changes were saved before drafts belonged to branches, so their branch is unknown. Move them into the draft of your displayed branch for each project to commit them.",
+              "ドラフトがブランチに属する前の形式で保存されていたため、属するブランチが分かりません。プロジェクトごとに、表示している自分のブランチのドラフトへ移してからコミットしてください。",
+              "Ĉi tiuj ŝanĝoj estis konservitaj antaŭ ol malnetoj apartenis al branĉoj. Movu ilin en la malneton de via branĉo por ĉiu projekto.",
+            )}
+          </p>
+          {legacyError !== null && (
+            <p className="text-danger" role="alert">
+              {legacyError}
+            </p>
+          )}
+          {legacyProjects.map((project) => {
+            const { inProject } = splitWorkingChanges(
+              legacyChanges,
+              project,
+              legacyProjectOf,
+            );
+            const count =
+              countWorkingChanges(inProject) +
+              (inProject.merges?.size ?? 0) +
+              (inProject.newModuleProjects?.size ?? 0);
+            const state = editStateFor(project);
+            return (
+              <div key={project} className="legacy-changes-row">
+                <strong>{project}</strong>{" "}
+                <span className="text-muted">
+                  {label(
+                    language,
+                    `${count} changes`,
+                    `${count} 件`,
+                    `${count} ŝanĝoj`,
+                  )}
+                </span>{" "}
+                {state.kind === "no_account" ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs"
+                    onClick={() => {
+                      setAccountModalOpen(true);
+                    }}
+                  >
+                    {label(language, "Log in", "ログイン", "Ensaluti")}
+                  </button>
+                ) : state.kind === "other_branch" ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs"
+                    disabled={committing}
+                    onClick={() => {
+                      setLegacyError(null);
+                      createEditingBranch(project).then(
+                        () => {},
+                        (e: unknown) => {
+                          setLegacyError(
+                            e instanceof Error ? e.message : String(e),
+                          );
+                        },
+                      );
+                    }}
+                  >
+                    {label(
+                      language,
+                      "Create my branch first",
+                      "先に自分のブランチを作る",
+                      "Unue krei mian branĉon",
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-xs"
+                    disabled={committing}
+                    onClick={() => {
+                      assignLegacyChanges(project);
+                    }}
+                  >
+                    {label(
+                      language,
+                      `Move into the draft of '${state.branch}'`,
+                      `「${state.branch}」のドラフトへ移す`,
+                      `Movi en la malneton de '${state.branch}'`,
+                    )}
+                  </button>
+                )}{" "}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs text-danger"
+                  disabled={committing}
+                  onClick={() => {
+                    discardLegacyChanges(project);
+                  }}
+                >
+                  {label(language, "Discard", "破棄", "Forĵeti")}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {suspendedDrafts.length > 0 && (
+        <div
+          className="card suspended-drafts-panel"
+          style={{ marginBottom: "1rem" }}
+        >
+          <h3 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+            {label(
+              language,
+              "Drafts suspended on other branches",
+              "他のブランチに保留中のドラフト",
+              "Malnetoj atendantaj en aliaj branĉoj",
+            )}
+          </h3>
+          <p className="text-muted">
+            {label(
+              language,
+              "A draft belongs to its branch. Switch to that branch to review and commit it.",
+              "ドラフトはブランチに属しています。そのブランチに切り替えると、確かめてコミットできます。",
+              "Malneto apartenas al sia branĉo. Ŝanĝu al tiu branĉo por enmeti ĝin.",
+            )}
+          </p>
+          {suspendedDrafts.map((draft) => (
+            <div
+              key={`${draft.projectName}/${draft.branch}`}
+              className="suspended-draft-row"
+            >
+              <strong>{draft.projectName}</strong>
+              {" / "}
+              {draft.branch}{" "}
+              <span className="text-muted">
+                {label(
+                  language,
+                  `${countWorkingChanges(draft.changes)} changes`,
+                  `${countWorkingChanges(draft.changes)} 件の変更`,
+                  `${countWorkingChanges(draft.changes)} ŝanĝoj`,
+                )}
+                {draft.baseCommitHash !== null &&
+                  ` (${label(language, "base", "基準", "bazo")} ${draft.baseCommitHash.slice(0, 8)})`}
+              </span>{" "}
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                disabled={committing}
+                onClick={() => {
+                  selectBranch(draft.projectName, draft.branch);
+                }}
+              >
+                {label(
+                  language,
+                  "Switch to this branch",
+                  "このブランチに切り替える",
+                  "Ŝanĝi al ĉi tiu branĉo",
+                )}
+              </button>{" "}
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs text-danger"
+                disabled={committing}
+                onClick={() => {
+                  discardDraft(draft.projectName, draft.branch);
+                }}
+              >
+                {label(language, "Discard", "破棄", "Forĵeti")}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {nothingAtAll ? (
         <div className="empty-state">
           <p>
             {label(
@@ -512,6 +740,7 @@ export function WorkingChanges(props: {
                     value={commitMessage}
                     onChange={(e) => {
                       setCommitMessage(e.target.value);
+                      setDraftMessage(selectedProject, e.target.value);
                     }}
                     disabled={committing}
                     required
