@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { Link } from "../src/components/Link.tsx";
+import { fetchIpVersion, type IpVersion } from "../src/healthz.ts";
 import { AboutIcon } from "../src/icons.tsx";
 import { label, languageNativeName } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
@@ -11,21 +12,17 @@ import {
 
 export default function SettingsPage(): JSX.Element {
   const { language, setLanguage, connectionStatus } = useDefiny();
-  const [ipVersion, setIpVersion] = useState<string | null>(null);
+  const [ipVersion, setIpVersion] = useState<IpVersion | null>(null);
   // wasi.io のプログラム (definy.deploy-to-cloudflare-workers など) を動かすときの設定
   const [wasiIoSettings, setWasiIoSettings] = useState(loadWasiIoSettings);
 
-  // サーバーから見た接続元が IPv4 / IPv6 のどちらか (`/healthz` の `ipVersion`)
+  // サーバーから見た接続元が IPv4 / IPv6 のどちらか (`/healthz` の `ipVersion`).
+  // 取れない・時間内に返らない場合も `unknown` になるので「...」のまま止まらない (src/healthz.ts)
   useEffect(() => {
     let cancelled = false;
-    fetch("/healthz")
-      .then((res) => res.json() as Promise<{ readonly ipVersion?: string }>)
-      .then((json) => {
-        if (!cancelled) setIpVersion(json.ipVersion ?? "unknown");
-      })
-      .catch(() => {
-        if (!cancelled) setIpVersion("unknown");
-      });
+    void fetchIpVersion().then((version) => {
+      if (!cancelled) setIpVersion(version);
+    });
     return () => {
       cancelled = true;
     };

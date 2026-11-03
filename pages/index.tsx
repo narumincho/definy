@@ -1,14 +1,20 @@
-import { useMemo, useState, type JSX } from "react";
+import { useMemo, type JSX } from "react";
 import {
   EVENT_TYPES,
   EventTimeline,
 } from "../src/components/EventTimeline.tsx";
+import { filterEventsByType } from "../src/event_filter.ts";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
 export default function EventsPage(): JSX.Element {
-  const { language, events, connectionStatus } = useDefiny();
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const {
+    language,
+    events,
+    connectionStatus,
+    eventTypeFilter: selectedFilter,
+    setEventTypeFilter: setSelectedFilter,
+  } = useDefiny();
 
   const countsByType = useMemo(() => {
     const counts = new Map<string, number>();
@@ -18,9 +24,7 @@ export default function EventsPage(): JSX.Element {
     return counts;
   }, [events]);
 
-  const filteredEvents = selectedFilter
-    ? events.filter((ev) => ev.eventType === selectedFilter)
-    : events;
+  const filteredEvents = filterEventsByType(events, selectedFilter);
 
   const filters: ReadonlyArray<{
     readonly type: string | null;

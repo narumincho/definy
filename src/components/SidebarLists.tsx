@@ -3,6 +3,7 @@ import { useRouter } from "@void/react";
 import { Link } from "./Link.tsx";
 import { dateLocale, eventTypeInfo } from "./EventTimeline.tsx";
 import { extractCreateAccount } from "../decoded_event.ts";
+import { filterEventsByType } from "../event_filter.ts";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
@@ -14,11 +15,17 @@ export function EventList({
 }: {
   readonly onNavigate: () => void;
 }): JSX.Element {
-  const { language, events, decodedCommits, accountNames } = useDefiny();
+  const { language, events, decodedCommits, accountNames, eventTypeFilter } =
+    useDefiny();
   const currentPath = useRouter().path;
   const commitByHash = useMemo(
     () => new Map(decodedCommits.map((c) => [c.event.eventHash, c.commit])),
     [decodedCommits],
+  );
+  // トップページのタイムラインと同じ種別フィルタを適用する (片方だけ絞ると件数が食い違うため)
+  const filteredEvents = useMemo(
+    () => filterEventsByType(events, eventTypeFilter),
+    [events, eventTypeFilter],
   );
 
   if (events.length === 0) {
@@ -33,9 +40,21 @@ export function EventList({
       </div>
     );
   }
+  if (filteredEvents.length === 0) {
+    return (
+      <div className="sidebar-empty">
+        {label(
+          language,
+          "No events found",
+          "イベントがありません",
+          "Neniuj eventoj trovitaj",
+        )}
+      </div>
+    );
+  }
   return (
     <div className="sidebar-list">
-      {events.map((event) => {
+      {filteredEvents.map((event) => {
         const info = eventTypeInfo(event.eventType);
         const Icon = info.icon;
         const commit = commitByHash.get(event.eventHash);
