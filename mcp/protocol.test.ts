@@ -39,7 +39,7 @@ describe("createMcpServer", () => {
       method: "initialize",
       params: { protocolVersion: "2025-03-26" },
     });
-    const result = res.result as Record<string, unknown>;
+    const result = res!.result as Record<string, unknown>;
     expect(result.protocolVersion).toBe("2025-03-26");
     expect(result.serverInfo).toEqual({
       name: "test-server",
@@ -73,7 +73,7 @@ describe("createMcpServer", () => {
       method: "tools/call",
       params: { name: "echo", arguments: { text: "hello" } },
     });
-    const result = called.result as {
+    const result = called!.result as {
       content: Array<{ text: string }>;
     };
     expect(result.content[0]?.text).toBe("echo: hello");
@@ -87,13 +87,13 @@ describe("createMcpServer", () => {
       method: "tools/call",
       params: { name: "nope", arguments: {} },
     });
-    expect((unknownTool.error as Record<string, unknown>).code).toBe(-32602);
+    expect((unknownTool!.error as Record<string, unknown>).code).toBe(-32602);
     const unknownMethod = await call(server, {
       jsonrpc: "2.0",
       id: 5,
       method: "resources/list",
     });
-    expect((unknownMethod.error as Record<string, unknown>).code).toBe(-32601);
+    expect((unknownMethod!.error as Record<string, unknown>).code).toBe(-32601);
   });
 
   it("壊れた JSON はパースエラーにする", async () => {
