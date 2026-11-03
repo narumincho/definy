@@ -984,9 +984,9 @@ body.sidebar-resizing {
   font-size: 0.84rem;
 }
 
-/* ブランチの作成者, コミットのメッセージ */
+/* ブランチの作成者, コミットのメッセージ. 名前より先にこちらを省略するので, 残りの幅いっぱいまで広がり優先して縮む */
 .sidebar-node-detail {
-  flex-shrink: 1;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -995,8 +995,11 @@ body.sidebar-resizing {
   color: var(--text-muted);
 }
 
+/* 名前と補足が並ぶ行では, 補足が長いと flex の縮みが名前側にも配分され名前が 1 文字になってしまう.
+   名前は縮めず (ただし行の 6 割まで. それより長い名前は名前側で省略する), 縮みは補足側で受ける */
 .sidebar-tree-node .sidebar-node-label:has(+ .sidebar-node-detail) {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
+  max-width: 60%;
 }
 
 /* コミットの短いハッシュは削らず, メッセージのほうを削る */
