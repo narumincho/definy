@@ -8,10 +8,15 @@ import {
 import {
   createSignedAccountEvent,
   generateAccountCredentials,
+  importAccountCredentials,
   type AccountCredentials,
   type SignedEventResult,
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
+import { bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
+import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
+import { serializeDrafts } from "../src/draft_commit_storage.ts";
+import type { Page } from "@playwright/test";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 
@@ -30,6 +35,21 @@ async function submitEvent(
   return request.post("/definy.v1.EventService/SubmitEvent", {
     data: { signedEventBytes: signed.signedEventBytes },
   });
+}
+
+/**
+ * seed のプロジェクトのパーツを編集するテスト用. 編集は自分のブランチに属する
+ * ドラフトとして持つので (docs/branch.md「ドラフトコミット」), seed のブランチ (main) の
+ * 作成者である開発用システムアカウントでログインした状態にする
+ */
+async function loginAsSystemAccount(page: Page): Promise<void> {
+  const credentials = await importAccountCredentials(
+    bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
+    "definy",
+  );
+  await page.addInitScript((account) => {
+    localStorage.setItem("definy.account.v1", JSON.stringify(account));
+  }, credentials);
 }
 
 /**
@@ -1076,34 +1096,57 @@ test.describe("definy UI E2E", () => {
   test("parts page shows new and deleted parts and filters to changes only", async ({
     page,
   }) => {
+    // 変更は表示しているブランチのドラフトとして持つ (docs/branch.md「ドラフトコミット」).
+    // sample の main の作成者 (開発用システムアカウント) でログインし, そのドラフトを入れる
+    const credentials = await importAccountCredentials(
+      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
+      "definy",
+    );
+    const part = {
+      moduleDefinitionEventHash: "sample",
+      description: [] as ReadonlyArray<never>,
+      partType: { "#type_number": null },
+      expression: { "#number": 1 },
+    };
+    const draftsJson = serializeDrafts([
+      {
+        accountId: credentials.accountId,
+        projectName: "sample",
+        branch: "main",
+        baseCommitHash: "e2e-base",
+        message: "",
+        updatedAtMs: 1,
+        changes: {
+          parts: new Map([
+            [
+              "sample.e2e-new",
+              {
+                ...part,
+                partDefinitionEventHash: "sample.e2e-new",
+                name: "e2e-new",
+              },
+            ],
+            [
+              "sample.triangle-area",
+              {
+                ...part,
+                partDefinitionEventHash: "sample.triangle-area",
+                name: "triangle-area",
+                deleted: true,
+              },
+            ],
+          ]),
+        },
+      },
+    ]);
+    await page.addInitScript(
+      ([accountJson, drafts]) => {
+        localStorage.setItem("definy.account.v1", accountJson!);
+        localStorage.setItem("definy.draft_commits.v1", drafts!);
+      },
+      [JSON.stringify(credentials), draftsJson] as const,
+    );
     await page.goto("/parts?lang=en");
-    await page.evaluate(() => {
-      const part = {
-        moduleDefinitionEventHash: "sample",
-        description: [],
-        partType: { "#type_number": null },
-        expression: { "#number": 1 },
-      };
-      localStorage.setItem(
-        "definy.working_changes.v5",
-        JSON.stringify({
-          parts: {
-            "sample.e2e-new": {
-              ...part,
-              partDefinitionEventHash: "sample.e2e-new",
-              name: "e2e-new",
-            },
-            "sample.triangle-area": {
-              ...part,
-              partDefinitionEventHash: "sample.triangle-area",
-              name: "triangle-area",
-              deleted: true,
-            },
-          },
-        }),
-      );
-    });
-    await page.reload();
 
     // 一覧にはコミット前の新しいパーツも出て, 削除したパーツは取り消し線で出る
     const newCard = page.locator(".part-card", { hasText: "e2e-new" });
@@ -1131,7 +1174,7 @@ test.describe("definy UI E2E", () => {
     await toggle.click();
     await expect(page.locator(".part-grid")).toBeVisible();
     await page.evaluate(() => {
-      localStorage.removeItem("definy.working_changes.v5");
+      localStorage.removeItem("definy.draft_commits.v1");
     });
   });
 
@@ -1276,6 +1319,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor asks the definy type checker for the expected type and renames function parameters", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/std.abs");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1318,6 +1362,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a function-typed parameter makes a call with all its argument names", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/core.list-map");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1343,6 +1388,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor shows the inferred type argument in an empty slot and fixes it with Enter", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/core.list-map");
     const valueTree = page.locator("#part-def-value-tree");
     await expect(valueTree).toBeVisible({ timeout: 15000 });
@@ -1376,6 +1422,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a part at a function-typed argument wraps it in a lambda", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/core.list-map");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1401,6 +1448,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a part with a function-typed parameter fills it with a lambda", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/std.abs");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1450,6 +1498,7 @@ test.describe("definy UI E2E", () => {
   test("renaming a function parameter renames the arguments of the callers in other parts", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/std.url-path");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1489,6 +1538,7 @@ test.describe("definy UI E2E", () => {
   test("adds and deletes function parameters, keeping the part type and the callers in sync", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     const option = (name: string) =>
       page
         .locator(".dropdown-option", {
@@ -1555,6 +1605,7 @@ test.describe("definy UI E2E", () => {
   test("hovering an expression shows its type and the documentation of the part", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/std.abs?lang=ja");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1612,6 +1663,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor edits match patterns with the tags of the target type", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.is-even-sample");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1669,6 +1721,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor renames let variables and goes to the definition of a variable", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.triangle-area");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1716,6 +1769,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor shows and edits line breaks in text literals (#800)", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.greet");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1765,6 +1819,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor adds, moves, and deletes list items", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.prime-numbers");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1804,6 +1859,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor creates variants of type parts", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.match-option-sample");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1838,6 +1894,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor adds, moves, and deletes let bindings", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.triangle-area");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1880,6 +1937,7 @@ test.describe("definy UI E2E", () => {
     page,
     browser,
   }) => {
+    await loginAsSystemAccount(page);
     await page
       .context()
       .grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -1937,6 +1995,7 @@ test.describe("definy UI E2E", () => {
     });
     try {
       const other = await otherContext.newPage();
+      await loginAsSystemAccount(other);
       await other.goto(page.url());
       const otherTree = other
         .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1964,6 +2023,7 @@ test.describe("definy UI E2E", () => {
   test("part detail undoes and redoes edits with buttons and shortcuts", async ({
     page,
   }) => {
+    await loginAsSystemAccount(page);
     await page.goto("/part/sample.prime-numbers");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -2168,6 +2228,8 @@ test.describe("definy UI E2E", () => {
   test("creates an Ed25519 account, displays account badge, and lists account in /accounts", async ({
     page,
   }) => {
+    // アカウント作成に加えてブランチ作成と 2 回のコミットをするので長めに取る
+    test.setTimeout(120_000);
     await page.goto("/");
 
     // クライアントのハイドレーション完了を確認
@@ -2223,33 +2285,53 @@ test.describe("definy UI E2E", () => {
       /You|あなた|Vi/,
     );
 
-    // 7. Test commit flow: stage a working change and commit from /parts?changes=only
-    await page.evaluate(() => {
-      const changes = {
-        parts: {
-          "sample.e2e-part": {
-            moduleDefinitionEventHash: "sample",
-            partDefinitionEventHash: "sample.e2e-part",
-            name: "e2e-part",
-            description: [{ language: "en", text: "Part created in E2E test" }],
-            partType: { "#type_number": null },
-            expression: { "#number": 999 },
-          },
-        },
-      };
-      localStorage.setItem(
-        "definy.working_changes.v5",
-        JSON.stringify(changes),
-      );
+    // 7. Test commit flow: sample の main はシステムアカウントのブランチなので,
+    // パーツのページで自分のブランチを作ってから, パーツを作ってコミットする (docs/branch.md「ドラフトコミット」)
+    await page.goto("/part/sample.greet");
+    await expect(page.locator(".branch-edit-gate")).toBeVisible({
+      timeout: 10000,
     });
+    await page
+      .locator(".branch-edit-gate")
+      .getByRole("button", {
+        name: /Create my branch|自分のブランチを作る|Krei mian branĉon/,
+      })
+      .click();
+    await expect(page.locator(".branch-edit-gate")).toHaveCount(0, {
+      timeout: 30000,
+    });
+    await expect(page.locator("#project-branch-select")).toHaveValue(
+      accountName,
+    );
+
+    // 新しいパーツを関数の形で作る (本体は引数 x をそのまま返す)
+    await page.goto("/new-part?module=sample");
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.locator("#new-part-name").fill("e2e-part");
+    await page.locator("#new-part-parameters").fill("x");
+    await page.locator(".new-part-form button[type='submit']").click();
+    await expect(page).toHaveURL(/\/part\/sample\.e2e-part/);
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await valueTree.locator(".tree-badge", { hasText: /^□$/ }).click();
+    await page.locator(".dropdown-search-input").fill("x");
+    await page.locator(".dropdown-option", { hasText: /^x/ }).first().click();
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+    ).toHaveCount(0);
 
     await page.goto("/parts?changes=only");
     const changeCard = page.locator(".change-card", { hasText: "e2e-part" });
     await expect(changeCard).toBeVisible({ timeout: 10000 });
 
-    // sample の main は system アカウントのブランチなので, 自分の名前の新しいブランチを作ってコミットする (docs/branch.md)
-    const branchInput = page.locator("input#commit-branch-input");
-    await expect(branchInput).toHaveValue(accountName);
+    // 自分のブランチへのコミットになる
+    await expect(page.locator("p#commit-branch-input")).toContainText(
+      accountName,
+    );
 
     const messageInput = page.locator("#commit-message-input");
     await expect(messageInput).toBeVisible();
@@ -2302,24 +2384,14 @@ test.describe("definy UI E2E", () => {
     await expect(branchSelect).toHaveValue("main", { timeout: 10000 });
     await branchSelect.selectOption(accountName);
 
-    // 自分のブランチを表示していれば, 次のコミットはそのブランチに
-    await page.evaluate(() => {
-      localStorage.setItem(
-        "definy.working_changes.v5",
-        JSON.stringify({
-          parts: {
-            "sample.e2e-part": {
-              moduleDefinitionEventHash: "sample",
-              partDefinitionEventHash: "sample.e2e-part",
-              name: "e2e-part",
-              description: [],
-              partType: { "#type_number": null },
-              expression: { "#number": 1000 },
-            },
-          },
-        }),
-      );
-    });
+    // 自分のブランチを表示していれば, 次のコミットもそのブランチに (公開範囲の変更で確かめる)
+    await page.goto("/part/sample.e2e-part");
+    await expect(
+      page
+        .locator(".part-definition-tree, #part-definition-value-tree")
+        .first(),
+    ).toBeVisible({ timeout: 15000 });
+    await page.locator("#part-visibility-select").selectOption("private");
     await page.goto("/parts?changes=only");
     await expect(page.locator("p#commit-branch-input")).toContainText(
       accountName,
