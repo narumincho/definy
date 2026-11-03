@@ -185,6 +185,8 @@ async function sqlStore(
     | "readCachedCommits"
     | "readCachedDefinitions"
     | "writeCachedDefinitions"
+    | "readCachedResolutions"
+    | "writeCachedResolutions"
   >;
 }> {
   const commits = fixtures.commits ?? [];
@@ -234,6 +236,8 @@ async function sqlStore(
       },
       // 定義の式は覚えていないことにする (definy が CAS から読んで覚える)
       readCachedDefinitions: () => Promise.resolve([]),
+      readCachedResolutions: () => Promise.resolve([]),
+      writeCachedResolutions: () => Promise.resolve(),
       writeCachedDefinitions: (entries) => {
         log.push(
           `cache definitions ${entries.map((entry) => entry.content_hash).join(",")}`,
@@ -307,6 +311,8 @@ const host = (overrides: Partial<ServiceIoHost> = {}): ServiceIoHost => ({
   },
   readCachedDefinitions: () => Promise.reject(new Error("not read")),
   writeCachedDefinitions: () => Promise.reject(new Error("not written")),
+  readCachedResolutions: () => Promise.reject(new Error("not read")),
+  writeCachedResolutions: () => Promise.reject(new Error("not written")),
   hashContents: () => Promise.reject(new Error("not hashed")),
   readRequestText: () => Promise.reject(new Error("not read")),
   readAdminAccountIds: () => {

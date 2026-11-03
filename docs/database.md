@@ -60,6 +60,7 @@ RPC が読み書きする SQL は definy の `definy.store-*` (`seeds/definy.jso
 - 受け付けたコミットの一覧は definy (`definy.read-commits`) が `project_commit` のイベントを 500 件ずつ読み, `definy.decode-stored-commit` で読む。読んだものはホストが isolate ごとにイベントハッシュで覚える (`read_cached_commits` / `write_cached_commits`. 2026-11-01 ユーザーの決定)
 - 型チェッカーの入力も definy (`definy.read-commit-check-input`) が読む。CAS の中身を定義の式として読んだものはホストが isolate ごとに content hash で覚える (`read_cached_definitions` / `write_cached_definitions`)
 - 上の 2 つのキャッシュは中身が不変なので、ホストが D1 の `host_commit_cache` / `host_definition_cache` にも保存し、isolate をまたいで使い回す (2026-11-03)。冷たい isolate でもコミットのデコードと定義の CBOR 読み直しを省ける。D1 が無い・失敗したときはメモリだけで動く
+- 中身を解決した結果 (解決済みの中身と型検査エントリ) も同じ理由で使い回せるので、`host_resolution_cache` に保存する (2026-11-04)。保存されるのは即時解決できたパーツだけ。設計は [resolution-cache.md](resolution-cache.md)
 - 以前の TypeScript は保存のときに Base64 を標準の形にそろえていたが, 今は definy が受け取った文字列をそのまま保存する
   (中身のハッシュは `hash_contents` で前もって確かめるので, 違う形の Base64 でもバイト列は同じ)
 - テスト (`worker/service_io.test.ts`) は sqlite の D1 に行を入れて, definy が流した SQL を `sql SELECT events ...` のように記録して確かめる

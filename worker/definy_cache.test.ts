@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   createCommitCacheHost,
   createDefinitionCacheHost,
+  createResolutionCacheHost,
 } from "./commit_store.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
-import type { CommitCacheEntry, DefinitionCacheEntry } from "./service_io.ts";
+import type {
+  CommitCacheEntry,
+  DefinitionCacheEntry,
+  ResolutionCacheEntry,
+} from "./service_io.ts";
 
 const definitionEntry = (hash: string): DefinitionCacheEntry => ({
   content_hash: hash,
@@ -18,6 +23,23 @@ const definitionEntry = (hash: string): DefinitionCacheEntry => ({
         { name: "expression", value: { "#some": { "#number": 42 } } },
       ],
     },
+  },
+});
+
+const resolutionEntry = (hash: string): ResolutionCacheEntry => ({
+  content_hash: hash,
+  content: {
+    description: [],
+    part_type: { "#some": { "#type_number": null } },
+  },
+  entry: {
+    part_id: "part",
+    module_id: "mod",
+    part_type: { "#some": { "#type_number": null } },
+    type_declaration: { "#none": null },
+    expression_key: { "#some": hash },
+    has_expression: true,
+    references: [],
   },
 });
 
@@ -50,6 +72,26 @@ describe("永続キャッシュ (D1 に保存するホストのキャッシュ)"
     expect(read).toEqual([
       definitionEntry("hash-a"),
       definitionEntry("hash-b"),
+    ]);
+  });
+
+  it("解決のキャッシュは別のメモリ (別の isolate) からも D1 経由で読める", async () => {
+    const db = createSqliteD1Database();
+    const writer = createResolutionCacheHost(db, new Map());
+    await writer.writeCachedResolutions([
+      resolutionEntry("hash-a"),
+      resolutionEntry("hash-b"),
+    ]);
+
+    const reader = createResolutionCacheHost(db, new Map());
+    const read = await reader.readCachedResolutions([
+      "hash-a",
+      "hash-b",
+      "hash-c",
+    ]);
+    expect(read).toEqual([
+      resolutionEntry("hash-a"),
+      resolutionEntry("hash-b"),
     ]);
   });
 

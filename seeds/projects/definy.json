@@ -10,7 +10,7 @@
       "text": "definy そのもの. 言語の中核 (型チェッカー, コンパイラ), 標準ライブラリ, WASI の入出力, definy プラットフォームの機能"
     }
   ],
-  "message": "incremental type check classification",
+  "message": "解決キャッシュのエントリの id を使う側に合わせる",
   "modules": [
     "definy",
     "core",
