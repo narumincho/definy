@@ -30,7 +30,7 @@ export type ToolDefinition = {
   ) => Promise<ToolResult>;
 };
 
-function jsonResult(value: unknown): ToolResult {
+export function jsonResult(value: unknown): ToolResult {
   return { content: [{ type: "text", text: JSON.stringify(value, null, 2) }] };
 }
 

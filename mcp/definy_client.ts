@@ -4,6 +4,14 @@
  * パーツの中身はコンテンツハッシュと SHA-256 が一致するものだけを使う。
  * 検証に失敗したイベントの中身は決して返さない
  */
+import {
+  createSignedAccountEvent,
+  createSignedProjectCommitEvent,
+  submitProjectCommitEvent,
+  submitSignedEvent,
+  type AccountCredentials,
+  type CommitModuleParams,
+} from "../src/auth.ts";
 import { base64ToBytes } from "../src/base64.ts";
 import { decodeCborItem } from "../src/cbor.ts";
 import {
@@ -187,6 +195,92 @@ export class DefinyClient {
       result.set(item.contentHash, decodePartDefinition(definition) ?? null);
     }
     return result;
+  }
+
+  /** `src/auth.ts` の送信系が使う相対 URL を、このクライアントの接続先に解決する fetch */
+  #boundFetch: typeof fetch = (input, init) => {
+    const url =
+      typeof input === "string" && input.startsWith("/")
+        ? `${this.#baseUrl}${input}`
+        : input;
+    return this.#fetchFn(url, init);
+  };
+
+  /** プロジェクトの 1 ブランチを正確に引く。無ければ `undefined` */
+  async getBranch(
+    projectName: string,
+    branchName: string,
+  ): Promise<VerifiedBranch | undefined> {
+    const branches = await this.listBranches();
+    return branches.find(
+      (b) => b.projectName === projectName && b.branch === branchName,
+    );
+  }
+
+  /** プロジェクトが存在するか (ブランチが 1 つでもあるか) */
+  async projectExists(projectName: string): Promise<boolean> {
+    const branches = await this.listBranches();
+    return branches.some((b) => b.projectName === projectName);
+  }
+
+  /**
+   * アカウント作成イベントを探す。`GetEvents` にはアカウントでの絞り込みが無いので、
+   * create_account イベントを走査する (ページ数の上限あり)
+   */
+  async findAccountEvent(accountId: string): Promise<VerifiedEvent | null> {
+    for (let page = 0; page < 5; page++) {
+      const events = await this.listEvents({
+        eventType: "create_account",
+        limit: 100,
+        offset: page * 100,
+      });
+      const found = events.find((e) => e.accountId === accountId);
+      if (found !== undefined) return found;
+      if (events.length < 100) break;
+    }
+    return null;
+  }
+
+  /** アカウント作成イベントを署名して送る */
+  async submitAccountCreation(
+    credentials: AccountCredentials,
+  ): Promise<{ readonly eventHash: string; readonly status: string }> {
+    const signed = await createSignedAccountEvent(credentials);
+    return await submitSignedEvent(signed.signedEventBytes, this.#boundFetch);
+  }
+
+  /**
+   * プロジェクトのコミットを署名して送る。パーツの中身がサーバーに無ければ
+   * `UploadContent` で送ってから出し直す (`submitProjectCommitEvent`)。
+   * 受け付けられると status は `accepted`、拒否されると理由の文字列が返る
+   */
+  async submitCommit(params: {
+    readonly credentials: AccountCredentials;
+    readonly projectName: string;
+    readonly branch: string;
+    readonly projectDescription: ReadonlyArray<{
+      readonly language: string;
+      readonly text: string;
+    }>;
+    readonly message: string;
+    readonly parentCommitHash: string | null;
+    readonly modules: ReadonlyArray<CommitModuleParams>;
+  }): Promise<{ readonly eventHash: string; readonly status: string }> {
+    const signed = await createSignedProjectCommitEvent({
+      credentials: params.credentials,
+      projectName: params.projectName,
+      branch: params.branch,
+      projectDescription: params.projectDescription,
+      message: params.message,
+      parentCommitHash: params.parentCommitHash,
+      mergedCommitHash: null,
+      modules: params.modules,
+    });
+    return await submitProjectCommitEvent(
+      signed.signedEventBytes,
+      signed.contents,
+      this.#boundFetch,
+    );
   }
 
   /**
