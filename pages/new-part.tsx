@@ -12,6 +12,7 @@ import {
   type NewPartKind,
 } from "../src/new_part.ts";
 import type { LanguageCode } from "../src/types.ts";
+import { BranchEditGate } from "../src/components/BranchEditGate.tsx";
 
 /**
  * 新しいパーツを作るページ (`/new-part?module=モジュール名` または `?project=プロジェクト名`. docs/ui.md「パーツの作成と削除」).
@@ -28,6 +29,7 @@ export default function NewPartPage(): JSX.Element {
     updateWorkingPart,
     setNewModuleProject,
     projectOfModule,
+    editStateFor,
   } = useDefiny();
   const [moduleName, setModuleName] = useState(
     () => router.query.get("module") ?? "",
@@ -69,10 +71,16 @@ export default function NewPartPage(): JSX.Element {
 
   const shownError = error ?? projectError;
 
+  // パーツの作成も編集なので, 入れるプロジェクトの表示しているブランチが自分のもので
+  // なければ作れない (docs/branch.md「ドラフトコミット」)
+  const editState = editStateFor(projectName);
+  const editBlocked =
+    editState.kind === "other_branch" || editState.kind === "no_account";
+
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     setSubmitted(true);
-    if (shownError !== null) return;
+    if (shownError !== null || editBlocked) return;
     const partId = newPartId(input);
     if (isNewModule) {
       setNewModuleProject(moduleName.trim(), projectName);
@@ -88,6 +96,7 @@ export default function NewPartPage(): JSX.Element {
           {label(language, "New Part", "新しいパーツ", "Nova parto")}
         </h2>
       </div>
+      {editBlocked && <BranchEditGate projectName={projectName} />}
       <form className="card new-part-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="new-part-module">
@@ -235,7 +244,11 @@ export default function NewPartPage(): JSX.Element {
           </div>
         )}
 
-        <button type="submit" className="btn btn-primary btn-sm">
+        <button
+          type="submit"
+          className="btn btn-primary btn-sm"
+          disabled={editBlocked}
+        >
           {label(language, "Create", "作成", "Krei")}
         </button>
       </form>

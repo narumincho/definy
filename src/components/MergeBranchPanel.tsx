@@ -13,6 +13,7 @@ import {
 } from "../merge.ts";
 import type { ProjectSnapshot } from "../types.ts";
 import type { DecodedCommitEvent } from "../state/useEvents.ts";
+import { isEmptyWorkingChanges } from "../draft_commits.ts";
 
 /** 取り込みに使うコミット. パーツはプロジェクトの全モジュールのものを `モジュール名.パーツ名` で並べる */
 function toMergeCommit({ event, commit }: DecodedCommitEvent): MergeCommit {
@@ -52,6 +53,7 @@ export function MergeBranchPanel({
     language,
     currentAccount,
     workingChanges,
+    draftForBranch,
     fetchCommit,
     startMerge,
     selectBranch,
@@ -71,8 +73,11 @@ export function MergeBranchPanel({
   }
 
   const handleMerge = async (): Promise<void> => {
+    // main に保留中のドラフトがあるときも取り込まない (表示中のブランチの変更だけでは分からない)
+    const mainDraft = draftForBranch(project.name, MAIN_BRANCH);
     if (
-      hasWorkingChangesIn(project.name, project.moduleNames, workingChanges)
+      hasWorkingChangesIn(project.name, project.moduleNames, workingChanges) ||
+      (mainDraft !== null && !isEmptyWorkingChanges(mainDraft.changes))
     ) {
       setState({ status: "blocked" });
       return;

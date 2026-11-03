@@ -10,6 +10,7 @@ import {
   PrivateBadge,
   VisibilitySelect,
 } from "../../src/components/Visibility.tsx";
+import { BranchEditGate } from "../../src/components/BranchEditGate.tsx";
 
 export default function ModuleDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function ModuleDetailPage(): JSX.Element {
     projectOfModule,
     workingChanges,
     setModuleVisibility,
+    editStateFor,
   } = useDefiny();
 
   const mod = modules.find((m) => m.moduleId === id) ?? {
@@ -41,6 +43,13 @@ export default function ModuleDetailPage(): JSX.Element {
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
   const changedVisibility = workingChanges.moduleVisibilities?.get(mod.name);
+  // 編集は表示しているブランチに属するドラフトとして持つ (docs/branch.md「ドラフトコミット」)
+  const editState =
+    mod.projectName === "" ? null : editStateFor(mod.projectName);
+  const canEdit =
+    editState === null ||
+    editState.kind === "own_branch" ||
+    editState.kind === "new_project";
 
   return (
     <div className="module-detail-view">
@@ -48,6 +57,9 @@ export default function ModuleDetailPage(): JSX.Element {
         projectName={mod.projectName}
         moduleName={mod.name}
       />
+      {!canEdit && mod.projectName !== "" && (
+        <BranchEditGate projectName={mod.projectName} />
+      )}
       <div className="card module-header">
         <h2 className="module-title">{mod.name}</h2>
         {mod.description.length > 0 && (
@@ -73,6 +85,7 @@ export default function ModuleDetailPage(): JSX.Element {
               id="module-visibility-select"
               language={language}
               value={changedVisibility ?? mod.visibility}
+              disabled={!canEdit}
               onChange={(visibility) => {
                 setModuleVisibility(mod.name, visibility);
               }}

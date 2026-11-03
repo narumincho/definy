@@ -11,6 +11,7 @@ import {
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { MAIN_BRANCH } from "../event_content.ts";
+import { isEmptyWorkingChanges } from "../draft_commits.ts";
 
 /**
  * プロジェクト / ブランチ (コミット) / モジュール / パーツ の階層を示すパンくず (docs/ui.md「階層のパンくず」).
@@ -33,7 +34,8 @@ export function HierarchyBreadcrumb({
   /** パンくずの後ろに付けるもの (「編集中の変更あり」のバッジなど) */
   readonly children?: ReactNode;
 }): JSX.Element {
-  const { language, projects, accountNames, selectBranch } = useDefiny();
+  const { language, projects, accountNames, selectBranch, draftForBranch } =
+    useDefiny();
   const project = projects.find((p) => p.name === projectName);
   const branch = commit?.branch ?? project?.branch ?? MAIN_BRANCH;
   const branches = project?.branches ?? [];
@@ -89,14 +91,22 @@ export function HierarchyBreadcrumb({
                     selectBranch(projectName, e.target.value);
                   }}
                 >
-                  {branches.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name} (
-                      {accountNames.get(b.creatorAccountId) ??
-                        b.creatorAccountId.slice(0, 8)}
-                      )
-                    </option>
-                  ))}
+                  {branches.map((b) => {
+                    // そのブランチに保留中のドラフトがある印 (docs/branch.md「ドラフトコミット」)
+                    const draft = draftForBranch(projectName, b.name);
+                    const hasDraft =
+                      draft !== null &&
+                      (!isEmptyWorkingChanges(draft.changes) ||
+                        draft.message !== "");
+                    return (
+                      <option key={b.name} value={b.name}>
+                        {b.name} (
+                        {accountNames.get(b.creatorAccountId) ??
+                          b.creatorAccountId.slice(0, 8)}
+                        ){hasDraft ? " ●" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               ) : commit !== undefined ? (
                 // コミットのブランチを表示してプロジェクトのページを開く

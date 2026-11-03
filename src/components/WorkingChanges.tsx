@@ -9,6 +9,7 @@ import { Link } from "./Link.tsx";
 import { label, localizedText } from "../language.ts";
 import { useDefiny, type CommitTypeError } from "../state.tsx";
 import { moduleOfPartId } from "../new_part.ts";
+import { countWorkingChanges } from "../draft_commits.ts";
 import { DEFAULT_VISIBILITY } from "../event_content.ts";
 import { visibilityLabel } from "./Visibility.tsx";
 
@@ -25,6 +26,11 @@ export function WorkingChanges(props: {
   const {
     language,
     workingChanges,
+    suspendedDrafts,
+    activeDraftFor,
+    setDraftMessage,
+    discardDraft,
+    selectBranch,
     discardWorkingPart,
     discardAllWorkingChanges,
     currentAccount,
@@ -89,6 +95,15 @@ export function WorkingChanges(props: {
     target?.kind === "new_branch"
       ? (newBranchName ?? target.suggestedName)
       : null;
+
+  // コミットメッセージはドラフトに保存する (対象プロジェクトを変えるとそのドラフトのものになる)
+  useEffect(() => {
+    setCommitMessage(activeDraftFor(selectedProject)?.message ?? "");
+    // 対象プロジェクトが変わったときだけ読み直す
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject]);
+
+  const nothingAtAll = !hasChanges && suspendedDrafts.length === 0;
 
   // コミットする前に, サーバーと同じ definy 製の型チェッカーで検査する.
   // 変更・対象モジュール・取得済みのイベントが変わったら 300ms 待ってから検査し直す
@@ -235,7 +250,76 @@ export function WorkingChanges(props: {
         </div>
       )}
 
-      {!hasChanges ? (
+      {suspendedDrafts.length > 0 && (
+        <div
+          className="card suspended-drafts-panel"
+          style={{ marginBottom: "1rem" }}
+        >
+          <h3 style={{ marginBottom: "0.5rem", fontSize: "1.05rem" }}>
+            {label(
+              language,
+              "Drafts suspended on other branches",
+              "他のブランチに保留中のドラフト",
+              "Malnetoj atendantaj en aliaj branĉoj",
+            )}
+          </h3>
+          <p className="text-muted">
+            {label(
+              language,
+              "A draft belongs to its branch. Switch to that branch to review and commit it.",
+              "ドラフトはブランチに属しています。そのブランチに切り替えると、確かめてコミットできます。",
+              "Malneto apartenas al sia branĉo. Ŝanĝu al tiu branĉo por enmeti ĝin.",
+            )}
+          </p>
+          {suspendedDrafts.map((draft) => (
+            <div
+              key={`${draft.projectName}/${draft.branch}`}
+              className="suspended-draft-row"
+            >
+              <strong>{draft.projectName}</strong>
+              {" / "}
+              {draft.branch}{" "}
+              <span className="text-muted">
+                {label(
+                  language,
+                  `${countWorkingChanges(draft.changes)} changes`,
+                  `${countWorkingChanges(draft.changes)} 件の変更`,
+                  `${countWorkingChanges(draft.changes)} ŝanĝoj`,
+                )}
+                {draft.baseCommitHash !== null &&
+                  ` (${label(language, "base", "基準", "bazo")} ${draft.baseCommitHash.slice(0, 8)})`}
+              </span>{" "}
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                disabled={committing}
+                onClick={() => {
+                  selectBranch(draft.projectName, draft.branch);
+                }}
+              >
+                {label(
+                  language,
+                  "Switch to this branch",
+                  "このブランチに切り替える",
+                  "Ŝanĝi al ĉi tiu branĉo",
+                )}
+              </button>{" "}
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs text-danger"
+                disabled={committing}
+                onClick={() => {
+                  discardDraft(draft.projectName, draft.branch);
+                }}
+              >
+                {label(language, "Discard", "破棄", "Forĵeti")}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {nothingAtAll ? (
         <div className="empty-state">
           <p>
             {label(
@@ -512,6 +596,7 @@ export function WorkingChanges(props: {
                     value={commitMessage}
                     onChange={(e) => {
                       setCommitMessage(e.target.value);
+                      setDraftMessage(selectedProject, e.target.value);
                     }}
                     disabled={committing}
                     required

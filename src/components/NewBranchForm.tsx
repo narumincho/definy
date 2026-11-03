@@ -6,7 +6,8 @@ import type { ProjectSnapshot } from "../types.ts";
 
 /**
  * プロジェクトのページの「新しいブランチ」(`/project/{名前}?add=branch`. docs/branch.md「ブランチの作成」).
- * 表示しているブランチの最新のコミットを親に, 同じ中身 (とこのプロジェクトの作業中の変更) を新しいブランチにコミットする
+ * 表示しているブランチの最新のコミットを親に, 同じ中身を新しいブランチにコミットする.
+ * 今のブランチのドラフトは元のブランチに残るので入らない (docs/branch.md「ドラフトコミット」)
  */
 export function NewBranchForm({
   project,
@@ -82,9 +83,9 @@ export function NewBranchForm({
           <label htmlFor="new-branch-name" className="text-muted">
             {label(
               language,
-              `Branch off from the latest commit of ${project.branch}. Uncommitted changes of this project are included.`,
-              `${project.branch} の最新のコミットから分けます。このプロジェクトの作業中の変更も入ります。`,
-              `Disbranĉigi de la lasta enmeto de ${project.branch}. Neenmetitaj ŝanĝoj de ĉi tiu projekto estas inkluzivitaj.`,
+              `Branch off from the latest commit of ${project.branch}. Uncommitted changes stay as a draft on ${project.branch} and are not included.`,
+              `${project.branch} の最新のコミットから分けます。作業中の変更は ${project.branch} のドラフトとして残り, このコミットには入りません。`,
+              `Disbranĉigi de la lasta enmeto de ${project.branch}. Neenmetitaj ŝanĝoj restas kiel malneto en ${project.branch}.`,
             )}
           </label>
           <div className="new-branch-row">
