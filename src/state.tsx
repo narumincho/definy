@@ -186,6 +186,12 @@ type DefinyContextValue = {
   /** 今のページの Undo / Redo (ヘッダーのボタンが使う). 持たないページでは `null` */
   readonly pageUndo: PageUndoControls | null;
   readonly setPageUndo: (controls: PageUndoControls | null) => void;
+  /**
+   * イベントタイムラインの種別フィルタ (`null` はすべて).
+   * トップページとサイドバーのイベント一覧で共有する
+   */
+  readonly eventTypeFilter: string | null;
+  readonly setEventTypeFilter: (eventType: string | null) => void;
 };
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
@@ -309,6 +315,8 @@ export function DefinyProvider({
       toggleRunPanel: ui.toggleRunPanel,
       pageUndo: ui.pageUndo,
       setPageUndo: ui.setPageUndo,
+      eventTypeFilter: ui.eventTypeFilter,
+      setEventTypeFilter: ui.setEventTypeFilter,
     }),
     [
       ui.language,
@@ -326,6 +334,8 @@ export function DefinyProvider({
       ui.toggleRunPanel,
       ui.pageUndo,
       ui.setPageUndo,
+      ui.eventTypeFilter,
+      ui.setEventTypeFilter,
       ui.accountModalOpen,
       ui.setAccountModalOpen,
       events.events,

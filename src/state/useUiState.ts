@@ -38,6 +38,12 @@ type UiState = {
   /** 今のページの Undo / Redo. 持たないページでは `null` (ヘッダーのボタンは押せない) */
   readonly pageUndo: PageUndoControls | null;
   readonly setPageUndo: (controls: PageUndoControls | null) => void;
+  /**
+   * イベントタイムラインの種別フィルタ (`null` はすべて).
+   * トップページとサイドバーのイベント一覧の両方が使うので, ページではなくここで持つ
+   */
+  readonly eventTypeFilter: string | null;
+  readonly setEventTypeFilter: (eventType: string | null) => void;
 };
 
 export function useUiState(): UiState {
@@ -59,6 +65,7 @@ export function useUiState(): UiState {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [runPanelOpen, setRunPanelOpen] = useState(false);
   const [pageUndo, setPageUndo] = useState<PageUndoControls | null>(null);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
 
   const setLanguage = useCallback(
     (lang: LanguageCode) => {
@@ -97,5 +104,7 @@ export function useUiState(): UiState {
     toggleRunPanel,
     pageUndo,
     setPageUndo,
+    eventTypeFilter,
+    setEventTypeFilter,
   };
 }
