@@ -1,5 +1,8 @@
 import serviceModule from "../wasm/service.wasm?module";
-import { commitCacheHost, definitionCacheHost } from "./commit_store.ts";
+import {
+  createCommitCacheHost,
+  createDefinitionCacheHost,
+} from "./commit_store.ts";
 import {
   handleRequestInDefiny,
   type HttpFetchRequest,
@@ -116,8 +119,9 @@ export async function handleWorkerRequest(
         hasAssets: serveAsset !== undefined,
       },
       {
-        ...commitCacheHost,
-        ...definitionCacheHost,
+        // 読んだコミットと定義の式のキャッシュは D1 にも保存して isolate をまたいで使い回す
+        ...createCommitCacheHost(env.DB),
+        ...createDefinitionCacheHost(env.DB),
         runSql: (statements) => runD1Statements(requireDb(env), statements),
         verifyEd25519,
         now: Date.now,
