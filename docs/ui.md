@@ -165,20 +165,21 @@ URL は `/project/{名前}`, `/module/{名前}`, `/part/{モジュール.パー�
   (seed の core だけで式が数 MB あり, 毎回 JavaScript の SHA-256 で計算すると読み込みのたびに重い).
   モジュールコミットのデコード (`extractModuleCommit`) も `decodedCommits` で 1 度だけにしている
 - 型エラーのあるコミットはサーバーが拒否する (署名や型を確かめずに保存する経路は無い). 表示を確かめるには下の localStorage の方法を使う
-- 動作確認のノウハウ: 作業中の変更は localStorage の `definy.working_changes.v4` に
-  `{"parts": {"myapp.bad": {"name": "bad", "partType": {"#number": null}, "expression": {"#string": "x"}, ...}}}`
-  の形 (`src/working_changes_storage.ts`) で入れて `/parts?changes=only` を開けば再現できる
+- 動作確認のノウハウ: ドラフトは localStorage の `definy.draft_commits.v1` にアカウント・プロジェクト・ブランチごとに
+  保存される (`src/draft_commit_storage.ts`). 中身の変更は `src/working_changes_storage.ts` の形なので,
+  その形の変更を持つドラフトを入れて `/parts?changes=only` を開けば再現できる
 
 ### 作業中の変更とまとめてコミット
 
-git の作業ツリーのように, パーツの編集はすぐにはコミットせず, ブラウザの localStorage
-(`definy.working_changes.v4`, JSON. 式と型は [value-encoding.md](value-encoding.md) の形のまま) に記録しておき, パーツ一覧の「変更のみ表示」 (`/parts?changes=only`) でまとめてコミットする.
+パーツの編集はすぐにはコミットせず, 表示しているブランチに属するドラフトコミットとしてブラウザの localStorage
+(`definy.draft_commits.v1`, JSON. 式と型は [value-encoding.md](value-encoding.md) の形のまま) に記録しておき, パーツ一覧の「変更のみ表示」 (`/parts?changes=only`) でまとめてコミットする.
+ドラフトの規則は [branch.md](branch.md)「ドラフトコミット」.
 実装は [src/state/useWorkingChanges.ts](../src/state/useWorkingChanges.ts) (記録・コミット),
-[src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [src/components/WorkingChanges.tsx](../src/components/WorkingChanges.tsx) (変更の一覧とコミット).
+[src/draft_commits.ts](../src/draft_commits.ts) (ドラフトの純粋関数), [src/draft_commit_storage.ts](../src/draft_commit_storage.ts) (保存形式), [src/components/WorkingChanges.tsx](../src/components/WorkingChanges.tsx) (変更の一覧とコミット).
 
-- 記録はパーツの定義全体 (`PartChange`) をパーツ ID ごとに 1 つ持つ
-- コミットはプロジェクトごとの `project_commit` ([project.md](project.md)). プロジェクトの今の全モジュールのパーツに作業中の変更を重ねたもの
-  (`buildCommitModules`) を, 表示しているブランチの最新コミットを親にして署名して送る. 受け付けられたらそのプロジェクトのモジュールの変更を記録から消す
+- 記録はパーツの定義全体 (`PartChange`) をパーツ ID ごとに 1 つ持つ. 有効なのは今のアカウントの, 表示しているブランチのドラフトだけ (`useDefiny()` の `workingChanges` はその合成)
+- コミットはプロジェクトごとの `project_commit` ([project.md](project.md)). プロジェクトの今の全モジュールのパーツにそのブランチのドラフトの変更を重ねたもの
+  (`buildCommitModules`) を, 表示しているブランチの最新コミットを親にして署名して送る. 受け付けられたらそのドラフトを消す
 - 未コミットの変更があるパーツはエクスプローラーに印を出し, アクティビティバーの「プロジェクト」に件数を出す
 - 「変更」ページは置かず, パーツ一覧 (`pages/parts.tsx`) で見る. 一覧はコミット済みのパーツに作業中の変更を重ねて出し,
   新しいパーツは「新規」, 変えたパーツは「●」, 削除したパーツは取り消し線と「削除」のバッジ (`.part-card[data-status]`).
@@ -598,8 +599,8 @@ Void はページを SSR してからクライアントでハイドレーショ�
 - URL は SSR でも `useRouter()` (`@void/react`) で読める. SSR では `createSsrRouter(リクエストの URL)` が使われ,
   `path` や `query` はクエリ文字列も含めてクライアントと一致する. 現在のパスは `window.location.pathname` ではなく
   `useRouter().path` を使う (`ActivityBar`)
-- 作業中の変更 (`definy.working_changes.v2`) はマウント後に読み込むが, 保存するのはユーザー操作による
-  `updateWorkingPart` などのときだけなので, 読み込み前の空の状態で保存済みの変更を消すことはない
+- ドラフト (`definy.draft_commits.v1`) はマウント後に読み込むが, 保存するのはユーザー操作による
+  `updateWorkingPart` などのときだけなので, 読み込み前の空の状態で保存済みのドラフトを消すことはない
 
 ### 表示言語の決め方
 
