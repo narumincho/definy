@@ -1754,14 +1754,14 @@ test.describe("definy UI E2E", () => {
     await expect(selected).toHaveText("height");
     await expect(badge("height")).toHaveCount(2);
 
-    // Ctrl + クリックでも移動できる. Ctrl を押しながらホバーすると下線が付く
-    await page.keyboard.down("Control");
+    // Ctrl (macOS では Cmd) + クリックでも移動できる. 押しながらホバーすると下線が付く. macOS の Ctrl + クリックは右クリックになるので ControlOrMeta を使う
+    await page.keyboard.down("ControlOrMeta");
     await badge("width").last().hover();
     await expect(badge("width").last()).toHaveAttribute("data-link", "true");
     await badge("width")
       .last()
-      .click({ modifiers: ["Control"] });
-    await page.keyboard.up("Control");
+      .click({ modifiers: ["ControlOrMeta"] });
+    await page.keyboard.up("ControlOrMeta");
     await expect(selected).toHaveText("width");
     await expect(page.locator(".dropdown-search-input")).toHaveCount(0);
   });
@@ -1809,8 +1809,8 @@ test.describe("definy UI E2E", () => {
     await expect(page).toHaveURL(/\/part\/sample\.match-option-sample/);
     await page.keyboard.press("Escape");
 
-    // Ctrl + クリックで呼び出しているパーツ core.plus の詳細ページへ移動する
-    await plus.click({ modifiers: ["Control"] });
+    // Ctrl (macOS では Cmd) + クリックで呼び出しているパーツ core.plus の詳細ページへ移動する
+    await plus.click({ modifiers: ["ControlOrMeta"] });
     await expect(page).not.toHaveURL(/match-option-sample/);
     await expect(page).toHaveURL(/\/part\//);
     await expect(page).toHaveTitle(/plus/);
