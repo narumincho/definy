@@ -21,6 +21,11 @@ export type NarrationLine = {
   readonly en: readonly string[];
   /** エスペラントの字幕. 日本語の字幕の文と 1 つずつ対応させる */
   readonly eo: readonly string[];
+  /**
+   * エスペラントの音声で読ませる文 (`eo` と同じ数の文). 書いた台詞だけエスペラントの音声を作る (無ければ日本語の音声).
+   * 名前は読みどおりのつづりにする (definy → defajni). scripts/esperanto_voice.ts
+   */
+  readonly eoSpeech?: readonly string[];
 };
 
 export const NARRATION: Readonly<
@@ -41,6 +46,11 @@ export const NARRATION: Readonly<
       eo: [
         "Saluton, mi estas Zundamon!",
         "Hodiaŭ mi prezentos programlingvon nomatan definy.",
+        "Ĝi estas simpla, pure funkcia, vida programlingvo!",
+      ],
+      eoSpeech: [
+        "Saluton, mi estas Zundamon!",
+        "Hodiaŭ mi prezentos programlingvon nomatan defajni.",
         "Ĝi estas simpla, pure funkcia, vida programlingvo!",
       ],
     },

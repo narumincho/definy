@@ -18,20 +18,38 @@ import {
   buildTimeline,
   entryIndexAt,
   formatTime,
+  type Timeline,
   type TimelineEntry,
 } from "./timeline.ts";
 import { VOICE_CLIPS, type VoiceClip } from "./voice_manifest.ts";
 import "./story.css";
 
-function voiceClipOf(slide: number, step: number): VoiceClip | undefined {
+/**
+ * その区間の解説音声. エスペラントはエスペラントの音声 (`eo/` で始まるキー) があればそれを, 無ければ日本語の音声を使う.
+ * 英語は日本語の音声 (字幕だけ訳す)
+ */
+function voiceClipOf(
+  lang: LanguageCode,
+  slide: number,
+  step: number,
+): VoiceClip | undefined {
   const id = SLIDES[slide]?.id;
-  return id === undefined ? undefined : VOICE_CLIPS[`${id}/${step}`];
+  if (id === undefined) {
+    return undefined;
+  }
+  return (
+    (lang === "eo" ? VOICE_CLIPS[`eo/${id}/${step}`] : undefined) ??
+    VOICE_CLIPS[`${id}/${step}`]
+  );
 }
 
 function entryVoiceClip(
+  lang: LanguageCode,
   entry: TimelineEntry | undefined,
 ): VoiceClip | undefined {
-  return entry === undefined ? undefined : voiceClipOf(entry.slide, entry.step);
+  return entry === undefined
+    ? undefined
+    : voiceClipOf(lang, entry.slide, entry.step);
 }
 
 /** 解説音声の後に空ける秒数 */
@@ -42,20 +60,38 @@ const REVEAL_SECONDS = 1.2;
 
 /**
  * 台詞のあるスライドは, 要素が現れるステップを短く済ませ, 台詞のあるステップは音声の長さにする.
- * 解説音声のオン・オフで再生位置がずれないよう, 時間軸は常にこの長さにする
+ * 解説音声のオン・オフで再生位置がずれないよう, 時間軸は常にこの長さにする.
+ * 音声の言語で長さが変わるので, 表示言語ごとに作る
  */
-const TIMELINE = buildTimeline(SLIDES, (slide, step, evenLength) => {
-  const id = SLIDES[slide]?.id;
-  if (id === undefined || !slideHasNarration(id)) {
-    return evenLength;
-  }
-  const clip = voiceClipOf(slide, step);
-  return clip === undefined
-    ? REVEAL_SECONDS
-    : clip.duration + VOICE_PADDING_SECONDS;
-});
+function storyTimeline(lang: LanguageCode): Timeline {
+  return buildTimeline(SLIDES, (slide, step, evenLength) => {
+    const id = SLIDES[slide]?.id;
+    if (id === undefined || !slideHasNarration(id)) {
+      return evenLength;
+    }
+    const clip = voiceClipOf(lang, slide, step);
+    return clip === undefined
+      ? REVEAL_SECONDS
+      : clip.duration + VOICE_PADDING_SECONDS;
+  });
+}
 
-const VOICE_URLS = Object.values(VOICE_CLIPS).map((clip) => clip.file);
+const TIMELINES: Readonly<Record<LanguageCode, Timeline>> = {
+  en: storyTimeline("en"),
+  ja: storyTimeline("ja"),
+  eo: storyTimeline("eo"),
+};
+
+/** その言語で使う解説音声 (先に読み込む) */
+function voiceUrls(timeline: Timeline, lang: LanguageCode): string[] {
+  return [
+    ...new Set(
+      timeline.entries.flatMap(
+        (entry) => entryVoiceClip(lang, entry)?.file ?? [],
+      ),
+    ),
+  ];
+}
 
 const PREFERENCE_KEY = "definy-story-sound";
 
@@ -97,8 +133,8 @@ function writePreference(preference: SoundPreference): void {
   }
 }
 
-function clampTime(time: number): number {
-  return Math.min(TIMELINE.total, Math.max(0, time));
+function clampTime(timeline: Timeline, time: number): number {
+  return Math.min(timeline.total, Math.max(0, time));
 }
 
 function ControlButton(props: {
@@ -151,11 +187,12 @@ const LEAVING_SLIDE_MS = 700;
 
 /** YouTube のようなシークバー. スライドごとに区切り, ドラッグでどこからでも再生できる */
 function SeekBar(props: {
+  readonly timeline: Timeline;
   readonly time: number;
   readonly lang: LanguageCode;
   readonly onSeek: (time: number) => void;
 }): JSX.Element {
-  const { time, lang, onSeek } = props;
+  const { timeline, time, lang, onSeek } = props;
   const trackRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | undefined>(undefined);
 
@@ -164,7 +201,10 @@ function SeekBar(props: {
     if (rect === undefined || rect.width === 0) {
       return 0;
     }
-    return clampTime(((clientX - rect.left) / rect.width) * TIMELINE.total);
+    return clampTime(
+      timeline,
+      ((clientX - rect.left) / rect.width) * timeline.total,
+    );
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
@@ -182,7 +222,7 @@ function SeekBar(props: {
   const hoverSlide =
     hover === undefined
       ? undefined
-      : SLIDES[TIMELINE.entries[entryIndexAt(TIMELINE, hover)]?.slide ?? 0];
+      : SLIDES[timeline.entries[entryIndexAt(timeline, hover)]?.slide ?? 0];
 
   return (
     <div
@@ -192,7 +232,7 @@ function SeekBar(props: {
       tabIndex={-1}
       aria-label={label(lang, "Seek", "再生位置", "Pozicio")}
       aria-valuemin={0}
-      aria-valuemax={Math.round(TIMELINE.total)}
+      aria-valuemax={Math.round(timeline.total)}
       aria-valuenow={Math.round(time)}
       aria-valuetext={formatTime(time)}
       onPointerDown={onPointerDown}
@@ -200,8 +240,8 @@ function SeekBar(props: {
       onPointerLeave={() => setHover(undefined)}
     >
       {SLIDES.map((slide, index) => {
-        const start = TIMELINE.slideStarts[index] ?? 0;
-        const length = TIMELINE.slideLengths[index] ?? slide.duration;
+        const start = timeline.slideStarts[index] ?? 0;
+        const length = timeline.slideLengths[index] ?? slide.duration;
         const played = Math.min(1, Math.max(0, (time - start) / length));
         const hovered =
           hover !== undefined && hover >= start && hover < start + length;
@@ -219,23 +259,23 @@ function SeekBar(props: {
         );
       })}
       {/* スライドの中で要素が現れる (アニメーションが入る) 時刻の点 */}
-      {TIMELINE.entries
+      {timeline.entries
         .filter((entry) => entry.step > 0)
         .map((entry) => (
           <span
             key={`${entry.slide}-${entry.step}`}
             className={`story-seek-dot ${time >= entry.start ? "is-past" : ""}`}
-            style={{ left: `${(entry.start / TIMELINE.total) * 100}%` }}
+            style={{ left: `${(entry.start / timeline.total) * 100}%` }}
           />
         ))}
       <div
         className="story-seek-thumb"
-        style={{ left: `${(time / TIMELINE.total) * 100}%` }}
+        style={{ left: `${(time / timeline.total) * 100}%` }}
       />
       {hover !== undefined && hoverSlide !== undefined ? (
         <div
           className="story-seek-tooltip"
-          style={{ left: `${(hover / TIMELINE.total) * 100}%` }}
+          style={{ left: `${(hover / timeline.total) * 100}%` }}
         >
           <div>{slideTitle(hoverSlide, lang)}</div>
           <div className="story-seek-tooltip-time">{formatTime(hover)}</div>
@@ -255,6 +295,8 @@ export function StoryPlayer(props: {
   readonly lang: LanguageCode;
 }): JSX.Element {
   const { lang } = props;
+  // 表示言語が変わったら作り直す (pages/about.tsx の key) ので, 1 つのプレイヤーの中では時間軸は変わらない
+  const timeline = TIMELINES[lang];
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [sound, setSound] = useState<SoundPreference>({
@@ -300,7 +342,7 @@ export function StoryPlayer(props: {
     audio.resume();
     audio.setBgm(soundRef.current.bgm);
     if (soundRef.current.voice) {
-      audio.preloadVoices(VOICE_URLS);
+      audio.preloadVoices(voiceUrls(timeline, lang));
     }
   }, []);
 
@@ -311,7 +353,7 @@ export function StoryPlayer(props: {
   }, []);
 
   const updateTime = useCallback((next: number): void => {
-    const clamped = clampTime(next);
+    const clamped = clampTime(timeline, next);
     timeRef.current = clamped;
     setTime(clamped);
   }, []);
@@ -322,7 +364,7 @@ export function StoryPlayer(props: {
     if (audio === null) {
       return;
     }
-    const clip = entryVoiceClip(TIMELINE.entries[index]);
+    const clip = entryVoiceClip(lang, timeline.entries[index]);
     if (
       !soundRef.current.voice ||
       clip === undefined ||
@@ -339,9 +381,9 @@ export function StoryPlayer(props: {
     (next: number): void => {
       wake();
       updateTime(next);
-      const index = entryIndexAt(TIMELINE, timeRef.current);
+      const index = entryIndexAt(timeline, timeRef.current);
       if (playingRef.current) {
-        const start = TIMELINE.entries[index]?.start ?? 0;
+        const start = timeline.entries[index]?.start ?? 0;
         startVoiceAt(index, timeRef.current - start);
       } else {
         audioRef.current?.stopVoice();
@@ -353,7 +395,7 @@ export function StoryPlayer(props: {
   /** 次へ・戻るでの移動. 止まっていても, 移った先のステップの解説音声を最初から鳴らす */
   const navigate = useCallback(
     (index: number): void => {
-      const target = TIMELINE.entries[index];
+      const target = timeline.entries[index];
       if (target === undefined) {
         return;
       }
@@ -364,22 +406,22 @@ export function StoryPlayer(props: {
     [startVoiceAt, updateTime, wake],
   );
 
-  const entryIndex = entryIndexAt(TIMELINE, time);
-  const entry = TIMELINE.entries[entryIndex];
+  const entryIndex = entryIndexAt(timeline, time);
+  const entry = timeline.entries[entryIndex];
 
   // 表示するステップが変わったら効果音を鳴らす
   useEffect(() => {
-    const previous = TIMELINE.entries[shownEntryRef.current];
-    const current = TIMELINE.entries[entryIndex];
+    const previous = timeline.entries[shownEntryRef.current];
+    const current = timeline.entries[entryIndex];
     shownEntryRef.current = entryIndex;
     if (previous === undefined || current === undefined) {
       return;
     }
-    if (entryIndex === TIMELINE.entries.length - 1 && previous !== current) {
+    if (entryIndex === timeline.entries.length - 1 && previous !== current) {
       playEffect("finish");
     } else if (current.slide > previous.slide) {
       playEffect("next");
-    } else if (entryIndex < TIMELINE.entries.indexOf(previous)) {
+    } else if (entryIndex < timeline.entries.indexOf(previous)) {
       playEffect("prev");
     } else if (current !== previous) {
       playEffect("reveal");
@@ -387,14 +429,14 @@ export function StoryPlayer(props: {
   }, [entryIndex, playEffect]);
 
   const next = useCallback((): void => {
-    const index = entryIndexAt(TIMELINE, timeRef.current) + 1;
-    if (index < TIMELINE.entries.length) {
+    const index = entryIndexAt(timeline, timeRef.current) + 1;
+    if (index < timeline.entries.length) {
       navigate(index);
     }
   }, [navigate]);
 
   const previous = useCallback((): void => {
-    navigate(Math.max(0, entryIndexAt(TIMELINE, timeRef.current) - 1));
+    navigate(Math.max(0, entryIndexAt(timeline, timeRef.current) - 1));
   }, [navigate]);
 
   const togglePlay = useCallback((): void => {
@@ -404,13 +446,13 @@ export function StoryPlayer(props: {
       setPlaying(false);
       return;
     }
-    if (timeRef.current >= TIMELINE.total) {
+    if (timeRef.current >= timeline.total) {
       updateTime(0);
     }
-    const index = entryIndexAt(TIMELINE, timeRef.current);
+    const index = entryIndexAt(timeline, timeRef.current);
     startVoiceAt(
       index,
-      timeRef.current - (TIMELINE.entries[index]?.start ?? 0),
+      timeRef.current - (timeline.entries[index]?.start ?? 0),
     );
     setPlaying(true);
   }, [playing, startVoiceAt, updateTime, wake]);
@@ -422,18 +464,18 @@ export function StoryPlayer(props: {
     }
     let last = performance.now();
     let frame = requestAnimationFrame(function tick(now: number): void {
-      const before = entryIndexAt(TIMELINE, timeRef.current);
+      const before = entryIndexAt(timeline, timeRef.current);
       const advanced = timeRef.current + (now - last) / 1000;
       last = now;
-      if (advanced >= TIMELINE.total) {
-        updateTime(TIMELINE.total);
+      if (advanced >= timeline.total) {
+        updateTime(timeline.total);
         setPlaying(false);
         return;
       }
       updateTime(advanced);
-      const after = entryIndexAt(TIMELINE, advanced);
+      const after = entryIndexAt(timeline, advanced);
       if (after !== before) {
-        startVoiceAt(after, advanced - (TIMELINE.entries[after]?.start ?? 0));
+        startVoiceAt(after, advanced - (timeline.entries[after]?.start ?? 0));
       }
       frame = requestAnimationFrame(tick);
     });
@@ -449,14 +491,14 @@ export function StoryPlayer(props: {
       wake();
       if (change.voice !== undefined) {
         if (change.voice) {
-          audioRef.current?.preloadVoices(VOICE_URLS);
+          audioRef.current?.preloadVoices(voiceUrls(timeline, lang));
         }
         // 再生中にオンにしたら, 今のステップの解説を今の位置から鳴らす. 止まっているときは鳴らさない
         if (playingRef.current) {
-          const index = entryIndexAt(TIMELINE, timeRef.current);
+          const index = entryIndexAt(timeline, timeRef.current);
           startVoiceAt(
             index,
-            timeRef.current - (TIMELINE.entries[index]?.start ?? 0),
+            timeRef.current - (timeline.entries[index]?.start ?? 0),
           );
         } else {
           audioRef.current?.stopVoice();
@@ -471,7 +513,7 @@ export function StoryPlayer(props: {
     { readonly slide: number; readonly step: number } | undefined
   >(undefined);
   const shownSlideRef = useRef({ slide: 0, step: 0 });
-  const currentSlide = TIMELINE.entries[entryIndexAt(TIMELINE, time)];
+  const currentSlide = timeline.entries[entryIndexAt(timeline, time)];
   useEffect(() => {
     if (currentSlide === undefined) {
       return;
@@ -621,7 +663,7 @@ export function StoryPlayer(props: {
     return <div />;
   }
   const slide = SLIDES[entry.slide];
-  const atEnd = time >= TIMELINE.total;
+  const atEnd = time >= timeline.total;
   /** 今のステップの台詞. 字幕は解説がオフでも出す (英語・エスペラントは音声が日本語で字幕だけ訳す) */
   const narration =
     slide !== undefined ? narrationLine(slide.id, entry.step) : undefined;
@@ -662,14 +704,14 @@ export function StoryPlayer(props: {
             character={narratorPresence}
             offset={time - entry.start}
             audio={audio}
-            clip={entryVoiceClip(entry)}
+            clip={entryVoiceClip(lang, entry)}
             line={narration}
             lang={lang}
           />
         </div>
       </div>
       <div className="story-controls">
-        <SeekBar time={time} lang={lang} onSeek={seek} />
+        <SeekBar timeline={timeline} time={time} lang={lang} onSeek={seek} />
         <div className="story-control-row">
           <ControlButton
             onClick={togglePlay}
@@ -698,7 +740,7 @@ export function StoryPlayer(props: {
             <span>{formatTime(time)}</span>
             <span className="story-time-total">
               {" / "}
-              {formatTime(TIMELINE.total)}
+              {formatTime(timeline.total)}
             </span>
             <span className="story-page-number">
               {entry.slide + 1} / {SLIDES.length}

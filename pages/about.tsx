@@ -127,7 +127,7 @@ export default function AboutPage(): JSX.Element {
     >
       <div style={{ display: "grid", gap: "2rem" }}>
         {/* 紹介スライド (docs/story.md) */}
-        <StoryPlayer lang={language} />
+        <StoryPlayer key={language} lang={language} />
 
         {/* ヒーローセクション */}
         <div

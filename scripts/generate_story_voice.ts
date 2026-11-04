@@ -17,6 +17,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { NARRATION, splitSentences } from "../src/story/narration.ts";
+import { ESPERANTO_SPEED_SCALE, esperantoQuery } from "./esperanto_voice.ts";
 import type { MouthShape, VoiceClip } from "../src/story/voice_manifest.ts";
 
 const ENGINE_URL = process.env["VOICEVOX_URL"] ?? "http://127.0.0.1:50021";
@@ -25,6 +26,8 @@ const SPEAKER = 3;
 const SPEED_SCALE = 1.15;
 /** 音声の作り方 (buildQuery など) を変えたら上げる. 全ての音声を作り直す */
 const SYNTHESIS_VERSION = 3;
+/** エスペラントの読ませ方 (scripts/esperanto_voice.ts) を変えたら上げる. エスペラントの音声を作り直す */
+const ESPERANTO_VERSION = 1;
 
 const ROOT = resolve(import.meta.dirname, "..");
 const VOICE_DIR = join(ROOT, "public", "story", "voice");
@@ -201,13 +204,22 @@ async function buildQuery(
     }
   }
   query.accent_phrases = phrases;
+  return {
+    query,
+    sentenceStarts: sentenceStartsOf(query, sentenceFirstPhrase),
+  };
+}
 
-  // 各文の始まる時刻 (秒, 話速を反映). 字幕を 1 文ずつ出すのに使う
+/** 各文の始まる時刻 (秒, 話速を反映). 字幕を 1 文ずつ出すのに使う */
+function sentenceStartsOf(
+  query: AudioQuery,
+  sentenceFirstPhrase: readonly number[],
+): number[] {
   const sentenceStarts: number[] = [];
   let time = query.prePhonemeLength;
-  for (const [index, phrase] of phrases.entries()) {
+  for (const [index, phrase] of query.accent_phrases.entries()) {
     if (sentenceFirstPhrase.includes(index)) {
-      sentenceStarts.push(Math.round((time / SPEED_SCALE) * 1000) / 1000);
+      sentenceStarts.push(Math.round((time / query.speedScale) * 1000) / 1000);
     }
     const moras =
       phrase.pause_mora === null
@@ -217,7 +229,51 @@ async function buildQuery(
       time += (mora.consonant_length ?? 0) + mora.vowel_length;
     }
   }
-  return { query, sentenceStarts };
+  return sentenceStarts;
+}
+
+/** audio_query から音声を合成して m4a にし (同じキーのものがあれば作り直さない), 一覧に載せる情報を返す */
+async function synthesizeClip(
+  query: AudioQuery,
+  key: string,
+  work: string,
+  name: string,
+  sentenceStarts: number[],
+): Promise<VoiceClip> {
+  const file = `${key}.m4a`;
+  const output = join(VOICE_DIR, file);
+  query.outputSamplingRate = 24000;
+  query.outputStereo = false;
+  const wav = new Uint8Array(
+    await (
+      await engine(`/synthesis?speaker=${SPEAKER}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(query),
+      })
+    ).arrayBuffer(),
+  );
+  if (!(await exists(output))) {
+    const wavPath = join(work, `${key}.wav`);
+    await writeFile(wavPath, wav);
+    await promisify(execFile)("afconvert", [
+      "-f",
+      "m4af",
+      "-d",
+      "aac",
+      "-b",
+      "64000",
+      wavPath,
+      output,
+    ]);
+    console.log(`作った: ${name} → ${file}`);
+  }
+  return {
+    file: `/story/voice/${file}`,
+    duration: Math.round(wavDuration(wav) * 1000) / 1000,
+    mouth: mouthTimeline(query),
+    sentences: sentenceStarts,
+  };
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -250,8 +306,6 @@ async function main(): Promise<void> {
         )
         .digest("hex")
         .slice(0, 16);
-      const file = `${key}.m4a`;
-      const output = join(VOICE_DIR, file);
 
       // 字幕にはかなの記法 ({...}) を書かない. 記法を使う台詞は subtitle を必ず書く
       const shown = line.subtitle ?? line.speech;
@@ -278,39 +332,48 @@ async function main(): Promise<void> {
           `${slideId}/${step}: 字幕と読み上げの文の数が違います (${subtitleSentences.length} と ${sentenceStarts.length})`,
         );
       }
-      query.outputSamplingRate = 24000;
-      query.outputStereo = false;
-
-      const wav = new Uint8Array(
-        await (
-          await engine(`/synthesis?speaker=${SPEAKER}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(query),
-          })
-        ).arrayBuffer(),
+      clips[`${slideId}/${step}`] = await synthesizeClip(
+        query,
+        key,
+        work,
+        `${slideId}/${step}`,
+        sentenceStarts,
       );
-      if (!(await exists(output))) {
-        const wavPath = join(work, `${key}.wav`);
-        await writeFile(wavPath, wav);
-        await promisify(execFile)("afconvert", [
-          "-f",
-          "m4af",
-          "-d",
-          "aac",
-          "-b",
-          "64000",
-          wavPath,
-          output,
-        ]);
-        console.log(`作った: ${slideId}/${step} → ${file}`);
+
+      // エスペラントの音声 (eoSpeech を書いた台詞だけ. scripts/esperanto_voice.ts)
+      if (line.eoSpeech !== undefined) {
+        if (line.eoSpeech.length !== line.eo.length) {
+          throw new Error(
+            `${slideId}/${step}: eoSpeech と eo の文の数が違います (${line.eoSpeech.length} と ${line.eo.length})`,
+          );
+        }
+        const eoKey = createHash("sha256")
+          .update(
+            JSON.stringify([
+              "eo",
+              line.eoSpeech,
+              SPEAKER,
+              ESPERANTO_SPEED_SCALE,
+              SYNTHESIS_VERSION,
+              ESPERANTO_VERSION,
+            ]),
+          )
+          .digest("hex")
+          .slice(0, 16);
+        const eo = await esperantoQuery(
+          line.eoSpeech,
+          SPEAKER,
+          ESPERANTO_SPEED_SCALE,
+        );
+        const eoQuery = eo.query as unknown as AudioQuery;
+        clips[`eo/${slideId}/${step}`] = await synthesizeClip(
+          eoQuery,
+          eoKey,
+          work,
+          `eo/${slideId}/${step}`,
+          sentenceStartsOf(eoQuery, eo.sentenceFirstPhrase),
+        );
       }
-      clips[`${slideId}/${step}`] = {
-        file: `/story/voice/${file}`,
-        duration: Math.round(wavDuration(wav) * 1000) / 1000,
-        mouth: mouthTimeline(query),
-        sentences: sentenceStarts,
-      };
     }
   }
   await rm(work, { recursive: true, force: true });
@@ -347,7 +410,7 @@ export type VoiceClip = {
   readonly sentences: readonly number[];
 };
 
-/** キーは \`スライドの id/ステップ\` */
+/** キーは \`スライドの id/ステップ\` (日本語). エスペラントの音声は \`eo/スライドの id/ステップ\` */
 export const VOICE_CLIPS: Readonly<Record<string, VoiceClip>> = ${JSON.stringify(clips, null, 2)};
 `,
   );
