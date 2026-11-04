@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { NodeKind } from "./types.ts";
 
 /** 式のツリーのノードの種類ごとのバッジの色 */
-export function nodeBadgeColors(kind: NodeKind): {
+function nodeBadgeColors(kind: NodeKind): {
   readonly bg: string;
   readonly color: string;
   readonly border: string;

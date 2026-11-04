@@ -47,7 +47,7 @@ function subtreeContains(
 }
 
 /** 部分木の描画に効く props. {@link sameSubtreeProps} で前と比べる */
-export type SubtreeProps = {
+type SubtreeProps = {
   readonly node: LayoutNode;
   readonly index: SubtreeIndex;
   readonly collapsedIds: ReadonlySet<string>;
