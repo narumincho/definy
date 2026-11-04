@@ -11,7 +11,7 @@ import {
 import { label } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
 import { StoryAudio, type SoundEffect } from "./audio.ts";
-import { narrationLine } from "./narration.ts";
+import { narrationLine, slideHasNarration } from "./narration.ts";
 import { Narrator } from "./Narrator.tsx";
 import { SLIDES, slideTitle } from "./slides.tsx";
 import {
@@ -22,9 +22,6 @@ import {
 } from "./timeline.ts";
 import { VOICE_CLIPS, type VoiceClip } from "./voice_manifest.ts";
 import "./story.css";
-
-/** 解説音声の後に空ける秒数. スライドの `duration` が音声より長ければ, その分はもともと空く */
-const VOICE_PADDING_SECONDS = 0;
 
 function voiceClipOf(slide: number, step: number): VoiceClip | undefined {
   const id = SLIDES[slide]?.id;
@@ -37,12 +34,25 @@ function entryVoiceClip(
   return entry === undefined ? undefined : voiceClipOf(entry.slide, entry.step);
 }
 
+/** 解説音声の後に空ける秒数 */
+const VOICE_PADDING_SECONDS = 0.4;
+
+/** 台詞のあるスライドで, 台詞の無いステップ (要素が現れるだけ) の秒数 */
+const REVEAL_SECONDS = 1.2;
+
 /**
- * 解説音声のオン・オフで再生位置がずれないよう, 時間軸は常に解説音声の長さを含める
+ * 台詞のあるスライドは, 要素が現れるステップを短く済ませ, 台詞のあるステップは音声の長さにする.
+ * 解説音声のオン・オフで再生位置がずれないよう, 時間軸は常にこの長さにする
  */
-const TIMELINE = buildTimeline(SLIDES, (slide, step) => {
+const TIMELINE = buildTimeline(SLIDES, (slide, step, evenLength) => {
+  const id = SLIDES[slide]?.id;
+  if (id === undefined || !slideHasNarration(id)) {
+    return evenLength;
+  }
   const clip = voiceClipOf(slide, step);
-  return clip === undefined ? 0 : clip.duration + VOICE_PADDING_SECONDS;
+  return clip === undefined
+    ? REVEAL_SECONDS
+    : clip.duration + VOICE_PADDING_SECONDS;
 });
 
 const VOICE_URLS = Object.values(VOICE_CLIPS).map((clip) => clip.file);
@@ -526,9 +536,11 @@ export function StoryPlayer(props: {
   }
   const slide = SLIDES[entry.slide];
   const atEnd = time >= TIMELINE.total;
+  /** ずんだもんの解説を出すか (オンで, 日本語のとき) */
+  const voiceOn = voiceAvailable && sound.voice;
   /** 今のステップの解説. 解説がオフか日本語以外なら undefined */
   const narration =
-    voiceAvailable && sound.voice && slide !== undefined
+    voiceOn && slide !== undefined
       ? narrationLine(slide.id, entry.step)
       : undefined;
 
@@ -538,7 +550,7 @@ export function StoryPlayer(props: {
       className={`story-frame ${fullscreen ? "is-fullscreen" : ""}`}
     >
       <div
-        className={`story-stage ${narration === undefined ? "" : "has-narrator"}`}
+        className={`story-stage ${voiceOn ? "has-narrator" : ""}`}
         onClick={(event) => {
           // 文字を選んでコピーしようとしているときは進めない
           if (
@@ -553,9 +565,11 @@ export function StoryPlayer(props: {
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}
         aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
       >
-        <SlideView slide={entry.slide} step={entry.step} lang={lang} />
-        {/* 台詞のあるステップだけ, ずんだもんと字幕を出す (スライドの中身と重ならないように) */}
-        {narration !== undefined ? (
+        {/* 解説がオンのときは, ずんだもんと字幕の場所を空けるためスライドを左上に縮める */}
+        <div className="story-slide-area">
+          <SlideView slide={entry.slide} step={entry.step} lang={lang} />
+        </div>
+        {voiceOn ? (
           <Narrator
             audio={audio}
             clip={entryVoiceClip(entry)}

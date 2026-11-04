@@ -1,6 +1,16 @@
-import type { JSX, ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type JSX,
+  type ReactNode,
+} from "react";
 import { label } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
+import { expressionToLayoutNode } from "../tree_layout/ast_to_layout.ts";
+import { computeLayout } from "../tree_layout/engine.ts";
+import { TreeLayoutRenderer } from "../tree_layout/TreeLayoutRenderer.tsx";
+import { SELF_HOSTING_STATS } from "./self_hosting_stats.ts";
 
 /**
  * 紹介スライド (/about/story) の内容.
@@ -277,7 +287,16 @@ function TitleSlide({ lang }: SlideProps): JSX.Element {
             ja: "これまでと、これから",
             en: "Where it came from, where it is going",
           })}
-          <span className="story-author">@narumincho</span>
+          <span className="story-author">
+            <img
+              src="/story/narumincho.webp"
+              alt=""
+              width={40}
+              height={40}
+              className="story-avatar"
+            />
+            @narumincho
+          </span>
         </p>
       </Reveal>
     </div>
@@ -460,7 +479,10 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
     <div className="story-body">
       <Heading
         lang={lang}
-        kicker={{ ja: "これまで", en: "History" }}
+        kicker={{
+          ja: "これまで (2026-11-04 時点)",
+          en: "History (as of 2026-11-04)",
+        }}
         text={{
           ja: `${formatCount(TOTAL_COMMITS)} コミットから読む definy の歴史`,
           en: `The history of definy in ${formatCount(TOTAL_COMMITS)} commits`,
@@ -507,6 +529,16 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
             <code>
               {FIRST_COMMIT.date} {FIRST_COMMIT.time}
             </code>
+            <span className="story-first-commit-author">
+              <img
+                src="/story/narumincho.webp"
+                alt=""
+                width={24}
+                height={24}
+                className="story-avatar"
+              />
+              narumincho
+            </span>
           </span>
         </Reveal>
       </div>
@@ -649,9 +681,95 @@ function VibeCodingSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
+/**
+ * definy のエディタと同じ部品 (TreeLayoutRenderer) で描く式. 三角形の面積 (sample.triangle-area) の割る数を「穴」にしたもの.
+ * seed の JSON のまま (`{"$part": ...}`) を渡すと, パーツの名前で表示される
+ */
+const SAMPLE_EXPRESSION = {
+  "#call": {
+    function: {
+      "#part_reference": {
+        part_definition_event_hash: { $part: "core.divide" },
+      },
+    },
+    arguments: [
+      {
+        name: "left",
+        value: {
+          "#call": {
+            function: {
+              "#part_reference": {
+                part_definition_event_hash: { $part: "core.multiply" },
+              },
+            },
+            arguments: [
+              { name: "left", value: { "#number": 10 } },
+              { name: "right", value: { "#number": 5 } },
+            ],
+          },
+        },
+      },
+      { name: "right", value: { "#hole": null } },
+    ],
+  },
+};
+
+/** ツリーを描く幅. エディタと同じ computeLayout でこの幅に折り返し, パネルの幅まで拡大する */
+const TREE_WIDTH_PX = 560;
+
+const SAMPLE_LAYOUT = computeLayout(
+  expressionToLayoutNode(SAMPLE_EXPRESSION, "story"),
+  { maxWidth: TREE_WIDTH_PX },
+);
+
+/**
+ * 実際の式のツリーエディタの描画部品で描いた式 (読むだけ).
+ * ツリーの大きさは px で決まるので, パネルの幅に合わせて縮める
+ */
+function RealExpressionTree(): JSX.Element {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState({ scale: 1, height: 0 });
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (outer === null || inner === null) {
+      return;
+    }
+    const update = (): void => {
+      // CSS の max-height (スライドの em) にも収まるようにする
+      const maxHeight = Number.parseFloat(getComputedStyle(outer).maxHeight);
+      const scale = Math.min(
+        outer.clientWidth / TREE_WIDTH_PX,
+        Number.isFinite(maxHeight) ? maxHeight / inner.scrollHeight : Infinity,
+      );
+      setFit({ scale, height: inner.scrollHeight * scale });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(outer);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div
+      ref={outerRef}
+      className="story-real-tree"
+      style={{ height: fit.height === 0 ? undefined : fit.height }}
+    >
+      <div
+        ref={innerRef}
+        className="story-real-tree-inner"
+        style={{ width: TREE_WIDTH_PX, transform: `scale(${fit.scale})` }}
+      >
+        <TreeLayoutRenderer node={SAMPLE_LAYOUT} editable={false} />
+      </div>
+    </div>
+  );
+}
+
 function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
   return (
-    <div className="story-body">
+    <div className="story-body is-tight">
       <Heading
         lang={lang}
         kicker={{ ja: "特徴 1", en: "Feature 1" }}
@@ -660,7 +778,7 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
           en: "Structured editing: no syntax errors",
         }}
       />
-      <div className="story-two">
+      <div className="story-two is-wide-right">
         <Reveal at={0} step={step} className="story-panel">
           <div className="story-panel-label">
             {t(lang, { ja: "テキストのコード", en: "Text code" })}
@@ -675,15 +793,7 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
         </Reveal>
         <Reveal at={1} step={step} className="story-panel is-good">
           <div className="story-panel-label">definy</div>
-          <div className="story-tree">
-            <div className="story-node is-call">
-              <span className="story-node-name">add</span>
-              <div className="story-node is-ref">price</div>
-              <div className="story-node is-hole">
-                □ <small>Number</small>
-              </div>
-            </div>
-          </div>
+          <RealExpressionTree />
           <div className="story-ok">
             {t(lang, {
               ja: "✓ 空きの「穴」は, 入るべき型を知っている",
@@ -793,78 +903,137 @@ function ScratchSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-type NetworkServer = {
-  readonly id: string;
-  readonly name: Text;
-  readonly host: Text;
-  /** このステップから現れる */
-  readonly appearAt: number;
+/**
+ * 署名付きイベントのスライドの図. 位置は図の左上を (0, 0), 右下を (100, 100) とした割合
+ */
+type NetworkNodeId = "alice" | "bob" | "narumincho" | "bobServer" | "evil";
+
+const NETWORK_NODES: Readonly<
+  Record<NetworkNodeId, { readonly x: number; readonly y: number }>
+> = {
+  alice: { x: 13, y: 17 },
+  bob: { x: 13, y: 68 },
+  narumincho: { x: 84, y: 17 },
+  bobServer: { x: 48, y: 68 },
+  evil: { x: 84, y: 68 },
 };
 
-const NETWORK_SERVERS: readonly NetworkServer[] = [
+/** 線. `pulseAt` のステップではイベントが流れる */
+const NETWORK_LINKS: ReadonlyArray<{
+  readonly from: NetworkNodeId;
+  readonly to: NetworkNodeId;
+  readonly label?: Text;
+  readonly appearAt: number;
+  readonly pulseAt: readonly number[];
+}> = [
   {
-    id: "a",
-    name: { ja: "サーバー A", en: "Server A" },
-    host: { ja: "definy.narumincho.com", en: "definy.narumincho.com" },
+    from: "alice",
+    to: "narumincho",
+    label: { ja: "ブラウザから直接", en: "directly from the browser" },
     appearAt: 0,
+    pulseAt: [1],
   },
   {
-    id: "b",
-    name: { ja: "サーバー B", en: "Server B" },
-    host: { ja: "悪意のある運営", en: "malicious operator" },
+    from: "bob",
+    to: "bobServer",
     appearAt: 0,
+    pulseAt: [1],
   },
   {
-    id: "c",
-    name: { ja: "サーバー C", en: "Server C" },
-    host: { ja: "別の運営", en: "another operator" },
+    from: "bobServer",
+    to: "narumincho",
+    label: { ja: "サーバー同士でつながる", en: "servers sync" },
     appearAt: 0,
+    pulseAt: [1],
   },
   {
-    id: "d",
-    name: { ja: "サーバー D", en: "Server D" },
-    host: { ja: "新しく立てたサーバー", en: "a brand-new server" },
+    from: "evil",
+    to: "narumincho",
+    appearAt: 2,
+    pulseAt: [2],
+  },
+  {
+    from: "alice",
+    to: "bobServer",
+    label: { ja: "控えから出し直す", en: "republish" },
     appearAt: 4,
+    pulseAt: [4],
   },
 ];
 
 const NETWORK_CAPTIONS: readonly Text[] = [
   {
-    ja: "nostr と同じく, 公開鍵がそのままユーザー ID。秘密鍵は自分の手元にだけある",
-    en: "Like nostr, the public key is the user ID. The private key never leaves your device",
+    ja: "nostr と同じく, 公開鍵がそのままユーザー ID。ライトユーザーはブラウザから直接, データを持ちたい人は自分で建てたサーバー経由でつなぐ",
+    en: "Like nostr, the public key is the user ID. Light users connect straight from the browser; people who want their own data go through a server they run",
   },
   {
-    ja: "署名したイベントを複数のサーバーに送る。どのサーバーでも署名を確かめられる",
-    en: "Signed events go to several servers, and every server can check the signature",
+    ja: "署名したイベントはサーバーからサーバーへ広がる。どのサーバーでも署名を確かめられる",
+    en: "Signed events spread from server to server, and every server can check the signature",
   },
   {
-    ja: "秘密鍵を持たないサーバーは, Alice のイベントを偽造も改ざんもできない",
-    en: "Without the private key a server cannot forge or alter Alice's events",
+    ja: "秘密鍵を持たないサーバーは, 他の人のイベントを偽造も改ざんもできない",
+    en: "Without the private key a server cannot forge or alter anyone's events",
   },
   {
     ja: "サーバーにできるのは「載せない」こと = 削除だけ (著作権侵害などに対応できる)",
     en: "All a server can do is stop serving it — delete (e.g. copyright violations)",
   },
   {
-    ja: "イベントは手元にも残せる。別のサーバーへそのまま出し直せる",
-    en: "You keep your own copy and can republish it to another server as is",
+    ja: "自分のサーバーにはデータが残る。手元の控えから別のサーバーへ出し直すこともできる",
+    en: "Your own server keeps the data, and you can republish your local copy elsewhere",
   },
 ];
 
-/** 公開鍵 (= ユーザー ID) の見本 */
-const SAMPLE_PUBLIC_KEY = "7f3a9c…e21b";
+type EventState = "ok" | "forged" | "deleted";
+type NetworkEvent = {
+  readonly author: "Alice" | "Bob";
+  readonly state: EventState;
+};
+
+/** そのステップで各ノードが持つイベント */
+function networkEvents(
+  node: NetworkNodeId,
+  step: number,
+): readonly NetworkEvent[] {
+  switch (node) {
+    case "alice":
+      return step >= 1 ? [{ author: "Alice", state: "ok" }] : [];
+    case "bob":
+      return step >= 1 ? [{ author: "Bob", state: "ok" }] : [];
+    case "narumincho":
+      return step >= 1
+        ? [
+            { author: "Alice", state: step >= 3 ? "deleted" : "ok" },
+            { author: "Bob", state: "ok" },
+          ]
+        : [];
+    case "bobServer":
+      return step >= 1
+        ? [
+            { author: "Bob", state: "ok" },
+            { author: "Alice", state: "ok" },
+          ]
+        : [];
+    case "evil":
+      return step >= 2 ? [{ author: "Alice", state: "forged" }] : [];
+  }
+}
 
 function EventChip(props: {
-  readonly state: "ok" | "forged" | "deleted";
+  readonly event: NetworkEvent;
   readonly lang: LanguageCode;
 }): JSX.Element {
-  const { state, lang } = props;
+  const { event, lang } = props;
+  const { author, state } = event;
   return (
     <div className={`story-event-chip is-${state}`}>
       <span className="story-event-chip-body">
         {state === "forged"
-          ? t(lang, { ja: "Alice: 偽のコミット", en: "Alice: forged commit" })
-          : t(lang, { ja: "Alice: コミット", en: "Alice: commit" })}
+          ? t(lang, {
+              ja: `${author}: 偽のコミット`,
+              en: `${author}: forged commit`,
+            })
+          : t(lang, { ja: `${author}: コミット`, en: `${author}: commit` })}
       </span>
       <span className="story-event-chip-mark">
         {state === "ok"
@@ -877,28 +1046,53 @@ function EventChip(props: {
   );
 }
 
-/** そのステップでサーバーが持つイベント */
-function serverEvents(
-  server: string,
-  step: number,
-): ReadonlyArray<"ok" | "forged" | "deleted"> {
-  switch (server) {
-    case "a":
-      return step >= 1 ? ["ok"] : [];
-    case "b":
-      return step >= 2 ? ["ok", "forged"] : step >= 1 ? ["ok"] : [];
-    case "c":
-      return step >= 3 ? ["deleted"] : step >= 1 ? ["ok"] : [];
-    case "d":
-      return step >= 4 ? ["ok"] : [];
-    default:
-      return [];
-  }
+function NetworkNode(props: {
+  readonly id: NetworkNodeId;
+  readonly step: number;
+  readonly lang: LanguageCode;
+  readonly appearAt: number;
+  readonly kind: "client" | "server";
+  readonly icon: string;
+  readonly name: Text;
+  readonly detail: Text;
+  readonly publicKey?: string;
+  readonly className?: string;
+}): JSX.Element {
+  const { id, step, lang } = props;
+  const position = NETWORK_NODES[id];
+  return (
+    <div
+      className="story-net-node"
+      style={{ left: `${position.x}%`, top: `${position.y}%` }}
+    >
+      <Reveal
+        at={props.appearAt}
+        step={step}
+        className={`story-net-card is-${props.kind} ${props.className ?? ""}`}
+      >
+        <div className="story-net-card-head">
+          <span>
+            {props.icon} {t(lang, props.name)}
+          </span>
+          <small>{t(lang, props.detail)}</small>
+        </div>
+        {props.publicKey === undefined ? null : (
+          <div className="story-net-key">
+            🔑 <code>{props.publicKey}</code>
+          </div>
+        )}
+        <div className="story-net-events">
+          {networkEvents(id, step).map((event) => (
+            <EventChip key={event.author} event={event} lang={lang} />
+          ))}
+        </div>
+      </Reveal>
+    </div>
+  );
 }
 
 function EventsSlide({ step, lang }: SlideProps): JSX.Element {
   const caption = NETWORK_CAPTIONS[Math.min(step, NETWORK_CAPTIONS.length - 1)];
-  const rows = NETWORK_SERVERS.length;
   return (
     <div className="story-body is-tight">
       <Heading
@@ -910,85 +1104,104 @@ function EventsSlide({ step, lang }: SlideProps): JSX.Element {
         }}
       />
       <div className="story-net">
-        <div className={`story-device ${step >= 4 ? "is-highlight" : ""}`}>
-          <div className="story-device-title">
-            💻 {t(lang, { ja: "Alice の手元", en: "Alice's device" })}
-          </div>
-          <div className="story-key">
-            <span>
-              🔑{" "}
-              {t(lang, {
-                ja: "公開鍵 = ユーザー ID",
-                en: "Public key = user ID",
-              })}
-            </span>
-            <code>{SAMPLE_PUBLIC_KEY}</code>
-          </div>
-          <div className="story-key is-secret">
-            <span>
-              🔒{" "}
-              {t(lang, {
-                ja: "秘密鍵 (手元だけ)",
-                en: "Private key (device only)",
-              })}
-            </span>
-          </div>
-          <Reveal at={1} step={step} className="story-device-copy">
-            <div className="story-device-copy-label">
-              📦 {t(lang, { ja: "手元の控え", en: "Local copy" })}
-            </div>
-            <EventChip state="ok" lang={lang} />
-          </Reveal>
-        </div>
-        <div className="story-net-link-cell">
-          <svg
-            className="story-net-links"
-            viewBox={`0 0 100 ${rows * 100}`}
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            {NETWORK_SERVERS.map((server, index) => {
-              const y = index * 100 + 50;
-              const d = `M 0 ${(rows * 100) / 2} C 50 ${(rows * 100) / 2}, 50 ${y}, 100 ${y}`;
-              const visible = step >= server.appearAt;
-              const sending =
-                server.appearAt === 0 ? step === 1 : step === server.appearAt;
-              return (
-                <g key={server.id} className={visible ? "" : "is-hidden"}>
-                  <path d={d} className="story-net-line" />
-                  {sending ? (
-                    <path d={d} pathLength={100} className="story-net-pulse" />
-                  ) : null}
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-        <div
-          className="story-servers"
-          style={{ gridTemplateRows: `repeat(${rows}, 1fr)` }}
+        <svg
+          className="story-net-links"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
         >
-          {NETWORK_SERVERS.map((server) => (
-            <Reveal
-              key={server.id}
-              at={server.appearAt}
-              step={step}
-              className={`story-server ${
-                server.id === "b" && step >= 2 ? "is-evil" : ""
-              }`}
+          {NETWORK_LINKS.map((link) => {
+            const from = NETWORK_NODES[link.from];
+            const to = NETWORK_NODES[link.to];
+            const d = `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+            return (
+              <g
+                key={`${link.from}-${link.to}`}
+                className={step >= link.appearAt ? "" : "is-hidden"}
+              >
+                <path d={d} className="story-net-line" />
+                {link.pulseAt.includes(step) ? (
+                  <path d={d} pathLength={100} className="story-net-pulse" />
+                ) : null}
+              </g>
+            );
+          })}
+        </svg>
+        {NETWORK_LINKS.map((link) =>
+          link.label === undefined || step < link.appearAt ? null : (
+            <div
+              key={`${link.from}-${link.to}-label`}
+              className="story-net-link-label"
+              style={{
+                left: `${(NETWORK_NODES[link.from].x + NETWORK_NODES[link.to].x) / 2}%`,
+                top: `${(NETWORK_NODES[link.from].y + NETWORK_NODES[link.to].y) / 2}%`,
+              }}
             >
-              <div className="story-server-head">
-                <span>🖥 {t(lang, server.name)}</span>
-                <small>{t(lang, server.host)}</small>
-              </div>
-              <div className="story-server-events">
-                {serverEvents(server.id, step).map((state) => (
-                  <EventChip key={state} state={state} lang={lang} />
-                ))}
-              </div>
-            </Reveal>
-          ))}
-        </div>
+              {t(lang, link.label)}
+            </div>
+          ),
+        )}
+        <NetworkNode
+          id="alice"
+          step={step}
+          lang={lang}
+          appearAt={0}
+          kind="client"
+          icon="💻"
+          name={{ ja: "Alice", en: "Alice" }}
+          detail={{
+            ja: "ライトユーザー (ブラウザだけ)",
+            en: "light user (browser only)",
+          }}
+          publicKey="7f3a…e21b"
+          className={step >= 4 ? "is-highlight" : ""}
+        />
+        <NetworkNode
+          id="bob"
+          step={step}
+          lang={lang}
+          appearAt={0}
+          kind="client"
+          icon="💻"
+          name={{ ja: "Bob", en: "Bob" }}
+          detail={{
+            ja: "データを自分で持ちたい人",
+            en: "wants to own their data",
+          }}
+          publicKey="c41d…09fa"
+        />
+        <NetworkNode
+          id="narumincho"
+          step={step}
+          lang={lang}
+          appearAt={0}
+          kind="server"
+          icon="🖥"
+          name={{ ja: "ナルミンチョのサーバー", en: "narumincho's server" }}
+          detail={{ ja: "definy.narumincho.com", en: "definy.narumincho.com" }}
+        />
+        <NetworkNode
+          id="bobServer"
+          step={step}
+          lang={lang}
+          appearAt={0}
+          kind="server"
+          icon="🖥"
+          name={{ ja: "Bob が建てたサーバー", en: "Bob's own server" }}
+          detail={{ ja: "自宅やクラウドに", en: "at home or in the cloud" }}
+          className={step >= 4 ? "is-highlight" : ""}
+        />
+        <NetworkNode
+          id="evil"
+          step={step}
+          lang={lang}
+          appearAt={2}
+          kind="server"
+          icon="🖥"
+          name={{ ja: "悪意のあるサーバー", en: "malicious server" }}
+          detail={{ ja: "他の人のふりをしたい", en: "wants to impersonate" }}
+          className="is-evil"
+        />
       </div>
       {caption === undefined ? null : (
         <div key={step} className="story-note story-net-caption">
@@ -1214,14 +1427,86 @@ const SELF_HOSTING_LAYERS: ReadonlyArray<{
 
 /** セルフホストを達成する目標の時期. 発表の前に確認して書き換える */
 const SELF_HOSTING_TARGET: Text = {
-  ja: "目標: 2027 年中に UI まで definy で",
-  en: "Goal: everything including the UI in definy during 2027",
+  ja: "2027 年中に UI まで definy でいけそう?",
+  en: "UI in definy too, by the end of 2027?",
 };
+
+/** 円グラフの区切り. 値は SELF_HOSTING_STATS の語の数 */
+const SELF_HOSTING_SLICES: ReadonlyArray<{
+  readonly name: Text;
+  readonly value: number;
+  readonly color: string;
+}> = [
+  {
+    name: { ja: "definy", en: "definy" },
+    value: SELF_HOSTING_STATS.definy,
+    color: "#b9d09b",
+  },
+  {
+    name: {
+      ja: "TypeScript (サーバー・ホスト)",
+      en: "TypeScript (server / host)",
+    },
+    value: SELF_HOSTING_STATS.typescriptHost,
+    color: "#3178c6",
+  },
+  {
+    name: { ja: "TypeScript (UI)", en: "TypeScript (UI)" },
+    value: SELF_HOSTING_STATS.typescriptUi,
+    color: "#61dafb",
+  },
+];
+
+function percent(value: number, total: number): string {
+  return `${Math.round((value / total) * 100)}%`;
+}
+
+/** ドーナツ型の円グラフ. 区切りは円周の長さを 100 とした破線で描く */
+function DonutChart(props: { readonly lang: LanguageCode }): JSX.Element {
+  const total = SELF_HOSTING_SLICES.reduce((sum, s) => sum + s.value, 0);
+  let offset = 0;
+  return (
+    <div className="story-donut">
+      <svg viewBox="0 0 42 42" className="story-donut-chart" aria-hidden="true">
+        <circle cx="21" cy="21" r="15.9155" className="story-donut-track" />
+        {SELF_HOSTING_SLICES.map((slice, index) => {
+          const length = (slice.value / total) * 100;
+          const circle = (
+            <circle
+              key={slice.name.en}
+              cx="21"
+              cy="21"
+              r="15.9155"
+              className="story-donut-slice"
+              style={{
+                stroke: slice.color,
+                strokeDasharray: `${length} ${100 - length}`,
+                strokeDashoffset: 25 - offset,
+                animationDelay: `${index * 0.25}s`,
+              }}
+            />
+          );
+          offset += length;
+          return circle;
+        })}
+      </svg>
+      <div className="story-donut-center">
+        <div className="story-donut-value">
+          {percent(SELF_HOSTING_STATS.definy, total)}
+        </div>
+        <div>{t(props.lang, { ja: "definy 製", en: "in definy" })}</div>
+      </div>
+    </div>
+  );
+}
 
 function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
   const doneCount = SELF_HOSTING_LAYERS.filter((l) => l.done).length;
+  const total = SELF_HOSTING_SLICES.reduce((sum, s) => sum + s.value, 0);
+  const withoutUi =
+    SELF_HOSTING_STATS.definy + SELF_HOSTING_STATS.typescriptHost;
   return (
-    <div className="story-body">
+    <div className="story-body is-tight">
       <Heading
         lang={lang}
         kicker={{ ja: "目標", en: "Goal" }}
@@ -1231,7 +1516,7 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
         }}
       />
       <div className="story-two is-wide-left">
-        <div className="story-layers">
+        <div className="story-layers is-compact">
           {SELF_HOSTING_LAYERS.map((layer, index) => (
             <Reveal
               key={layer.name.en}
@@ -1244,26 +1529,38 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
               {t(lang, layer.name)}
             </Reveal>
           ))}
+          <Reveal at={3} step={step} className="story-layer is-deploy">
+            <span>☁</span>
+            {t(lang, {
+              ja: "Cloudflare Workers へのデプロイも, definy で書いたパーツが REST API を呼んで行う",
+              en: "Deploying to Cloudflare Workers is a definy part calling the REST API",
+            })}
+          </Reveal>
         </div>
-        <div className="story-stats">
-          <Reveal at={2} step={step} className="story-stat">
-            <div className="story-big-number">869</div>
+        <Reveal at={2} step={step} className="story-donut-panel">
+          <DonutChart lang={lang} />
+          <div className="story-donut-legend">
+            {SELF_HOSTING_SLICES.map((slice) => (
+              <div key={slice.name.en}>
+                <span
+                  className="story-donut-swatch"
+                  style={{ background: slice.color }}
+                />
+                {t(lang, slice.name)}
+                <b>{percent(slice.value, total)}</b>
+              </div>
+            ))}
+          </div>
+          <div className="story-donut-note">
             {t(lang, {
-              ja: "definy で書いたパーツ (組み込みモジュール)",
-              en: "parts written in definy (builtin modules)",
+              ja: `UI を除くと ${percent(SELF_HOSTING_STATS.definy, withoutUi)} が definy。コードの量は語の数で比べた目安 (${SELF_HOSTING_STATS.measuredAt})`,
+              en: `${percent(SELF_HOSTING_STATS.definy, withoutUi)} without the UI. Rough size in words (${SELF_HOSTING_STATS.measuredAt})`,
             })}
-          </Reveal>
-          <Reveal at={2} step={step} delay={0.2} className="story-stat">
-            <div className="story-big-number">0</div>
-            {t(lang, {
-              ja: "残っている Rust のコード",
-              en: "lines of Rust left",
-            })}
-          </Reveal>
-          <Reveal at={3} step={step} className="story-stat is-hot">
+          </div>
+          <Reveal at={3} step={step} delay={0.3} className="story-goal">
             {t(lang, SELF_HOSTING_TARGET)}
           </Reveal>
-        </div>
+        </Reveal>
       </div>
     </div>
   );
@@ -1383,6 +1680,15 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
       </Reveal>
       <Reveal at={1} step={step}>
         <h1 className="story-wordmark is-small">definy</h1>
+      </Reveal>
+      <Reveal at={1} step={step} delay={0.5} className="story-qr">
+        <img
+          src="/story/qr-definy.svg"
+          alt="https://definy.narumincho.com/ の QR コード"
+          width={160}
+          height={160}
+        />
+        <div>definy.narumincho.com</div>
       </Reveal>
       <Reveal at={1} step={step} delay={0.3}>
         <p className="story-sub story-closing-links">

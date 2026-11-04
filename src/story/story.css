@@ -473,15 +473,20 @@
   align-items: stretch;
 }
 
+.story-two.is-wide-right {
+  grid-template-columns: 2fr 3fr;
+}
+
 .story-two.is-wide-left {
   grid-template-columns: 3fr 2fr;
 }
 
-.story-two:not(.is-wide-left):has(> :nth-child(2):last-child) {
+.story-two:not(.is-wide-left, .is-wide-right):has(> :nth-child(2):last-child) {
   grid-template-columns: 1fr 1fr;
 }
 
 .story-panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: 0.6em;
@@ -886,31 +891,6 @@
   color: var(--text-secondary);
 }
 
-.story-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2em;
-}
-
-.story-stat {
-  font-size: 1.4em;
-  color: var(--text-secondary);
-}
-
-.story-stat .story-big-number {
-  font-size: 3.4em;
-  color: var(--text-primary);
-}
-
-.story-stat.is-hot {
-  padding: 0.8em 1em;
-  border-radius: 0.4em;
-  background: var(--green-bg-strong);
-  border: 1px solid var(--green-border);
-  color: var(--green-text);
-  font-weight: 700;
-}
-
 /* ---- 証明 ---- */
 
 .story-cards {
@@ -1135,69 +1115,16 @@
   gap: 1.5em;
 }
 
-/* ---- 複数のサーバー ---- */
+/* ---- 複数のクライアントとサーバー (署名付きイベント) ---- */
 
 .story-body.is-tight {
   gap: 1.2em;
 }
 
 .story-net {
+  position: relative;
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 22em 1fr 30em;
-}
-
-.story-device {
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6em;
-  padding: 1.2em;
-  border-radius: 0.6em;
-  border: 1px solid var(--blue-border);
-  background: var(--blue-bg);
-  transition: box-shadow 0.4s ease;
-}
-
-.story-device.is-highlight {
-  border-color: var(--green);
-  box-shadow: 0 0 3em var(--green-border);
-}
-
-.story-device-title {
-  font-size: 1.5em;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.story-key {
-  display: grid;
-  gap: 0.2em;
-  font-size: 1.2em;
-  color: var(--text-secondary);
-}
-
-.story-key code {
-  font-family: var(--font-mono);
-  color: var(--blue-text);
-  font-size: 1.1em;
-}
-
-.story-key.is-secret {
-  color: var(--yellow-text);
-}
-
-.story-device-copy {
-  display: grid;
-  gap: 0.4em;
-  padding-top: 0.6em;
-  border-top: 1px dashed var(--border-strong);
-}
-
-.story-device-copy-label {
-  font-size: 1.15em;
-  color: var(--text-secondary);
 }
 
 .story-net-links {
@@ -1206,11 +1133,6 @@
   width: 100%;
   height: 100%;
   overflow: visible;
-}
-
-.story-net-link-cell {
-  position: relative;
-  min-height: 0;
 }
 
 .story-net-line {
@@ -1244,57 +1166,95 @@
   }
 }
 
-.story-servers {
-  display: grid;
-  gap: 0.6em;
-  min-height: 0;
+.story-net-link-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.15em 0.6em;
+  border-radius: 1em;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-strong);
+  font-size: 1.05em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  animation: story-fade-in 0.4s ease both;
 }
 
-.story-server {
+/* 図の中のノード. 位置は中心 */
+.story-net-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 19em;
+}
+
+.story-net-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8em;
-  padding: 0.5em 0.9em;
+  flex-direction: column;
+  gap: 0.4em;
+  padding: 0.6em 0.9em;
   border-radius: 0.5em;
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  min-height: 0;
+  transition:
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
 }
 
-.story-server.is-evil {
+.story-net-card.is-client {
+  border-color: var(--blue-border);
+  background: color-mix(in srgb, var(--surface) 85%, var(--blue) 15%);
+}
+
+.story-net-card.is-evil {
   border-color: var(--red-border);
-  background: var(--red-bg);
+  background: color-mix(in srgb, var(--surface) 88%, var(--red) 12%);
 }
 
-.story-server-head {
+.story-net-card.is-highlight {
+  border-color: var(--green);
+  box-shadow: 0 0 2.5em var(--green-border);
+}
+
+.story-net-card-head {
   display: grid;
-  font-size: 1.25em;
+  font-size: 1.2em;
   font-weight: 700;
   color: var(--text-primary);
-  white-space: nowrap;
 }
 
-.story-server-head small {
+.story-net-card-head small {
   font-weight: 400;
   font-size: 0.8em;
   color: var(--text-secondary);
 }
 
-.story-server-events {
+.story-net-key {
+  font-size: 1em;
+  color: var(--text-secondary);
+}
+
+.story-net-key code {
+  font-family: var(--font-mono);
+  color: var(--blue-text);
+}
+
+.story-net-events {
   display: flex;
   flex-direction: column;
-  gap: 0.3em;
-  align-items: flex-end;
+  gap: 0.25em;
+}
+
+.story-net-events:empty {
+  display: none;
 }
 
 .story-event-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.6em;
-  padding: 0.25em 0.6em;
+  padding: 0.2em 0.6em;
   border-radius: 0.4em;
-  font-size: 1.05em;
+  font-size: 1em;
   white-space: nowrap;
   border: 1px solid var(--green-border);
   background: var(--green-bg-strong);
@@ -1314,7 +1274,8 @@
   animation: story-shake 0.5s ease both;
 }
 
-.story-event-chip.is-forged .story-event-chip-body {
+.story-event-chip.is-forged .story-event-chip-body,
+.story-event-chip.is-deleted .story-event-chip-body {
   text-decoration: line-through;
 }
 
@@ -1325,12 +1286,9 @@
   color: var(--text-muted);
 }
 
-.story-event-chip.is-deleted .story-event-chip-body {
-  text-decoration: line-through;
-}
-
 .story-net-caption {
   margin-top: 0;
+  font-size: 1.45em;
   animation: story-reveal 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
@@ -1355,16 +1313,26 @@
   font-size: 1.25cqw;
 }
 
-/* 解説がオンのときはスライドの下に字幕の場所を空ける */
-.story-stage.has-narrator .story-slide {
-  padding-bottom: 8em;
+/*
+ * 解説がオンのときはスライドを左上に 78% に縮め, 下に字幕, 右にずんだもんの場所を作る.
+ * スライドの中は全て em なので, 縮めても崩れない
+ */
+.story-slide-area {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 0.4s ease;
+}
+
+.story-stage.has-narrator .story-slide-area {
+  transform: scale(0.78);
 }
 
 .story-subtitle {
   position: absolute;
-  left: 3em;
-  right: 17em;
-  bottom: 1.2em;
+  left: 2em;
+  right: 18.5em;
+  bottom: 0.9em;
   padding: 0.5em 0.9em;
   border-radius: 0.5em;
   background: rgba(0, 0, 0, 0.72);
@@ -1380,10 +1348,10 @@
 /* 立ち絵は上半身だけを右下に出す */
 .story-zundamon {
   position: absolute;
-  right: 1em;
+  right: 0.5em;
   bottom: 0;
-  width: 20em;
-  height: 15em;
+  width: 17em;
+  height: 21em;
   overflow: hidden;
   animation: story-reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -1425,7 +1393,8 @@
 
 .story-notes .story-note {
   margin-top: 0;
-  font-size: 1.5em;
+  font-size: 1.35em;
+  padding: 0.55em 0.9em;
 }
 
 /* git との比較 (3 列) */
@@ -1463,4 +1432,185 @@
 
 .story-credits .story-link {
   color: var(--text-secondary);
+}
+
+/* ---- セルフホストの円グラフ ---- */
+
+.story-layer.is-deploy {
+  border-color: var(--orange-border);
+  background: var(--orange-bg-strong);
+  color: var(--orange-text);
+}
+
+.story-donut-panel {
+  display: grid;
+  justify-items: center;
+  gap: 0.8em;
+}
+
+.story-donut {
+  position: relative;
+  width: 13em;
+  height: 13em;
+}
+
+.story-donut-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.story-donut-track {
+  fill: none;
+  stroke: var(--overlay-3);
+  stroke-width: 6;
+}
+
+.story-donut-slice {
+  fill: none;
+  stroke-width: 6;
+  animation: story-donut-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes story-donut-in {
+  from {
+    opacity: 0;
+    stroke-width: 0;
+  }
+  to {
+    opacity: 1;
+    stroke-width: 6;
+  }
+}
+
+.story-donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  font-size: 1.2em;
+  color: var(--text-secondary);
+}
+
+.story-donut-value {
+  font-size: 2.6em;
+  font-weight: 800;
+  line-height: 1;
+  color: #b9d09b;
+}
+
+.story-donut-legend {
+  display: grid;
+  gap: 0.3em;
+  font-size: 1.2em;
+  color: var(--text-secondary);
+}
+
+.story-donut-legend > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.story-donut-legend b {
+  margin-left: auto;
+  padding-left: 1em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.story-donut-swatch {
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 0.2em;
+}
+
+.story-donut-note {
+  font-size: 1em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.story-layers.is-compact {
+  gap: 0.45em;
+}
+
+.story-layers.is-compact .story-layer {
+  font-size: 1.3em;
+  padding: 0.45em 0.8em;
+}
+
+.story-goal {
+  padding: 0.5em 0.9em;
+  border-radius: 0.4em;
+  background: var(--green-bg-strong);
+  border: 1px solid var(--green-border);
+  color: var(--green-text);
+  font-weight: 700;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+/* ---- 作者のアイコン ---- */
+
+.story-avatar {
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  margin-right: 0.35em;
+  border: 1px solid var(--border-strong);
+}
+
+.story-author {
+  display: inline-flex;
+  align-items: center;
+}
+
+.story-first-commit-author {
+  display: flex;
+  align-items: center;
+  margin-top: 0.2em;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+/* ---- 実際の式のツリー ---- */
+
+.story-real-tree {
+  position: relative;
+  min-width: 0;
+  max-height: 12em;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.story-real-tree-inner {
+  padding: 0.5rem;
+  background: var(--bg-inset);
+  border-radius: 6px;
+  transform-origin: 0 0;
+}
+
+/* ---- 最後のスライドの QR コード ---- */
+
+.story-qr {
+  position: absolute;
+  right: 0;
+  bottom: 3em;
+  display: grid;
+  justify-items: center;
+  gap: 0.4em;
+  font-size: 1.1em;
+  color: var(--text-secondary);
+}
+
+.story-qr img {
+  width: 11em;
+  height: 11em;
+  padding: 0.5em;
+  background: #fff;
+  border-radius: 0.5em;
+  image-rendering: pixelated;
 }

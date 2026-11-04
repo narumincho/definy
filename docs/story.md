@@ -50,9 +50,12 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 ## スライドの書き方
 
 - 1 枚は `steps` 回の「次へ」で `<Reveal at={n}>` の要素が順に現れる。`at={0}` は最初から出る。
-- 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む。全体は約 5 分 (4:51)。
+- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体は 4:24。
 - ロゴは単色の SVG を CSS の mask にし, `PROJECTS` の `color` で塗る。ロゴの無いもの (nostr, Lean など) は名前だけ出す。
-- 複数のサーバーの線は SVG の `preserveAspectRatio="none"` で伸ばすので, 線の上を進む光は円ではなく丸い端の短い破線で描く。
+- 署名付きイベントのスライドの図はノードの位置を割合 (`NETWORK_NODES`) で持ち, 線は全体に重ねた 1 つの SVG で描く。
+  Alice (ライトユーザー) はブラウザからナルミンチョのサーバーへ直接, Bob (データを持ちたい人) は自分で建てたサーバー経由でつなぐ。
+  ステップごとに: 公開鍵 = ユーザー ID → イベントが広がる → 悪意のあるサーバーは偽造できない → 削除だけできる → 自分のサーバーに残り, 控えから出し直せる。
+- 線は SVG の `preserveAspectRatio="none"` で伸ばすので, 線の上を進む光は円ではなく丸い端の短い破線で描く。
 - 大きさは全て `em` で書く。`.story-slide` の 1em はスライドの幅の 1/80 (`1.25cqw`) なので, 全画面でも同じ見た目のまま大きくなる。
 - `prefers-reduced-motion` では main.css が animation を全て消すので, `.story-reveal.is-on` は animation が無くても表示される形にしてある。
 - エスペラントの文は用意していないので, `lang=eo` では英語を出す。
@@ -62,7 +65,11 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 - 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-04 時点, 4,043 コミット)。
   月ごとの数は `git log --format=%ad --date=format:%Y-%m | sort | uniq -c` で作り直せる。合計や年ごとの数はこの表から求める。
   主な言語は 2019-01〜2020-05 Elm, 2020-06〜2022-12 TypeScript + PureScript, 2023〜2025 Deno・Flutter (Dart) などを試す, 2026-01〜2026-09 Rust, 2026-10 から TypeScript + definy 製コンパイラ (2026-10-18 に Rust 製の stage0 を削除)。
-- definy で書いたパーツの数: `seeds/*.json` の `parts` の合計 (869)。
+- definy 自身で書いている割合 (セルフホストのスライドの円グラフ): `node scripts/measure_self_hosting.ts` が `src/story/self_hosting_stats.ts` に書く。
+  言語が違うので「語の数」で比べた目安。TypeScript は src・worker・middleware・pages のテスト以外のファイルの, コメント・括弧・区切りを除いた識別子・キーワード・リテラル・演算子の数
+  (.tsx と src/components・src/story・src/tree_layout・pages は UI として分ける)。definy は core・std・wasi・wasm・definy モジュールの組み込みでないパーツの, 式と型の木のノード (`#` のキー) の数。
+  definy は ID・名前・リテラルの中身を数えないので少なめに出る。2026-11-04 は definy 32%, TypeScript (サーバー・ホスト) 24%, TypeScript (UI) 43% (UI を除くと definy 57%)。
+- Cloudflare Workers へのデプロイは definy で書いたパーツ `definy.deploy-to-cloudflare-workers` が REST API v4 を呼んで行う ([cloudflare-workers.md](cloudflare-workers.md))。
 - セルフホストの到達状況: [self-hosting.md](self-hosting.md)。
 - セルフホストを終える目標の時期 (`SELF_HOSTING_TARGET`) は仮の値。
 
@@ -71,6 +78,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, 配信する (ブラウザから VOICEVOX は呼ばない)。
 
 1. 台本は `src/story/narration.ts` に, スライドの id ごと・ステップの順に書く。語尾は「〜なのだ」。
+   全てのスライドにある。要素を先に全部出してから話せるよう, 台詞は基本的にスライドの最後のステップに置く (署名付きイベントのスライドだけはステップごと)。
    `speech` は読ませる文 (definy は「デファイニー」のようにかなで書く), `subtitle` は字幕, `face` は表情。
 2. VOICEVOX を起動して `node scripts/generate_story_voice.ts` を実行する。
    ENGINE (`http://127.0.0.1:50021`, `VOICEVOX_URL` で変えられる) の `/audio_query` → `/synthesis` で WAV を作り, macOS の `afconvert` で AAC にする。
@@ -79,11 +87,11 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 
 再生のしかた:
 
-- 時間軸は解説音声のオン・オフによらず, ステップの長さを音声の長さ以上にする (`buildTimeline` の `minimumLength`)。オン・オフで再生位置がずれない。
+- 時間軸は解説音声のオン・オフによらず同じ (`buildTimeline` の `stepLength`)。オン・オフで再生位置がずれない。
 - 次へ・戻るで移ったときは, 止まっていてもそのステップの解説を最初から鳴らす。
 - 再生中のシークや再生の再開では, ステップの中の位置から鳴らす。止まっているときのシークでは鳴らさない。
 - 解説の間は BGM を小さくする。
-- 解説があるステップではスライドの下に字幕の場所を空ける。
+- 解説がオンのときはスライド全体を左上に 78% に縮め (`.story-slide-area`), 下を字幕, 右をずんだもんの場所にする。スライドの中は全て em なので縮めても崩れず, ずんだもんと重ならない。
 - 「VOICEVOX:ずんだもん」の表記が必要 ([ずんだもんの音声ライブラリの利用規約](https://zunko.jp/con_ongen_kiyaku.html))。最後のスライドの下に, 立ち絵とロゴのクレジットと一緒に常に出す (解説がオンでも途中のスライドには出さない)。
 - 解説がオンなら最初の操作で全ての音声を読み込み始める。読み込みが遅れた分は先から鳴らし, 時間軸とずらさない。
 
@@ -109,4 +117,12 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 - 体 (体・腕「腰」・枝豆「枝豆通常」・顔色「ほっぺ基本」) を 1 枚にまとめ, その上に口・目・眉を重ねる。どれも 1/2 に縮小する。
 - 口の形: 閉じ = ほほえみ, あ = ほあー, い = にやり, う = お, え = んえー, お = ほう, ん = んー。
 - 表情: 通常 = 基本目 + 基本眉, 笑顔 = にっこり + 上がり眉, 驚き = 〇〇 + 上がり眉, 困り = 基本目 + 困り眉。まばたきは閉じ目 (笑顔のときはしない)。
-- 画面には上半身だけを出し, 話している間は少し弾ませる。台詞のあるステップだけに出し, 無いステップではスライドの中身と重ならないよう消す。
+- 画面には上半身だけを出し, 話している間は少し弾ませる。解説がオンの間はずっと出す。
+
+## そのほかの部品
+
+- 構造化編集のスライドの式は, エディタと同じ `expressionToLayoutNode` → `computeLayout` → `TreeLayoutRenderer` で描く (読むだけ)。
+  ツリーの大きさは px で決まるので, 560px の幅で折り返したものをパネルの幅 (と `max-height`) に収まるよう `transform: scale` で拡大・縮小する。
+- 最後のスライドの QR コード (`public/story/qr-definy.svg`, https://definy.narumincho.com/) は `npx qrcode@1.5.4 -t svg -e M -q 1 -o public/story/qr-definy.svg "https://definy.narumincho.com/"` で作った。
+- 作者のアイコン (`public/story/narumincho.webp`) は narumincho の GitHub のアイコン。タイトルと, 歴史のグラフの最初のコミットに出す。
+- 歴史のスライドの数は 2026-11-04 時点 (見出しにも書く)。作り直すスクリプトは作らない。

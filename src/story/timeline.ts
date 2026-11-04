@@ -23,12 +23,17 @@ export type Timeline = {
 };
 
 /**
- * 1 枚の `duration` 秒を `steps + 1` 個のステップで等分する.
- * `minimumLength` を渡すと, ステップはその秒数より短くならない (解説音声が途中で切れないように)
+ * スライドを, 開始時刻と長さを持つステップの列にする.
+ * 既定では 1 枚の `duration` 秒を `steps + 1` 個のステップで等分する.
+ * `stepLength` を渡すと各ステップの長さを決め直せる (等分した長さが渡される. 解説音声の長さに合わせるため)
  */
 export function buildTimeline(
   slides: ReadonlyArray<{ readonly duration: number; readonly steps: number }>,
-  minimumLength: (slide: number, step: number) => number = () => 0,
+  stepLength: (slide: number, step: number, evenLength: number) => number = (
+    _slide,
+    _step,
+    evenLength,
+  ) => evenLength,
 ): Timeline {
   const entries: TimelineEntry[] = [];
   const slideStarts: number[] = [];
@@ -37,7 +42,7 @@ export function buildTimeline(
     slideStarts.push(start);
     const evenLength = slide.duration / (slide.steps + 1);
     for (let step = 0; step <= slide.steps; step++) {
-      const length = Math.max(evenLength, minimumLength(slideIndex, step));
+      const length = stepLength(slideIndex, step, evenLength);
       entries.push({ slide: slideIndex, step, start, length });
       start += length;
     }
