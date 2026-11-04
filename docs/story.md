@@ -50,8 +50,9 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 
 ## 数値の出どころ
 
-- 年ごとのコミット数・言語の移り変わり: `git log` (2026-11-04 時点, 4,040 コミット)。
-  主な言語は 2019〜2020 Elm, 2020〜2022 TypeScript + PureScript, 2023〜2025 Deno・Flutter (Dart) などを試す, 2026 Rust → definy 製コンパイラ (2026-10-18 に Rust 製の stage0 を削除)。
+- 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-04 時点, 4,043 コミット)。
+  月ごとの数は `git log --format=%ad --date=format:%Y-%m | sort | uniq -c` で作り直せる。合計や年ごとの数はこの表から求める。
+  主な言語は 2019-01〜2020-05 Elm, 2020-06〜2022-12 TypeScript + PureScript, 2023〜2025 Deno・Flutter (Dart) などを試す, 2026 Rust → definy 製コンパイラ (2026-10-18 に Rust 製の stage0 を削除)。
 - definy で書いたパーツの数: `seeds/*.json` の `parts` の合計 (869)。
 - セルフホストの到達状況: [self-hosting.md](self-hosting.md)。
 - セルフホストを終える目標の時期 (`SELF_HOSTING_TARGET`) は仮の値。

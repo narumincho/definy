@@ -276,7 +276,6 @@
 
 .story-chart {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
   gap: 1.2em;
   height: 18em;
   align-items: end;
@@ -310,18 +309,6 @@
   }
 }
 
-.story-bar-count {
-  font-family: var(--font-mono);
-  font-size: 1.3em;
-  color: var(--text-secondary);
-}
-
-.story-bar-year {
-  font-family: var(--font-mono);
-  font-size: 1.4em;
-  color: var(--text-primary);
-}
-
 .story-bar-column.is-quiet {
   opacity: 0.45;
 }
@@ -331,19 +318,17 @@
   box-shadow: 0 0 2em var(--green-border);
 }
 
-.story-bar-column.is-hot .story-bar-count {
-  color: var(--green-text);
-  font-weight: 700;
+.story-eras {
+  margin-top: -0.6em;
 }
 
-.story-eras {
+.story-eras-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 1.2em;
-  margin-top: -1em;
 }
 
 .story-era {
+  grid-row: 1;
+  min-width: 0;
   border-top: 0.25em solid;
   padding-top: 0.5em;
   font-size: 1.3em;
@@ -363,6 +348,83 @@
 
 .story-era-sep {
   color: var(--text-muted);
+}
+
+/* 月ごとのグラフ. 棒が細いので数は出さず, 一番多い月だけ出す */
+.story-chart.is-monthly {
+  position: relative;
+  gap: 0.18em;
+  column-gap: 0.18em;
+}
+
+.story-chart.is-monthly .story-bar {
+  border-radius: 0.15em 0.15em 0 0;
+  min-height: 0;
+}
+
+.story-chart.is-monthly .story-bar-column {
+  position: relative;
+  gap: 0;
+}
+
+.story-bar-peak {
+  position: absolute;
+  bottom: calc(100% + 0.3em);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  font-family: var(--font-mono);
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--green-text);
+  white-space: nowrap;
+  animation: story-reveal 0.5s ease both;
+}
+
+.story-bar-peak small {
+  font-size: 0.65em;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.story-first-commit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+  font-size: 1.3em;
+  color: var(--text-primary);
+}
+
+.story-first-commit code {
+  display: block;
+  font-family: var(--font-mono);
+  color: var(--yellow-text);
+}
+
+.story-first-commit::after {
+  content: "";
+  position: absolute;
+  left: 0.15em;
+  top: 1.3em;
+  height: calc(18em / 1.3 - 1.3em);
+  border-left: 0.1em dashed var(--yellow-border);
+}
+
+.story-years {
+  display: grid;
+  margin-top: -1.4em;
+}
+
+.story-year {
+  border-left: 1px solid var(--border-strong);
+  padding-left: 0.3em;
+  font-family: var(--font-mono);
+  font-size: 1.25em;
+  color: var(--text-secondary);
 }
 
 .story-era-definy {

@@ -272,117 +272,297 @@ function TitleSlide({ lang }: SlideProps): JSX.Element {
   );
 }
 
-/** `git log` の年ごとのコミット数 (2026-11-04 時点) */
-const COMMITS_PER_YEAR: ReadonlyArray<{
-  readonly year: number;
-  readonly count: number;
-}> = [
-  { year: 2019, count: 426 },
-  { year: 2020, count: 610 },
-  { year: 2021, count: 818 },
-  { year: 2022, count: 883 },
-  { year: 2023, count: 76 },
-  { year: 2024, count: 86 },
-  { year: 2025, count: 39 },
-  { year: 2026, count: 1102 },
-];
+/**
+ * `git log` の月ごとのコミット数 (2026-11-04 時点). 無い月は 0.
+ * 作り直すには `git log --format=%ad --date=format:%Y-%m | sort | uniq -c`
+ */
+const COMMITS_BY_MONTH: Readonly<Record<string, number>> = {
+  "2019-01": 2,
+  "2019-02": 96,
+  "2019-03": 9,
+  "2019-04": 27,
+  "2019-05": 32,
+  "2019-06": 13,
+  "2019-07": 8,
+  "2019-08": 57,
+  "2019-09": 59,
+  "2019-10": 36,
+  "2019-11": 35,
+  "2019-12": 52,
+  "2020-01": 8,
+  "2020-02": 7,
+  "2020-03": 117,
+  "2020-04": 91,
+  "2020-05": 31,
+  "2020-06": 54,
+  "2020-07": 75,
+  "2020-08": 45,
+  "2020-09": 11,
+  "2020-10": 25,
+  "2020-11": 69,
+  "2020-12": 77,
+  "2021-01": 58,
+  "2021-02": 66,
+  "2021-03": 96,
+  "2021-04": 87,
+  "2021-05": 76,
+  "2021-06": 45,
+  "2021-07": 34,
+  "2021-08": 57,
+  "2021-09": 55,
+  "2021-10": 67,
+  "2021-11": 100,
+  "2021-12": 77,
+  "2022-01": 108,
+  "2022-02": 97,
+  "2022-03": 56,
+  "2022-04": 42,
+  "2022-05": 23,
+  "2022-06": 28,
+  "2022-07": 34,
+  "2022-08": 73,
+  "2022-09": 121,
+  "2022-10": 85,
+  "2022-11": 139,
+  "2022-12": 77,
+  "2023-01": 13,
+  "2023-02": 13,
+  "2023-03": 1,
+  "2023-04": 27,
+  "2023-05": 22,
+  "2024-01": 70,
+  "2024-06": 9,
+  "2024-07": 7,
+  "2025-06": 4,
+  "2025-09": 2,
+  "2025-11": 14,
+  "2025-12": 19,
+  "2026-01": 87,
+  "2026-02": 69,
+  "2026-03": 130,
+  "2026-05": 14,
+  "2026-06": 10,
+  "2026-07": 18,
+  "2026-08": 86,
+  "2026-09": 133,
+  "2026-10": 481,
+  "2026-11": 77,
+};
 
-/** 主に使っていた言語の移り変わり. from/to は COMMITS_PER_YEAR の添字 */
+/** 最初のコミット (`git log --reverse`) */
+const FIRST_COMMIT = {
+  date: "2019-01-31",
+  time: "13:36",
+};
+
+const FIRST_MONTH = { year: 2019, month: 1 };
+const LAST_MONTH = { year: 2026, month: 11 };
+
+type MonthCount = {
+  readonly year: number;
+  readonly month: number;
+  readonly count: number;
+};
+
+const MONTHLY_COMMITS: readonly MonthCount[] = (() => {
+  const result: MonthCount[] = [];
+  for (
+    let index = FIRST_MONTH.year * 12 + FIRST_MONTH.month - 1;
+    index <= LAST_MONTH.year * 12 + LAST_MONTH.month - 1;
+    index++
+  ) {
+    const year = Math.floor(index / 12);
+    const month = (index % 12) + 1;
+    const key = `${year}-${month.toString().padStart(2, "0")}`;
+    result.push({ year, month, count: COMMITS_BY_MONTH[key] ?? 0 });
+  }
+  return result;
+})();
+
+/** 月の添字 (MONTHLY_COMMITS の何番目か) */
+function monthIndex(year: number, month: number): number {
+  return (year - FIRST_MONTH.year) * 12 + (month - FIRST_MONTH.month);
+}
+
+function commitsIn(from: number, to: number): number {
+  return MONTHLY_COMMITS.filter((m) => m.year >= from && m.year <= to).reduce(
+    (sum, m) => sum + m.count,
+    0,
+  );
+}
+
+const TOTAL_COMMITS = commitsIn(0, 9999);
+const PEAK_MONTH = MONTHLY_COMMITS.reduce((peak, m) =>
+  m.count > peak.count ? m : peak,
+);
+
+/** 主に使っていた言語の移り変わり. from/to は月 (両端を含む) */
 const LANGUAGE_ERAS: ReadonlyArray<{
-  readonly from: number;
-  readonly to: number;
+  readonly from: readonly [number, number];
+  readonly to: readonly [number, number];
   readonly projects: readonly ProjectId[];
   readonly color: string;
   /** 途中で移った先 */
   readonly movedTo?: string;
 }> = [
-  { from: 0, to: 1, projects: ["elm"], color: "#60b5cc" },
-  { from: 1, to: 3, projects: ["typescript", "purescript"], color: "#3178c6" },
-  { from: 4, to: 6, projects: ["deno", "flutter"], color: "var(--text-muted)" },
-  { from: 7, to: 7, projects: ["rust"], color: "#e0904f", movedTo: "definy" },
+  { from: [2019, 1], to: [2020, 5], projects: ["elm"], color: "#60b5cc" },
+  {
+    from: [2020, 6],
+    to: [2022, 12],
+    projects: ["typescript", "purescript"],
+    color: "#3178c6",
+  },
+  {
+    from: [2023, 1],
+    to: [2025, 12],
+    projects: ["deno", "flutter"],
+    color: "var(--text-muted)",
+  },
+  {
+    from: [2026, 1],
+    to: [2026, 11],
+    projects: ["rust"],
+    color: "#e0904f",
+    movedTo: "definy",
+  },
 ];
 
+function formatCount(count: number): string {
+  return count.toLocaleString("en-US");
+}
+
 function HistorySlide({ step, lang }: SlideProps): JSX.Element {
-  const max = Math.max(...COMMITS_PER_YEAR.map((c) => c.count));
+  const max = PEAK_MONTH.count;
+  const columns = {
+    gridTemplateColumns: `repeat(${MONTHLY_COMMITS.length}, 1fr)`,
+  };
+  const years = [...new Set(MONTHLY_COMMITS.map((m) => m.year))];
   return (
     <div className="story-body">
       <Heading
         lang={lang}
         kicker={{ ja: "これまで", en: "History" }}
         text={{
-          ja: "4,040 コミットから読む definy の歴史",
-          en: "The history of definy in 4,040 commits",
+          ja: `${formatCount(TOTAL_COMMITS)} コミットから読む definy の歴史`,
+          en: `The history of definy in ${formatCount(TOTAL_COMMITS)} commits`,
         }}
       />
-      <div className="story-chart">
-        {COMMITS_PER_YEAR.map((c, index) => {
-          const quiet = c.year >= 2023 && c.year <= 2025;
+      <div className="story-chart is-monthly" style={columns}>
+        {MONTHLY_COMMITS.map((m, index) => {
+          const quiet = m.year >= 2023 && m.year <= 2025;
           const highlight =
-            step >= 3 && (quiet ? "is-quiet" : c.year === 2026 ? "is-hot" : "");
+            step >= 3
+              ? quiet
+                ? "is-quiet"
+                : m.year === 2026
+                  ? "is-hot"
+                  : ""
+              : "";
+          const label = `${m.year}-${m.month.toString().padStart(2, "0")}: ${m.count}`;
           return (
-            <div key={c.year} className={`story-bar-column ${highlight || ""}`}>
-              <div className="story-bar-count">{c.count}</div>
+            <div
+              key={label}
+              className={`story-bar-column ${highlight} ${m.month === 1 ? "is-january" : ""}`}
+              title={label}
+            >
+              {m === PEAK_MONTH && step >= 3 ? (
+                <div className="story-bar-peak">
+                  {m.count}
+                  <small>{`${m.year}-${m.month}`}</small>
+                </div>
+              ) : null}
               <div
                 className="story-bar"
                 style={{
-                  height: `${(c.count / max) * 100}%`,
-                  animationDelay: `${index * 0.12}s`,
+                  height: `${(m.count / max) * 100}%`,
+                  animationDelay: `${index * 0.012}s`,
                 }}
               />
-              <div className="story-bar-year">{c.year}</div>
+            </div>
+          );
+        })}
+        <Reveal at={2} step={step} className="story-first-commit">
+          <span className="story-first-commit-flag">🚩</span>
+          <span>
+            {t(lang, { ja: "最初のコミット", en: "First commit" })}
+            <code>
+              {FIRST_COMMIT.date} {FIRST_COMMIT.time}
+            </code>
+          </span>
+        </Reveal>
+      </div>
+      <div className="story-years" style={columns}>
+        {years.map((year) => {
+          const start = monthIndex(
+            year,
+            year === FIRST_MONTH.year ? FIRST_MONTH.month : 1,
+          );
+          const end = Math.min(
+            monthIndex(year, 12),
+            MONTHLY_COMMITS.length - 1,
+          );
+          return (
+            <div
+              key={year}
+              className="story-year"
+              style={{ gridColumn: `${start + 1} / ${end + 2}` }}
+            >
+              {year}
             </div>
           );
         })}
       </div>
       <Reveal at={1} step={step} className="story-eras">
-        {LANGUAGE_ERAS.map((era, index) => (
-          <div
-            key={era.projects.join()}
-            className="story-era"
-            style={{
-              gridColumn: `${era.from + 1} / ${era.to + 2}`,
-              borderColor: era.color,
-              animationDelay: `${index * 0.15}s`,
-            }}
-          >
-            {era.projects.map((project, i) => (
-              <span key={project} className="story-era-item">
-                {i > 0 ? <span className="story-era-sep">+</span> : null}
-                <ProjectLink project={project}>
-                  <Logo project={project} size={1.6} />
-                  {PROJECTS[project].name}
-                </ProjectLink>
-              </span>
-            ))}
-            {era.movedTo === undefined ? null : (
-              <span className="story-era-item">
-                <span className="story-era-sep">→</span>
-                <span className="story-era-definy">{era.movedTo}</span>
-              </span>
-            )}
-          </div>
-        ))}
+        <div className="story-eras-grid" style={columns}>
+          {LANGUAGE_ERAS.map((era, index) => (
+            <div
+              key={era.projects.join()}
+              className="story-era"
+              style={{
+                gridColumn: `${monthIndex(...era.from) + 1} / ${monthIndex(...era.to) + 2}`,
+                borderColor: era.color,
+                animationDelay: `${index * 0.15}s`,
+              }}
+            >
+              {era.projects.map((project, i) => (
+                <span key={project} className="story-era-item">
+                  {i > 0 ? <span className="story-era-sep">+</span> : null}
+                  <ProjectLink project={project}>
+                    <Logo project={project} size={1.5} />
+                    {PROJECTS[project].name}
+                  </ProjectLink>
+                </span>
+              ))}
+              {era.movedTo === undefined ? null : (
+                <span className="story-era-item">
+                  <span className="story-era-sep">→</span>
+                  <span className="story-era-definy">{era.movedTo}</span>
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </Reveal>
       <div className="story-callouts">
         <Reveal at={2} step={step} className="story-callout">
           🎓{" "}
           {t(lang, {
-            ja: "2019 年, 大学の研究から始まった個人プロジェクト",
-            en: "2019: started as a personal project from university research",
+            ja: `${FIRST_COMMIT.date}, 大学の研究から始まった個人プロジェクト`,
+            en: `${FIRST_COMMIT.date}: started as a personal project from university research`,
           })}
         </Reveal>
         <Reveal at={3} step={step} className="story-callout is-quiet">
           💤{" "}
           {t(lang, {
-            ja: "2023〜2025 年: 言語を変えながらも, 手が止まった 3 年",
-            en: "2023–2025: three quiet years of rewrites",
+            ja: `2023〜2025 年: 手が止まった 3 年 (${commitsIn(2023, 2025)} コミット)`,
+            en: `2023–2025: three quiet years (${commitsIn(2023, 2025)} commits)`,
           })}
         </Reveal>
         <Reveal at={3} step={step} delay={0.3} className="story-callout is-hot">
           🚀{" "}
           {t(lang, {
-            ja: "2026 年: 1 年で 1,102 コミット",
-            en: "2026: 1,102 commits in one year",
+            ja: `2026 年: ${formatCount(commitsIn(2026, 2026))} コミット`,
+            en: `2026: ${formatCount(commitsIn(2026, 2026))} commits`,
           })}
         </Reveal>
       </div>
