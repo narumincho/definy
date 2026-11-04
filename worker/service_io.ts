@@ -39,6 +39,17 @@ export type ServiceIoHost = {
     entries: ReadonlyArray<DefinitionCacheEntry>,
   ) => Promise<void>;
   /**
+   * この isolate が覚えている, 中身を解決した結果 (`read_cached_resolutions`.
+   * `definy.resolution-cache-entry` の値). 覚えていない content hash は入れない
+   */
+  readonly readCachedResolutions: (
+    contentHashes: ReadonlyArray<string>,
+  ) => Promise<ReadonlyArray<ResolutionCacheEntry>>;
+  /** definy が解決したものを覚える (`write_cached_resolutions`) */
+  readonly writeCachedResolutions: (
+    entries: ReadonlyArray<ResolutionCacheEntry>,
+  ) => Promise<void>;
+  /**
    * SQL の文を順に実行し, それぞれの結果の行を返す (`sql`. 2 つ以上なら 1 つのトランザクション).
    * 行は列の名前から値 (文字列, 整数, `null`) で, 列は SELECT の順
    */
@@ -100,6 +111,16 @@ export type CommitCacheEntry = {
 export type DefinitionCacheEntry = {
   readonly content_hash: string;
   readonly definition: unknown;
+};
+
+/**
+ * `definy.resolution-cache-entry` (`content` は `core.part-content` の値,
+ * `entry` は `definy.type-check-entry` の値。どちらも即時解決できたものだけが保存される)
+ */
+export type ResolutionCacheEntry = {
+  readonly content_hash: string;
+  readonly content: unknown;
+  readonly entry: unknown;
 };
 
 /** `definy.sql-value` */
@@ -371,6 +392,28 @@ async function runServiceIo(
           instance.read(
             instance.recordField(payload, "entries"),
           ) as ReadonlyArray<DefinitionCacheEntry>,
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(true),
+        ]);
+        break;
+      }
+      case "read_cached_resolutions": {
+        const entries = await host.readCachedResolutions(
+          readStrings(
+            instance.read(instance.recordField(payload, "content_hashes")),
+          ),
+        );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(entries),
+        ]);
+        break;
+      }
+      case "write_cached_resolutions": {
+        await host.writeCachedResolutions(
+          instance.read(
+            instance.recordField(payload, "entries"),
+          ) as ReadonlyArray<ResolutionCacheEntry>,
         );
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(true),

@@ -15,6 +15,7 @@ import type { ContentItem } from "../src/content_store.ts";
 import type {
   CommitCacheEntry,
   DefinitionCacheEntry,
+  ResolutionCacheEntry,
   ServiceIoHost,
 } from "./service_io.ts";
 import { instantiateCompiledFunction } from "../src/stage1_compiler.ts";
@@ -204,6 +205,13 @@ const definyCommitCache = new Map<string, CommitCacheEntry>();
  */
 const definyDefinitionCache = new Map<string, DefinitionCacheEntry>();
 
+/**
+ * definy が中身を解決した結果 (キーは content hash)。解決済みの中身も型検査エントリも
+ * 中身そのものから決まるので、定義のキャッシュと同じく使い回せる
+ * (`read_cached_resolutions` / `write_cached_resolutions`)
+ */
+const definyResolutionCache = new Map<string, ResolutionCacheEntry>();
+
 /*
  * 上の 2 つのキャッシュは中身が不変 (イベントも CAS も書き換わらない) なので、
  * D1 にも保存して isolate をまたいで使い回せるようにする (永続キャッシュ)。
@@ -214,6 +222,7 @@ const definyDefinitionCache = new Map<string, DefinitionCacheEntry>();
 /** D1 に保存済みのキー (isolate ごと。再保存を省く) */
 const persistedCommitHashes = new Set<string>();
 const persistedDefinitionHashes = new Set<string>();
+const persistedResolutionHashes = new Set<string>();
 
 /** テーブルを作った D1 (isolate ごと) */
 const tablesReady = new WeakMap<D1Database, Promise<void>>();
@@ -224,7 +233,8 @@ function ensureCacheTables(db: D1Database): Promise<void> {
     ready = (async () => {
       await db.exec(
         "CREATE TABLE IF NOT EXISTS host_commit_cache (event_hash TEXT PRIMARY KEY, entry_json TEXT NOT NULL);" +
-          "CREATE TABLE IF NOT EXISTS host_definition_cache (content_hash TEXT PRIMARY KEY, entry_json TEXT NOT NULL)",
+          "CREATE TABLE IF NOT EXISTS host_definition_cache (content_hash TEXT PRIMARY KEY, entry_json TEXT NOT NULL);" +
+          "CREATE TABLE IF NOT EXISTS host_resolution_cache (content_hash TEXT PRIMARY KEY, entry_json TEXT NOT NULL)",
       );
     })();
     tablesReady.set(db, ready);
@@ -236,7 +246,8 @@ const D1_LOOKUP_CHUNK = 100;
 
 async function readPersistedEntries(
   db: D1Database,
-  table: "host_commit_cache" | "host_definition_cache",
+  table:
+    "host_commit_cache" | "host_definition_cache" | "host_resolution_cache",
   hashColumn: "event_hash" | "content_hash",
   hashes: ReadonlyArray<string>,
 ): Promise<Array<{ hash: string; entry: unknown }>> {
@@ -271,7 +282,8 @@ async function readPersistedEntries(
 
 async function persistEntries(
   db: D1Database,
-  table: "host_commit_cache" | "host_definition_cache",
+  table:
+    "host_commit_cache" | "host_definition_cache" | "host_resolution_cache",
   hashColumn: "event_hash" | "content_hash",
   entries: ReadonlyArray<{ hash: string; json: string }>,
 ): Promise<void> {
@@ -418,6 +430,77 @@ export function createDefinitionCacheHost(
     },
   };
 }
+
+/**
+ * {@link definyResolutionCache} を読み書きする能力。`db` を渡すと D1 にも保存し、
+ * メモリに無いものは D1 から読む。`memory` はテスト用 (isolate を模す)
+ */
+export function createResolutionCacheHost(
+  db?: D1Database,
+  memory: Map<string, ResolutionCacheEntry> = definyResolutionCache,
+): Pick<ServiceIoHost, "readCachedResolutions" | "writeCachedResolutions"> {
+  return {
+    readCachedResolutions: async (contentHashes) => {
+      const missing: Array<string> = [];
+      const result: Array<ResolutionCacheEntry> = [];
+      for (const contentHash of contentHashes) {
+        const entry = memory.get(contentHash);
+        if (entry === undefined) missing.push(contentHash);
+        else result.push(entry);
+      }
+      if (db !== undefined && missing.length > 0) {
+        const persisted = await readPersistedEntries(
+          db,
+          "host_resolution_cache",
+          "content_hash",
+          missing,
+        );
+        for (const { hash, entry } of persisted) {
+          const cacheEntry = entry as ResolutionCacheEntry;
+          if (cacheEntry.content_hash === hash) {
+            memory.set(hash, cacheEntry);
+            persistedResolutionHashes.add(hash);
+            result.push(cacheEntry);
+          }
+        }
+      }
+      return result;
+    },
+    writeCachedResolutions: async (entries) => {
+      for (const entry of entries) {
+        memory.set(entry.content_hash, entry);
+      }
+      if (db === undefined) return;
+      const fresh: Array<{ hash: string; json: string }> = [];
+      for (const entry of entries) {
+        if (persistedResolutionHashes.has(entry.content_hash)) continue;
+        try {
+          fresh.push({
+            hash: entry.content_hash,
+            json: JSON.stringify(entry),
+          });
+          persistedResolutionHashes.add(entry.content_hash);
+        } catch {
+          // JSON にできない値はメモリだけに残す
+        }
+      }
+      if (fresh.length > 0) {
+        await persistEntries(
+          db,
+          "host_resolution_cache",
+          "content_hash",
+          fresh,
+        );
+      }
+    },
+  };
+}
+
+/** {@link definyResolutionCache} を読み書きする能力 (メモリのみ) */
+export const resolutionCacheHost: Pick<
+  ServiceIoHost,
+  "readCachedResolutions" | "writeCachedResolutions"
+> = createResolutionCacheHost();
 
 /** {@link definyCommitCache} を読み書きする能力 (メモリのみ) */
 export const commitCacheHost: Pick<

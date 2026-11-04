@@ -2,6 +2,7 @@ import serviceModule from "../wasm/service.wasm?module";
 import {
   createCommitCacheHost,
   createDefinitionCacheHost,
+  createResolutionCacheHost,
 } from "./commit_store.ts";
 import {
   handleRequestInDefiny,
@@ -122,6 +123,7 @@ export async function handleWorkerRequest(
         // 読んだコミットと定義の式のキャッシュは D1 にも保存して isolate をまたいで使い回す
         ...createCommitCacheHost(env.DB),
         ...createDefinitionCacheHost(env.DB),
+        ...createResolutionCacheHost(env.DB),
         runSql: (statements) => runD1Statements(requireDb(env), statements),
         verifyEd25519,
         now: Date.now,
