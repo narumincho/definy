@@ -701,7 +701,7 @@
 .story-code {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 1.9em;
+  font-size: 1.6em;
   padding: 0.8em;
   background: var(--bg-inset);
   border-radius: 0.3em;
@@ -714,7 +714,7 @@
   overflow: hidden;
   vertical-align: bottom;
   white-space: pre;
-  animation: story-typing 1.6s steps(23) 0.3s both;
+  animation: story-typing 1.2s steps(15) 0.3s both;
 }
 
 @keyframes story-typing {
@@ -722,7 +722,7 @@
     width: 0;
   }
   to {
-    width: 23ch;
+    width: 15ch;
   }
 }
 
@@ -1188,6 +1188,22 @@
   inset: 0;
   background: var(--red);
   transform-origin: left;
+}
+
+/* 要素が現れる時刻の点. 通り過ぎた点は再生済みの色の上で見えるよう白くする */
+.story-seek-dot {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  pointer-events: none;
+}
+
+.story-seek-dot.is-past {
+  background: #fff;
 }
 
 .story-seek-thumb {

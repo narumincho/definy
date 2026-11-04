@@ -802,7 +802,7 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
             {t(lang, { ja: "テキストのコード", en: "Text code" })}
           </div>
           <pre className="story-code">
-            <span className="story-typing">{"let total = add(price, "}</span>
+            <span className="story-typing">{"x = add(price, "}</span>
             <span className="story-squiggle">{"   "}</span>
           </pre>
           <div className="story-error">

@@ -218,6 +218,16 @@ function SeekBar(props: {
           </div>
         );
       })}
+      {/* スライドの中で要素が現れる (アニメーションが入る) 時刻の点 */}
+      {TIMELINE.entries
+        .filter((entry) => entry.step > 0)
+        .map((entry) => (
+          <span
+            key={`${entry.slide}-${entry.step}`}
+            className={`story-seek-dot ${time >= entry.start ? "is-past" : ""}`}
+            style={{ left: `${(entry.start / TIMELINE.total) * 100}%` }}
+          />
+        ))}
       <div
         className="story-seek-thumb"
         style={{ left: `${(time / TIMELINE.total) * 100}%` }}
@@ -237,6 +247,7 @@ function SeekBar(props: {
 
 /**
  * 紹介スライドの再生. 動画のように再生位置 (秒) を持ち, 既定は止まった状態で手で送る.
+ * スライドのクリックでは進めない (文字を選んだりリンクを押したりするため).
  * キー: → / PageDown / Enter 次へ, ← / PageUp 戻る, Space / K 再生と一時停止,
  * J / L 5 秒戻る・進む, S 効果音, B BGM, V ずんだもんの解説, F 全画面
  */
@@ -527,6 +538,11 @@ export function StoryPlayer(props: {
       visibleRef.current = true;
       return;
     }
+    // 最初の通知を待たずに, 今の位置で見えているかを決めておく
+    const rect = frame.getBoundingClientRect();
+    const visibleHeight =
+      Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+    visibleRef.current = visibleHeight >= rect.height * 0.4;
     const observer = new IntersectionObserver(
       (entries) => {
         visibleRef.current = entries.some(
@@ -630,16 +646,6 @@ export function StoryPlayer(props: {
     >
       <div
         className={`story-stage ${voiceOn ? "has-narrator" : ""}`}
-        onClick={(event) => {
-          // 文字を選んでコピーしようとしているときは進めない
-          if (
-            (window.getSelection()?.toString() ?? "") !== "" ||
-            (event.target instanceof Element && event.target.closest("a"))
-          ) {
-            return;
-          }
-          next();
-        }}
         role="region"
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}
         aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
@@ -758,9 +764,9 @@ export function StoryPlayer(props: {
       <div className="story-hint">
         {label(
           lang,
-          "Click or → next · ← back · Space play/pause · J/L ±5s · S sound · B music · F full screen",
-          "クリックか → で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · V ずんだもんの解説 · F 全画面",
-          "Klaku aŭ → · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · F plenekrane",
+          "→ next · ← back · Space play/pause · J/L ±5s · S sound · B music · F full screen",
+          "→ で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · V ずんだもんの解説 · F 全画面",
+          "→ antaŭen · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · F plenekrane",
         )}
       </div>
     </div>
