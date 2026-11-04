@@ -52,6 +52,15 @@ export function probeInferredTypeAt(
   );
 }
 
+/**
+ * 式 (probe の未入力を 1 つ含む) を型チェッカーに渡して, その位置の型 (`core.type-ast` の値) を聞く.
+ * 分からなければ `null`
+ */
+export type TypeQuery = (part: {
+  readonly partType: unknown;
+  readonly expression: unknown;
+}) => Promise<DefinyValue | null>;
+
 /** 式の型. `inferred` は式から推論した型, `expected` は推論できず, その位置で期待する型 */
 export type ExpressionTypeAt = {
   readonly kind: "inferred" | "expected";
