@@ -289,7 +289,7 @@ function TitleSlide({ lang }: SlideProps): JSX.Element {
         />
       </Reveal>
       <Reveal at={0} step={0} delay={0.25}>
-        <h1 className="story-wordmark">definy</h1>
+        <p className="story-wordmark">definy</p>
       </Reveal>
       <Reveal at={0} step={0} delay={0.5}>
         <p className="story-lead">
@@ -1876,7 +1876,7 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
         </span>
       </Reveal>
       <Reveal at={1} step={step}>
-        <h1 className="story-wordmark is-small">definy</h1>
+        <p className="story-wordmark is-small">definy</p>
       </Reveal>
       <Reveal at={1} step={step} delay={0.5} className="story-qr">
         <img
