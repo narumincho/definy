@@ -129,6 +129,38 @@ export default function ProjectDetailPage(): JSX.Element {
       cancelled = true;
     };
   }, [missing, unavailable, loadEvent]);
+  /** 親のコミットがこのサーバーに無く, 履歴がそこで途切れている (サーバーが消した・隠したかもしれない. docs/event.md「消されたことに気づけるか」) */
+  const missingParent =
+    missing !== null && unavailable.has(missing) ? missing : null;
+  // 取り込んだコミットも, 読んでいなければ読んでみる. 無ければ取り込みのバッジにそう出す
+  const loadedCommitHashes = new Set(
+    decodedCommits.map((c) => c.event.eventHash),
+  );
+  const unloadedMergedKey = [
+    ...new Set(
+      projectCommits.flatMap(({ commit }) =>
+        commit.mergedCommitHash !== null &&
+        !loadedCommitHashes.has(commit.mergedCommitHash) &&
+        !unavailable.has(commit.mergedCommitHash)
+          ? [commit.mergedCommitHash]
+          : [],
+      ),
+    ),
+  ].join(",");
+  useEffect(() => {
+    if (unloadedMergedKey === "") return;
+    let cancelled = false;
+    for (const hash of unloadedMergedKey.split(",")) {
+      void loadEvent(hash).then((found) => {
+        if (!found && !cancelled) {
+          setUnavailable((prev) => new Set(prev).add(hash));
+        }
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [unloadedMergedKey, loadEvent]);
 
   return (
     <div className="module-detail-view project-detail-view">
@@ -199,7 +231,7 @@ export default function ProjectDetailPage(): JSX.Element {
         </div>
       </div>
 
-      {projectCommits.length > 0 && (
+      {(projectCommits.length > 0 || missingParent !== null) && (
         <div className="module-parts-section">
           <h3>{label(language, "Commits", "コミット履歴", "Enmetoj")}</h3>
           <ol className="module-commit-list">
@@ -219,15 +251,34 @@ export default function ProjectDetailPage(): JSX.Element {
                       )}
                 </Link>
                 <span className="module-commit-meta">
-                  {commit.mergedCommitHash !== null && (
-                    <Link
-                      href={`/event/${commit.mergedCommitHash}`}
-                      className="badge badge-success"
-                    >
-                      {label(language, "Merge", "取り込み", "Kunfando")}{" "}
-                      {commit.mergedCommitHash.slice(0, 8)}
-                    </Link>
-                  )}
+                  {commit.mergedCommitHash !== null &&
+                    (unavailable.has(commit.mergedCommitHash) ? (
+                      <span
+                        className="badge badge-invalid-signature module-commit-merged-missing"
+                        title={label(
+                          language,
+                          "The merged commit is not on this server. It may have been deleted. Another server or a local copy may still have it.",
+                          "取り込んだコミットがこのサーバーにありません。消された可能性があります。他のサーバーや手元のコピーには残っているかもしれません。",
+                          "La kunfandita enmeto ne estas en ĉi tiu servilo. Ĝi eble estis forigita. Alia servilo aŭ loka kopio eble ankoraŭ havas ĝin.",
+                        )}
+                      >
+                        {label(
+                          language,
+                          "Merge (missing)",
+                          "取り込み (見つからない)",
+                          "Kunfando (mankas)",
+                        )}{" "}
+                        {commit.mergedCommitHash.slice(0, 8)}
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/event/${commit.mergedCommitHash}`}
+                        className="badge badge-success"
+                      >
+                        {label(language, "Merge", "取り込み", "Kunfando")}{" "}
+                        {commit.mergedCommitHash.slice(0, 8)}
+                      </Link>
+                    ))}
                   <AccountLink accountId={event.accountId} />
                   <time dateTime={event.createdAtRfc3339}>
                     {new Date(event.timeMs).toLocaleString(
@@ -244,6 +295,19 @@ export default function ProjectDetailPage(): JSX.Element {
                 </span>
               </li>
             ))}
+            {missingParent !== null && (
+              <li
+                className="module-commit module-commit-missing alert alert-danger"
+                role="note"
+              >
+                {label(
+                  language,
+                  `The parent commit ${missingParent.slice(0, 8)} is not on this server, so the history stops here. It may have been deleted. Another server or a local copy may still have it.`,
+                  `親のコミット ${missingParent.slice(0, 8)} がこのサーバーに無いため、履歴はここで途切れています。消された可能性があります。他のサーバーや手元のコピーには残っているかもしれません。`,
+                  `La gepatra enmeto ${missingParent.slice(0, 8)} ne estas en ĉi tiu servilo, do la historio finiĝas ĉi tie. Ĝi eble estis forigita. Alia servilo aŭ loka kopio eble ankoraŭ havas ĝin.`,
+                )}
+              </li>
+            )}
           </ol>
         </div>
       )}
