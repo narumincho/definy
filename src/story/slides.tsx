@@ -121,6 +121,18 @@ const PROJECTS = {
     logo: "scratch",
     color: "#f9a92f",
   },
+  git: {
+    name: "Git",
+    url: "https://git-scm.com/",
+    logo: "git",
+    color: "#f05033",
+  },
+  connect: {
+    name: "Connect-RPC",
+    url: "https://connectrpc.com/",
+    logo: undefined,
+    color: "#8cbaf5",
+  },
   bitcoin: {
     name: "Bitcoin",
     url: "https://bitcoin.org/",
@@ -680,12 +692,20 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
           </div>
         </Reveal>
       </div>
-      <Reveal at={2} step={step} className="story-note">
-        {t(lang, {
-          ja: "コードは文字列ではなく構文木として保存。壊れた状態をそもそも作れない",
-          en: "Code is stored as a syntax tree, not text — broken states cannot be written",
-        })}
-      </Reveal>
+      <div className="story-notes">
+        <Reveal at={2} step={step} className="story-note">
+          {t(lang, {
+            ja: "コードは文字列ではなく構文木として保存。壊れた状態をそもそも作れない",
+            en: "Code is stored as a syntax tree, not text — broken states cannot be written",
+          })}
+        </Reveal>
+        <Reveal at={3} step={step} className="story-note is-hot">
+          {t(lang, {
+            ja: "予約語が存在しない。let や match も組み込みのパーツで, 構文は文字ではなく木の種類で決まるので, let や if という名前もそのまま使える",
+            en: "There are no reserved words. let and match are just builtin parts; syntax is the kind of tree node, not text, so you can name things let or if",
+          })}
+        </Reveal>
+      </div>
     </div>
   );
 }
@@ -1068,6 +1088,94 @@ function ComparisonSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
+function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
+  const rows: ReadonlyArray<{
+    readonly name: Text;
+    readonly git: Text;
+    readonly definy: Text;
+  }> = [
+    {
+      name: { ja: "保存するもの", en: "What is stored" },
+      git: { ja: "テキストファイル", en: "text files" },
+      definy: {
+        ja: "構文木のまま (決定論的 CBOR, SHA-256 で内容を指す)",
+        en: "syntax trees as is (deterministic CBOR, addressed by SHA-256)",
+      },
+    },
+    {
+      name: { ja: "差分と取り込み", en: "Diff & merge" },
+      git: { ja: "行の差分。文字の衝突", en: "line diffs, text conflicts" },
+      definy: {
+        ja: "パーツ (関数・型) 単位。名前を変えても参照は ID なので壊れない",
+        en: "per part (function / type); references are IDs, so renames never break",
+      },
+    },
+    {
+      name: { ja: "誰のコミットか", en: "Who committed" },
+      git: {
+        ja: "名前とメールは自己申告 (署名は任意)",
+        en: "self-reported name/email (signing optional)",
+      },
+      definy: {
+        ja: "全てのコミットが Ed25519 で署名されたイベント",
+        en: "every commit is an Ed25519-signed event",
+      },
+    },
+    {
+      name: { ja: "通信", en: "Protocol" },
+      git: {
+        ja: "git プロトコル (SSH / HTTPS)",
+        en: "git protocol (SSH / HTTPS)",
+      },
+      definy: {
+        ja: "Connect-RPC (gRPC 互換, HTTP + JSON)。サーバーに無い式だけ送る",
+        en: "Connect-RPC (gRPC-compatible, HTTP + JSON); only missing trees are sent",
+      },
+    },
+  ];
+  return (
+    <div className="story-body is-tight">
+      <Heading
+        lang={lang}
+        kicker={{ ja: "特徴 4", en: "Feature 4" }}
+        text={{
+          ja: "バージョン管理も definy 自身が持つ",
+          en: "Version control is built into definy",
+        }}
+      />
+      <Reveal at={0} step={step} className="story-lead-left is-small">
+        {t(lang, {
+          ja: "プロジェクト → ブランチ → コミット (親コミット・取り込み) を, ファイルではなく構文木で扱う",
+          en: "Projects, branches and commits (with parents and merges) — over syntax trees, not files",
+        })}
+      </Reveal>
+      <div className="story-table is-two">
+        <div className="story-table-head" />
+        <div className="story-table-head">
+          <ProjectLink project="git" />
+        </div>
+        <div className="story-table-head is-definy">definy</div>
+        {rows.map((row, index) => (
+          <Reveal
+            key={row.name.en}
+            at={index}
+            step={step}
+            className="story-table-row"
+          >
+            <div className="story-compare-name">{t(lang, row.name)}</div>
+            <div>{t(lang, row.git)}</div>
+            <div className="story-yes">{t(lang, row.definy)}</div>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal at={3} step={step} className="story-protocol">
+        <ProjectLink project="connect" />
+        <code>proto/definy/v1/*.proto</code>
+      </Reveal>
+    </div>
+  );
+}
+
 const SELF_HOSTING_LAYERS: ReadonlyArray<{
   readonly name: Text;
   readonly done: boolean;
@@ -1296,6 +1404,33 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
           </a>
         </p>
       </Reveal>
+      <p className="story-credits">
+        {t(lang, {
+          ja: "解説音声: VOICEVOX:ずんだもん · 立ち絵: ",
+          en: "Narration: VOICEVOX:ずんだもん · Character art: ",
+        })}
+        <a
+          className="story-link"
+          href="https://tachie.net/w/sC90rhbReJ"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t(lang, {
+            ja: "坂本アヒル「ずんだもん立ち絵素材」",
+            en: "Sakamoto Ahiru, Zundamon character art",
+          })}
+        </a>
+        {" · "}
+        {t(lang, { ja: "ロゴ: ", en: "Logos: " })}
+        <a
+          className="story-link"
+          href="https://simpleicons.org/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Simple Icons
+        </a>
+      </p>
     </div>
   );
 }
@@ -1304,21 +1439,21 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "title",
     title: { ja: "タイトル", en: "Title" },
-    duration: 20,
+    duration: 11,
     steps: 0,
     render: TitleSlide,
   },
   {
     id: "history",
     title: { ja: "歴史", en: "History" },
-    duration: 40,
+    duration: 35,
     steps: 3,
     render: HistorySlide,
   },
   {
     id: "vibe-coding",
     title: { ja: "バイブコーディング", en: "Vibe coding" },
-    duration: 25,
+    duration: 20,
     steps: 2,
     render: VibeCodingSlide,
   },
@@ -1326,41 +1461,48 @@ export const SLIDES: readonly Slide[] = [
     id: "structured-editing",
     title: { ja: "構造化編集", en: "Structured editing" },
     duration: 30,
-    steps: 2,
+    steps: 3,
     render: StructuredEditingSlide,
   },
   {
     id: "scratch",
     title: { ja: "Scratch との違い", en: "vs. Scratch" },
-    duration: 30,
+    duration: 25,
     steps: 3,
     render: ScratchSlide,
   },
   {
     id: "events",
     title: { ja: "署名付きイベント", en: "Signed events" },
-    duration: 45,
+    duration: 40,
     steps: 4,
     render: EventsSlide,
   },
   {
     id: "comparison",
     title: { ja: "ブロックチェーン・nostr", en: "Blockchain & nostr" },
-    duration: 25,
+    duration: 20,
     steps: 3,
     render: ComparisonSlide,
   },
   {
+    id: "version-control",
+    title: { ja: "バージョン管理", en: "Version control" },
+    duration: 30,
+    steps: 3,
+    render: VersionControlSlide,
+  },
+  {
     id: "self-hosting",
     title: { ja: "セルフホスト", en: "Self-hosting" },
-    duration: 35,
+    duration: 30,
     steps: 3,
     render: SelfHostingSlide,
   },
   {
     id: "proof",
     title: { ja: "証明", en: "Proofs" },
-    duration: 35,
+    duration: 30,
     steps: 3,
     render: ProofSlide,
   },

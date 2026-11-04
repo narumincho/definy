@@ -30,3 +30,17 @@ test("時刻を m:ss で表す", () => {
   expect(formatTime(201.7)).toBe("3:21");
   expect(formatTime(290)).toBe("4:50");
 });
+
+test("ステップは最小の長さより短くならない", () => {
+  const withVoice = buildTimeline(
+    [
+      { duration: 10, steps: 0 },
+      { duration: 30, steps: 2 },
+    ],
+    (slide, step) => (slide === 1 && step === 0 ? 12.5 : 0),
+  );
+  expect(withVoice.entries.map((e) => e.start)).toEqual([0, 10, 22.5, 32.5]);
+  expect(withVoice.total).toBe(42.5);
+  expect(withVoice.slideStarts).toEqual([0, 10]);
+  expect(withVoice.slideLengths).toEqual([10, 32.5]);
+});

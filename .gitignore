@@ -18,3 +18,6 @@ playwright-report/
 /wasm/service.wasm
 /wasm/definition_evaluator.wasm
 /wasm/part_id_deriver.wasm
+
+# ずんだもん立ち絵素材などの配布物そのものはリポジトリに入れない (docs/story.md)
+*.psd

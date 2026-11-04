@@ -1345,3 +1345,122 @@
     display: none;
   }
 }
+
+/* ---- ずんだもんの解説 (Narrator.tsx) ---- */
+
+.story-narrator {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 1.25cqw;
+}
+
+/* 解説がオンのときはスライドの下に字幕の場所を空ける */
+.story-stage.has-narrator .story-slide {
+  padding-bottom: 8em;
+}
+
+.story-subtitle {
+  position: absolute;
+  left: 3em;
+  right: 17em;
+  bottom: 1.2em;
+  padding: 0.5em 0.9em;
+  border-radius: 0.5em;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 1.3em;
+  line-height: 1.5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  user-select: text;
+  animation: story-reveal 0.35s ease both;
+}
+
+/* 立ち絵は上半身だけを右下に出す */
+.story-zundamon {
+  position: absolute;
+  right: 1em;
+  bottom: 0;
+  width: 20em;
+  height: 15em;
+  overflow: hidden;
+  animation: story-reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.story-zundamon-figure {
+  position: relative;
+  width: 100%;
+  margin-top: -1.2em;
+  filter: drop-shadow(0 0.4em 0.8em rgba(0, 0, 0, 0.45));
+  transform-origin: 50% 100%;
+}
+
+.story-zundamon.is-speaking .story-zundamon-figure {
+  animation: story-narrator-bounce 0.42s ease-in-out infinite alternate;
+}
+
+@keyframes story-narrator-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-0.3em);
+  }
+}
+
+.story-zundamon-part {
+  position: absolute;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* 構造化編集のスライドの下の 2 つの補足 */
+.story-notes {
+  margin-top: auto;
+  display: grid;
+  gap: 0.8em;
+}
+
+.story-notes .story-note {
+  margin-top: 0;
+  font-size: 1.5em;
+}
+
+/* git との比較 (3 列) */
+.story-table.is-two {
+  grid-template-columns: 9em 1fr 1.7fr;
+  font-size: 1.25em;
+}
+
+.story-lead-left.is-small {
+  font-size: 1.55em;
+}
+
+.story-protocol {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  font-size: 1.4em;
+}
+
+.story-protocol code {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+/* 最後のスライドのクレジット */
+.story-credits {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 1.05em;
+  color: var(--text-muted);
+}
+
+.story-credits .story-link {
+  color: var(--text-secondary);
+}

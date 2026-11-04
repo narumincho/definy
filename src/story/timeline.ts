@@ -18,24 +18,34 @@ export type Timeline = {
   readonly total: number;
   /** スライドごとの開始時刻 (秒) */
   readonly slideStarts: readonly number[];
+  /** スライドごとの長さ (秒). 解説音声で `duration` より長くなることがある */
+  readonly slideLengths: readonly number[];
 };
 
-/** 1 枚の `duration` 秒を `steps + 1` 個のステップで等分する */
+/**
+ * 1 枚の `duration` 秒を `steps + 1` 個のステップで等分する.
+ * `minimumLength` を渡すと, ステップはその秒数より短くならない (解説音声が途中で切れないように)
+ */
 export function buildTimeline(
   slides: ReadonlyArray<{ readonly duration: number; readonly steps: number }>,
+  minimumLength: (slide: number, step: number) => number = () => 0,
 ): Timeline {
   const entries: TimelineEntry[] = [];
   const slideStarts: number[] = [];
   let start = 0;
   slides.forEach((slide, slideIndex) => {
     slideStarts.push(start);
-    const length = slide.duration / (slide.steps + 1);
+    const evenLength = slide.duration / (slide.steps + 1);
     for (let step = 0; step <= slide.steps; step++) {
+      const length = Math.max(evenLength, minimumLength(slideIndex, step));
       entries.push({ slide: slideIndex, step, start, length });
       start += length;
     }
   });
-  return { entries, total: start, slideStarts };
+  const slideLengths = slideStarts.map(
+    (slideStart, index) => (slideStarts[index + 1] ?? start) - slideStart,
+  );
+  return { entries, total: start, slideStarts, slideLengths };
 }
 
 /** その時刻に表示する区間の添字. 範囲外は端に寄せる */

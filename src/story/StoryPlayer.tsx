@@ -11,18 +11,53 @@ import {
 import { label } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
 import { StoryAudio, type SoundEffect } from "./audio.ts";
+import { narrationLine } from "./narration.ts";
+import { Narrator } from "./Narrator.tsx";
 import { SLIDES, slideTitle } from "./slides.tsx";
-import { buildTimeline, entryIndexAt, formatTime } from "./timeline.ts";
+import {
+  buildTimeline,
+  entryIndexAt,
+  formatTime,
+  type TimelineEntry,
+} from "./timeline.ts";
+import { VOICE_CLIPS, type VoiceClip } from "./voice_manifest.ts";
 import "./story.css";
 
-const TIMELINE = buildTimeline(SLIDES);
+/** 解説音声の後に空ける秒数. スライドの `duration` が音声より長ければ, その分はもともと空く */
+const VOICE_PADDING_SECONDS = 0;
+
+function voiceClipOf(slide: number, step: number): VoiceClip | undefined {
+  const id = SLIDES[slide]?.id;
+  return id === undefined ? undefined : VOICE_CLIPS[`${id}/${step}`];
+}
+
+function entryVoiceClip(
+  entry: TimelineEntry | undefined,
+): VoiceClip | undefined {
+  return entry === undefined ? undefined : voiceClipOf(entry.slide, entry.step);
+}
+
+/**
+ * 解説音声のオン・オフで再生位置がずれないよう, 時間軸は常に解説音声の長さを含める
+ */
+const TIMELINE = buildTimeline(SLIDES, (slide, step) => {
+  const clip = voiceClipOf(slide, step);
+  return clip === undefined ? 0 : clip.duration + VOICE_PADDING_SECONDS;
+});
+
+const VOICE_URLS = Object.values(VOICE_CLIPS).map((clip) => clip.file);
 
 const PREFERENCE_KEY = "definy-story-sound";
 
 /** J / L で動かす秒数 */
 const SKIP_SECONDS = 5;
 
-type SoundPreference = { readonly effects: boolean; readonly bgm: boolean };
+type SoundPreference = {
+  readonly effects: boolean;
+  readonly bgm: boolean;
+  /** ずんだもんの解説音声 (日本語のときだけ) */
+  readonly voice: boolean;
+};
 
 function readPreference(): SoundPreference {
   try {
@@ -34,13 +69,14 @@ function readPreference(): SoundPreference {
         return {
           effects: record["effects"] !== false,
           bgm: record["bgm"] === true,
+          voice: record["voice"] === true,
         };
       }
     }
   } catch {
     // 保存できない環境では既定値を使う
   }
-  return { effects: true, bgm: false };
+  return { effects: true, bgm: false, voice: false };
 }
 
 function writePreference(preference: SoundPreference): void {
@@ -145,19 +181,15 @@ function SeekBar(props: {
     >
       {SLIDES.map((slide, index) => {
         const start = TIMELINE.slideStarts[index] ?? 0;
-        const played = Math.min(
-          1,
-          Math.max(0, (time - start) / slide.duration),
-        );
+        const length = TIMELINE.slideLengths[index] ?? slide.duration;
+        const played = Math.min(1, Math.max(0, (time - start) / length));
         const hovered =
-          hover !== undefined &&
-          hover >= start &&
-          hover < start + slide.duration;
+          hover !== undefined && hover >= start && hover < start + length;
         return (
           <div
             key={slide.id}
             className={`story-seek-chapter ${hovered ? "is-hovered" : ""}`}
-            style={{ flexGrow: slide.duration }}
+            style={{ flexGrow: length }}
           >
             <div
               className="story-seek-played"
@@ -186,7 +218,7 @@ function SeekBar(props: {
 /**
  * 紹介スライドの再生. 動画のように再生位置 (秒) を持ち, 既定は止まった状態で手で送る.
  * キー: → / PageDown / Enter 次へ, ← / PageUp 戻る, Space / K 再生と一時停止,
- * J / L 5 秒戻る・進む, S 効果音, B BGM, F 全画面
+ * J / L 5 秒戻る・進む, S 効果音, B BGM, V ずんだもんの解説, F 全画面
  */
 export function StoryPlayer(props: {
   readonly lang: LanguageCode;
@@ -197,13 +229,20 @@ export function StoryPlayer(props: {
   const [sound, setSound] = useState<SoundPreference>({
     effects: true,
     bgm: false,
+    voice: false,
   });
+  const [audio, setAudio] = useState<StoryAudio | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<StoryAudio | null>(null);
   const soundRef = useRef(sound);
   const timeRef = useRef(time);
   const shownEntryRef = useRef(0);
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
+  const voiceAvailable = lang === "ja";
+  const voiceAvailableRef = useRef(voiceAvailable);
+  voiceAvailableRef.current = voiceAvailable;
 
   useEffect(() => {
     const preference = readPreference();
@@ -211,6 +250,7 @@ export function StoryPlayer(props: {
     setSound(preference);
     const audio = new StoryAudio();
     audioRef.current = audio;
+    setAudio(audio);
     const onFullscreenChange = (): void => {
       setFullscreen(document.fullscreenElement === frameRef.current);
     };
@@ -219,6 +259,7 @@ export function StoryPlayer(props: {
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       audio.dispose();
       audioRef.current = null;
+      setAudio(null);
     };
   }, []);
 
@@ -230,6 +271,9 @@ export function StoryPlayer(props: {
     }
     audio.resume();
     audio.setBgm(soundRef.current.bgm);
+    if (soundRef.current.voice) {
+      audio.preloadVoices(VOICE_URLS);
+    }
   }, []);
 
   const playEffect = useCallback((effect: SoundEffect): void => {
@@ -244,12 +288,53 @@ export function StoryPlayer(props: {
     setTime(clamped);
   }, []);
 
+  /** その区間の解説音声を `offset` 秒の位置から鳴らす. 無ければ止める */
+  const startVoiceAt = useCallback((index: number, offset: number): void => {
+    const audio = audioRef.current;
+    if (audio === null) {
+      return;
+    }
+    const clip = entryVoiceClip(TIMELINE.entries[index]);
+    if (
+      !soundRef.current.voice ||
+      !voiceAvailableRef.current ||
+      clip === undefined ||
+      offset >= clip.duration
+    ) {
+      audio.stopVoice();
+      return;
+    }
+    audio.playVoice(clip.file, Math.max(0, offset));
+  }, []);
+
+  /** シークバーや J / L での移動. 再生中なら解説音声もその位置から鳴らす */
   const seek = useCallback(
     (next: number): void => {
       wake();
       updateTime(next);
+      const index = entryIndexAt(TIMELINE, timeRef.current);
+      if (playingRef.current) {
+        const start = TIMELINE.entries[index]?.start ?? 0;
+        startVoiceAt(index, timeRef.current - start);
+      } else {
+        audioRef.current?.stopVoice();
+      }
     },
-    [updateTime, wake],
+    [startVoiceAt, updateTime, wake],
+  );
+
+  /** 次へ・戻るでの移動. 止まっていても, 移った先のステップの解説音声を最初から鳴らす */
+  const navigate = useCallback(
+    (index: number): void => {
+      const target = TIMELINE.entries[index];
+      if (target === undefined) {
+        return;
+      }
+      wake();
+      updateTime(target.start);
+      startVoiceAt(index, 0);
+    },
+    [startVoiceAt, updateTime, wake],
   );
 
   const entryIndex = entryIndexAt(TIMELINE, time);
@@ -275,25 +360,33 @@ export function StoryPlayer(props: {
   }, [entryIndex, playEffect]);
 
   const next = useCallback((): void => {
-    const following =
-      TIMELINE.entries[entryIndexAt(TIMELINE, timeRef.current) + 1];
-    if (following !== undefined) {
-      seek(following.start);
+    const index = entryIndexAt(TIMELINE, timeRef.current) + 1;
+    if (index < TIMELINE.entries.length) {
+      navigate(index);
     }
-  }, [seek]);
+  }, [navigate]);
 
   const previous = useCallback((): void => {
-    const index = entryIndexAt(TIMELINE, timeRef.current);
-    seek(TIMELINE.entries[Math.max(0, index - 1)]?.start ?? 0);
-  }, [seek]);
+    navigate(Math.max(0, entryIndexAt(TIMELINE, timeRef.current) - 1));
+  }, [navigate]);
 
   const togglePlay = useCallback((): void => {
     wake();
-    if (!playing && timeRef.current >= TIMELINE.total) {
+    if (playing) {
+      audioRef.current?.stopVoice();
+      setPlaying(false);
+      return;
+    }
+    if (timeRef.current >= TIMELINE.total) {
       updateTime(0);
     }
-    setPlaying(!playing);
-  }, [playing, updateTime, wake]);
+    const index = entryIndexAt(TIMELINE, timeRef.current);
+    startVoiceAt(
+      index,
+      timeRef.current - (TIMELINE.entries[index]?.start ?? 0),
+    );
+    setPlaying(true);
+  }, [playing, startVoiceAt, updateTime, wake]);
 
   // 再生中は requestAnimationFrame で再生位置を進める
   useEffect(() => {
@@ -302,6 +395,7 @@ export function StoryPlayer(props: {
     }
     let last = performance.now();
     let frame = requestAnimationFrame(function tick(now: number): void {
+      const before = entryIndexAt(TIMELINE, timeRef.current);
       const advanced = timeRef.current + (now - last) / 1000;
       last = now;
       if (advanced >= TIMELINE.total) {
@@ -310,10 +404,14 @@ export function StoryPlayer(props: {
         return;
       }
       updateTime(advanced);
+      const after = entryIndexAt(TIMELINE, advanced);
+      if (after !== before) {
+        startVoiceAt(after, advanced - (TIMELINE.entries[after]?.start ?? 0));
+      }
       frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [playing, updateTime]);
+  }, [playing, startVoiceAt, updateTime]);
 
   const updateSound = useCallback(
     (change: Partial<SoundPreference>): void => {
@@ -322,9 +420,27 @@ export function StoryPlayer(props: {
       setSound(updated);
       writePreference(updated);
       wake();
+      if (change.voice !== undefined) {
+        if (change.voice) {
+          audioRef.current?.preloadVoices(VOICE_URLS);
+        }
+        // オンにしたら今のステップの解説を今の位置から鳴らす (止まっていれば最初から)
+        const index = entryIndexAt(TIMELINE, timeRef.current);
+        const offset = playingRef.current
+          ? timeRef.current - (TIMELINE.entries[index]?.start ?? 0)
+          : 0;
+        startVoiceAt(index, offset);
+      }
     },
-    [wake],
+    [startVoiceAt, wake],
   );
+
+  // 日本語以外にしたら解説を止める
+  useEffect(() => {
+    if (!voiceAvailable) {
+      audioRef.current?.stopVoice();
+    }
+  }, [voiceAvailable]);
 
   const toggleFullscreen = useCallback((): void => {
     wake();
@@ -385,6 +501,12 @@ export function StoryPlayer(props: {
         case "S":
           updateSound({ effects: !soundRef.current.effects });
           return;
+        case "v":
+        case "V":
+          if (voiceAvailableRef.current) {
+            updateSound({ voice: !soundRef.current.voice });
+          }
+          return;
         case "b":
         case "B":
           updateSound({ bgm: !soundRef.current.bgm });
@@ -404,6 +526,11 @@ export function StoryPlayer(props: {
   }
   const slide = SLIDES[entry.slide];
   const atEnd = time >= TIMELINE.total;
+  /** 今のステップの解説. 解説がオフか日本語以外なら undefined */
+  const narration =
+    voiceAvailable && sound.voice && slide !== undefined
+      ? narrationLine(slide.id, entry.step)
+      : undefined;
 
   return (
     <div
@@ -411,7 +538,7 @@ export function StoryPlayer(props: {
       className={`story-frame ${fullscreen ? "is-fullscreen" : ""}`}
     >
       <div
-        className="story-stage"
+        className={`story-stage ${narration === undefined ? "" : "has-narrator"}`}
         onClick={(event) => {
           // 文字を選んでコピーしようとしているときは進めない
           if (
@@ -427,6 +554,14 @@ export function StoryPlayer(props: {
         aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
       >
         <SlideView slide={entry.slide} step={entry.step} lang={lang} />
+        {/* 台詞のあるステップだけ, ずんだもんと字幕を出す (スライドの中身と重ならないように) */}
+        {narration !== undefined ? (
+          <Narrator
+            audio={audio}
+            clip={entryVoiceClip(entry)}
+            line={narration}
+          />
+        ) : null}
         <div className="story-page-number">
           {entry.slide + 1} / {SLIDES.length}
         </div>
@@ -489,6 +624,15 @@ export function StoryPlayer(props: {
           >
             🎵
           </ControlButton>
+          {voiceAvailable ? (
+            <ControlButton
+              onClick={() => updateSound({ voice: !sound.voice })}
+              active={sound.voice}
+              title="ずんだもんの解説 (v)"
+            >
+              🗣
+            </ControlButton>
+          ) : null}
           <ControlButton
             onClick={toggleFullscreen}
             active={fullscreen}
@@ -507,7 +651,7 @@ export function StoryPlayer(props: {
         {label(
           lang,
           "Click or → next · ← back · Space play/pause · J/L ±5s · S sound · B music · F full screen",
-          "クリックか → で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · F 全画面",
+          "クリックか → で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · V ずんだもんの解説 · F 全画面",
           "Klaku aŭ → · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · F plenekrane",
         )}
       </div>

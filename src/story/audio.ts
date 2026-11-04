@@ -31,6 +31,16 @@ export class StoryAudio {
   private bgmTimer: ReturnType<typeof setInterval> | undefined;
   private nextBarTime = 0;
   private barIndex = 0;
+  /** 解説音声が鳴っている間に BGM を小さくする */
+  private duckGain: GainNode | undefined;
+  private voiceGain: GainNode | undefined;
+  private readonly voiceBuffers = new Map<string, Promise<AudioBuffer>>();
+  private voiceSource: AudioBufferSourceNode | undefined;
+  /** 鳴らしている解説音声. `startedAt` は音声の 0 秒にあたる AudioContext の時刻 */
+  private voicePlaying:
+    { readonly url: string; readonly startedAt: number } | undefined;
+  /** 古い playVoice の読み込みが後から終わっても鳴らさないための番号 */
+  private voiceRequest = 0;
 
   /** 利用者の操作の中で呼ぶ. AudioContext を作り, 止まっていれば再開する */
   resume(): void {
@@ -42,12 +52,19 @@ export class StoryAudio {
       const seGain = context.createGain();
       seGain.gain.value = 0.35;
       seGain.connect(context.destination);
+      const duckGain = context.createGain();
+      duckGain.connect(context.destination);
       const bgmGain = context.createGain();
       bgmGain.gain.value = 0;
-      bgmGain.connect(context.destination);
+      bgmGain.connect(duckGain);
+      const voiceGain = context.createGain();
+      voiceGain.gain.value = 1;
+      voiceGain.connect(context.destination);
       this.context = context;
       this.seGain = seGain;
       this.bgmGain = bgmGain;
+      this.duckGain = duckGain;
+      this.voiceGain = voiceGain;
     }
     if (this.context.state === "suspended") {
       void this.context.resume();
@@ -238,7 +255,110 @@ export class StoryAudio {
     oscillator.stop(time + length + 0.05);
   }
 
+  private loadVoice(url: string): Promise<AudioBuffer> | undefined {
+    const context = this.context;
+    if (context === undefined) {
+      return undefined;
+    }
+    let buffer = this.voiceBuffers.get(url);
+    if (buffer === undefined) {
+      buffer = fetch(url)
+        .then((response) => response.arrayBuffer())
+        .then((data) => context.decodeAudioData(data));
+      // 失敗したら次は読み直す
+      buffer.catch(() => this.voiceBuffers.delete(url));
+      this.voiceBuffers.set(url, buffer);
+    }
+    return buffer;
+  }
+
+  /** 解説音声を先に読み込んでおく */
+  preloadVoices(urls: readonly string[]): void {
+    for (const url of urls) {
+      void this.loadVoice(url)?.catch(() => undefined);
+    }
+  }
+
+  /** 解説音声を `offset` 秒の位置から鳴らす. 鳴っている音声は止める */
+  playVoice(url: string, offset: number): void {
+    this.stopVoice();
+    const request = this.voiceRequest;
+    const buffer = this.loadVoice(url);
+    if (buffer === undefined || this.context === undefined) {
+      return;
+    }
+    // 読み込みに時間がかかった分は先から鳴らし, 時間軸とずれないようにする
+    const requestedAt = this.context.currentTime;
+    void buffer.then(
+      (decoded) => {
+        const context = this.context;
+        const output = this.voiceGain;
+        if (
+          context === undefined ||
+          output === undefined ||
+          request !== this.voiceRequest
+        ) {
+          return;
+        }
+        const start = offset + (context.currentTime - requestedAt);
+        if (start >= decoded.duration) {
+          return;
+        }
+        const source = context.createBufferSource();
+        source.buffer = decoded;
+        source.connect(output);
+        const now = context.currentTime;
+        source.start(now, start);
+        source.onended = () => {
+          if (this.voiceSource === source) {
+            this.voiceSource = undefined;
+            this.voicePlaying = undefined;
+            this.duck(false);
+          }
+        };
+        this.voiceSource = source;
+        this.voicePlaying = { url, startedAt: now - start };
+        this.duck(true);
+      },
+      () => undefined,
+    );
+  }
+
+  stopVoice(): void {
+    this.voiceRequest += 1;
+    const source = this.voiceSource;
+    this.voiceSource = undefined;
+    this.voicePlaying = undefined;
+    if (source !== undefined) {
+      source.onended = null;
+      source.stop();
+    }
+    this.duck(false);
+  }
+
+  /** 鳴っている解説音声の再生位置 (秒). 鳴っていなければ undefined */
+  voiceTime(url: string): number | undefined {
+    const playing = this.voicePlaying;
+    if (this.context === undefined || playing?.url !== url) {
+      return undefined;
+    }
+    return this.context.currentTime - playing.startedAt;
+  }
+
+  private duck(on: boolean): void {
+    const context = this.context;
+    const duckGain = this.duckGain;
+    if (context === undefined || duckGain === undefined) {
+      return;
+    }
+    const now = context.currentTime;
+    duckGain.gain.cancelScheduledValues(now);
+    duckGain.gain.setValueAtTime(duckGain.gain.value, now);
+    duckGain.gain.linearRampToValueAtTime(on ? 0.35 : 1, now + 0.3);
+  }
+
   dispose(): void {
+    this.stopVoice();
     if (this.bgmTimer !== undefined) {
       clearInterval(this.bgmTimer);
       this.bgmTimer = undefined;
@@ -247,5 +367,8 @@ export class StoryAudio {
     this.context = undefined;
     this.seGain = undefined;
     this.bgmGain = undefined;
+    this.duckGain = undefined;
+    this.voiceGain = undefined;
+    this.voiceBuffers.clear();
   }
 }
