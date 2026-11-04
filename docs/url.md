@@ -16,5 +16,6 @@
 | /history                  | コミット履歴                                              |
 | /settings                 | 設定                                                      |
 | /about                    | definy について (設定のページから開く)                    |
+| /about/story              | 紹介スライド ([story.md](story.md))                       |
 
 表示言語はクエリパラメータ `lang` で指定できる ([ui.md](ui.md) の「表示言語の決め方」).

@@ -242,8 +242,20 @@ export default function AboutPage(): JSX.Element {
             }}
           >
             <Link
-              href="/modules"
+              href="/about/story"
               className="btn btn-primary"
+              style={{ padding: "0.6rem 1.4rem", textDecoration: "none" }}
+            >
+              {label(
+                language,
+                "▶ Watch the introduction",
+                "▶ 紹介スライドを見る",
+                "▶ Spekti la prezenton",
+              )}
+            </Link>
+            <Link
+              href="/modules"
+              className="btn btn-secondary"
               style={{ padding: "0.6rem 1.4rem", textDecoration: "none" }}
             >
               {label(
