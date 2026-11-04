@@ -74,6 +74,11 @@ export const NARRATION: Readonly<
         "Ĝi estis refarita multfoje en diversaj lingvoj: Elm, TypeScript kaj PureScript, Deno kaj Flutter.",
         "Dum la tri jaroj ekde 2023 ĝi preskaŭ ne moviĝis, sed nur en 2026 ĝi superis 1 100 enmetojn!",
       ],
+      eoSpeech: [
+        "Defajni komenciĝis la tridek unuan de januaro du mil dek naŭ kiel persona projekto el universitata esplorado.",
+        "Ĝi estis refarita multfoje en diversaj lingvoj: Elm, Tajpskript kaj Pjurskript, Dino kaj Flater.",
+        "Dum la tri jaroj ekde du mil dudek tri ĝi preskaŭ ne moviĝis, sed nur en du mil dudek ses ĝi superis mil cent enmetojn!",
+      ],
     },
   ],
   "vibe-coding": [
@@ -94,6 +99,11 @@ export const NARRATION: Readonly<
         "Ĝi estis tro granda por konstrui sola, kaj la motivo ne daŭris.",
         "Sed per vibe coding, lasante la realigon al AI, nur en oktobro 2026 estis 481 enmetoj.",
         "La Rust-kompililo kaj -servilo estis forĵetitaj kaj anstataŭigitaj per TypeScript kaj kompililo verkita en definy mem.",
+      ],
+      eoSpeech: [
+        "Ĝi estis tro granda por konstrui sola, kaj la motivo ne daŭris.",
+        "Sed per vajb koding, lasante la realigon al ejáj, nur en oktobro du mil dudek ses estis kvarcent okdek unu enmetoj.",
+        "La Rast-kompililo kaj servilo estis forĵetitaj kaj anstataŭigitaj per Tajpskript kaj kompililo verkita en defajni mem.",
       ],
     },
   ],
@@ -118,6 +128,12 @@ export const NARRATION: Readonly<
         "Malplena truo scias, kiu tipo devas eniri.",
         "Kaj ne estas rezervitaj vortoj, do vi povas uzi nomojn kiel let kaj if senŝanĝe.",
       ],
+      eoSpeech: [
+        "Teksta kodo tuj fariĝas sintaksa eraro, kiam ĝi estas duone skribita.",
+        "Defajni tenas kodon kiel sintaksan arbon, ne kiel signojn, do sintaksaj eraroj tute ne ekzistas.",
+        "Malplena truo scias, kiu tipo devas eniri.",
+        "Kaj ne estas rezervitaj vortoj, do vi povas uzi nomojn kiel let kaj if senŝanĝe.",
+      ],
     },
   ],
   scratch: [
@@ -139,6 +155,11 @@ export const NARRATION: Readonly<
         "Sama enigo ĉiam donas saman rezulton, kaj kromefikoj estas transdonataj de ekstere kiel kapabloj.",
         "Ĝi havas algebrajn datumtipojn kiel registrojn kaj sumtipojn, kaj kontrolas, ke ŝablonkongruoj kovras ĉiujn kazojn.",
       ],
+      eoSpeech: [
+        "Oni konstruas per blokoj kiel en Skreĉ, sed defajni estas pura.",
+        "Sama enigo ĉiam donas saman rezulton, kaj kromefikoj estas transdonataj de ekstere kiel kapabloj.",
+        "Ĝi havas algebrajn datumtipojn kiel registrojn kaj sumtipojn, kaj kontrolas, ke ŝablonkongruoj kovras ĉiujn kazojn.",
+      ],
     },
   ],
   events: [
@@ -157,6 +178,11 @@ export const NARRATION: Readonly<
         "Alice, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de narumincho.",
         "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo.",
       ],
+      eoSpeech: [
+        "La uzanto-identigilo estas la publika ŝlosilo mem.",
+        "Alis, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de Naruminĉo.",
+        "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo.",
+      ],
     },
     {
       speech:
@@ -166,6 +192,10 @@ export const NARRATION: Readonly<
         "Any server can check the signature.",
       ],
       eo: [
+        "Subskribitaj eventoj disvastiĝas de servilo al servilo.",
+        "Ĉiu servilo povas kontroli la subskribon.",
+      ],
+      eoSpeech: [
         "Subskribitaj eventoj disvastiĝas de servilo al servilo.",
         "Ĉiu servilo povas kontroli la subskribon.",
       ],
@@ -182,6 +212,9 @@ export const NARRATION: Readonly<
       eo: [
         "Eĉ se malbona servilo ŝajnigas esti Alice, ĝi ne havas la privatan ŝlosilon, do la subskribo ne kongruas kaj ĝi tuj malkaŝiĝas.",
       ],
+      eoSpeech: [
+        "Eĉ se malbona servilo ŝajnigas esti Alis, ĝi ne havas la privatan ŝlosilon, do la subskribo ne kongruas kaj ĝi tuj malkaŝiĝas.",
+      ],
     },
     {
       speech:
@@ -191,6 +224,10 @@ export const NARRATION: Readonly<
         "So things like copyright violations can be handled properly.",
       ],
       eo: [
+        "Servilo povas nur ne porti ion, alivorte, forigi ĝin.",
+        "Do ekzemple kopirajtajn malobservojn oni povas ĝuste trakti.",
+      ],
+      eoSpeech: [
         "Servilo povas nur ne porti ion, alivorte, forigi ĝin.",
         "Do ekzemple kopirajtajn malobservojn oni povas ĝuste trakti.",
       ],
@@ -206,6 +243,9 @@ export const NARRATION: Readonly<
       ],
       eo: [
         "Sed ĝi ankoraŭ estas en la servilo de Bob, kaj Alice povas republikigi ĝin al alia servilo el loka kopio.",
+      ],
+      eoSpeech: [
+        "Sed ĝi ankoraŭ estas en la servilo de Bob, kaj Alis povas republikigi ĝin al alia servilo el loka kopio.",
       ],
     },
   ],
@@ -227,6 +267,11 @@ export const NARRATION: Readonly<
         "Blokĉenoj atingas konsenton tra la tuta reto, do nenio estas forigebla, kaj ili uzas multe da energio.",
         "nostr similas al definy, sed ĝia celo estas sociaj retoj.",
         "definy nur kontrolas sen konsento, do ĝi ŝparas energion, kaj operaciantoj tamen povas forigi problemajn enhavojn.",
+      ],
+      eoSpeech: [
+        "Blokĉenoj atingas konsenton tra la tuta reto, do nenio estas forigebla, kaj ili uzas multe da energio.",
+        "Nostr similas al defajni, sed ĝia celo estas sociaj retoj.",
+        "Defajni nur kontrolas sen konsento, do ĝi ŝparas energion, kaj operaciantoj tamen povas forigi problemajn enhavojn.",
       ],
     },
   ],
@@ -253,6 +298,13 @@ export const NARRATION: Readonly<
         "Referencoj estas identigiloj, do renomado neniam rompas ion, kaj ĉiu enmeto estas subskribita.",
         "Ĝi komunikas per Connect-RPC, kongrua kun gRPC.",
       ],
+      eoSpeech: [
+        "Defajni havas ankaŭ sian propran versikontrolon.",
+        "Enmetoj ligiĝas al siaj gepatroj, kaj branĉoj estas kunfandeblaj.",
+        "Git traktas liniajn diferencojn de tekstaj dosieroj, sed defajni laboras po parto, rekte sur la sintaksa arbo.",
+        "Referencoj estas identigiloj, do renomado neniam rompas ion, kaj ĉiu enmeto estas subskribita.",
+        "Ĝi komunikas per Konekt ar pi si, kongrua kun ĝi ar pi si.",
+      ],
     },
   ],
   "self-hosting": [
@@ -276,6 +328,12 @@ export const NARRATION: Readonly<
         "Nun ĉirkaŭ 30 % de la kodo, aŭ preskaŭ 60 % sen la fasado, estas farita en definy.",
         "Eble eĉ la fasado ĝis la fino de 2027.",
       ],
+      eoSpeech: [
+        "La celo estas esprimi defajni en defajni.",
+        "La tipkontrolilo, la Ŭazm-kompililo, la eventaj reguloj kaj la ar pi si traktiloj jam estas verkitaj en defajni.",
+        "Nun ĉirkaŭ tridek procentoj de la kodo, aŭ preskaŭ sesdek procentoj sen la fasado, estas farita en defajni.",
+        "Eble eĉ la fasado ĝis la fino de du mil dudek sep.",
+      ],
     },
   ],
   deploy: [
@@ -298,6 +356,11 @@ export const NARRATION: Readonly<
         "La definy-kompililo faras el ĝi Wasm kaj sendas ĝin al la REST API, kun enigo kaj eligo modelitaj laŭ WASI 0.3 (Preview 3).",
         "Eĉ la definy-servilo verkita en definy estas disponigata en ĉirkaŭ 3 sekundoj!",
       ],
+      eoSpeech: [
+        "Ankaŭ disponigo al Klaŭdfler Ŭorkers estas nur ordinara parto verkita en defajni.",
+        "La defajni-kompililo faras el ĝi Ŭazm kaj sendas ĝin al la Rest ej pi aj, kun enigo kaj eligo modelitaj laŭ Ŭazi nul komo tri, privju tri.",
+        "Eĉ la defajni-servilo verkita en defajni estas disponigata en ĉirkaŭ tri sekundoj!",
+      ],
     },
   ],
   proof: [
@@ -319,6 +382,11 @@ export const NARRATION: Readonly<
         "Lastatempe AI uzas Lean por matematikaj pruvoj, kaj ekzistas projektoj kiel Idris 2, nyxis, h5i kaj qedos.",
         "Ankaŭ definy tenas sian sintakson simpla kaj iam volas alfronti pruvojn.",
       ],
+      eoSpeech: [
+        "Ju pli da kodo ejáj skribas, des pli gravas, ke maŝinoj povu kontroli ĝian ĝustecon.",
+        "Lastatempe ejáj uzas Lin por matematikaj pruvoj, kaj ekzistas projektoj kiel Idris du, Niksis, ejĉ fajv aj kaj Kedos.",
+        "Ankaŭ defajni tenas sian sintakson simpla kaj iam volas alfronti pruvojn.",
+      ],
     },
   ],
   closing: [
@@ -337,6 +405,11 @@ export const NARRATION: Readonly<
       eo: [
         "definy estas evoluigata, celante la idealan specifon.",
         "Se vi scivolas, provu ĝin per la QR-kodo.",
+        "Dankon pro la aŭskultado!",
+      ],
+      eoSpeech: [
+        "Defajni estas evoluigata, celante la idealan specifon.",
+        "Se vi scivolas, provu ĝin per la kju ar kodo.",
         "Dankon pro la aŭskultado!",
       ],
     },

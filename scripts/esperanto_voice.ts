@@ -44,8 +44,8 @@ type EoMora = {
 /** アクセント句 (単語. 1 音節の語は次の語に付ける) */
 type EoPhrase = {
   readonly moras: readonly EoMora[];
-  /** 強く読むモーラの番号 (0 から). 無ければ平板 */
-  readonly stressed: number | undefined;
+  /** 強く読むモーラの番号 (0 から) */
+  readonly stressed: number;
   /** この句の後が読点 (,) か */
   readonly comma: boolean;
 };
@@ -198,10 +198,8 @@ export function esperantoPhrases(sentence: string): EoPhrase[] {
     }
     phrases.push({
       moras: [...carried, ...moras],
-      stressed:
-        stressed === undefined || syllables <= 1
-          ? undefined
-          : carried.length + stressed,
+      // VOICEVOX のかな記法はどの句にもアクセントが要るので, 1 音節の語だけの句 (Elm, Bob など) もその母音に置く
+      stressed: carried.length + (stressed ?? 0),
       comma: false,
     });
     carried = [];
