@@ -46,33 +46,35 @@
   cursor: default;
 }
 
+/*
+ * 全画面ではスライドの下に操作 UI を常に出す.
+ * スライドは操作 UI の高さを除いた画面に 16:9 で収まる大きさにする
+ */
 .story-frame.is-fullscreen {
+  --story-controls-height: 4.75rem;
+  height: 100vh;
   background: #000;
-  align-content: center;
+  grid-template-rows: 1fr var(--story-controls-height);
+  align-items: center;
   justify-items: center;
   padding: 0;
   gap: 0;
 }
 
 .story-frame.is-fullscreen .story-stage {
-  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100vw, calc((100vh - var(--story-controls-height)) * 16 / 9));
   border: none;
   border-radius: 0;
 }
 
 .story-frame.is-fullscreen .story-controls {
-  position: fixed;
-  left: 50%;
-  bottom: 1rem;
-  transform: translateX(-50%);
-  width: min(900px, 90vw);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.story-frame.is-fullscreen .story-controls:hover,
-.story-frame.is-fullscreen .story-controls:focus-within {
-  opacity: 1;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  align-content: center;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
 }
 
 .story-frame.is-fullscreen .story-hint {
