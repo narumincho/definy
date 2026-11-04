@@ -1,20 +1,13 @@
+import { memo, useMemo, useRef, type JSX } from "react";
+import { nodeBadgeStyle } from "./node_badge_style.ts";
 import {
-  memo,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type JSX,
-  type KeyboardEvent,
-} from "react";
-import { estimateTextWidth } from "./engine.ts";
-import {
-  isSamePath,
-  pathToString,
-  type LayoutNode,
-  type NodeKind,
-  type PathStep,
-} from "./types.ts";
+  buildSubtreeIndex,
+  sameSubtreeProps,
+  type SubtreeIndex,
+} from "./subtree_index.ts";
+import { TreeLeafNode } from "./TreeLeafNode.tsx";
+import { TreeTableNode } from "./TreeTableNode.tsx";
+import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 
 type TreeLayoutRendererProps = {
   readonly node: LayoutNode;
@@ -65,165 +58,10 @@ function TypeErrorMarker({
   );
 }
 
-function nodeBadgeColors(kind: NodeKind): {
-  readonly bg: string;
-  readonly color: string;
-  readonly border: string;
-} {
-  switch (kind) {
-    case "literalNumber":
-      return {
-        bg: "var(--blue-bg-strong)",
-        color: "var(--blue-text)",
-        border: "1px solid var(--blue-border)",
-      };
-    case "literalString":
-      return {
-        bg: "var(--green-bg-strong)",
-        color: "var(--green)",
-        border: "1px solid var(--green-border)",
-      };
-    case "literalBoolean":
-      return {
-        bg: "var(--pink-bg-strong)",
-        color: "var(--pink)",
-        border: "1px solid var(--pink-border)",
-      };
-    case "identifier":
-    case "parameterName":
-      return {
-        bg: "var(--overlay-3)",
-        color: "var(--text)",
-        border: "1px solid var(--overlay-3)",
-      };
-    case "keyword":
-      return {
-        bg: "var(--purple-bg-strong)",
-        color: "var(--purple)",
-        border: "1px solid var(--purple-border)",
-      };
-    case "symbol":
-      return {
-        bg: "var(--yellow-bg-strong)",
-        color: "var(--yellow)",
-        border: "1px solid var(--yellow-border)",
-      };
-    case "delimiter":
-      return {
-        bg: "transparent",
-        color: "var(--text-secondary)",
-        border: "none",
-      };
-    case "group":
-      return {
-        bg: "var(--blue-bg)",
-        color: "var(--blue)",
-        border: "1px solid var(--blue-border)",
-      };
-    case "block":
-      return {
-        bg: "var(--surface-elevated)",
-        color: "var(--text-primary)",
-        border: "1px solid var(--border-strong)",
-      };
-    case "table":
-      return {
-        bg: "var(--purple-bg-strong)",
-        color: "var(--purple-text)",
-        border: "1px solid var(--purple-border)",
-      };
-  }
-}
-
-/**
- * 部分木に入っているノードの ID とパス (行きがけ順の番号で引く). 選択やホバーが変わったとき,
- * それを含まない部分木の描画を飛ばすのに使う (ID もパスも親子で入れ子になるとは限らないので番号で比べる)
- */
-type SubtreeIndex = {
-  /** ノード → 部分木の行きがけ順の番号の範囲 [start, end] */
-  readonly ranges: WeakMap<LayoutNode, readonly [number, number]>;
-  /** ID → その ID のノードの番号 */
-  readonly idOrders: ReadonlyMap<string, ReadonlyArray<number>>;
-  /** パス (`pathToString`) → そのパスのノードの番号 */
-  readonly pathOrders: ReadonlyMap<string, ReadonlyArray<number>>;
-};
-
-function buildSubtreeIndex(root: LayoutNode): SubtreeIndex {
-  const ranges = new WeakMap<LayoutNode, readonly [number, number]>();
-  const idOrders = new Map<string, number[]>();
-  const pathOrders = new Map<string, number[]>();
-  let order = 0;
-  const push = (map: Map<string, number[]>, key: string, value: number) => {
-    const list = map.get(key);
-    if (list === undefined) map.set(key, [value]);
-    else list.push(value);
-  };
-  const visit = (node: LayoutNode): void => {
-    const start = order++;
-    push(idOrders, node.id, start);
-    push(pathOrders, pathToString(node.path), start);
-    for (const child of node.children) visit(child);
-    ranges.set(node, [start, order - 1]);
-  };
-  visit(root);
-  return { ranges, idOrders, pathOrders };
-}
-
-function subtreeContains(
-  index: SubtreeIndex,
-  node: LayoutNode,
-  orders: ReadonlyMap<string, ReadonlyArray<number>>,
-  key: string | null | undefined,
-): boolean {
-  if (key == null) return false;
-  const range = index.ranges.get(node);
-  if (range === undefined) return true;
-  return (orders.get(key) ?? []).some((o) => o >= range[0] && o <= range[1]);
-}
-
 type TreeNodeProps = TreeLayoutRendererProps & {
   readonly collapsedIds: ReadonlySet<string>;
   readonly index: SubtreeIndex;
 };
-
-/** 部分木の描画が前と変わらないか. 関数の props は TreeLayoutRenderer が変わらないものにしている */
-function sameTreeNodeProps(prev: TreeNodeProps, next: TreeNodeProps): boolean {
-  if (
-    prev.node !== next.node ||
-    prev.collapsedIds !== next.collapsedIds ||
-    prev.inlineEdit !== next.inlineEdit ||
-    prev.editable !== next.editable ||
-    prev.selectionAnchorName !== next.selectionAnchorName
-  ) {
-    return false;
-  }
-  // 前か後の値のノードがこの部分木にあれば描画し直す
-  const affects = (
-    orders: (index: SubtreeIndex) => ReadonlyMap<string, ReadonlyArray<number>>,
-    prevKey: string | null | undefined,
-    nextKey: string | null | undefined,
-  ): boolean =>
-    prevKey !== nextKey &&
-    (subtreeContains(prev.index, prev.node, orders(prev.index), prevKey) ||
-      subtreeContains(next.index, next.node, orders(next.index), nextKey));
-  const ids = (index: SubtreeIndex) => index.idOrders;
-  const paths = (index: SubtreeIndex) => index.pathOrders;
-  const pathKey = (path: ReadonlyArray<PathStep> | null | undefined) =>
-    path == null ? null : pathToString(path);
-  return !(
-    affects(paths, pathKey(prev.selectedPath), pathKey(next.selectedPath)) ||
-    affects(ids, prev.hoveredId, next.hoveredId) ||
-    affects(ids, prev.linkNodeId, next.linkNodeId) ||
-    affects(ids, prev.typeErrorNodeId, next.typeErrorNodeId) ||
-    (prev.typeErrorMessage !== next.typeErrorMessage &&
-      subtreeContains(
-        next.index,
-        next.node,
-        next.index.idOrders,
-        next.typeErrorNodeId,
-      ))
-  );
-}
 
 const EMPTY_COLLAPSED_IDS: ReadonlySet<string> = new Set();
 
@@ -271,7 +109,7 @@ export function TreeLayoutRenderer(
   );
 }
 
-const TreeNode = memo(TreeNodeView, sameTreeNodeProps);
+const TreeNode = memo(TreeNodeView, sameSubtreeProps);
 
 function TreeNodeView(props: TreeNodeProps): JSX.Element {
   const {
@@ -321,128 +159,27 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
    */
   const anchorName = isSelected ? selectionAnchorName : undefined;
 
-  // 1. Table node rendering (Spreadsheet view)
+  // 1. 表 (スプレッドシート)
   if (node.kind === "table") {
-    const headers = node.tableHeaders ?? [];
-    const colWidths = node.columnsWidth ?? [];
-
     return (
-      <div
-        className="tree-node-table-wrapper tree-table"
-        data-node-id={node.id}
-        data-state={state}
-        data-type-error={hasTypeError ? "true" : undefined}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: "var(--radius-lg)",
-          background: "var(--bg-inset)",
-          overflowX: "auto",
-          maxWidth: "100%",
-          margin: "0.35rem 0",
-          boxShadow: "var(--shadow-sm)",
-          ...(anchorName ? { anchorName } : {}),
-        }}
-        onClick={handleSelect}
-      >
-        {typeErrorMarker}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            minWidth: "max-content",
-            width: "100%",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              background: "var(--overlay-2)",
-              borderBottom: "1px solid var(--border)",
-              padding: "0.4rem 0.6rem",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-            }}
-          >
-            <div
-              style={{
-                width: "2.2rem",
-                minWidth: "2.2rem",
-                color: "var(--text-secondary)",
-                textAlign: "center",
-                opacity: 0.7,
-              }}
-            >
-              #
-            </div>
-            {headers.map((h, i) => (
-              <div
-                key={`th-${h}`}
-                style={{
-                  width: `${colWidths[i] ?? 80}px`,
-                  minWidth: `${colWidths[i] ?? 80}px`,
-                  padding: "0 0.5rem",
-                  textAlign: "left",
-                }}
-              >
-                {h}
-              </div>
-            ))}
-          </div>
-
-          {node.children.map((row, rowIdx) => (
-            <div
-              key={`row-${rowIdx}`}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                borderBottom: "1px solid var(--overlay-2)",
-                padding: "0.35rem 0.6rem",
-                fontSize: "0.85rem",
-              }}
-            >
-              <div
-                style={{
-                  width: "2.2rem",
-                  minWidth: "2.2rem",
-                  color: "var(--text-secondary)",
-                  textAlign: "center",
-                  fontSize: "0.75rem",
-                  opacity: 0.6,
-                }}
-              >
-                {rowIdx + 1}
-              </div>
-              {row.children.map((cell, colIdx) => (
-                <div
-                  key={`cell-${rowIdx}-${colIdx}`}
-                  style={{
-                    width: `${colWidths[colIdx] ?? 80}px`,
-                    minWidth: `${colWidths[colIdx] ?? 80}px`,
-                    padding: "0 0.5rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <TreeNode {...props} node={cell} />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+      <TreeTableNode
+        node={node}
+        state={state}
+        hasTypeError={hasTypeError}
+        anchorName={anchorName}
+        typeErrorMarker={typeErrorMarker}
+        onSelect={handleSelect}
+        renderNode={(cell) => <TreeNode {...props} node={cell} />}
+      />
     );
   }
 
-  // 2. Leaf node rendering (Literal / Identifier)
+  // 2. 子の無いノード (リテラル・名前)
   if (node.children.length === 0) {
     return (
-      <LeafNodeRenderer
+      <TreeLeafNode
         node={node}
         isSelected={isSelected}
-        isHovered={isHovered}
         isLink={linkNodeId === node.id}
         state={state}
         inlineEdit={inlineEdit}
@@ -457,9 +194,8 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
     );
   }
 
-  // 3. Multiline capsule node rendering
+  // 3. 複数行のカプセル
   if (node.layoutMode === "multiline") {
-    const colors = nodeBadgeColors(node.kind);
     // 見出しの無いノード (関数呼び出し) は最初の子 (呼び出す関数) を見出しの行に出す
     const [headerChild, bodyChildren] =
       node.label.length === 0
@@ -523,18 +259,7 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
               data-state={isSelected ? "selected" : ""}
               data-type-error={hasTypeError ? "true" : undefined}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "0.12rem 0.42rem",
-                borderRadius: "var(--radius-full)",
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.82rem",
-                background: colors.bg,
-                color: colors.color,
-                border: colors.border,
-                cursor: "pointer",
-                userSelect: "none",
-                whiteSpace: "nowrap",
+                ...nodeBadgeStyle(node.kind),
                 ...(anchorName ? { anchorName } : {}),
               }}
             >
@@ -571,8 +296,7 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
     );
   }
 
-  // 4. Inline capsule node rendering
-  const colors = nodeBadgeColors(node.kind);
+  // 4. 1 行のカプセル
   return (
     <div
       className="tree-node-capsule-inline tree-capsule"
@@ -597,20 +321,7 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
           className="tree-badge"
           data-state={isSelected ? "selected" : ""}
           data-type-error={hasTypeError ? "true" : undefined}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "0.12rem 0.42rem",
-            borderRadius: "var(--radius-full)",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.82rem",
-            background: colors.bg,
-            color: colors.color,
-            border: colors.border,
-            cursor: "pointer",
-            userSelect: "none",
-            whiteSpace: "nowrap",
-          }}
+          style={nodeBadgeStyle(node.kind)}
         >
           {node.label}
         </div>
@@ -618,282 +329,6 @@ function TreeNodeView(props: TreeNodeProps): JSX.Element {
       {node.children.map((child) => (
         <TreeNode key={child.id} {...props} node={child} />
       ))}
-      {typeErrorMarker}
-    </div>
-  );
-}
-
-/** 編集中の文字列リテラルの入力欄のカーソル位置. 入力欄が作り直されたときに戻すため */
-let editingStringCaret: {
-  readonly path: string;
-  readonly start: number;
-  readonly end: number;
-} | null = null;
-
-function LeafNodeRenderer({
-  node,
-  isSelected,
-  isLink,
-  state,
-  anchorName,
-  inlineEdit,
-  editable,
-  onSelect,
-  onChangeNumber,
-  onChangeString,
-  onClear,
-  typeErrorMarker,
-}: {
-  readonly node: LayoutNode;
-  readonly isSelected: boolean;
-  readonly isHovered: boolean;
-  /** Ctrl / Cmd を押しながらホバーしていて, クリックで定義へ移動できる */
-  readonly isLink: boolean;
-  readonly state: string;
-  readonly anchorName?: string;
-  readonly inlineEdit: boolean;
-  readonly editable: boolean;
-  readonly onSelect: (e: React.MouseEvent) => void;
-  readonly onChangeNumber?: (
-    path: ReadonlyArray<PathStep>,
-    value: number,
-  ) => void;
-  readonly onChangeString?: (
-    path: ReadonlyArray<PathStep>,
-    value: string,
-  ) => void;
-  readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
-  readonly typeErrorMarker: JSX.Element | null;
-}): JSX.Element {
-  const colors = nodeBadgeColors(node.kind);
-  const isEditing = editable && isSelected && inlineEdit;
-
-  const [localNumber, setLocalNumber] = useState(node.label);
-  const [localString, setLocalString] = useState(() =>
-    node.label.replace(/^"|"$/g, ""),
-  );
-
-  useEffect(() => {
-    setLocalNumber(node.label);
-    setLocalString(node.label.replace(/^"|"$/g, ""));
-  }, [node.label]);
-
-  function handleKeyDown(
-    e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void {
-    if (e.key === "Delete") {
-      e.preventDefault();
-      onClear?.(node.path);
-      return;
-    }
-    if (e.key === "Backspace") {
-      const val = e.currentTarget.value;
-      let isAllSelected = false;
-      try {
-        isAllSelected =
-          e.currentTarget.selectionStart === 0 &&
-          e.currentTarget.selectionEnd === val.length;
-      } catch {
-        // ignore
-      }
-      if (val.length === 0 || isAllSelected || val === node.label) {
-        e.preventDefault();
-        onClear?.(node.path);
-        return;
-      }
-    }
-    // Escape / Enter はツリーの枠 (ExpressionTreeEditor) で受けてツリーにフォーカスを戻す
-  }
-
-  function rememberCaret(textarea: HTMLTextAreaElement): void {
-    editingStringCaret = {
-      path: pathToString(node.path),
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-    };
-  }
-
-  let content: JSX.Element;
-
-  if (isEditing && node.kind === "literalNumber") {
-    content = (
-      <input
-        type="number"
-        value={localNumber}
-        // クリック・Enter で選んだときはすぐ入力できるようにする.
-        // キーボードで移動している間は inlineEdit が false なので入力欄にならない
-        autoFocus
-        onFocus={(e) => {
-          e.currentTarget.select();
-        }}
-        style={{
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
-          borderRadius: "var(--radius-full)",
-          color: "inherit",
-          fontFamily: "inherit",
-          fontSize: "inherit",
-          width: "3.5rem",
-          textAlign: "center",
-          padding: 0,
-          margin: 0,
-        }}
-        onKeyDown={handleKeyDown}
-        onChange={(e) => {
-          setLocalNumber(e.target.value);
-          const num = Number(e.target.value);
-          if (!Number.isNaN(num)) {
-            onChangeNumber?.(node.path, num);
-          }
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      />
-    );
-  } else if (isEditing && node.kind === "literalString") {
-    // 文字列リテラルは改行を含められる. Shift + Enter で改行し, Enter でツリーに戻る (useTreeKeyboard)
-    const lines = localString.split("\n");
-    content = (
-      <textarea
-        value={localString}
-        autoFocus
-        rows={lines.length}
-        cols={Math.max(6, ...lines.map((line) => estimateTextWidth(line, 1)))}
-        onFocus={(e) => {
-          // 改行の入力などで 1 行 ⇔ 複数行のレイアウトが変わると入力欄が作り直されるので, カーソルの位置を戻す
-          const caret = editingStringCaret;
-          if (caret !== null && caret.path === pathToString(node.path)) {
-            e.currentTarget.setSelectionRange(caret.start, caret.end);
-          } else {
-            e.currentTarget.select();
-          }
-        }}
-        onSelect={(e) => {
-          rememberCaret(e.currentTarget);
-        }}
-        onBlur={() => {
-          editingStringCaret = null;
-        }}
-        style={{
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
-          color: "inherit",
-          fontFamily: "inherit",
-          fontSize: "inherit",
-          lineHeight: "inherit",
-          resize: "none",
-          overflow: "hidden",
-          width: "auto",
-          minHeight: 0,
-          whiteSpace: "pre",
-          padding: 0,
-          margin: 0,
-        }}
-        onKeyDown={handleKeyDown}
-        onChange={(e) => {
-          rememberCaret(e.currentTarget);
-          setLocalString(e.target.value);
-          onChangeString?.(node.path, e.target.value);
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      />
-    );
-  } else if (isEditing && node.kind === "parameterName") {
-    content = (
-      <input
-        type="text"
-        value={localString}
-        autoFocus
-        onFocus={(e) => {
-          e.currentTarget.select();
-        }}
-        style={{
-          background: "transparent",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
-          borderRadius: "var(--radius-full)",
-          color: "inherit",
-          fontFamily: "inherit",
-          fontSize: "inherit",
-          minWidth: "3.5rem",
-          maxWidth: "12rem",
-          padding: 0,
-          margin: 0,
-        }}
-        onKeyDown={handleKeyDown}
-        onChange={(e) => {
-          setLocalString(e.target.value);
-          onChangeString?.(node.path, e.target.value);
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      />
-    );
-  } else {
-    content = (
-      <>
-        <span>{node.label}</span>
-        {node.hint !== undefined && (
-          <span className="tree-hole-hint">{node.hint}</span>
-        )}
-      </>
-    );
-  }
-  // 改行を含む文字列リテラルは改行したまま複数行で出す
-  const isMultiline =
-    node.kind === "literalString" && node.label.includes("\n");
-
-  return (
-    <div
-      className="tree-node-leaf"
-      data-node-id={node.id}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        verticalAlign: "middle",
-        margin: "0.08rem 0.12rem",
-        ...(anchorName ? { anchorName } : {}),
-      }}
-      onClick={onSelect}
-    >
-      <div
-        className="tree-badge"
-        data-state={state}
-        data-type-error={typeErrorMarker !== null ? "true" : undefined}
-        data-link={isLink ? "true" : undefined}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          padding: "0.12rem 0.42rem",
-          borderRadius: "var(--radius-full)",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "0.82rem",
-          background: colors.bg,
-          color: colors.color,
-          border: colors.border,
-          cursor: "pointer",
-          userSelect: "none",
-          // 文字列リテラルは空白・改行をそのまま見せる
-          whiteSpace: node.kind === "literalString" ? "pre" : "nowrap",
-          ...(isMultiline
-            ? { borderRadius: "var(--radius-md)", lineHeight: 1.5 }
-            : {}),
-          ...(isLink
-            ? { textDecoration: "underline", textUnderlineOffset: "0.15em" }
-            : {}),
-        }}
-      >
-        {content}
-      </div>
       {typeErrorMarker}
     </div>
   );

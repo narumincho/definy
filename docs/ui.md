@@ -40,6 +40,7 @@ UI でまだできない操作の一覧は [ui-missing-operations.md](ui-missing
   ページ側で `window` のスクロール位置に依存する処理は書かないこと
 - 幅の広い画面ではエクスプローラーは常に出ている. 右端の境界 (`.sidebar-resizer`) をドラッグして幅を変えられる
   (矢印キーでも 16px ずつ変わる. ダブルクリック・Home で既定の幅に戻す). 幅は localStorage の `definy.sidebar.width` に保存する
+  (`src/components/explorer/SidebarResizer.tsx`)
   - 幅はワークベンチのグリッドの列 `--sidebar-width` をワークベンチの要素に直接書いて変える.
     エクスプローラーの要素だけに幅を書くとグリッドの列とずれてエディタ領域に重なる.
     ドラッグ中は React の state を変えない (エクスプローラーの大きな木を毎回描画し直さない) で, 離したときに保存する
@@ -97,6 +98,9 @@ URL は `/project/{名前}`, `/module/{名前}`, `/part/{モジュール.パー�
 
 - プロジェクト ▸ ブランチ ▸ コミット ▸ モジュール ▸ パーツ の 5 段の木 (木は `src/explorer_tree.ts` の `buildExplorerTree` で作る).
   見出し (「エクスプローラー」) や見出しの `+` は置かない
+  - 実装は `src/components/explorer/`: 開閉の状態・開いているパーツを見せる処理・未読のコミットの読み込みは
+    `useExplorerProjectTree.ts` (サイドバーの欄を切り替えても開閉が残るよう `ExplorerSidebar` で呼ぶ),
+    段ごとの描画は `ExplorerProjectTree.tsx`, 1 行の部品は `TreeRows.tsx`
   - 各行は左の `›` / `⌄` (`.sidebar-tree-toggle`) で開閉し, 名前はその段の詳細のページへの `<a href>`:
     プロジェクト → `/project/{名前}`, ブランチ → `/project/{名前}?branch={ブランチ}`, コミット → `/event/{ハッシュ}`, モジュール → `/module/{名前}`, パーツ → `/part/{id}`
   - コミットは各ブランチの最新のコミット (ブランチが今指しているもの) だけを出す. 古いコミットはプロジェクトのページのコミット履歴で見る
@@ -217,7 +221,10 @@ URL は `/project/{名前}`, `/module/{名前}`, `/part/{モジュール.パー�
 ### ツリーエディタの選択肢
 
 ノードを選ぶと出るメニュー (置換メニュー) の選択肢と並び順・操作.
-実装は [src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx),
+実装は [src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx)
+(期待する型 `useExpectedType.ts`, 型引数の推論 `useInferredTypeArguments.ts`, ホバー `useExpressionHover.ts`,
+定義へ移動の下線 `useDefinitionLink.ts`, クリップボード `useExpressionClipboard.ts`, 選んだ選択肢の適用 `useApplyOption.ts` に分けている.
+描画は `TreeLayoutRenderer.tsx` で, 子の無いノードは `TreeLeafNode.tsx`, 表は `TreeTableNode.tsx`, 描画を飛ばす判定は `subtree_index.ts`),
 選択肢と検索・ハイライトの規則は [src/tree_layout/selector_options.ts](../src/tree_layout/selector_options.ts) (単体テストあり).
 キー操作は [key.md](key.md).
 
