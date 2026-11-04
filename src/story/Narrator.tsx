@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import type { StoryAudio } from "./audio.ts";
-import type { Face, NarrationLine } from "./narration.ts";
+import { splitSentences, type Face, type NarrationLine } from "./narration.ts";
 import type { MouthShape, VoiceClip } from "./voice_manifest.ts";
 import {
   ZUNDAMON_PARTS,
@@ -24,25 +24,33 @@ function mouthAt(clip: VoiceClip, time: number): MouthShape {
 function useMouth(
   audio: StoryAudio | null,
   clip: VoiceClip | undefined,
-): { readonly mouth: MouthShape; readonly speaking: boolean } {
+): { readonly mouth: MouthShape; readonly sentence: number } {
   const [state, setState] = useState<{
     readonly mouth: MouthShape;
-    readonly speaking: boolean;
-  }>({ mouth: "closed", speaking: false });
+    readonly sentence: number;
+  }>({ mouth: "closed", sentence: 0 });
   useEffect(() => {
+    setState({ mouth: "closed", sentence: 0 });
     if (audio === null || clip === undefined) {
-      setState({ mouth: "closed", speaking: false });
       return;
     }
     let frame = requestAnimationFrame(function tick(): void {
       const time = audio.voiceTime(clip.file);
       const speaking = time !== undefined && time < clip.duration;
       const mouth = speaking ? mouthAt(clip, time) : "closed";
-      setState((current) =>
-        current.mouth === mouth && current.speaking === speaking
+      setState((current) => {
+        // 話していないときは, 最後に出した文のままにする
+        const sentence =
+          time === undefined
+            ? current.sentence
+            : Math.max(
+                0,
+                clip.sentences.findLastIndex((start) => start <= time),
+              );
+        return current.mouth === mouth && current.sentence === sentence
           ? current
-          : { mouth, speaking },
-      );
+          : { mouth, sentence };
+      });
       frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
@@ -151,13 +159,16 @@ export function Narrator(props: {
   readonly leaving: boolean;
 }): JSX.Element {
   const { audio, clip, line } = props;
-  const { mouth } = useMouth(audio, clip);
+  const { mouth, sentence } = useMouth(audio, clip);
+  const sentences =
+    line === undefined ? [] : splitSentences(line.subtitle ?? line.speech);
+  const text = sentences[Math.min(sentence, sentences.length - 1)] ?? "";
   usePreloadParts();
   return (
     <div className={`story-narrator ${props.leaving ? "is-leaving" : ""}`}>
       {line === undefined ? null : (
-        <div key={line.speech} className="story-bubble">
-          {line.subtitle ?? line.speech}
+        <div key={`${line.speech}-${sentence}`} className="story-bubble">
+          {text}
         </div>
       )}
       <ZundamonCharacter mouth={mouth} face={line?.face ?? "normal"} />

@@ -181,3 +181,11 @@ export function narrationLine(
 export function slideHasNarration(slideId: string): boolean {
   return (NARRATION[slideId] ?? []).some((line) => line !== undefined);
 }
+
+/** 台詞を文 (。! ? で終わるまで) に分ける. 字幕は 1 文ずつ出す */
+export function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[。！？!?])/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence !== "");
+}

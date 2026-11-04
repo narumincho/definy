@@ -16,7 +16,7 @@ import { mkdir, readdir, rm, writeFile, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { NARRATION } from "../src/story/narration.ts";
+import { NARRATION, splitSentences } from "../src/story/narration.ts";
 import type { MouthShape, VoiceClip } from "../src/story/voice_manifest.ts";
 
 const ENGINE_URL = process.env["VOICEVOX_URL"] ?? "http://127.0.0.1:50021";
@@ -24,7 +24,7 @@ const ENGINE_URL = process.env["VOICEVOX_URL"] ?? "http://127.0.0.1:50021";
 const SPEAKER = 3;
 const SPEED_SCALE = 1.15;
 /** 音声の作り方 (buildQuery など) を変えたら上げる. 全ての音声を作り直す */
-const SYNTHESIS_VERSION = 2;
+const SYNTHESIS_VERSION = 3;
 
 const ROOT = resolve(import.meta.dirname, "..");
 const VOICE_DIR = join(ROOT, "public", "story", "voice");
@@ -149,46 +149,75 @@ async function accentPhrases(
  * 台詞から audio_query を作る. `{...}` の中は AquesTalk 風のかな (`デファイ'ニイワ` のように ' がアクセントの位置) として読み,
  * 外は普通の文として読む. VOICEVOX が名前を区切って読んでしまうもの (definy, ナルミンチョ など) は {} で書く
  */
-async function buildQuery(speech: string): Promise<AudioQuery> {
+async function buildQuery(
+  speech: string,
+): Promise<{ query: AudioQuery; sentenceStarts: number[] }> {
   const query = (await (
     await engine(
       `/audio_query?speaker=${SPEAKER}&text=${encodeURIComponent("あ")}`,
-      {
-        method: "POST",
-      },
+      { method: "POST" },
     )
   ).json()) as AudioQuery;
+  query.speedScale = SPEED_SCALE;
   const phrases: AccentPhrase[] = [];
-  for (const [index, part] of speech.split(/\{([^}]*)\}/).entries()) {
-    if (part === "") {
-      continue;
+  /** 各文の最初のアクセント句の番号 */
+  const sentenceFirstPhrase: number[] = [];
+  const sentences = splitSentences(speech);
+  for (const [sentenceIndex, sentence] of sentences.entries()) {
+    sentenceFirstPhrase.push(phrases.length);
+    const parts = sentence.split(/\{([^}]*)\}/);
+    for (const [index, part] of parts.entries()) {
+      if (part === "") {
+        continue;
+      }
+      // split の奇数番目が {} の中
+      const added = await accentPhrases(part, index % 2 === 1);
+      // 文の終わり (。など) で区切ると最後の息継ぎが付かないので, 次の区切りとの間に足す
+      const isLastOfAll =
+        sentenceIndex === sentences.length - 1 &&
+        parts.slice(index + 1).every((rest) => rest === "");
+      const last = added[added.length - 1];
+      const ending = isLastOfAll
+        ? 0
+        : /[。！？!?]$/.test(part)
+          ? 0.45
+          : /[、,]$/.test(part)
+            ? 0.25
+            : 0;
+      if (last !== undefined && last.pause_mora === null && ending > 0) {
+        added[added.length - 1] = {
+          ...last,
+          pause_mora: {
+            text: "、",
+            pitch: 0,
+            consonant: null,
+            consonant_length: null,
+            vowel: "pau",
+            vowel_length: ending,
+          },
+        };
+      }
+      phrases.push(...added);
     }
-    // split の奇数番目が {} の中
-    const added = await accentPhrases(part, index % 2 === 1);
-    // 文の終わり (。など) で区切ると最後の息継ぎが付かないので, 次の区切りとの間に足す
-    const last = added[added.length - 1];
-    const ending = /[。！？!?]$/.test(part)
-      ? 0.45
-      : /[、,]$/.test(part)
-        ? 0.25
-        : 0;
-    if (last !== undefined && last.pause_mora === null && ending > 0) {
-      added[added.length - 1] = {
-        ...last,
-        pause_mora: {
-          text: "、",
-          pitch: 0,
-          consonant: null,
-          consonant_length: null,
-          vowel: "pau",
-          vowel_length: ending,
-        },
-      };
-    }
-    phrases.push(...added);
   }
   query.accent_phrases = phrases;
-  return query;
+
+  // 各文の始まる時刻 (秒, 話速を反映). 字幕を 1 文ずつ出すのに使う
+  const sentenceStarts: number[] = [];
+  let time = query.prePhonemeLength;
+  for (const [index, phrase] of phrases.entries()) {
+    if (sentenceFirstPhrase.includes(index)) {
+      sentenceStarts.push(Math.round((time / SPEED_SCALE) * 1000) / 1000);
+    }
+    const moras =
+      phrase.pause_mora === null
+        ? phrase.moras
+        : [...phrase.moras, phrase.pause_mora];
+    for (const mora of moras) {
+      time += (mora.consonant_length ?? 0) + mora.vowel_length;
+    }
+  }
+  return { query, sentenceStarts };
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -224,8 +253,13 @@ async function main(): Promise<void> {
       const file = `${key}.m4a`;
       const output = join(VOICE_DIR, file);
 
-      const query = await buildQuery(line.speech);
-      query.speedScale = SPEED_SCALE;
+      const subtitleSentences = splitSentences(line.subtitle ?? line.speech);
+      const { query, sentenceStarts } = await buildQuery(line.speech);
+      if (subtitleSentences.length !== sentenceStarts.length) {
+        throw new Error(
+          `${slideId}/${step}: 字幕と読み上げの文の数が違います (${subtitleSentences.length} と ${sentenceStarts.length})`,
+        );
+      }
       query.outputSamplingRate = 24000;
       query.outputStereo = false;
 
@@ -257,6 +291,7 @@ async function main(): Promise<void> {
         file: `/story/voice/${file}`,
         duration: Math.round(wavDuration(wav) * 1000) / 1000,
         mouth: mouthTimeline(query),
+        sentences: sentenceStarts,
       };
     }
   }
@@ -290,6 +325,8 @@ export type VoiceClip = {
   readonly duration: number;
   /** [時刻 (秒), 口の形] を時刻の順に */
   readonly mouth: ReadonlyArray<readonly [number, MouthShape]>;
+  /** 各文 (字幕を 1 文ずつ出す) の始まる時刻 (秒) */
+  readonly sentences: readonly number[];
 };
 
 /** キーは \`スライドの id/ステップ\` */

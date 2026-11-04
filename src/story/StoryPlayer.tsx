@@ -126,6 +126,8 @@ const SlideView = memo(function SlideView(props: {
   readonly slide: number;
   readonly step: number;
   readonly lang: LanguageCode;
+  /** 次のスライドに切り替わって, 消えていくところ */
+  readonly leaving?: boolean;
 }): JSX.Element | null {
   const slide = SLIDES[props.slide];
   if (slide === undefined) {
@@ -133,11 +135,19 @@ const SlideView = memo(function SlideView(props: {
   }
   const Render = slide.render;
   return (
-    <div key={slide.id} className="story-slide">
+    <div
+      className={`story-slide ${
+        props.leaving === true ? "is-leaving" : `is-enter-${slide.transition}`
+      }`}
+      aria-hidden={props.leaving === true ? true : undefined}
+    >
       <Render step={props.step} lang={props.lang} />
     </div>
   );
 });
+
+/** 切り替わるとき, 前のスライドを消えるアニメーションの間だけ下に残す */
+const LEAVING_SLIDE_MS = 700;
 
 /** YouTube のようなシークバー. スライドごとに区切り, ドラッグでどこからでも再生できる */
 function SeekBar(props: {
@@ -445,6 +455,37 @@ export function StoryPlayer(props: {
     [startVoiceAt, wake],
   );
 
+  // スライドが変わったら, 前のスライドを少しの間だけ下に残す
+  const [leavingSlide, setLeavingSlide] = useState<
+    { readonly slide: number; readonly step: number } | undefined
+  >(undefined);
+  const shownSlideRef = useRef({ slide: 0, step: 0 });
+  const currentSlide = TIMELINE.entries[entryIndexAt(TIMELINE, time)];
+  useEffect(() => {
+    if (currentSlide === undefined) {
+      return;
+    }
+    const previous = shownSlideRef.current;
+    shownSlideRef.current = {
+      slide: currentSlide.slide,
+      step: currentSlide.step,
+    };
+    if (previous.slide === currentSlide.slide) {
+      return;
+    }
+    setLeavingSlide(previous);
+  }, [currentSlide]);
+  useEffect(() => {
+    if (leavingSlide === undefined) {
+      return;
+    }
+    const timer = setTimeout(
+      () => setLeavingSlide(undefined),
+      LEAVING_SLIDE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [leavingSlide]);
+
   // 解説をオフにしたら, 退出のアニメーションの間だけずんだもんを残す
   const voiceOnNow = voiceAvailable && sound.voice;
   const [narratorPresence, setNarratorPresence] = useState<
@@ -605,7 +646,21 @@ export function StoryPlayer(props: {
       >
         {/* 解説がオンのときは, ずんだもんと字幕の場所を空けるためスライドを左上に縮める */}
         <div className="story-slide-area">
-          <SlideView slide={entry.slide} step={entry.step} lang={lang} />
+          {leavingSlide === undefined ? null : (
+            <SlideView
+              key={`leaving-${leavingSlide.slide}`}
+              slide={leavingSlide.slide}
+              step={leavingSlide.step}
+              lang={lang}
+              leaving
+            />
+          )}
+          <SlideView
+            key={`slide-${entry.slide}`}
+            slide={entry.slide}
+            step={entry.step}
+            lang={lang}
+          />
         </div>
         {narratorPresence !== "hidden" ? (
           <Narrator

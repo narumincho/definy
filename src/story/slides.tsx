@@ -35,7 +35,23 @@ export type Slide = {
   /** 最初の表示の後に「次へ」で進むステップの数 */
   readonly steps: number;
   readonly render: (props: SlideProps) => JSX.Element;
+  /** このスライドが現れるときの切り替えのアニメーション (src/story/story.css の .is-enter-*) */
+  readonly transition: SlideTransition;
 };
+
+export type SlideTransition =
+  | "zoom"
+  | "wipe-right"
+  | "rise"
+  | "flip"
+  | "pop"
+  | "iris"
+  | "slide-left"
+  | "wipe-down"
+  | "spin"
+  | "slide-right"
+  | "blur"
+  | "shrink";
 
 /** エスペラントの文は用意していないので英語にする */
 function t(lang: LanguageCode, text: Text): string {
@@ -1393,7 +1409,7 @@ function CommitGraph(props: { readonly lang: LanguageCode }): JSX.Element {
           </text>
         </g>
       ))}
-      <text x="700" y="110" className="story-graph-note">
+      <text x="890" y="110" textAnchor="end" className="story-graph-note">
         {t(lang, {
           ja: "パーツの構文木 (SHA-256 で指す)",
           en: "part syntax trees (by SHA-256)",
@@ -1928,6 +1944,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 11,
     steps: 0,
     render: TitleSlide,
+    transition: "zoom",
   },
   {
     id: "history",
@@ -1935,6 +1952,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 35,
     steps: 3,
     render: HistorySlide,
+    transition: "wipe-right",
   },
   {
     id: "vibe-coding",
@@ -1942,6 +1960,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 20,
     steps: 2,
     render: VibeCodingSlide,
+    transition: "rise",
   },
   {
     id: "structured-editing",
@@ -1949,6 +1968,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 30,
     steps: 3,
     render: StructuredEditingSlide,
+    transition: "flip",
   },
   {
     id: "scratch",
@@ -1956,6 +1976,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 25,
     steps: 3,
     render: ScratchSlide,
+    transition: "pop",
   },
   {
     id: "events",
@@ -1963,6 +1984,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 40,
     steps: 4,
     render: EventsSlide,
+    transition: "iris",
   },
   {
     id: "comparison",
@@ -1970,6 +1992,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 20,
     steps: 3,
     render: ComparisonSlide,
+    transition: "slide-left",
   },
   {
     id: "version-control",
@@ -1977,6 +2000,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 30,
     steps: 3,
     render: VersionControlSlide,
+    transition: "wipe-down",
   },
   {
     id: "self-hosting",
@@ -1984,6 +2008,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 30,
     steps: 3,
     render: SelfHostingSlide,
+    transition: "spin",
   },
   {
     id: "deploy",
@@ -1991,6 +2016,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 20,
     steps: 3,
     render: DeploySlide,
+    transition: "slide-right",
   },
   {
     id: "proof",
@@ -1998,6 +2024,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 30,
     steps: 3,
     render: ProofSlide,
+    transition: "blur",
   },
   {
     id: "closing",
@@ -2005,6 +2032,7 @@ export const SLIDES: readonly Slide[] = [
     duration: 20,
     steps: 1,
     render: ClosingSlide,
+    transition: "shrink",
   },
 ];
 

@@ -74,17 +74,182 @@
   font-size: 1.25cqw;
   padding: 4em 5em;
   display: flex;
-  animation: story-slide-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* 下に残る前のスライドが透けないよう, 面の背景をスライドごとに持つ */
+  background:
+    radial-gradient(
+      circle at 85% 10%,
+      var(--blue-bg-strong) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 10% 95%,
+      var(--green-bg-strong) 0%,
+      transparent 40%
+    ),
+    var(--bg-canvas);
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-fill-mode: both;
 }
 
-@keyframes story-slide-in {
+/*
+ * スライドの切り替え. スライドごとに違う入り方をする (slides.tsx の transition).
+ * 前のスライド (.is-leaving) は下に残して薄れていくので, 切り抜き (clip-path) の入り方では前のスライドの上に広がって見える
+ */
+.story-slide.is-leaving {
+  animation-name: story-leave;
+  animation-duration: 0.7s;
+}
+
+@keyframes story-leave {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.story-slide.is-enter-zoom {
+  animation-name: story-enter-zoom;
+  animation-duration: 1s;
+}
+
+@keyframes story-enter-zoom {
   from {
     opacity: 0;
-    transform: translateX(3%);
+    transform: scale(1.15);
+    filter: blur(0.6em);
+  }
+}
+
+.story-slide.is-enter-wipe-right {
+  animation-name: story-enter-wipe-right;
+}
+
+@keyframes story-enter-wipe-right {
+  from {
+    clip-path: inset(0 100% 0 0);
   }
   to {
-    opacity: 1;
-    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.story-slide.is-enter-rise {
+  animation-name: story-enter-rise;
+}
+
+@keyframes story-enter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12%);
+  }
+}
+
+.story-slide.is-enter-flip {
+  animation-name: story-enter-flip;
+  animation-duration: 0.8s;
+  transform-origin: 0 50%;
+}
+
+@keyframes story-enter-flip {
+  from {
+    opacity: 0;
+    transform: perspective(80em) rotateY(-60deg);
+  }
+}
+
+.story-slide.is-enter-pop {
+  animation-name: story-enter-pop;
+  animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+@keyframes story-enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.story-slide.is-enter-iris {
+  animation-name: story-enter-iris;
+  animation-duration: 0.9s;
+}
+
+@keyframes story-enter-iris {
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+  to {
+    clip-path: circle(75% at 50% 50%);
+  }
+}
+
+.story-slide.is-enter-slide-left {
+  animation-name: story-enter-slide-left;
+}
+
+@keyframes story-enter-slide-left {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+.story-slide.is-enter-wipe-down {
+  animation-name: story-enter-wipe-down;
+}
+
+@keyframes story-enter-wipe-down {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.story-slide.is-enter-spin {
+  animation-name: story-enter-spin;
+  animation-duration: 0.8s;
+}
+
+@keyframes story-enter-spin {
+  from {
+    opacity: 0;
+    transform: rotate(-8deg) scale(0.85);
+  }
+}
+
+.story-slide.is-enter-slide-right {
+  animation-name: story-enter-slide-right;
+}
+
+@keyframes story-enter-slide-right {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.story-slide.is-enter-blur {
+  animation-name: story-enter-blur;
+  animation-duration: 0.9s;
+}
+
+@keyframes story-enter-blur {
+  from {
+    opacity: 0;
+    filter: blur(1.2em);
+  }
+}
+
+.story-slide.is-enter-shrink {
+  animation-name: story-enter-shrink;
+  animation-duration: 1s;
+}
+
+@keyframes story-enter-shrink {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
   }
 }
 
@@ -1301,7 +1466,7 @@
 }
 
 /*
- * 解説がオンのときはスライドを左上に 78% に縮め, 下に字幕, 右にずんだもんの場所を作る.
+ * 解説がオンのときはスライドを左上に 86% に縮め, 下に字幕, 右にずんだもんの場所を作る.
  * スライドの中は全て em なので, 縮めても崩れない
  */
 .story-slide-area {
@@ -1312,15 +1477,15 @@
 }
 
 .story-stage.has-narrator .story-slide-area {
-  transform: scale(0.78);
+  transform: scale(0.86);
 }
 
 /* 漫画の吹き出し. しっぽは右のずんだもんへ向ける */
 .story-bubble {
   position: absolute;
   left: 2em;
-  right: 16.5em;
-  bottom: 0.8em;
+  right: 11.8em;
+  bottom: 0.9em;
   padding: 0.45em 0.9em;
   border: 0.14em solid #2b2f36;
   border-radius: 1.2em;
@@ -1371,10 +1536,10 @@
 /* 立ち絵は上半身だけを右下に出す */
 .story-zundamon {
   position: absolute;
-  right: 0.5em;
+  right: 0.3em;
   bottom: 0;
-  width: 17em;
-  height: 21em;
+  width: 10.5em;
+  height: 8.5em;
   overflow: hidden;
   animation: story-zundamon-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
 }
@@ -1412,10 +1577,11 @@
   }
 }
 
+/* 肩から上だけを見せる */
 .story-zundamon-figure {
   position: relative;
-  width: 100%;
-  margin-top: -1.2em;
+  width: 13em;
+  margin: -1em 0 0 -1.25em;
   filter: drop-shadow(0 0.4em 0.8em rgba(0, 0, 0, 0.45));
   transform-origin: 50% 100%;
 }
