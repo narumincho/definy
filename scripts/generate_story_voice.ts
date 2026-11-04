@@ -261,6 +261,17 @@ async function main(): Promise<void> {
         );
       }
       const subtitleSentences = splitSentences(shown);
+      // 英語・エスペラントの字幕は日本語の字幕の文と 1 つずつ対応させ, 同じ時刻で切り替える
+      for (const [lang, translated] of [
+        ["en", line.en],
+        ["eo", line.eo],
+      ] as const) {
+        if (translated.length !== subtitleSentences.length) {
+          throw new Error(
+            `${slideId}/${step}: ${lang} の字幕の文の数が日本語と違います (${translated.length} と ${subtitleSentences.length})`,
+          );
+        }
+      }
       const { query, sentenceStarts } = await buildQuery(line.speech);
       if (subtitleSentences.length !== sentenceStarts.length) {
         throw new Error(

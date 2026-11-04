@@ -271,9 +271,6 @@ export function StoryPlayer(props: {
   const shownEntryRef = useRef(0);
   const playingRef = useRef(playing);
   playingRef.current = playing;
-  const voiceAvailable = lang === "ja";
-  const voiceAvailableRef = useRef(voiceAvailable);
-  voiceAvailableRef.current = voiceAvailable;
 
   useEffect(() => {
     const preference = readPreference();
@@ -328,7 +325,6 @@ export function StoryPlayer(props: {
     const clip = entryVoiceClip(TIMELINE.entries[index]);
     if (
       !soundRef.current.voice ||
-      !voiceAvailableRef.current ||
       clip === undefined ||
       offset >= clip.duration
     ) {
@@ -502,7 +498,7 @@ export function StoryPlayer(props: {
   }, [leavingSlide]);
 
   // 解説をオフにしたら, 退出のアニメーションの間だけずんだもんを残す
-  const voiceOnNow = voiceAvailable && sound.voice;
+  const voiceOnNow = sound.voice;
   const [narratorPresence, setNarratorPresence] = useState<
     "hidden" | "shown" | "leaving"
   >("hidden");
@@ -517,13 +513,6 @@ export function StoryPlayer(props: {
     const timer = setTimeout(() => setNarratorPresence("hidden"), 350);
     return () => clearTimeout(timer);
   }, [voiceOnNow]);
-
-  // 日本語以外にしたら解説を止める
-  useEffect(() => {
-    if (!voiceAvailable) {
-      audioRef.current?.stopVoice();
-    }
-  }, [voiceAvailable]);
 
   const toggleFullscreen = useCallback((): void => {
     wake();
@@ -612,9 +601,7 @@ export function StoryPlayer(props: {
           return;
         case "v":
         case "V":
-          if (voiceAvailableRef.current) {
-            updateSound({ voice: !soundRef.current.voice });
-          }
+          updateSound({ voice: !soundRef.current.voice });
           return;
         case "b":
         case "B":
@@ -635,13 +622,9 @@ export function StoryPlayer(props: {
   }
   const slide = SLIDES[entry.slide];
   const atEnd = time >= TIMELINE.total;
-  /** ずんだもんの解説を出すか (オンで, 日本語のとき) */
-  const voiceOn = voiceAvailable && sound.voice;
-  /** 今のステップの解説. 解説がオフか日本語以外なら undefined */
+  /** 今のステップの台詞. 字幕は解説がオフでも出す (英語・エスペラントは音声が日本語で字幕だけ訳す) */
   const narration =
-    voiceOn && slide !== undefined
-      ? narrationLine(slide.id, entry.step)
-      : undefined;
+    slide !== undefined ? narrationLine(slide.id, entry.step) : undefined;
 
   return (
     <div
@@ -649,38 +632,41 @@ export function StoryPlayer(props: {
       className={`story-frame ${fullscreen ? "is-fullscreen" : ""}`}
     >
       <div
-        className={`story-stage ${voiceOn ? "has-narrator" : ""}`}
+        className={`story-stage has-caption ${
+          narratorPresence !== "hidden" ? "has-character" : ""
+        }`}
         role="region"
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}
         aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
       >
-        {/* 解説がオンのときは, ずんだもんと字幕の場所を空けるためスライドを左上に縮める */}
-        <div className="story-slide-area">
-          {leavingSlide === undefined ? null : (
+        {/* スライドは 16:9 のまま, 字幕とずんだもんの場所を下と右に空けて, 収まる一番大きい大きさにする */}
+        <div className="story-layout">
+          <div className="story-slide-area">
+            {leavingSlide === undefined ? null : (
+              <SlideView
+                key={`leaving-${leavingSlide.slide}`}
+                slide={leavingSlide.slide}
+                step={leavingSlide.step}
+                lang={lang}
+                leaving
+              />
+            )}
             <SlideView
-              key={`leaving-${leavingSlide.slide}`}
-              slide={leavingSlide.slide}
-              step={leavingSlide.step}
+              key={`slide-${entry.slide}`}
+              slide={entry.slide}
+              step={entry.step}
               lang={lang}
-              leaving
             />
-          )}
-          <SlideView
-            key={`slide-${entry.slide}`}
-            slide={entry.slide}
-            step={entry.step}
-            lang={lang}
-          />
-        </div>
-        {narratorPresence !== "hidden" ? (
+          </div>
           <Narrator
-            leaving={narratorPresence === "leaving"}
+            character={narratorPresence}
             offset={time - entry.start}
             audio={audio}
             clip={entryVoiceClip(entry)}
             line={narration}
+            lang={lang}
           />
-        ) : null}
+        </div>
       </div>
       <div className="story-controls">
         <SeekBar time={time} lang={lang} onSeek={seek} />
@@ -743,15 +729,18 @@ export function StoryPlayer(props: {
           >
             🎵
           </ControlButton>
-          {voiceAvailable ? (
-            <ControlButton
-              onClick={() => updateSound({ voice: !sound.voice })}
-              active={sound.voice}
-              title="ずんだもんの解説 (v)"
-            >
-              🗣
-            </ControlButton>
-          ) : null}
+          <ControlButton
+            onClick={() => updateSound({ voice: !sound.voice })}
+            active={sound.voice}
+            title={label(
+              lang,
+              "Zundamon narration, in Japanese (v)",
+              "ずんだもんの解説 (v)",
+              "Rakontado de Zundamon, japane (v)",
+            )}
+          >
+            🗣
+          </ControlButton>
           <ControlButton
             onClick={toggleFullscreen}
             active={fullscreen}
@@ -769,9 +758,9 @@ export function StoryPlayer(props: {
       <div className="story-hint">
         {label(
           lang,
-          "→ next · ← back · Space play/pause · J/L ±5s · S sound · B music · F full screen",
+          "→ next · ← back · Space play/pause · J/L ±5s · S sound · B music · V Zundamon narration (Japanese) · F full screen",
           "→ で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · V ずんだもんの解説 · F 全画面",
-          "→ antaŭen · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · F plenekrane",
+          "→ antaŭen · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · V rakontado de Zundamon (japane) · F plenekrane",
         )}
       </div>
     </div>

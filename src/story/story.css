@@ -1,7 +1,7 @@
 /*
  * 紹介スライド (/about の上).
- * .story-frame を container にし, スライドの中の大きさは全て em で書く.
- * .story-stage の 1em はスライドの幅の 1/80 なので, 全画面でも同じ見た目のまま大きくなる
+ * .story-slide-area (16:9) を container にし, スライドの中の大きさは全て em で書く.
+ * スライドの 1em はスライドの幅の 1/80 なので, 全画面でも同じ見た目のまま大きくなる
  */
 
 .story-frame {
@@ -13,7 +13,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   width: 100%;
-  container-type: inline-size;
+  container: story-stage / size;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -35,7 +35,7 @@
 
 /*
  * 全画面ではスライドの下に操作 UI を常に出す.
- * スライドは操作 UI の高さを除いた画面に 16:9 で収まる大きさにする
+ * ステージは操作 UI を除いた画面いっぱいにし, スライド (16:9) と字幕・ずんだもんをその中に収める (.story-layout)
  */
 .story-frame.is-fullscreen {
   --story-controls-height: 4.75rem;
@@ -49,7 +49,9 @@
 }
 
 .story-frame.is-fullscreen .story-stage {
-  width: min(100vw, calc((100vh - var(--story-controls-height)) * 16 / 9));
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
   border: none;
   border-radius: 0;
 }
@@ -1466,36 +1468,112 @@
   }
 }
 
-/* ---- ずんだもんの解説 (Narrator.tsx) ---- */
+/* ---- 置き場所: スライド・字幕・ずんだもん ---- */
 
+/*
+ * スライドは 16:9 のまま, 下に字幕の帯 (スライドの幅の --story-band 倍の高さ),
+ * 右にずんだもんの列 (スライドの幅の --story-side 倍の幅) を空け, ステージに収まる一番大きい大きさで真ん中に置く.
+ * 横長のステージではずんだもんを右の列に, そうでなければ字幕の帯の右端に置く (下の @container).
+ * 100cqw / 100cqh はステージの大きさ. 子の要素が var() で使ったときにステージを基準に決まる
+ */
+.story-layout {
+  --story-band: 0;
+  --story-side: 0;
+  --story-slide-width: min(
+    100cqw / (1 + var(--story-side)),
+    100cqh / (0.5625 + var(--story-band))
+  );
+  --story-slide-height: calc(var(--story-slide-width) * 0.5625);
+  --story-block-width: calc(var(--story-slide-width) * (1 + var(--story-side)));
+  --story-block-height: calc(
+    var(--story-slide-width) * (0.5625 + var(--story-band))
+  );
+  --story-block-left: calc((100cqw - var(--story-block-width)) / 2);
+  --story-block-top: calc((100cqh - var(--story-block-height)) / 2);
+  position: absolute;
+  inset: 0;
+}
+
+/* 字幕だけ: 帯は 6em (2 行まで) */
+.story-stage.has-caption .story-layout {
+  --story-band: calc(6 / 80);
+}
+
+/* ずんだもんを帯の右端に置くときは, 立ち絵が入るよう帯を 7em にする */
+.story-stage.has-caption.has-character .story-layout {
+  --story-band: calc(7 / 80);
+}
+
+/*
+ * 横長 (幅 / 高さ が 1.74 より大きい. 16:9 の画面で操作 UI を除いたときなど) では,
+ * ずんだもんを右の列 (10.5em) に置く方がスライドが大きくなる
+ */
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-stage.has-caption.has-character .story-layout {
+    --story-band: calc(6 / 80);
+    --story-side: calc(10.5 / 80);
+  }
+}
+
+.story-slide-area {
+  position: absolute;
+  left: var(--story-block-left);
+  top: var(--story-block-top);
+  width: var(--story-slide-width);
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+  overflow: hidden;
+  transition:
+    left 0.4s ease,
+    top 0.4s ease,
+    width 0.4s ease;
+}
+
+.story-stage.has-caption .story-slide-area {
+  border-radius: 0.6cqw;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* ---- 字幕とずんだもん (Narrator.tsx) ---- */
+
+/* 1em はスライドの 1em と同じ (スライドの幅の 1/80) */
 .story-narrator {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  font-size: 1.25cqw;
+  font-size: calc(var(--story-slide-width) / 80);
 }
 
-/*
- * 解説がオンのときはスライドを左上に 86% に縮め, 下に字幕, 右にずんだもんの場所を作る.
- * スライドの中は全て em なので, 縮めても崩れない
- */
-.story-slide-area {
+/* スライドの下の字幕の帯. 吹き出しを縦の真ん中に置く */
+.story-caption {
   position: absolute;
-  inset: 0;
-  transform-origin: 0 0;
-  transition: transform 0.4s ease;
+  left: var(--story-block-left);
+  top: calc(var(--story-block-top) + var(--story-slide-height));
+  width: var(--story-slide-width);
+  height: calc(var(--story-slide-width) * var(--story-band));
+  box-sizing: border-box;
+  padding: 0 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.story-stage.has-narrator .story-slide-area {
-  transform: scale(0.86);
+/* ずんだもんが帯の右端にいるときは, その分だけ帯を短くする */
+.story-stage.has-character .story-caption {
+  width: calc(var(--story-slide-width) - 8.6em);
+  justify-content: flex-start;
+  padding-right: 1.4em;
 }
 
-/* 漫画の吹き出し. しっぽは右のずんだもんへ向ける */
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-stage.has-character .story-caption {
+    width: var(--story-slide-width);
+  }
+}
+
+/* 漫画の吹き出し. しっぽは右のずんだもんへ向ける. ずんだもんがいないときは字幕の箱 */
 .story-bubble {
-  position: absolute;
-  left: 2em;
-  right: 11.8em;
-  bottom: 1.5em;
+  position: relative;
   padding: 0.45em 0.9em;
   border: 0.14em solid #2b2f36;
   border-radius: 1.2em;
@@ -1510,9 +1588,19 @@
   transform-origin: 100% 70%;
 }
 
+/* ずんだもんがいるときは, しっぽがずんだもんに届くよう帯いっぱいに伸ばす */
+.story-stage.has-character .story-bubble {
+  flex: 1;
+}
+
+.story-stage:not(.has-character) .story-bubble {
+  transform-origin: 50% 50%;
+  text-align: center;
+}
+
 /* しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す. 外側 (枠の色) と内側 (地の色) の 2 枚で描く */
-.story-bubble::before,
-.story-bubble::after {
+.story-stage.has-character .story-bubble::before,
+.story-stage.has-character .story-bubble::after {
   content: "";
   position: absolute;
   clip-path: polygon(0 35%, 100% 0, 0 100%);
@@ -1545,11 +1633,15 @@
   }
 }
 
-/* 立ち絵は上半身だけを右下に出す */
+/*
+ * 立ち絵は肩から上だけを, スライドと帯を合わせた範囲の右下に出す.
+ * 帯の右端に置くときは帯の高さ (7em) に合わせて縮める
+ */
 .story-zundamon {
   position: absolute;
-  right: 0.3em;
-  bottom: 0;
+  right: calc(100cqw - var(--story-block-left) - var(--story-block-width));
+  bottom: calc(100cqh - var(--story-block-top) - var(--story-block-height));
+  font-size: calc(7 / 8.5 * 1em);
   width: 10.5em;
   height: 8.5em;
   overflow: hidden;
@@ -1565,6 +1657,12 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-zundamon {
+    font-size: 1em;
   }
 }
 
