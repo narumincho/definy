@@ -340,6 +340,13 @@
   white-space: nowrap;
 }
 
+/* 2 段目の帯は右端にそろえ, 名前は左へはみ出させる */
+.story-era.is-second-row {
+  grid-row: 2;
+  justify-content: flex-end;
+  margin-top: 0.4em;
+}
+
 .story-era-item {
   display: inline-flex;
   align-items: center;

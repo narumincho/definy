@@ -402,8 +402,12 @@ const LANGUAGE_ERAS: ReadonlyArray<{
   readonly to: readonly [number, number];
   readonly projects: readonly ProjectId[];
   readonly color: string;
-  /** 途中で移った先 */
-  readonly movedTo?: string;
+  /** definy 自身で書いた部分も使っている */
+  readonly withDefiny?: boolean;
+  /**
+   * 期間が短く名前が入りきらないものは 2 段目に置き, 右端にそろえて左へはみ出させる
+   */
+  readonly secondRow?: boolean;
 }> = [
   { from: [2019, 1], to: [2020, 5], projects: ["elm"], color: "#60b5cc" },
   {
@@ -418,12 +422,15 @@ const LANGUAGE_ERAS: ReadonlyArray<{
     projects: ["deno", "flutter"],
     color: "var(--text-muted)",
   },
+  { from: [2026, 1], to: [2026, 9], projects: ["rust"], color: "#e0904f" },
   {
-    from: [2026, 1],
+    // 2026-10-18 に Rust 製のコンパイラ・サーバーを削除し, TypeScript と definy 製の Wasm にした
+    from: [2026, 10],
     to: [2026, 11],
-    projects: ["rust"],
-    color: "#e0904f",
-    movedTo: "definy",
+    projects: ["typescript"],
+    color: "#b9d09b",
+    withDefiny: true,
+    secondRow: true,
   },
 ];
 
@@ -517,7 +524,7 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
           {LANGUAGE_ERAS.map((era, index) => (
             <div
               key={era.projects.join()}
-              className="story-era"
+              className={`story-era ${era.secondRow === true ? "is-second-row" : ""}`}
               style={{
                 gridColumn: `${monthIndex(...era.from) + 1} / ${monthIndex(...era.to) + 2}`,
                 borderColor: era.color,
@@ -533,12 +540,12 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
                   </ProjectLink>
                 </span>
               ))}
-              {era.movedTo === undefined ? null : (
+              {era.withDefiny === true ? (
                 <span className="story-era-item">
-                  <span className="story-era-sep">→</span>
-                  <span className="story-era-definy">{era.movedTo}</span>
+                  <span className="story-era-sep">+</span>
+                  <span className="story-era-definy">definy</span>
                 </span>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
@@ -622,8 +629,8 @@ function VibeCodingSlide({ step, lang }: SlideProps): JSX.Element {
       </div>
       <Reveal at={2} step={step} className="story-note">
         {t(lang, {
-          ja: "Rust 製のコンパイラ・サーバーを捨てて, definy 自身で書いたコンパイラに置き換えるところまで来た (2026-10)",
-          en: "Far enough to throw away the Rust compiler and server and replace them with a compiler written in definy (Oct 2026)",
+          ja: "Rust 製のコンパイラ・サーバーを捨てて, TypeScript と definy 自身で書いたコンパイラ (Wasm) に置き換えるところまで来た (2026-10)",
+          en: "Far enough to throw away the Rust compiler and server and replace them with TypeScript and a Wasm compiler written in definy (Oct 2026)",
         })}
       </Reveal>
     </div>
