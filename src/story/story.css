@@ -1,7 +1,7 @@
 /*
  * 紹介スライド (/about の上).
- * .story-frame を container にし, スライドの中の大きさは全て em で書く.
- * .story-stage の 1em はスライドの幅の 1/80 なので, 全画面でも同じ見た目のまま大きくなる
+ * .story-slide-area (16:9) を container にし, スライドの中の大きさは全て em で書く.
+ * スライドの 1em はスライドの幅の 1/80 なので, 全画面でも同じ見た目のまま大きくなる
  */
 
 .story-frame {
@@ -13,7 +13,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   width: 100%;
-  container-type: inline-size;
+  container: story-stage / size;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -35,7 +35,7 @@
 
 /*
  * 全画面ではスライドの下に操作 UI を常に出す.
- * スライドは操作 UI の高さを除いた画面に 16:9 で収まる大きさにする
+ * ステージは操作 UI を除いた画面いっぱいにし, スライド (16:9) と字幕・ずんだもんをその中に収める (.story-layout)
  */
 .story-frame.is-fullscreen {
   --story-controls-height: 4.75rem;
@@ -49,7 +49,9 @@
 }
 
 .story-frame.is-fullscreen .story-stage {
-  width: min(100vw, calc((100vh - var(--story-controls-height)) * 16 / 9));
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
   border: none;
   border-radius: 0;
 }
@@ -253,13 +255,15 @@
   }
 }
 
+/* 時刻の右に出すスライドの番号 */
 .story-page-number {
-  position: absolute;
-  right: 1.2cqw;
-  bottom: 1cqw;
-  font-size: 1cqw;
-  color: var(--text-muted);
+  margin-left: 0.8rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--overlay-2);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
+  font-size: 0.75rem;
 }
 
 /* 「次へ」で現れる要素. 動きを減らす設定では animation が消えても表示されるようにする */
@@ -701,7 +705,7 @@
 .story-code {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 1.9em;
+  font-size: 1.6em;
   padding: 0.8em;
   background: var(--bg-inset);
   border-radius: 0.3em;
@@ -714,7 +718,7 @@
   overflow: hidden;
   vertical-align: bottom;
   white-space: pre;
-  animation: story-typing 1.6s steps(23) 0.3s both;
+  animation: story-typing 1.2s steps(15) 0.3s both;
 }
 
 @keyframes story-typing {
@@ -722,7 +726,7 @@
     width: 0;
   }
   to {
-    width: 23ch;
+    width: 15ch;
   }
 }
 
@@ -1077,20 +1081,6 @@
 
 /* ---- おわりに ---- */
 
-.story-keywords {
-  display: flex;
-  gap: 1em;
-}
-
-.story-keywords span {
-  font-size: 1.8em;
-  padding: 0.4em 0.9em;
-  border-radius: 2em;
-  border: 1px solid var(--green-border);
-  background: var(--green-bg-strong);
-  color: var(--green-text);
-}
-
 /* ---- 操作 ---- */
 
 .story-controls {
@@ -1188,6 +1178,22 @@
   inset: 0;
   background: var(--red);
   transform-origin: left;
+}
+
+/* 要素が現れる時刻の点. 通り過ぎた点は再生済みの色の上で見えるよう白くする */
+.story-seek-dot {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  pointer-events: none;
+}
+
+.story-seek-dot.is-past {
+  background: #fff;
 }
 
 .story-seek-thumb {
@@ -1462,36 +1468,112 @@
   }
 }
 
-/* ---- ずんだもんの解説 (Narrator.tsx) ---- */
+/* ---- 置き場所: スライド・字幕・ずんだもん ---- */
 
+/*
+ * スライドは 16:9 のまま, 下に字幕の帯 (スライドの幅の --story-band 倍の高さ),
+ * 右にずんだもんの列 (スライドの幅の --story-side 倍の幅) を空け, ステージに収まる一番大きい大きさで真ん中に置く.
+ * 横長のステージではずんだもんを右の列に, そうでなければ字幕の帯の右端に置く (下の @container).
+ * 100cqw / 100cqh はステージの大きさ. 子の要素が var() で使ったときにステージを基準に決まる
+ */
+.story-layout {
+  --story-band: 0;
+  --story-side: 0;
+  --story-slide-width: min(
+    100cqw / (1 + var(--story-side)),
+    100cqh / (0.5625 + var(--story-band))
+  );
+  --story-slide-height: calc(var(--story-slide-width) * 0.5625);
+  --story-block-width: calc(var(--story-slide-width) * (1 + var(--story-side)));
+  --story-block-height: calc(
+    var(--story-slide-width) * (0.5625 + var(--story-band))
+  );
+  --story-block-left: calc((100cqw - var(--story-block-width)) / 2);
+  --story-block-top: calc((100cqh - var(--story-block-height)) / 2);
+  position: absolute;
+  inset: 0;
+}
+
+/* 字幕だけ: 帯は 6em (2 行まで) */
+.story-stage.has-caption .story-layout {
+  --story-band: calc(6 / 80);
+}
+
+/* ずんだもんを帯の右端に置くときは, 立ち絵が入るよう帯を 7em にする */
+.story-stage.has-caption.has-character .story-layout {
+  --story-band: calc(7 / 80);
+}
+
+/*
+ * 横長 (幅 / 高さ が 1.74 より大きい. 16:9 の画面で操作 UI を除いたときなど) では,
+ * ずんだもんを右の列 (10.5em) に置く方がスライドが大きくなる
+ */
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-stage.has-caption.has-character .story-layout {
+    --story-band: calc(6 / 80);
+    --story-side: calc(10.5 / 80);
+  }
+}
+
+.story-slide-area {
+  position: absolute;
+  left: var(--story-block-left);
+  top: var(--story-block-top);
+  width: var(--story-slide-width);
+  aspect-ratio: 16 / 9;
+  container-type: inline-size;
+  overflow: hidden;
+  transition:
+    left 0.4s ease,
+    top 0.4s ease,
+    width 0.4s ease;
+}
+
+.story-stage.has-caption .story-slide-area {
+  border-radius: 0.6cqw;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* ---- 字幕とずんだもん (Narrator.tsx) ---- */
+
+/* 1em はスライドの 1em と同じ (スライドの幅の 1/80) */
 .story-narrator {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  font-size: 1.25cqw;
+  font-size: calc(var(--story-slide-width) / 80);
 }
 
-/*
- * 解説がオンのときはスライドを左上に 86% に縮め, 下に字幕, 右にずんだもんの場所を作る.
- * スライドの中は全て em なので, 縮めても崩れない
- */
-.story-slide-area {
+/* スライドの下の字幕の帯. 吹き出しを縦の真ん中に置く */
+.story-caption {
   position: absolute;
-  inset: 0;
-  transform-origin: 0 0;
-  transition: transform 0.4s ease;
+  left: var(--story-block-left);
+  top: calc(var(--story-block-top) + var(--story-slide-height));
+  width: var(--story-slide-width);
+  height: calc(var(--story-slide-width) * var(--story-band));
+  box-sizing: border-box;
+  padding: 0 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.story-stage.has-narrator .story-slide-area {
-  transform: scale(0.86);
+/* ずんだもんが帯の右端にいるときは, その分だけ帯を短くする */
+.story-stage.has-character .story-caption {
+  width: calc(var(--story-slide-width) - 8.6em);
+  justify-content: flex-start;
+  padding-right: 1.4em;
 }
 
-/* 漫画の吹き出し. しっぽは右のずんだもんへ向ける */
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-stage.has-character .story-caption {
+    width: var(--story-slide-width);
+  }
+}
+
+/* 漫画の吹き出し. しっぽは右のずんだもんへ向ける. ずんだもんがいないときは字幕の箱 */
 .story-bubble {
-  position: absolute;
-  left: 2em;
-  right: 11.8em;
-  bottom: 1.5em;
+  position: relative;
   padding: 0.45em 0.9em;
   border: 0.14em solid #2b2f36;
   border-radius: 1.2em;
@@ -1506,9 +1588,19 @@
   transform-origin: 100% 70%;
 }
 
+/* ずんだもんがいるときは, しっぽがずんだもんに届くよう帯いっぱいに伸ばす */
+.story-stage.has-character .story-bubble {
+  flex: 1;
+}
+
+.story-stage:not(.has-character) .story-bubble {
+  transform-origin: 50% 50%;
+  text-align: center;
+}
+
 /* しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す. 外側 (枠の色) と内側 (地の色) の 2 枚で描く */
-.story-bubble::before,
-.story-bubble::after {
+.story-stage.has-character .story-bubble::before,
+.story-stage.has-character .story-bubble::after {
   content: "";
   position: absolute;
   clip-path: polygon(0 35%, 100% 0, 0 100%);
@@ -1541,11 +1633,15 @@
   }
 }
 
-/* 立ち絵は上半身だけを右下に出す */
+/*
+ * 立ち絵は肩から上だけを, スライドと帯を合わせた範囲の右下に出す.
+ * 帯の右端に置くときは帯の高さ (7em) に合わせて縮める
+ */
 .story-zundamon {
   position: absolute;
-  right: 0.3em;
-  bottom: 0;
+  right: calc(100cqw - var(--story-block-left) - var(--story-block-width));
+  bottom: calc(100cqh - var(--story-block-top) - var(--story-block-height));
+  font-size: calc(7 / 8.5 * 1em);
   width: 10.5em;
   height: 8.5em;
   overflow: hidden;
@@ -1561,6 +1657,12 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@container story-stage (min-aspect-ratio: 1.74) {
+  .story-zundamon {
+    font-size: 1em;
   }
 }
 
@@ -1652,12 +1754,6 @@
 }
 
 /* ---- セルフホストの円グラフ ---- */
-
-.story-layer.is-deploy {
-  border-color: var(--orange-border);
-  background: var(--orange-bg-strong);
-  color: var(--orange-text);
-}
 
 .story-donut-panel {
   display: grid;
@@ -1832,19 +1928,237 @@
   image-rendering: pixelated;
 }
 
-/* ---- デプロイの流れ ---- */
+/* ---- デプロイの様子 ---- */
 
-.story-flow.is-deploy {
-  margin-top: 0.5em;
+.story-deploy {
+  position: relative;
+  flex: 1;
+  min-height: 19em;
 }
 
-.story-flow.is-deploy .story-flow-item {
-  font-size: 1.3em;
-  padding: 1.1em 0.4em;
+.story-deploy-paths {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-.story-flow.is-deploy .story-flow-link {
-  width: 2.2em;
+/* パッケージが飛ぶ弧. 飛んでいる間に線が伸びる */
+.story-deploy-arc {
+  fill: none;
+  stroke: var(--orange-border);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+}
+
+.story-deploy-arc.is-on {
+  opacity: 1;
+  animation: story-fade-in 0.4s ease both;
+}
+
+.story-deploy-code {
+  position: absolute;
+  left: 0;
+  top: 2%;
+  width: 29%;
+  padding: 0.6em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--blue-border);
+  background: var(--bg-inset);
+}
+
+.story-deploy-code-title {
+  font-family: var(--font-mono);
+  font-size: 1.05em;
+  color: var(--yellow-text);
+  margin-bottom: 0.3em;
+}
+
+.story-deploy-code pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre;
+}
+
+.story-deploy-compiler {
+  position: absolute;
+  left: 37%;
+  top: 12%;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 1.15em;
+}
+
+.story-deploy-compiler b,
+.story-deploy-api b {
+  display: block;
+  color: var(--text-primary);
+}
+
+.story-deploy-compiler small,
+.story-deploy-api small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--text-secondary);
+}
+
+.story-deploy-gear {
+  display: inline-block;
+  font-size: 3em;
+  line-height: 1;
+}
+
+.story-deploy-gear.is-spinning {
+  animation: story-spin 1.2s linear infinite;
+}
+
+.story-deploy-package {
+  position: absolute;
+  left: 38%;
+  top: 52%;
+  display: grid;
+  padding: 0.5em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--orange-border);
+  background: var(--orange-bg-strong);
+  color: var(--orange-text);
+  font-family: var(--font-mono);
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.story-deploy-package small {
+  font-weight: 400;
+  font-size: 0.8em;
+}
+
+/* REST API で雲まで飛ぶパッケージ */
+.story-deploy-parcel {
+  position: absolute;
+  font-size: 2.4em;
+  translate: -50% -50%;
+  animation: story-parcel-fly 1.1s cubic-bezier(0.45, 0, 0.3, 1) both;
+}
+
+@keyframes story-parcel-fly {
+  0% {
+    left: 47%;
+    top: 60%;
+    opacity: 1;
+  }
+  50% {
+    left: 60%;
+    top: 4%;
+  }
+  90% {
+    left: 74%;
+    top: 24%;
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    left: 76%;
+    top: 26%;
+    opacity: 0;
+    scale: 0.3;
+  }
+}
+
+.story-deploy-api {
+  position: absolute;
+  left: 38%;
+  top: 76%;
+  font-size: 1.1em;
+}
+
+.story-deploy-cloud {
+  position: absolute;
+  left: 66%;
+  top: 4%;
+  width: 34%;
+  display: grid;
+  justify-items: center;
+  color: var(--text-muted);
+  font-size: 1.2em;
+  transition:
+    color 0.4s ease,
+    filter 0.4s ease;
+}
+
+.story-deploy-cloud.is-on {
+  color: var(--orange-text);
+  filter: drop-shadow(0 0 1.2em var(--orange-border));
+  transition-delay: 1s;
+}
+
+.story-deploy-cloud-icon {
+  font-size: 4.5em;
+  line-height: 1;
+}
+
+.story-deploy-edge {
+  position: absolute;
+  width: 0.9em;
+  height: 0.9em;
+  margin: -0.45em 0 0 -0.45em;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.story-deploy-edge.is-on {
+  animation: story-edge-on 0.5s ease both;
+}
+
+@keyframes story-edge-on {
+  0% {
+    background: var(--border-strong);
+    box-shadow: none;
+  }
+  60% {
+    background: #fff;
+    box-shadow: 0 0 1.4em var(--orange);
+  }
+  100% {
+    background: var(--orange);
+    box-shadow: 0 0 0.8em var(--orange-border);
+  }
+}
+
+.story-deploy-edges-label {
+  position: absolute;
+  left: 76%;
+  top: 88%;
+  font-size: 1.05em;
+  color: var(--orange-text);
+}
+
+.story-deploy-browser {
+  position: absolute;
+  left: 0;
+  top: 74%;
+  display: grid;
+  gap: 0.3em;
+  padding: 0.5em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--blue-border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--text-secondary);
+}
+
+.story-deploy-response {
+  color: var(--green-text);
+  font-weight: 700;
+  animation: story-fade-in 0.4s ease 0.9s both;
 }
 
 /* ---- コミットの図 ---- */

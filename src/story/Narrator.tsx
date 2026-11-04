@@ -1,6 +1,11 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import type { StoryAudio } from "./audio.ts";
-import { splitSentences, type Face, type NarrationLine } from "./narration.ts";
+import type { LanguageCode } from "../types.ts";
+import {
+  subtitleSentences,
+  type Face,
+  type NarrationLine,
+} from "./narration.ts";
 import type { MouthShape, VoiceClip } from "./voice_manifest.ts";
 import {
   ZUNDAMON_PARTS,
@@ -20,33 +25,47 @@ function mouthAt(clip: VoiceClip, time: number): MouthShape {
   return shape;
 }
 
-/** 鳴っている解説音声に合わせて口の形を変える */
+/**
+ * 鳴っている解説音声に合わせて口の形と字幕の文を変える.
+ * 音声が鳴っていないとき (解説がオフのときも) は, 再生位置 (`offset`, このステップの中の秒) が動いたら, その位置の文にする
+ */
 function useMouth(
   audio: StoryAudio | null,
   clip: VoiceClip | undefined,
+  offset: number,
 ): { readonly mouth: MouthShape; readonly sentence: number } {
+  const offsetRef = useRef(offset);
+  offsetRef.current = offset;
   const [state, setState] = useState<{
     readonly mouth: MouthShape;
     readonly sentence: number;
   }>({ mouth: "closed", sentence: 0 });
   useEffect(() => {
     setState({ mouth: "closed", sentence: 0 });
-    if (audio === null || clip === undefined) {
+    if (clip === undefined) {
       return;
     }
+    let lastOffset = offsetRef.current;
+    const sentenceAt = (time: number): number =>
+      Math.max(
+        0,
+        clip.sentences.findLastIndex((start) => start <= time),
+      );
     let frame = requestAnimationFrame(function tick(): void {
-      const time = audio.voiceTime(clip.file);
+      const time = audio?.voiceTime(clip.file);
+      const offsetNow = offsetRef.current;
+      const seeked = offsetNow !== lastOffset;
+      lastOffset = offsetNow;
       const speaking = time !== undefined && time < clip.duration;
       const mouth = speaking ? mouthAt(clip, time) : "closed";
       setState((current) => {
-        // 話していないときは, 最後に出した文のままにする
+        // 話していないときは, シークしたらその位置の文, しなければ最後に出した文のままにする
         const sentence =
-          time === undefined
-            ? current.sentence
-            : Math.max(
-                0,
-                clip.sentences.findLastIndex((start) => start <= time),
-              );
+          time !== undefined
+            ? sentenceAt(time)
+            : seeked
+              ? sentenceAt(offsetNow)
+              : current.sentence;
         return current.mouth === mouth && current.sentence === sentence
           ? current
           : { mouth, sentence };
@@ -150,28 +169,40 @@ function usePreloadParts(): void {
   }, []);
 }
 
-/** ずんだもんと字幕. 解説音声がオンのときだけ出す */
+/**
+ * 字幕 (常に出す. 英語・エスペラントでも音声は日本語で, 字幕だけ訳す) と, ずんだもん (解説がオンのときだけ).
+ * 置き場所はスライドの下と右 (story.css の .story-layout)
+ */
 export function Narrator(props: {
   readonly audio: StoryAudio | null;
   readonly clip: VoiceClip | undefined;
   readonly line: NarrationLine | undefined;
-  /** 解説をオフにしたあと, 退出のアニメーションをしている間 */
-  readonly leaving: boolean;
+  readonly lang: LanguageCode;
+  /** ずんだもんを出すか. 解説をオフにしたあと, 退出のアニメーションをしている間は "leaving" */
+  readonly character: "hidden" | "shown" | "leaving";
+  /** 今のステップの中の再生位置 (秒) */
+  readonly offset: number;
 }): JSX.Element {
   const { audio, clip, line } = props;
-  const { mouth, sentence } = useMouth(audio, clip);
+  const { mouth, sentence } = useMouth(audio, clip, props.offset);
   const sentences =
-    line === undefined ? [] : splitSentences(line.subtitle ?? line.speech);
+    line === undefined ? [] : subtitleSentences(line, props.lang);
   const text = sentences[Math.min(sentence, sentences.length - 1)] ?? "";
   usePreloadParts();
   return (
-    <div className={`story-narrator ${props.leaving ? "is-leaving" : ""}`}>
-      {line === undefined ? null : (
-        <div key={`${line.speech}-${sentence}`} className="story-bubble">
-          {text}
-        </div>
+    <div
+      className={`story-narrator ${props.character === "leaving" ? "is-leaving" : ""}`}
+    >
+      <div className="story-caption">
+        {line === undefined ? null : (
+          <div key={`${line.speech}-${sentence}`} className="story-bubble">
+            {text}
+          </div>
+        )}
+      </div>
+      {props.character === "hidden" ? null : (
+        <ZundamonCharacter mouth={mouth} face={line?.face ?? "normal"} />
       )}
-      <ZundamonCharacter mouth={mouth} face={line?.face ?? "normal"} />
     </div>
   );
 }

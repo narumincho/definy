@@ -11,7 +11,7 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 | [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                                                                                                                                     |
 | [src/story/StoryPlayer.tsx](../src/story/StoryPlayer.tsx)             | 再生 (シークバー・再生/一時停止・全画面・キー操作)                                                                                                                                           |
 | [src/story/audio.ts](../src/story/audio.ts)                           | 効果音と BGM (Web Audio API で合成) と解説音声の再生                                                                                                                                         |
-| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (日本語だけ)                                                                                                                                                          |
+| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (音声は日本語, 字幕は日本語・英語・エスペラント)                                                                                                                      |
 | [src/story/Narrator.tsx](../src/story/Narrator.tsx)                   | ずんだもんの立ち絵と字幕. 口の形・まばたき・表情                                                                                                                                             |
 | [scripts/generate_story_voice.ts](../scripts/generate_story_voice.ts) | VOICEVOX ENGINE で解説音声を作る                                                                                                                                                             |
 | [src/story/voice_manifest.ts](../src/story/voice_manifest.ts)         | 解説音声の一覧 (長さ・口の形の時刻). スクリプトが作るので手で直さない                                                                                                                        |
@@ -21,27 +21,30 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 | [public/story/zundamon/](../public/story/zundamon)                    | 立ち絵のパーツ (PNG)                                                                                                                                                                         |
 | [src/story/story.css](../src/story/story.css)                         | 見た目                                                                                                                                                                                       |
 | [public/story/logos/](../public/story/logos)                          | 言語などのロゴ. [simple-icons](https://simpleicons.org/) 16.36.0 の SVG (CC0). nostr だけは [nostr-logo](https://github.com/mbarulli/nostr-logo) の `nostr-icon-black-transparent.svg` (CC0) |
+| [scripts/capture_story_ogp.ts](../scripts/capture_story_ogp.ts)       | 表紙のスライドを撮って OGP 画像 (`public/story/ogp-*.png`) を作る                                                                                                                            |
+| [pages/about.server.ts](../pages/about.server.ts)                     | /about のタイトルと OGP                                                                                                                                                                      |
 
 ## 操作
 
 YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まった状態で, 手で送る。
 シークバーのどこ (ステップの途中や, 全て表示された後でも) からでも再生を始められる。
 
-| キー                                      | 動作                                                     |
-| ----------------------------------------- | -------------------------------------------------------- |
-| → / PageDown / Enter / スライドのクリック | 次のステップの先頭へ                                     |
-| ← / PageUp                                | 前のステップの先頭へ                                     |
-| Space / K                                 | 再生と一時停止                                           |
-| J / L                                     | 5 秒戻る / 進む                                          |
-| Home                                      | 最初へ                                                   |
-| S                                         | 効果音の切り替え (既定 オン)                             |
-| B                                         | BGM の切り替え (既定 オフ)                               |
-| V                                         | ずんだもんの解説の切り替え (既定 オフ, 日本語のときだけ) |
-| F                                         | 全画面                                                   |
+| キー                 | 動作                                                                 |
+| -------------------- | -------------------------------------------------------------------- |
+| → / PageDown / Enter | 次のステップの先頭へ                                                 |
+| ← / PageUp           | 前のステップの先頭へ                                                 |
+| Space / K            | 再生と一時停止                                                       |
+| J / L                | 5 秒戻る / 進む                                                      |
+| Home                 | 最初へ                                                               |
+| S                    | 効果音の切り替え (既定 オン)                                         |
+| B                    | BGM の切り替え (既定 オフ)                                           |
+| V                    | ずんだもんの解説の切り替え (既定 オン. どの表示言語でも音声は日本語) |
+| F                    | 全画面                                                               |
 
-全画面 (F) でも操作 UI はスライドの下に常に出す。スライドは操作 UI の高さ (`--story-controls-height`) を除いた画面に 16:9 で収まる。
+全画面 (F) でも操作 UI はスライドの下に常に出す。ステージ (`.story-stage`) は操作 UI の高さ (`--story-controls-height`) を除いた画面いっぱいになり, その中にスライドと字幕・ずんだもんを置く (「置き場所」)。
 
-スライドの文字は選んでコピーできる。文字を選んでいるときのクリックと, リンクのクリックではスライドを進めない。
+スライドの文字は選んでコピーできる。スライドのクリックでは進めない (文字の選択やリンクのため)。
+シークバーには, スライドの中で要素が現れる (アニメーションが入る) 時刻に小さな点を出す。スライドの番号は時刻の右に出す。
 関連プロジェクトのリンクは新しいタブで開く。
 
 効果音・BGM・解説の設定は localStorage (`definy-story-sound`) に覚える。
@@ -50,15 +53,15 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 ## スライドの書き方
 
 - 1 枚は `steps` 回の「次へ」で `<Reveal at={n}>` の要素が順に現れる。`at={0}` は最初から出る。
-- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体は 4:51。
+- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体の長さはプレイヤーの表示が正 (2026-11-05 時点で 4:51)。台詞や `REVEAL_SECONDS` を変えると変わる。
 - ロゴは単色の SVG を CSS の mask にし, `PROJECTS` の `color` で塗る。ロゴの無いもの (nostr, Lean など) は名前だけ出す。
 - 署名付きイベントのスライドの図はノードの位置を割合 (`NETWORK_NODES`) で持ち, 線は全体に重ねた 1 つの SVG で描く。
   Alice (ライトユーザー) はブラウザからナルミンチョのサーバーへ直接, Bob (データを持ちたい人) は自分で建てたサーバー経由でつなぐ。
   ステップごとに: 公開鍵 = ユーザー ID → イベントが広がる → 悪意のあるサーバーは偽造できない → 削除だけできる → 自分のサーバーに残り, 控えから出し直せる。
 - 線は SVG の `preserveAspectRatio="none"` で伸ばすので, 線の上を進む光は円ではなく丸い端の短い破線で描く。
-- 大きさは全て `em` で書く。`.story-slide` の 1em はスライドの幅の 1/80 (`1.25cqw`) なので, 全画面でも同じ見た目のまま大きくなる。
+- 大きさは全て `em` で書く。`.story-slide` の 1em はスライドの幅の 1/80 (`.story-slide-area` を container にした `1.25cqw`) なので, 全画面でも同じ見た目のまま大きくなる。
 - `prefers-reduced-motion` では main.css が animation を全て消すので, `.story-reveal.is-on` は animation が無くても表示される形にしてある。
-- エスペラントの文は用意していないので, `lang=eo` では英語を出す。
+- スライドの文 (`Text`) は日本語・英語・エスペラントの 3 つを書く (`eo` も必須)。エスペラントのコミットは, サイトの UI と同じく「enmeto」と訳す。
 
 ## 数値の出どころ
 
@@ -80,6 +83,7 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 1. 台本は `src/story/narration.ts` に, スライドの id ごと・ステップの順に書く。語尾は「〜なのだ」。
    全てのスライドにある。要素を先に全部出してから話せるよう, 台詞は基本的にスライドの最後のステップに置く (署名付きイベントのスライドだけはステップごと)。
    `speech` は読ませる文 (definy は「デファイニー」のようにかなで書く), `subtitle` は字幕, `face` は表情。
+   `en` / `eo` は英語・エスペラントの字幕で, 日本語の字幕と同じ数の文の配列で書く (同じ時刻で 1 文ずつ切り替える。英語は略語の . で文を分けられないので配列にした)。数が違うと生成スクリプトがエラーにする。
 2. VOICEVOX を起動して `node scripts/generate_story_voice.ts` を実行する。
    ENGINE (`http://127.0.0.1:50021`, `VOICEVOX_URL` で変えられる) の `/audio_query` → `/synthesis` で WAV を作り, macOS の `afconvert` で AAC にする。
    話者はずんだもん (ノーマル, ID 3), 話速 1.15。ファイル名は文・話者・話速・`SYNTHESIS_VERSION` のハッシュなので, 変えていない台詞は作り直さない。使わなくなった音声は消す。
@@ -94,9 +98,33 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 - 次へ・戻るで移ったときは, 止まっていてもそのステップの解説を最初から鳴らす。
 - 再生中のシークや再生の再開では, ステップの中の位置から鳴らす。止まっているときのシークでは鳴らさない。
 - 解説の間は BGM を小さくする。
-- 解説がオンのときはスライド全体を左上に 86% に縮め (`.story-slide-area`), 下を字幕, 右をずんだもんの場所にする。スライドの中は全て em なので縮めても崩れず, ずんだもんと重ならない。
-- 「VOICEVOX:ずんだもん」の表記が必要 ([ずんだもんの音声ライブラリの利用規約](https://zunko.jp/con_ongen_kiyaku.html))。最後のスライドの下に, 立ち絵とロゴのクレジットと一緒に常に出す (解説がオンでも途中のスライドには出さない)。
+- 「VOICEVOX:ずんだもん」の表記が必要 ([ずんだもんの音声ライブラリの利用規約](https://zunko.jp/con_ongen_kiyaku.html))。[VOICEVOX](https://voicevox.hiroshiba.jp/) へのリンクにする。最後のスライドの下に, 立ち絵とロゴのクレジットと一緒に常に出す (解説がオンでも途中のスライドには出さない)。
+- 止まっているときに解説をオンにしても鳴らさない (再生か, 次へ・戻るで鳴る)。
+- 音声が鳴っていないときにシークバーやJ / L で位置を動かすと, 吹き出しはその位置の文になる。
+- 字幕はどの表示言語でも, 解説がオフでも出す (ずんだもんだけ消え, 吹き出しはしっぽの無い字幕の箱になる)。再生位置から文を決めるので, 音声が無くても台詞に合わせて進む。
+- 英語・エスペラントでも音声は日本語のまま, 字幕だけ訳す。VOICEVOX は日本語の音声なので, 英語の音声は作らない。エスペラントは発音がかなに近く (母音 5 つ, つづりどおり, アクセントは後ろから 2 番目) VOICEVOX でも読ませられそうなので, 試すなら台本・音声・時間軸を言語ごとに持つ。
 - 解説がオンなら最初の操作で全ての音声を読み込み始める。読み込みが遅れた分は先から鳴らし, 時間軸とずらさない。
+
+## エスペラントの音声
+
+`lang=eo` では, 台詞に `eoSpeech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。英語は日本語の音声。
+音声は日本語と同じく `node scripts/generate_story_voice.ts` で作り, `voice_manifest.ts` のキーは `eo/スライドの id/ステップ`。
+音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-05 時点で全体は日本語・英語 4:51, エスペラント 5:10。
+
+読ませ方は [scripts/esperanto_voice.ts](../scripts/esperanto_voice.ts)。1 文だけ試すには:
+
+```sh
+node scripts/esperanto_voice.ts <出力.wav> <話者 ID> "Saluton, mi estas Zundamon!"
+```
+
+- つづりどおりにかな (AquesTalk 風の記法) に直し, アクセント (') は後ろから 2 番目の音節に置く。1 音節の語 (mi, la, kaj など) は次の語と同じアクセント句にする。
+- 子音の連続 (pro, gr など) と語末の子音にはかなの都合で母音が入るので, accent_phrases の後で補った母音を短くする (無声子音の後は無声化する)。強く読む母音は 1.3 倍に伸ばす。語末や子音の前の n はン。
+- 数字は読まないので言葉で書く (2019 → du mil dek naŭ, 1 100 → mil cent, 30 % → tridek procentoj)。
+- 英語などの名前は読みどおりのつづりにする: TypeScript → Tajpskript, PureScript → Pjurskript, Deno → Dino, Flutter → Flater, Rust → Rast, Wasm → Ŭazm, WASI → Ŭazi, Cloudflare Workers → Klaŭdfler Ŭorkers, AI → ejáj, RPC → ar pi si, REST API → Rest ej pi aj, QR → kju ar, Alice → Alis, Scratch → Skreĉ, Lean → Lin, h5i → ejĉ fajv aj。
+- VOICEVOX のかな記法はどのアクセント句にもアクセントが要るので, 1 音節の語だけの句 (読点の前の Elm, Bob など) はその母音に置く。
+- 二重母音の j / ŭ はイ / ウ。l と r はどちらもラ行。名前は読みどおりのつづりで書く (definy → defajni)。アクセントの位置は母音に ´ を付けると変えられる。
+- 話者はずんだもん (ノーマル, 3)。WhiteCUL (ノーマル, 23) と聞き比べてずんだもんにした。話速は 1.1 (`ESPERANTO_SPEED_SCALE`)。
+- 読ませ方を変えたら `generate_story_voice.ts` の `ESPERANTO_VERSION` を上げる (エスペラントの音声を作り直す)。
 
 ## ずんだもんの立ち絵
 
@@ -121,7 +149,27 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 - 口の形: 閉じ = ほほえみ, あ = ほあー, い = にやり, う = お, え = んえー, お = ほう, ん = んー。
 - 表情: 通常 = 基本目 + 基本眉, 笑顔 = にっこり + 上がり眉, 驚き = 〇〇 + 上がり眉, 困り = 基本目 + 困り眉。まばたきは閉じ目 (笑顔のときはしない)。
 - 画面には肩から上だけを出す (スライドを大きく見せるため)。話している間は動かさず (口とまばたきだけ), 解説ボタンでの登場と退出だけ下から出入りさせる (`is-leaving` の 350ms)。
-- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す (`clip-path` の三角形 2 枚)。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとスクリプトがエラーにする)。
+- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す (`clip-path` の三角形 2 枚)。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとき, 字幕に {} の記法が入っているときはスクリプトがエラーにする)。
+
+## 置き場所
+
+スライドは常に 16:9 で, 字幕とずんだもんの場所を外に空け, ステージに収まる一番大きい大きさで真ん中に置く (story.css の `.story-layout`)。
+スライドにずんだもんや字幕が重ならない。大きさは CSS の変数で計算し, `100cqw` / `100cqh` はステージ (`container: story-stage / size`) の大きさ。
+
+| 状態                                         | スライドの下の帯 | 右の列 | ずんだもん                    |
+| -------------------------------------------- | ---------------- | ------ | ----------------------------- |
+| 字幕だけ (解説オフ)                          | 6em              | なし   | なし                          |
+| 解説オン, ステージが 幅 / 高さ ≤ 1.74        | 7em              | なし   | 帯の右端 (7em の高さに縮める) |
+| 解説オン, ステージが 幅 / 高さ > 1.74 (横長) | 6em              | 10.5em | 右の列の下                    |
+
+1.74 は 2 つの置き方でスライドが同じ大きさになる比率。16:10 の画面の全画面 (操作 UI を除くと 1.6 ほど) では帯に置き, 16:9 の画面の全画面 (1.9 ほど) と全画面でない 16:9 のステージでは右の列に置く方がスライドが大きい。
+例: 1280×900 の全画面 (ステージ 1280×834) でスライドは幅 1280px (前の 86% に縮める作りでは 1101px)。
+
+## OGP
+
+/about の head ([pages/about.server.ts](../pages/about.server.ts)) で og:image を `public/story/ogp-{en,ja,eo}.png` (1200×675, 表紙のスライド) にし, `twitter:card` を `summary_large_image` にする。
+og:image は絶対 URL でないと読まない SNS があるので, 要求の URL のオリジンを付ける。
+画像は dev サーバーを動かして `node scripts/capture_story_ogp.ts` で撮る (Playwright の chromium でステージを 1200×675 に置き, 字幕とずんだもんを消して撮る)。表紙を変えたら撮り直す。
 
 ## スライドの切り替え
 
@@ -132,7 +180,8 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 
 ## そのほかの部品
 
-- Cloudflare Workers へのデプロイのスライドは, パーツ → definy 製コンパイラ → worker.js + app.wasm → REST API v4 → Workers の流れの図 ([cloudflare-workers.md](cloudflare-workers.md))。
+- Cloudflare Workers へのデプロイのスライドは, デプロイされる様子のアニメーション: コード → definy 製コンパイラの歯車が回って worker.js + app.wasm ができる → REST API v4 で雲へ飛ぶ (エッジが順に光る) → ブラウザから開くと返事が来る ([cloudflare-workers.md](cloudflare-workers.md))。
+  HTTP は WASI 0.3 (Preview 3) に倣った `wasi.io` で送ると書く ([wasi-io.md](wasi-io.md), [wasi-capability-io.md](wasi-capability-io.md))。WASI 0.3 そのもののランタイムで動くわけではない。
 - バージョン管理のスライドの上の図 (`CommitGraph`) は, main とブランチのコミットが取り込みで合流し, どのコミットもパーツの構文木をハッシュで指す (変わっていないものは共有する) ことを表す。
 
 - 構造化編集のスライドの式は, エディタと同じ `expressionToLayoutNode` → `computeLayout` → `TreeLayoutRenderer` で描く (読むだけ)。
