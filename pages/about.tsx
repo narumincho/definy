@@ -2,6 +2,7 @@ import type { JSX } from "react";
 import { Link } from "../src/components/Link.tsx";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
+import { StoryPlayer } from "../src/story/StoryPlayer.tsx";
 import type { LanguageCode } from "../src/types.ts";
 import {
   BUILTIN_MODULES,
@@ -125,6 +126,9 @@ export default function AboutPage(): JSX.Element {
       style={{ maxWidth: 960, margin: "0 auto", paddingBottom: "3rem" }}
     >
       <div style={{ display: "grid", gap: "2rem" }}>
+        {/* 紹介スライド (docs/story.md) */}
+        <StoryPlayer lang={language} />
+
         {/* ヒーローセクション */}
         <div
           className="card"
@@ -242,20 +246,8 @@ export default function AboutPage(): JSX.Element {
             }}
           >
             <Link
-              href="/about/story"
-              className="btn btn-primary"
-              style={{ padding: "0.6rem 1.4rem", textDecoration: "none" }}
-            >
-              {label(
-                language,
-                "▶ Watch the introduction",
-                "▶ 紹介スライドを見る",
-                "▶ Spekti la prezenton",
-              )}
-            </Link>
-            <Link
               href="/modules"
-              className="btn btn-secondary"
+              className="btn btn-primary"
               style={{ padding: "0.6rem 1.4rem", textDecoration: "none" }}
             >
               {label(

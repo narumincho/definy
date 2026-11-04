@@ -445,6 +445,23 @@ export function StoryPlayer(props: {
     [startVoiceAt, wake],
   );
 
+  // 解説をオフにしたら, 退出のアニメーションの間だけずんだもんを残す
+  const voiceOnNow = voiceAvailable && sound.voice;
+  const [narratorPresence, setNarratorPresence] = useState<
+    "hidden" | "shown" | "leaving"
+  >("hidden");
+  useEffect(() => {
+    if (voiceOnNow) {
+      setNarratorPresence("shown");
+      return;
+    }
+    setNarratorPresence((current) =>
+      current === "hidden" ? current : "leaving",
+    );
+    const timer = setTimeout(() => setNarratorPresence("hidden"), 350);
+    return () => clearTimeout(timer);
+  }, [voiceOnNow]);
+
   // 日本語以外にしたら解説を止める
   useEffect(() => {
     if (!voiceAvailable) {
@@ -461,11 +478,32 @@ export function StoryPlayer(props: {
     }
   }, [wake]);
 
+  // about ページの中にあるので, スライドが画面に見えているときだけキー操作を受け付ける
+  const visibleRef = useRef(false);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (frame === null || typeof IntersectionObserver === "undefined") {
+      visibleRef.current = true;
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        visibleRef.current = entries.some(
+          (entry) => entry.intersectionRatio >= 0.4,
+        );
+      },
+      { threshold: [0, 0.4, 1] },
+    );
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+
   // キー操作
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const target = event.target;
       if (
+        (!visibleRef.current && document.fullscreenElement === null) ||
         event.metaKey ||
         event.ctrlKey ||
         event.altKey ||
@@ -569,8 +607,9 @@ export function StoryPlayer(props: {
         <div className="story-slide-area">
           <SlideView slide={entry.slide} step={entry.step} lang={lang} />
         </div>
-        {voiceOn ? (
+        {narratorPresence !== "hidden" ? (
           <Narrator
+            leaving={narratorPresence === "leaving"}
             audio={audio}
             clip={entryVoiceClip(entry)}
             line={narration}

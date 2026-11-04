@@ -1,5 +1,5 @@
 /**
- * definy のコードのうち, どれだけを definy 自身で書いているかを数え, 紹介スライド (/about/story) の円グラフに使う.
+ * definy のコードのうち, どれだけを definy 自身で書いているかを数え, 紹介スライド (/about の上) の円グラフに使う.
  *
  *   node scripts/measure_self_hosting.ts
  *

@@ -1,5 +1,5 @@
 /**
- * 坂本アヒルさんの「ずんだもん立ち絵素材」(https://tachie.net/w/sC90rhbReJ) の PSD から, 紹介スライド (/about/story) で使うパーツを PNG に書き出す.
+ * 坂本アヒルさんの「ずんだもん立ち絵素材」(https://tachie.net/w/sC90rhbReJ) の PSD から, 紹介スライド (/about の上) で使うパーツを PNG に書き出す.
  *
  *   node scripts/export_zundamon.ts <基本版.psd>              パーツを書き出す
  *   node scripts/export_zundamon.ts <基本版.psd> --preview <dir> 口・目・眉を並べた確認用の画像を書き出す

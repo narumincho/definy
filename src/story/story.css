@@ -1,21 +1,8 @@
 /*
- * 紹介スライド (/about/story).
+ * 紹介スライド (/about の上).
  * .story-frame を container にし, スライドの中の大きさは全て em で書く.
  * .story-stage の 1em はスライドの幅の 1/80 なので, 全画面でも同じ見た目のまま大きくなる
  */
-
-.story-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.story-page-header a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.9rem;
-}
 
 .story-frame {
   display: grid;
@@ -1328,21 +1315,57 @@
   transform: scale(0.78);
 }
 
-.story-subtitle {
+/* 漫画の吹き出し. しっぽは右のずんだもんへ向ける */
+.story-bubble {
   position: absolute;
   left: 2em;
-  right: 18.5em;
-  bottom: 0.9em;
-  padding: 0.5em 0.9em;
-  border-radius: 0.5em;
-  background: rgba(0, 0, 0, 0.72);
-  color: #fff;
-  font-size: 1.3em;
-  line-height: 1.5;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  right: 16.5em;
+  bottom: 0.8em;
+  padding: 0.45em 0.9em;
+  border: 0.14em solid #2b2f36;
+  border-radius: 1.2em;
+  background: #fffdf5;
+  color: #1e2025;
+  font-size: 1.2em;
+  line-height: 1.45;
   pointer-events: auto;
   user-select: text;
-  animation: story-reveal 0.35s ease both;
+  box-shadow: 0 0.3em 0 rgba(0, 0, 0, 0.35);
+  animation: story-bubble-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1.3) both;
+  transform-origin: 100% 70%;
+}
+
+.story-bubble::before,
+.story-bubble::after {
+  content: "";
+  position: absolute;
+  top: 55%;
+  border-style: solid;
+  border-color: transparent;
+}
+
+.story-bubble::before {
+  right: -1.25em;
+  border-width: 0.6em 0 0.6em 1.25em;
+  border-left-color: #2b2f36;
+}
+
+.story-bubble::after {
+  right: -0.98em;
+  margin-top: 0.14em;
+  border-width: 0.46em 0 0.46em 1em;
+  border-left-color: #fffdf5;
+}
+
+@keyframes story-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 立ち絵は上半身だけを右下に出す */
@@ -1353,7 +1376,40 @@
   width: 17em;
   height: 21em;
   overflow: hidden;
-  animation: story-reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: story-zundamon-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+/* 解説ボタンでの登場と退出だけ動かす (話している間は動かさない) */
+@keyframes story-zundamon-in {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.story-narrator.is-leaving .story-zundamon {
+  animation: story-zundamon-out 0.35s ease-in both;
+}
+
+.story-narrator.is-leaving .story-bubble {
+  animation: story-fade-out 0.2s ease-in both;
+}
+
+@keyframes story-zundamon-out {
+  to {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+}
+
+@keyframes story-fade-out {
+  to {
+    opacity: 0;
+  }
 }
 
 .story-zundamon-figure {
@@ -1362,19 +1418,6 @@
   margin-top: -1.2em;
   filter: drop-shadow(0 0.4em 0.8em rgba(0, 0, 0, 0.45));
   transform-origin: 50% 100%;
-}
-
-.story-zundamon.is-speaking .story-zundamon-figure {
-  animation: story-narrator-bounce 0.42s ease-in-out infinite alternate;
-}
-
-@keyframes story-narrator-bounce {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-0.3em);
-  }
 }
 
 .story-zundamon-part {
@@ -1613,4 +1656,83 @@
   background: #fff;
   border-radius: 0.5em;
   image-rendering: pixelated;
+}
+
+/* ---- デプロイの流れ ---- */
+
+.story-flow.is-deploy {
+  margin-top: 0.5em;
+}
+
+.story-flow.is-deploy .story-flow-item {
+  font-size: 1.3em;
+  padding: 1.1em 0.4em;
+}
+
+.story-flow.is-deploy .story-flow-link {
+  width: 2.2em;
+}
+
+/* ---- コミットの図 ---- */
+
+.story-commit-graph {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.story-graph-lane {
+  font-size: 18px;
+  fill: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.story-graph-edge {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 4;
+}
+
+.story-graph-edge.is-branch {
+  stroke: var(--purple);
+}
+
+.story-graph-ref {
+  fill: none;
+  stroke: var(--green-border);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+
+.story-graph-commit {
+  fill: var(--surface-elevated);
+  stroke: var(--blue-text);
+  stroke-width: 3;
+}
+
+.story-graph-commit-label {
+  font-size: 14px;
+  text-anchor: middle;
+  fill: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.story-graph-sign {
+  font-size: 14px;
+}
+
+.story-graph-note {
+  font-size: 15px;
+  fill: var(--text-muted);
+}
+
+.story-graph-part {
+  fill: var(--green-bg-strong);
+  stroke: var(--green-border);
+}
+
+.story-graph-part-label {
+  font-size: 15px;
+  fill: var(--green-text);
+  font-family: var(--font-mono);
 }

@@ -1,10 +1,11 @@
 /**
- * 紹介スライド (/about/story) のずんだもんの解説音声を VOICEVOX ENGINE で作る.
+ * 紹介スライド (/about の上) のずんだもんの解説音声を VOICEVOX ENGINE で作る.
  *
  *   node scripts/generate_story_voice.ts
  *
  * - VOICEVOX を起動しておく (ENGINE が http://127.0.0.1:50021 で待ち受ける. VOICEVOX_URL で変えられる)
- * - 台詞は src/story/narration.ts. 文・話者・話速が同じ音声は作り直さない
+ * - 台詞は src/story/narration.ts. 文・話者・話速が同じ音声は作り直さない.
+ *   `{デファイ'ニイワ}` のように {} で囲んだところは, アクセント付きのかなとして読ませる
  * - 出力: public/story/voice/*.m4a (macOS の afconvert で AAC にする) と
  *   src/story/voice_manifest.ts (長さと口の形の時刻)
  * - VOICEVOX:ずんだもん の表記が必要 (https://zunko.jp/con_ongen_kiyaku.html)
@@ -22,12 +23,16 @@ const ENGINE_URL = process.env["VOICEVOX_URL"] ?? "http://127.0.0.1:50021";
 /** ずんだもん (ノーマル) */
 const SPEAKER = 3;
 const SPEED_SCALE = 1.15;
+/** 音声の作り方 (buildQuery など) を変えたら上げる. 全ての音声を作り直す */
+const SYNTHESIS_VERSION = 2;
 
 const ROOT = resolve(import.meta.dirname, "..");
 const VOICE_DIR = join(ROOT, "public", "story", "voice");
 const MANIFEST_PATH = join(ROOT, "src", "story", "voice_manifest.ts");
 
 type Mora = {
+  readonly text?: string;
+  readonly pitch?: number;
   readonly consonant: string | null;
   readonly consonant_length: number | null;
   readonly vowel: string;
@@ -126,6 +131,66 @@ async function engine(path: string, init?: RequestInit): Promise<Response> {
   return response;
 }
 
+type AccentPhrase = AudioQuery["accent_phrases"][number];
+
+async function accentPhrases(
+  text: string,
+  isKana: boolean,
+): Promise<AccentPhrase[]> {
+  return (await (
+    await engine(
+      `/accent_phrases?speaker=${SPEAKER}&is_kana=${isKana}&text=${encodeURIComponent(text)}`,
+      { method: "POST" },
+    )
+  ).json()) as AccentPhrase[];
+}
+
+/**
+ * 台詞から audio_query を作る. `{...}` の中は AquesTalk 風のかな (`デファイ'ニイワ` のように ' がアクセントの位置) として読み,
+ * 外は普通の文として読む. VOICEVOX が名前を区切って読んでしまうもの (definy, ナルミンチョ など) は {} で書く
+ */
+async function buildQuery(speech: string): Promise<AudioQuery> {
+  const query = (await (
+    await engine(
+      `/audio_query?speaker=${SPEAKER}&text=${encodeURIComponent("あ")}`,
+      {
+        method: "POST",
+      },
+    )
+  ).json()) as AudioQuery;
+  const phrases: AccentPhrase[] = [];
+  for (const [index, part] of speech.split(/\{([^}]*)\}/).entries()) {
+    if (part === "") {
+      continue;
+    }
+    // split の奇数番目が {} の中
+    const added = await accentPhrases(part, index % 2 === 1);
+    // 文の終わり (。など) で区切ると最後の息継ぎが付かないので, 次の区切りとの間に足す
+    const last = added[added.length - 1];
+    const ending = /[。！？!?]$/.test(part)
+      ? 0.45
+      : /[、,]$/.test(part)
+        ? 0.25
+        : 0;
+    if (last !== undefined && last.pause_mora === null && ending > 0) {
+      added[added.length - 1] = {
+        ...last,
+        pause_mora: {
+          text: "、",
+          pitch: 0,
+          consonant: null,
+          consonant_length: null,
+          vowel: "pau",
+          vowel_length: ending,
+        },
+      };
+    }
+    phrases.push(...added);
+  }
+  query.accent_phrases = phrases;
+  return query;
+}
+
 async function exists(path: string): Promise<boolean> {
   return access(path).then(
     () => true,
@@ -146,18 +211,20 @@ async function main(): Promise<void> {
         continue;
       }
       const key = createHash("sha256")
-        .update(JSON.stringify([line.speech, SPEAKER, SPEED_SCALE]))
+        .update(
+          JSON.stringify([
+            line.speech,
+            SPEAKER,
+            SPEED_SCALE,
+            SYNTHESIS_VERSION,
+          ]),
+        )
         .digest("hex")
         .slice(0, 16);
       const file = `${key}.m4a`;
       const output = join(VOICE_DIR, file);
 
-      const query = (await (
-        await engine(
-          `/audio_query?speaker=${SPEAKER}&text=${encodeURIComponent(line.speech)}`,
-          { method: "POST" },
-        )
-      ).json()) as AudioQuery;
+      const query = await buildQuery(line.speech);
       query.speedScale = SPEED_SCALE;
       query.outputSamplingRate = 24000;
       query.outputStereo = false;

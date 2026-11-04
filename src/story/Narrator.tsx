@@ -100,7 +100,6 @@ function Part(props: { readonly part: ZundamonPart }): JSX.Element {
 function ZundamonCharacter(props: {
   readonly mouth: MouthShape;
   readonly face: Face;
-  readonly speaking: boolean;
 }): JSX.Element {
   const blink = useBlink();
   const mouth: PartKey = props.mouth;
@@ -110,11 +109,7 @@ function ZundamonCharacter(props: {
       ? ZUNDAMON_PARTS.blink
       : ZUNDAMON_PARTS.eyes[props.face];
   return (
-    <div
-      className={`story-zundamon ${props.speaking ? "is-speaking" : ""}`}
-      role="img"
-      aria-label="ずんだもん"
-    >
+    <div className="story-zundamon" role="img" aria-label="ずんだもん">
       <div
         className="story-zundamon-figure"
         style={{
@@ -152,20 +147,20 @@ export function Narrator(props: {
   readonly audio: StoryAudio | null;
   readonly clip: VoiceClip | undefined;
   readonly line: NarrationLine | undefined;
+  /** 解説をオフにしたあと, 退出のアニメーションをしている間 */
+  readonly leaving: boolean;
 }): JSX.Element {
   const { audio, clip, line } = props;
-  const { mouth, speaking } = useMouth(audio, clip);
+  const { mouth } = useMouth(audio, clip);
   usePreloadParts();
   return (
-    <div className="story-narrator">
+    <div className={`story-narrator ${props.leaving ? "is-leaving" : ""}`}>
       {line === undefined ? null : (
-        <div className="story-subtitle">{line.subtitle ?? line.speech}</div>
+        <div key={line.speech} className="story-bubble">
+          {line.subtitle ?? line.speech}
+        </div>
       )}
-      <ZundamonCharacter
-        mouth={mouth}
-        face={line?.face ?? "normal"}
-        speaking={speaking}
-      />
+      <ZundamonCharacter mouth={mouth} face={line?.face ?? "normal"} />
     </div>
   );
 }

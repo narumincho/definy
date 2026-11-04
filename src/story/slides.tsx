@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useLayoutEffect,
   useRef,
   useState,
@@ -13,7 +14,7 @@ import { TreeLayoutRenderer } from "../tree_layout/TreeLayoutRenderer.tsx";
 import { SELF_HOSTING_STATS } from "./self_hosting_stats.ts";
 
 /**
- * 紹介スライド (/about/story) の内容.
+ * 紹介スライド (/about の上) の内容.
  * 1 枚のスライドは `steps` 回の「次へ」で要素が順に現れる (`<Reveal at={n}>`).
  * 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む (src/story/timeline.ts).
  * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/story/story.css の .story-slide)
@@ -1301,6 +1302,107 @@ function ComparisonSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
+/**
+ * コミットの図. main とブランチのコミットが親をたどってつながり, 取り込み (マージ) で合流する.
+ * どのコミットも, パーツの構文木をハッシュで指す (変わっていないパーツは共有する)
+ */
+function CommitGraph(props: { readonly lang: LanguageCode }): JSX.Element {
+  const { lang } = props;
+  const main = [
+    { x: 150, label: "c1" },
+    { x: 290, label: "c2" },
+    { x: 570, label: "c4" },
+  ];
+  const branchCommit = { x: 430, label: "c3" };
+  const mainY = 34;
+  const branchY = 92;
+  const parts = [
+    { y: 18, label: "core.divide" },
+    { y: 50, label: "sample.area" },
+    { y: 82, label: "sample.area′" },
+  ];
+  return (
+    <svg
+      viewBox="0 0 900 112"
+      className="story-commit-graph"
+      role="img"
+      aria-label={t(lang, {
+        ja: "main とブランチのコミットの図",
+        en: "Commits on main and a branch",
+      })}
+    >
+      <text x="10" y={mainY + 5} className="story-graph-lane">
+        main
+      </text>
+      <text x="10" y={branchY + 5} className="story-graph-lane">
+        {t(lang, { ja: "ブランチ", en: "branch" })}
+      </text>
+      {/* 親へのつながり */}
+      <path d={`M 150 ${mainY} L 570 ${mainY}`} className="story-graph-edge" />
+      <path
+        d={`M 290 ${mainY} C 340 ${branchY}, 380 ${branchY}, 430 ${branchY} C 480 ${branchY}, 520 ${mainY}, 570 ${mainY}`}
+        className="story-graph-edge is-branch"
+      />
+      {/* パーツの構文木へのハッシュ参照 (c2 と c4 は同じ core.divide を共有する) */}
+      <path d="M 290 34 C 450 0, 600 10, 700 18" className="story-graph-ref" />
+      <path d="M 570 34 C 630 30, 660 20, 700 18" className="story-graph-ref" />
+      <path d="M 570 34 C 630 60, 660 82, 700 82" className="story-graph-ref" />
+      <path d="M 290 34 C 450 56, 600 50, 700 50" className="story-graph-ref" />
+      {[
+        ...main.map((c) => ({ ...c, y: mainY })),
+        { ...branchCommit, y: branchY },
+      ].map((commit) => (
+        <g key={commit.label}>
+          <circle
+            cx={commit.x}
+            cy={commit.y}
+            r="16"
+            className="story-graph-commit"
+          />
+          <text
+            x={commit.x}
+            y={commit.y + 5}
+            className="story-graph-commit-label"
+          >
+            {commit.label}
+          </text>
+          <text
+            x={commit.x + 20}
+            y={commit.y - 14}
+            className="story-graph-sign"
+          >
+            ✍
+          </text>
+        </g>
+      ))}
+      <text x="570" y="70" className="story-graph-note">
+        {t(lang, { ja: "取り込み", en: "merge" })}
+      </text>
+      {parts.map((part) => (
+        <g key={part.label}>
+          <rect
+            x="700"
+            y={part.y - 13}
+            width="190"
+            height="26"
+            rx="6"
+            className="story-graph-part"
+          />
+          <text x="712" y={part.y + 5} className="story-graph-part-label">
+            🌳 {part.label}
+          </text>
+        </g>
+      ))}
+      <text x="700" y="110" className="story-graph-note">
+        {t(lang, {
+          ja: "パーツの構文木 (SHA-256 で指す)",
+          en: "part syntax trees (by SHA-256)",
+        })}
+      </text>
+    </svg>
+  );
+}
+
 function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
   const rows: ReadonlyArray<{
     readonly name: Text;
@@ -1356,11 +1458,8 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
           en: "Version control is built into definy",
         }}
       />
-      <Reveal at={0} step={step} className="story-lead-left is-small">
-        {t(lang, {
-          ja: "プロジェクト → ブランチ → コミット (親コミット・取り込み) を, ファイルではなく構文木で扱う",
-          en: "Projects, branches and commits (with parents and merges) — over syntax trees, not files",
-        })}
+      <Reveal at={0} step={step}>
+        <CommitGraph lang={lang} />
       </Reveal>
       <div className="story-table is-two">
         <div className="story-table-head" />
@@ -1381,10 +1480,6 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
           </Reveal>
         ))}
       </div>
-      <Reveal at={3} step={step} className="story-protocol">
-        <ProjectLink project="connect" />
-        <code>proto/definy/v1/*.proto</code>
-      </Reveal>
     </div>
   );
 }
@@ -1529,13 +1624,6 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
               {t(lang, layer.name)}
             </Reveal>
           ))}
-          <Reveal at={3} step={step} className="story-layer is-deploy">
-            <span>☁</span>
-            {t(lang, {
-              ja: "Cloudflare Workers へのデプロイも, definy で書いたパーツが REST API を呼んで行う",
-              en: "Deploying to Cloudflare Workers is a definy part calling the REST API",
-            })}
-          </Reveal>
         </div>
         <Reveal at={2} step={step} className="story-donut-panel">
           <DonutChart lang={lang} />
@@ -1560,6 +1648,98 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
           <Reveal at={3} step={step} delay={0.3} className="story-goal">
             {t(lang, SELF_HOSTING_TARGET)}
           </Reveal>
+        </Reveal>
+      </div>
+    </div>
+  );
+}
+
+function DeploySlide({ step, lang }: SlideProps): JSX.Element {
+  const items: ReadonlyArray<{
+    readonly at: number;
+    readonly icon: string;
+    readonly name: Text;
+    readonly detail: string;
+  }> = [
+    {
+      at: 0,
+      icon: "📝",
+      name: { ja: "definy で書いたパーツ", en: "A part written in definy" },
+      detail: "fn(request) => response",
+    },
+    {
+      at: 1,
+      icon: "⚙️",
+      name: { ja: "definy 製コンパイラ", en: "Compiler written in definy" },
+      detail: "core.compile-to-wasm",
+    },
+    {
+      at: 1,
+      icon: "📦",
+      name: { ja: "worker.js + app.wasm", en: "worker.js + app.wasm" },
+      detail: "multipart/form-data",
+    },
+    {
+      at: 2,
+      icon: "🔐",
+      name: { ja: "REST API v4", en: "REST API v4" },
+      detail: "api.cloudflare.com",
+    },
+    {
+      at: 2,
+      icon: "☁",
+      name: { ja: "Cloudflare Workers", en: "Cloudflare Workers" },
+      detail: "*.workers.dev",
+    },
+  ];
+  return (
+    <div className="story-body">
+      <Heading
+        lang={lang}
+        kicker={{ ja: "できていること", en: "Already working" }}
+        text={{
+          ja: "Cloudflare Workers へのデプロイも definy で",
+          en: "Deploying to Cloudflare Workers, in definy",
+        }}
+      />
+      <div className="story-flow is-deploy">
+        {items.map((item, index) => (
+          <Fragment key={item.detail}>
+            {index > 0 ? (
+              <Reveal
+                at={item.at}
+                step={step}
+                delay={index % 2 === 0 ? 0.2 : 0}
+                className="story-flow-link"
+              >
+                <span className="story-packet" />
+              </Reveal>
+            ) : null}
+            <Reveal
+              at={item.at}
+              step={step}
+              delay={index % 2 === 0 ? 0.3 : 0.1}
+              className="story-flow-item"
+            >
+              <div className="story-flow-icon">{item.icon}</div>
+              <div>{t(lang, item.name)}</div>
+              <small>{item.detail}</small>
+            </Reveal>
+          </Fragment>
+        ))}
+      </div>
+      <div className="story-notes">
+        <Reveal at={3} step={step} className="story-note">
+          {t(lang, {
+            ja: "デプロイは特別な機能ではなく, definy.deploy-to-cloudflare-workers という普通のパーツ。API トークンはシークレットとして渡す",
+            en: "Deploying is not a special feature but an ordinary part, definy.deploy-to-cloudflare-workers. The API token is passed as a secret",
+          })}
+        </Reveal>
+        <Reveal at={3} step={step} delay={0.2} className="story-note is-hot">
+          {t(lang, {
+            ja: "definy で書いた definy のサーバーも, 約 3 秒でデプロイできる",
+            en: "Even a definy server written in definy deploys in about 3 seconds",
+          })}
         </Reveal>
       </div>
     </div>
@@ -1804,6 +1984,13 @@ export const SLIDES: readonly Slide[] = [
     duration: 30,
     steps: 3,
     render: SelfHostingSlide,
+  },
+  {
+    id: "deploy",
+    title: { ja: "デプロイ", en: "Deploy" },
+    duration: 20,
+    steps: 3,
+    render: DeploySlide,
   },
   {
     id: "proof",
