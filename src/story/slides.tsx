@@ -5,8 +5,8 @@ import type { LanguageCode } from "../types.ts";
 /**
  * 紹介スライド (/about/story) の内容.
  * 1 枚のスライドは `steps` 回の「次へ」で要素が順に現れる (`<Reveal at={n}>`).
- * 自動再生では `duration` 秒をステップの数で割った間隔で進む.
- * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/main.css の .story-stage)
+ * 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む (src/story/timeline.ts).
+ * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/story/story.css の .story-slide)
  */
 
 type Text = { readonly ja: string; readonly en: string };
@@ -59,6 +59,173 @@ function Heading(props: {
       <div className="story-kicker">{t(props.lang, props.kicker)}</div>
       <h2>{t(props.lang, props.text)}</h2>
     </div>
+  );
+}
+
+/**
+ * スライドに出てくる関連プロジェクト. `logo` は public/story/logos/ の SVG
+ * (simple-icons, CC0) で, `color` で塗る
+ */
+const PROJECTS = {
+  elm: {
+    name: "Elm",
+    url: "https://elm-lang.org/",
+    logo: "elm",
+    color: "#60b5cc",
+  },
+  typescript: {
+    name: "TypeScript",
+    url: "https://www.typescriptlang.org/",
+    logo: "typescript",
+    color: "#3178c6",
+  },
+  purescript: {
+    name: "PureScript",
+    url: "https://www.purescript.org/",
+    logo: "purescript",
+    color: "#c4c9d4",
+  },
+  deno: {
+    name: "Deno",
+    url: "https://deno.com/",
+    logo: "deno",
+    color: "#e8eaee",
+  },
+  flutter: {
+    name: "Flutter",
+    url: "https://flutter.dev/",
+    logo: "flutter",
+    color: "#54c5f8",
+  },
+  rust: {
+    name: "Rust",
+    url: "https://www.rust-lang.org/",
+    logo: "rust",
+    color: "#e0904f",
+  },
+  webassembly: {
+    name: "WebAssembly",
+    url: "https://webassembly.org/",
+    logo: "webassembly",
+    color: "#8b7bff",
+  },
+  react: {
+    name: "React",
+    url: "https://react.dev/",
+    logo: "react",
+    color: "#61dafb",
+  },
+  scratch: {
+    name: "Scratch",
+    url: "https://scratch.mit.edu/",
+    logo: "scratch",
+    color: "#f9a92f",
+  },
+  bitcoin: {
+    name: "Bitcoin",
+    url: "https://bitcoin.org/",
+    logo: "bitcoin",
+    color: "#f7931a",
+  },
+  ethereum: {
+    name: "Ethereum",
+    url: "https://ethereum.org/",
+    logo: "ethereum",
+    color: "#a0a6ff",
+  },
+  nostr: {
+    name: "nostr",
+    url: "https://github.com/nostr-protocol/nostr",
+    logo: undefined,
+    color: "#a68cf0",
+  },
+  lean: {
+    name: "Lean 4",
+    url: "https://lean-lang.org/",
+    logo: undefined,
+    color: "#c9b8f7",
+  },
+  idris: {
+    name: "Idris 2",
+    url: "https://github.com/idris-lang/Idris2",
+    logo: undefined,
+    color: "#c9b8f7",
+  },
+  nyxis: {
+    name: "nyxis",
+    url: "https://github.com/NyxFoundation/nyxis",
+    logo: undefined,
+    color: "#c9b8f7",
+  },
+  h5i: {
+    name: "h5i",
+    url: "https://github.com/h5i-dev/h5i",
+    logo: undefined,
+    color: "#c9b8f7",
+  },
+  qedos: {
+    name: "qedos",
+    url: "https://github.com/shi3z/qedos",
+    logo: undefined,
+    color: "#c9b8f7",
+  },
+} as const satisfies Record<
+  string,
+  {
+    readonly name: string;
+    readonly url: string;
+    readonly logo: string | undefined;
+    readonly color: string;
+  }
+>;
+
+type ProjectId = keyof typeof PROJECTS;
+
+function Logo(props: {
+  readonly project: ProjectId;
+  readonly size?: number;
+}): JSX.Element | null {
+  const project = PROJECTS[props.project];
+  if (project.logo === undefined) {
+    return null;
+  }
+  const url = `url(/story/logos/${project.logo}.svg)`;
+  return (
+    <span
+      className="story-logo-icon"
+      aria-hidden="true"
+      style={{
+        backgroundColor: project.color,
+        maskImage: url,
+        WebkitMaskImage: url,
+        fontSize: `${props.size ?? 1}em`,
+      }}
+    />
+  );
+}
+
+/** 関連プロジェクトの公式サイトへのリンク. 新しいタブで開き, クリックしてもスライドは進まない */
+function ProjectLink(props: {
+  readonly project: ProjectId;
+  readonly children?: ReactNode;
+  readonly className?: string;
+}): JSX.Element {
+  const project = PROJECTS[props.project];
+  return (
+    <a
+      href={project.url}
+      target="_blank"
+      rel="noreferrer"
+      className={`story-link ${props.className ?? ""}`}
+      style={{ color: project.color }}
+    >
+      {props.children ?? (
+        <>
+          <Logo project={props.project} />
+          {project.name}
+        </>
+      )}
+    </a>
   );
 }
 
@@ -124,13 +291,15 @@ const COMMITS_PER_YEAR: ReadonlyArray<{
 const LANGUAGE_ERAS: ReadonlyArray<{
   readonly from: number;
   readonly to: number;
-  readonly name: string;
+  readonly projects: readonly ProjectId[];
   readonly color: string;
+  /** 途中で移った先 */
+  readonly movedTo?: string;
 }> = [
-  { from: 0, to: 1, name: "Elm", color: "var(--blue)" },
-  { from: 1, to: 3, name: "TypeScript + PureScript", color: "var(--purple)" },
-  { from: 4, to: 6, name: "Deno / Flutter …", color: "var(--text-muted)" },
-  { from: 7, to: 7, name: "Rust → definy", color: "var(--orange)" },
+  { from: 0, to: 1, projects: ["elm"], color: "#60b5cc" },
+  { from: 1, to: 3, projects: ["typescript", "purescript"], color: "#3178c6" },
+  { from: 4, to: 6, projects: ["deno", "flutter"], color: "var(--text-muted)" },
+  { from: 7, to: 7, projects: ["rust"], color: "#e0904f", movedTo: "definy" },
 ];
 
 function HistorySlide({ step, lang }: SlideProps): JSX.Element {
@@ -168,16 +337,29 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
       <Reveal at={1} step={step} className="story-eras">
         {LANGUAGE_ERAS.map((era, index) => (
           <div
-            key={era.name}
+            key={era.projects.join()}
             className="story-era"
             style={{
               gridColumn: `${era.from + 1} / ${era.to + 2}`,
               borderColor: era.color,
-              color: era.color,
               animationDelay: `${index * 0.15}s`,
             }}
           >
-            {era.name}
+            {era.projects.map((project, i) => (
+              <span key={project} className="story-era-item">
+                {i > 0 ? <span className="story-era-sep">+</span> : null}
+                <ProjectLink project={project}>
+                  <Logo project={project} size={1.6} />
+                  {PROJECTS[project].name}
+                </ProjectLink>
+              </span>
+            ))}
+            {era.movedTo === undefined ? null : (
+              <span className="story-era-item">
+                <span className="story-era-sep">→</span>
+                <span className="story-era-definy">{era.movedTo}</span>
+              </span>
+            )}
           </div>
         ))}
       </Reveal>
@@ -365,7 +547,9 @@ function ScratchSlide({ step, lang }: SlideProps): JSX.Element {
       />
       <div className="story-compare">
         <div className="story-compare-head" />
-        <div className="story-compare-head">Scratch</div>
+        <div className="story-compare-head">
+          <ProjectLink project="scratch" />
+        </div>
         <div className="story-compare-head is-definy">definy</div>
         {rows.map((row) => (
           <Reveal
@@ -402,9 +586,114 @@ function ScratchSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-function EventsSlide({ step, lang }: SlideProps): JSX.Element {
+type NetworkServer = {
+  readonly id: string;
+  readonly name: Text;
+  readonly host: Text;
+  /** このステップから現れる */
+  readonly appearAt: number;
+};
+
+const NETWORK_SERVERS: readonly NetworkServer[] = [
+  {
+    id: "a",
+    name: { ja: "サーバー A", en: "Server A" },
+    host: { ja: "definy.narumincho.com", en: "definy.narumincho.com" },
+    appearAt: 0,
+  },
+  {
+    id: "b",
+    name: { ja: "サーバー B", en: "Server B" },
+    host: { ja: "悪意のある運営", en: "malicious operator" },
+    appearAt: 0,
+  },
+  {
+    id: "c",
+    name: { ja: "サーバー C", en: "Server C" },
+    host: { ja: "別の運営", en: "another operator" },
+    appearAt: 0,
+  },
+  {
+    id: "d",
+    name: { ja: "サーバー D", en: "Server D" },
+    host: { ja: "新しく立てたサーバー", en: "a brand-new server" },
+    appearAt: 4,
+  },
+];
+
+const NETWORK_CAPTIONS: readonly Text[] = [
+  {
+    ja: "nostr と同じく, 公開鍵がそのままユーザー ID。秘密鍵は自分の手元にだけある",
+    en: "Like nostr, the public key is the user ID. The private key never leaves your device",
+  },
+  {
+    ja: "署名したイベントを複数のサーバーに送る。どのサーバーでも署名を確かめられる",
+    en: "Signed events go to several servers, and every server can check the signature",
+  },
+  {
+    ja: "秘密鍵を持たないサーバーは, Alice のイベントを偽造も改ざんもできない",
+    en: "Without the private key a server cannot forge or alter Alice's events",
+  },
+  {
+    ja: "サーバーにできるのは「載せない」こと = 削除だけ (著作権侵害などに対応できる)",
+    en: "All a server can do is stop serving it — delete (e.g. copyright violations)",
+  },
+  {
+    ja: "イベントは手元にも残せる。別のサーバーへそのまま出し直せる",
+    en: "You keep your own copy and can republish it to another server as is",
+  },
+];
+
+/** 公開鍵 (= ユーザー ID) の見本 */
+const SAMPLE_PUBLIC_KEY = "7f3a9c…e21b";
+
+function EventChip(props: {
+  readonly state: "ok" | "forged" | "deleted";
+  readonly lang: LanguageCode;
+}): JSX.Element {
+  const { state, lang } = props;
   return (
-    <div className="story-body">
+    <div className={`story-event-chip is-${state}`}>
+      <span className="story-event-chip-body">
+        {state === "forged"
+          ? t(lang, { ja: "Alice: 偽のコミット", en: "Alice: forged commit" })
+          : t(lang, { ja: "Alice: コミット", en: "Alice: commit" })}
+      </span>
+      <span className="story-event-chip-mark">
+        {state === "ok"
+          ? t(lang, { ja: "✓ 署名 OK", en: "✓ valid" })
+          : state === "forged"
+            ? t(lang, { ja: "✗ 署名が合わない", en: "✗ bad signature" })
+            : t(lang, { ja: "🗑 削除", en: "🗑 deleted" })}
+      </span>
+    </div>
+  );
+}
+
+/** そのステップでサーバーが持つイベント */
+function serverEvents(
+  server: string,
+  step: number,
+): ReadonlyArray<"ok" | "forged" | "deleted"> {
+  switch (server) {
+    case "a":
+      return step >= 1 ? ["ok"] : [];
+    case "b":
+      return step >= 2 ? ["ok", "forged"] : step >= 1 ? ["ok"] : [];
+    case "c":
+      return step >= 3 ? ["deleted"] : step >= 1 ? ["ok"] : [];
+    case "d":
+      return step >= 4 ? ["ok"] : [];
+    default:
+      return [];
+  }
+}
+
+function EventsSlide({ step, lang }: SlideProps): JSX.Element {
+  const caption = NETWORK_CAPTIONS[Math.min(step, NETWORK_CAPTIONS.length - 1)];
+  const rows = NETWORK_SERVERS.length;
+  return (
+    <div className="story-body is-tight">
       <Heading
         lang={lang}
         kicker={{ ja: "特徴 3", en: "Feature 3" }}
@@ -413,57 +702,92 @@ function EventsSlide({ step, lang }: SlideProps): JSX.Element {
           en: "A distributed system of signed events",
         }}
       />
-      <div className="story-flow">
-        <Reveal at={0} step={step} className="story-flow-item">
-          <div className="story-flow-icon">🔑</div>
-          <div>{t(lang, { ja: "アカウント = 鍵", en: "Account = key" })}</div>
-          <small>Ed25519</small>
-        </Reveal>
-        <Reveal at={1} step={step} className="story-flow-link">
-          <span className="story-packet" />
-        </Reveal>
-        <Reveal at={1} step={step} delay={0.2} className="story-flow-item">
-          <div className="story-flow-icon">📝</div>
-          <div>{t(lang, { ja: "署名したイベント", en: "Signed event" })}</div>
-          <small>
-            {t(lang, {
-              ja: "コミット・プロジェクト作成…",
-              en: "commit, create project…",
-            })}
-          </small>
-        </Reveal>
-        <Reveal at={2} step={step} className="story-flow-link">
-          <span className="story-packet" />
-        </Reveal>
-        <Reveal at={2} step={step} delay={0.2} className="story-flow-item">
-          <div className="story-flow-icon">#️⃣</div>
-          <div>
-            {t(lang, { ja: "内容はハッシュで固定", en: "Content-addressed" })}
+      <div className="story-net">
+        <div className={`story-device ${step >= 4 ? "is-highlight" : ""}`}>
+          <div className="story-device-title">
+            💻 {t(lang, { ja: "Alice の手元", en: "Alice's device" })}
           </div>
-          <small>SHA-256</small>
-        </Reveal>
-        <Reveal at={3} step={step} className="story-flow-link">
-          <span className="story-packet" />
-        </Reveal>
-        <Reveal at={3} step={step} delay={0.2} className="story-flow-item">
-          <div className="story-flow-icon">🌐</div>
-          <div>
-            {t(lang, { ja: "誰でも検証できる", en: "Anyone can verify" })}
+          <div className="story-key">
+            <span>
+              🔑{" "}
+              {t(lang, {
+                ja: "公開鍵 = ユーザー ID",
+                en: "Public key = user ID",
+              })}
+            </span>
+            <code>{SAMPLE_PUBLIC_KEY}</code>
           </div>
-          <small>
-            {t(lang, {
-              ja: "サーバーもブラウザも",
-              en: "servers and browsers",
+          <div className="story-key is-secret">
+            <span>
+              🔒{" "}
+              {t(lang, {
+                ja: "秘密鍵 (手元だけ)",
+                en: "Private key (device only)",
+              })}
+            </span>
+          </div>
+          <Reveal at={1} step={step} className="story-device-copy">
+            <div className="story-device-copy-label">
+              📦 {t(lang, { ja: "手元の控え", en: "Local copy" })}
+            </div>
+            <EventChip state="ok" lang={lang} />
+          </Reveal>
+        </div>
+        <div className="story-net-link-cell">
+          <svg
+            className="story-net-links"
+            viewBox={`0 0 100 ${rows * 100}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {NETWORK_SERVERS.map((server, index) => {
+              const y = index * 100 + 50;
+              const d = `M 0 ${(rows * 100) / 2} C 50 ${(rows * 100) / 2}, 50 ${y}, 100 ${y}`;
+              const visible = step >= server.appearAt;
+              const sending =
+                server.appearAt === 0 ? step === 1 : step === server.appearAt;
+              return (
+                <g key={server.id} className={visible ? "" : "is-hidden"}>
+                  <path d={d} className="story-net-line" />
+                  {sending ? (
+                    <path d={d} pathLength={100} className="story-net-pulse" />
+                  ) : null}
+                </g>
+              );
             })}
-          </small>
-        </Reveal>
+          </svg>
+        </div>
+        <div
+          className="story-servers"
+          style={{ gridTemplateRows: `repeat(${rows}, 1fr)` }}
+        >
+          {NETWORK_SERVERS.map((server) => (
+            <Reveal
+              key={server.id}
+              at={server.appearAt}
+              step={step}
+              className={`story-server ${
+                server.id === "b" && step >= 2 ? "is-evil" : ""
+              }`}
+            >
+              <div className="story-server-head">
+                <span>🖥 {t(lang, server.name)}</span>
+                <small>{t(lang, server.host)}</small>
+              </div>
+              <div className="story-server-events">
+                {serverEvents(server.id, step).map((state) => (
+                  <EventChip key={state} state={state} lang={lang} />
+                ))}
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </div>
-      <Reveal at={3} step={step} delay={0.4} className="story-note">
-        {t(lang, {
-          ja: "サーバーを信用しなくても「誰が・何を」したかを確かめられる",
-          en: "You can check who did what without trusting the server",
-        })}
-      </Reveal>
+      {caption === undefined ? null : (
+        <div key={step} className="story-note story-net-caption">
+          {t(lang, caption)}
+        </div>
+      )}
     </div>
   );
 }
@@ -526,8 +850,18 @@ function ComparisonSlide({ step, lang }: SlideProps): JSX.Element {
         <div className="story-table-head" />
         <div className="story-table-head">
           {t(lang, { ja: "ブロックチェーン", en: "Blockchain" })}
+          <span className="story-table-logos">
+            <ProjectLink project="bitcoin">
+              <Logo project="bitcoin" size={1.3} />
+            </ProjectLink>
+            <ProjectLink project="ethereum">
+              <Logo project="ethereum" size={1.3} />
+            </ProjectLink>
+          </span>
         </div>
-        <div className="story-table-head">nostr</div>
+        <div className="story-table-head">
+          <ProjectLink project="nostr" />
+        </div>
         <div className="story-table-head is-definy">definy</div>
         {rows.map((row, index) => (
           <Reveal
@@ -643,12 +977,12 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
 function ProofSlide({ step, lang }: SlideProps): JSX.Element {
   const projects: ReadonlyArray<{
     readonly at: number;
-    readonly name: string;
+    readonly project: ProjectId;
     readonly desc: Text;
   }> = [
     {
       at: 1,
-      name: "Lean 4",
+      project: "lean",
       desc: {
         ja: "定理証明支援系。AI による数学の証明で注目",
         en: "Proof assistant now used by AI for math proofs",
@@ -656,7 +990,7 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
     },
     {
       at: 1,
-      name: "Idris 2",
+      project: "idris",
       desc: {
         ja: "依存型を中心にした関数型言語",
         en: "Functional language built around dependent types",
@@ -664,7 +998,7 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
     },
     {
       at: 2,
-      name: "nyxis",
+      project: "nyxis",
       desc: {
         ja: "Lean 4 のバックエンド。認可の安全性をビルドのたびに証明で検査",
         en: "Lean 4 backend whose authorization safety is proven on every build",
@@ -672,7 +1006,7 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
     },
     {
       at: 2,
-      name: "h5i",
+      project: "h5i",
       desc: {
         ja: "Rust の Web アプリの中心部分を Lean 4 に変換して性質を証明",
         en: "Proves properties of Rust web app kernels via Lean 4",
@@ -680,7 +1014,7 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
     },
     {
       at: 2,
-      name: "qedos",
+      project: "qedos",
       desc: {
         ja: "seL4 上の実験的 OS。コードを信用せず, できることを検証する",
         en: "Experimental seL4 OS: don't trust code, verify what it can do",
@@ -706,13 +1040,15 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
       <div className="story-cards">
         {projects.map((p, index) => (
           <Reveal
-            key={p.name}
+            key={p.project}
             at={p.at}
             step={step}
             delay={(index % 3) * 0.12}
             className="story-card"
           >
-            <div className="story-card-name">{p.name}</div>
+            <div className="story-card-name">
+              <ProjectLink project={p.project} />
+            </div>
             <div>{t(lang, p.desc)}</div>
           </Reveal>
         ))}
@@ -754,8 +1090,23 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
         <h1 className="story-wordmark is-small">definy</h1>
       </Reveal>
       <Reveal at={1} step={step} delay={0.3}>
-        <p className="story-sub">
-          definy.narumincho.com · github.com/narumincho/definy
+        <p className="story-sub story-closing-links">
+          <a
+            className="story-link"
+            href="https://definy.narumincho.com/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            definy.narumincho.com
+          </a>
+          <a
+            className="story-link"
+            href="https://github.com/narumincho/definy"
+            target="_blank"
+            rel="noreferrer"
+          >
+            github.com/narumincho/definy
+          </a>
         </p>
       </Reveal>
     </div>
@@ -801,14 +1152,14 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "events",
     title: { ja: "署名付きイベント", en: "Signed events" },
-    duration: 30,
-    steps: 3,
+    duration: 45,
+    steps: 4,
     render: EventsSlide,
   },
   {
     id: "comparison",
     title: { ja: "ブロックチェーン・nostr", en: "Blockchain & nostr" },
-    duration: 30,
+    duration: 25,
     steps: 3,
     render: ComparisonSlide,
   },
@@ -829,7 +1180,7 @@ export const SLIDES: readonly Slide[] = [
   {
     id: "closing",
     title: { ja: "おわりに", en: "Closing" },
-    duration: 25,
+    duration: 20,
     steps: 1,
     render: ClosingSlide,
   },

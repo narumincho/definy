@@ -43,8 +43,7 @@
     ),
     var(--bg-canvas);
   color: var(--text);
-  cursor: pointer;
-  user-select: none;
+  cursor: default;
 }
 
 .story-frame.is-fullscreen {
@@ -107,26 +106,6 @@
   font-size: 1cqw;
   color: var(--text-muted);
   font-family: var(--font-mono);
-}
-
-.story-timer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 0.3cqw;
-  width: 100%;
-  background: var(--brand-gradient);
-  transform-origin: left;
-  animation: story-timer linear both;
-}
-
-@keyframes story-timer {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
 }
 
 /* 「次へ」で現れる要素. 動きを減らす設定では animation が消えても表示されるようにする */
@@ -364,11 +343,30 @@
 
 .story-era {
   border-top: 0.25em solid;
-  padding-top: 0.4em;
+  padding-top: 0.5em;
   font-size: 1.3em;
   font-weight: 700;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
   white-space: nowrap;
+}
+
+.story-era-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.story-era-sep {
+  color: var(--text-muted);
+}
+
+.story-era-definy {
+  font-family: "Hack", var(--font-mono);
+  font-weight: 400;
+  color: #b9d09b;
 }
 
 .story-callouts {
@@ -887,10 +885,9 @@
 /* ---- 操作 ---- */
 
 .story-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem 0.3rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -922,34 +919,348 @@
   color: var(--blue-text);
 }
 
-.story-control-text {
-  font-size: 0.8rem;
+.story-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
-.story-progress {
+.story-time {
   flex: 1;
+  min-width: 0;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.story-time-total {
+  color: var(--text-secondary);
+}
+
+.story-time-chapter {
+  color: var(--text-secondary);
+}
+
+/* YouTube のようなシークバー. スライドごとの区切りの間に隙間を空ける */
+.story-seek {
+  position: relative;
   display: flex;
   gap: 3px;
-  min-width: 0;
-  padding: 0 0.4rem;
-}
-
-.story-progress-segment {
-  flex-basis: 0;
-  height: 0.5rem;
-  border: none;
-  border-radius: 1rem;
-  background: var(--overlay-3);
+  height: 1.1rem;
+  align-items: center;
   cursor: pointer;
-  padding: 0;
+  touch-action: none;
 }
 
-.story-progress-segment.is-past {
-  background: var(--blue-border);
+.story-seek-chapter {
+  position: relative;
+  flex-basis: 0;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--overlay-3);
+  transition: height 0.1s ease;
 }
 
-.story-progress-segment.is-current {
-  background: var(--blue);
+.story-seek:hover .story-seek-chapter {
+  height: 6px;
+}
+
+.story-seek-chapter.is-hovered {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.story-seek-played {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform-origin: left;
+}
+
+.story-seek-thumb {
+  position: absolute;
+  top: 50%;
+  width: 0.8rem;
+  height: 0.8rem;
+  margin: -0.4rem 0 0 -0.4rem;
+  border-radius: 50%;
+  background: var(--red);
+  transform: scale(0);
+  transition: transform 0.1s ease;
+  pointer-events: none;
+}
+
+.story-seek:hover .story-seek-thumb {
+  transform: scale(1);
+}
+
+.story-seek-tooltip {
+  position: absolute;
+  bottom: 1.4rem;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 0.75rem;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.story-seek-tooltip-time {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---- ロゴとリンク ---- */
+
+.story-logo-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  vertical-align: -0.15em;
+}
+
+.story-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  color: var(--blue-text);
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+  cursor: pointer;
+}
+
+.story-link:hover {
+  border-bottom-style: solid;
+}
+
+.story-table-logos {
+  display: inline-flex;
+  gap: 0.4em;
+  margin-left: 0.6em;
+  vertical-align: middle;
+}
+
+.story-table-logos .story-link,
+.story-era .story-link {
+  border-bottom: none;
+}
+
+.story-closing-links {
+  display: flex;
+  gap: 1.5em;
+}
+
+/* ---- 複数のサーバー ---- */
+
+.story-body.is-tight {
+  gap: 1.2em;
+}
+
+.story-net {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 22em 1fr 30em;
+}
+
+.story-device {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  padding: 1.2em;
+  border-radius: 0.6em;
+  border: 1px solid var(--blue-border);
+  background: var(--blue-bg);
+  transition: box-shadow 0.4s ease;
+}
+
+.story-device.is-highlight {
+  border-color: var(--green);
+  box-shadow: 0 0 3em var(--green-border);
+}
+
+.story-device-title {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.story-key {
+  display: grid;
+  gap: 0.2em;
+  font-size: 1.2em;
+  color: var(--text-secondary);
+}
+
+.story-key code {
+  font-family: var(--font-mono);
+  color: var(--blue-text);
+  font-size: 1.1em;
+}
+
+.story-key.is-secret {
+  color: var(--yellow-text);
+}
+
+.story-device-copy {
+  display: grid;
+  gap: 0.4em;
+  padding-top: 0.6em;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.story-device-copy-label {
+  font-size: 1.15em;
+  color: var(--text-secondary);
+}
+
+.story-net-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.story-net-link-cell {
+  position: relative;
+  min-height: 0;
+}
+
+.story-net-line {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.story-net-links .is-hidden {
+  opacity: 0;
+}
+
+/* 線の上を進む光. 線ごと伸び縮みするので円ではなく丸い端の短い破線で描く */
+.story-net-pulse {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 10;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1 99;
+  animation: story-net-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes story-net-pulse {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: -99;
+  }
+}
+
+.story-servers {
+  display: grid;
+  gap: 0.6em;
+  min-height: 0;
+}
+
+.story-server {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8em;
+  padding: 0.5em 0.9em;
+  border-radius: 0.5em;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  min-height: 0;
+}
+
+.story-server.is-evil {
+  border-color: var(--red-border);
+  background: var(--red-bg);
+}
+
+.story-server-head {
+  display: grid;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.story-server-head small {
+  font-weight: 400;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+
+.story-server-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  align-items: flex-end;
+}
+
+.story-event-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.25em 0.6em;
+  border-radius: 0.4em;
+  font-size: 1.05em;
+  white-space: nowrap;
+  border: 1px solid var(--green-border);
+  background: var(--green-bg-strong);
+  color: var(--green-text);
+  animation: story-reveal 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.story-event-chip-mark {
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
+.story-event-chip.is-forged {
+  border-color: var(--red-border);
+  background: var(--red-bg-strong);
+  color: var(--red-text);
+  animation: story-shake 0.5s ease both;
+}
+
+.story-event-chip.is-forged .story-event-chip-body {
+  text-decoration: line-through;
+}
+
+.story-event-chip.is-deleted {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.story-event-chip.is-deleted .story-event-chip-body {
+  text-decoration: line-through;
+}
+
+.story-net-caption {
+  margin-top: 0;
+  animation: story-reveal 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .story-hint {
@@ -959,7 +1270,7 @@
 }
 
 @media (max-width: 640px) {
-  .story-control-text {
+  .story-time-chapter {
     display: none;
   }
 }

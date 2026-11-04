@@ -1,20 +1,26 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useRef,
   useState,
   type JSX,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { label } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
 import { StoryAudio, type SoundEffect } from "./audio.ts";
 import { SLIDES, slideTitle } from "./slides.tsx";
+import { buildTimeline, entryIndexAt, formatTime } from "./timeline.ts";
 import "./story.css";
 
-type Position = { readonly slide: number; readonly step: number };
+const TIMELINE = buildTimeline(SLIDES);
 
 const PREFERENCE_KEY = "definy-story-sound";
+
+/** J / L で動かす秒数 */
+const SKIP_SECONDS = 5;
 
 type SoundPreference = { readonly effects: boolean; readonly bgm: boolean };
 
@@ -45,34 +51,8 @@ function writePreference(preference: SoundPreference): void {
   }
 }
 
-function stepsOf(slide: number): number {
-  return SLIDES[slide]?.steps ?? 0;
-}
-
-function nextPosition(position: Position): Position | undefined {
-  if (position.step < stepsOf(position.slide)) {
-    return { slide: position.slide, step: position.step + 1 };
-  }
-  if (position.slide + 1 < SLIDES.length) {
-    return { slide: position.slide + 1, step: 0 };
-  }
-  return undefined;
-}
-
-function previousPosition(position: Position): Position | undefined {
-  if (position.step > 0) {
-    return { slide: position.slide, step: position.step - 1 };
-  }
-  if (position.slide > 0) {
-    return { slide: position.slide - 1, step: stepsOf(position.slide - 1) };
-  }
-  return undefined;
-}
-
-/** 自動再生で 1 ステップに使う秒数 */
-function stepSeconds(slide: number): number {
-  const s = SLIDES[slide];
-  return s === undefined ? 5 : s.duration / (s.steps + 1);
+function clampTime(time: number): number {
+  return Math.min(TIMELINE.total, Math.max(0, time));
 }
 
 function ControlButton(props: {
@@ -95,16 +75,125 @@ function ControlButton(props: {
   );
 }
 
+/** 再生位置が動くたびに描き直さないよう, スライドとステップが変わったときだけ描く */
+const SlideView = memo(function SlideView(props: {
+  readonly slide: number;
+  readonly step: number;
+  readonly lang: LanguageCode;
+}): JSX.Element | null {
+  const slide = SLIDES[props.slide];
+  if (slide === undefined) {
+    return null;
+  }
+  const Render = slide.render;
+  return (
+    <div key={slide.id} className="story-slide">
+      <Render step={props.step} lang={props.lang} />
+    </div>
+  );
+});
+
+/** YouTube のようなシークバー. スライドごとに区切り, ドラッグでどこからでも再生できる */
+function SeekBar(props: {
+  readonly time: number;
+  readonly lang: LanguageCode;
+  readonly onSeek: (time: number) => void;
+}): JSX.Element {
+  const { time, lang, onSeek } = props;
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | undefined>(undefined);
+
+  const timeAt = (clientX: number): number => {
+    const rect = trackRef.current?.getBoundingClientRect();
+    if (rect === undefined || rect.width === 0) {
+      return 0;
+    }
+    return clampTime(((clientX - rect.left) / rect.width) * TIMELINE.total);
+  };
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    onSeek(timeAt(event.clientX));
+  };
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const t = timeAt(event.clientX);
+    setHover(t);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      onSeek(t);
+    }
+  };
+
+  const hoverSlide =
+    hover === undefined
+      ? undefined
+      : SLIDES[TIMELINE.entries[entryIndexAt(TIMELINE, hover)]?.slide ?? 0];
+
+  return (
+    <div
+      ref={trackRef}
+      className="story-seek"
+      role="slider"
+      tabIndex={-1}
+      aria-label={label(lang, "Seek", "再生位置", "Pozicio")}
+      aria-valuemin={0}
+      aria-valuemax={Math.round(TIMELINE.total)}
+      aria-valuenow={Math.round(time)}
+      aria-valuetext={formatTime(time)}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerLeave={() => setHover(undefined)}
+    >
+      {SLIDES.map((slide, index) => {
+        const start = TIMELINE.slideStarts[index] ?? 0;
+        const played = Math.min(
+          1,
+          Math.max(0, (time - start) / slide.duration),
+        );
+        const hovered =
+          hover !== undefined &&
+          hover >= start &&
+          hover < start + slide.duration;
+        return (
+          <div
+            key={slide.id}
+            className={`story-seek-chapter ${hovered ? "is-hovered" : ""}`}
+            style={{ flexGrow: slide.duration }}
+          >
+            <div
+              className="story-seek-played"
+              style={{ transform: `scaleX(${played})` }}
+            />
+          </div>
+        );
+      })}
+      <div
+        className="story-seek-thumb"
+        style={{ left: `${(time / TIMELINE.total) * 100}%` }}
+      />
+      {hover !== undefined && hoverSlide !== undefined ? (
+        <div
+          className="story-seek-tooltip"
+          style={{ left: `${(hover / TIMELINE.total) * 100}%` }}
+        >
+          <div>{slideTitle(hoverSlide, lang)}</div>
+          <div className="story-seek-tooltip-time">{formatTime(hover)}</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /**
- * 紹介スライドの再生. 既定は手で送る. 自動再生・効果音・BGM・全画面を切り替えられる.
- * キー: → / Space / Enter 次へ, ← 戻る, A 自動再生, S 効果音, B BGM, F 全画面
+ * 紹介スライドの再生. 動画のように再生位置 (秒) を持ち, 既定は止まった状態で手で送る.
+ * キー: → / PageDown / Enter 次へ, ← / PageUp 戻る, Space / K 再生と一時停止,
+ * J / L 5 秒戻る・進む, S 効果音, B BGM, F 全画面
  */
 export function StoryPlayer(props: {
   readonly lang: LanguageCode;
 }): JSX.Element {
   const { lang } = props;
-  const [position, setPosition] = useState<Position>({ slide: 0, step: 0 });
-  const [auto, setAuto] = useState(false);
+  const [time, setTime] = useState(0);
+  const [playing, setPlaying] = useState(false);
   const [sound, setSound] = useState<SoundPreference>({
     effects: true,
     bgm: false,
@@ -113,7 +202,8 @@ export function StoryPlayer(props: {
   const frameRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<StoryAudio | null>(null);
   const soundRef = useRef(sound);
-  const positionRef = useRef(position);
+  const timeRef = useRef(time);
+  const shownEntryRef = useRef(0);
 
   useEffect(() => {
     const preference = readPreference();
@@ -142,50 +232,88 @@ export function StoryPlayer(props: {
     audio.setBgm(soundRef.current.bgm);
   }, []);
 
-  const play = useCallback((effect: SoundEffect): void => {
+  const playEffect = useCallback((effect: SoundEffect): void => {
     if (soundRef.current.effects) {
       audioRef.current?.playEffect(effect);
     }
   }, []);
 
-  /** 位置を変え, 動きに合った効果音を鳴らす */
-  const go = useCallback(
-    (to: Position | undefined): void => {
+  const updateTime = useCallback((next: number): void => {
+    const clamped = clampTime(next);
+    timeRef.current = clamped;
+    setTime(clamped);
+  }, []);
+
+  const seek = useCallback(
+    (next: number): void => {
       wake();
-      const from = positionRef.current;
-      if (to === undefined) {
-        setAuto(false);
+      updateTime(next);
+    },
+    [updateTime, wake],
+  );
+
+  const entryIndex = entryIndexAt(TIMELINE, time);
+  const entry = TIMELINE.entries[entryIndex];
+
+  // 表示するステップが変わったら効果音を鳴らす
+  useEffect(() => {
+    const previous = TIMELINE.entries[shownEntryRef.current];
+    const current = TIMELINE.entries[entryIndex];
+    shownEntryRef.current = entryIndex;
+    if (previous === undefined || current === undefined) {
+      return;
+    }
+    if (entryIndex === TIMELINE.entries.length - 1 && previous !== current) {
+      playEffect("finish");
+    } else if (current.slide > previous.slide) {
+      playEffect("next");
+    } else if (entryIndex < TIMELINE.entries.indexOf(previous)) {
+      playEffect("prev");
+    } else if (current !== previous) {
+      playEffect("reveal");
+    }
+  }, [entryIndex, playEffect]);
+
+  const next = useCallback((): void => {
+    const following =
+      TIMELINE.entries[entryIndexAt(TIMELINE, timeRef.current) + 1];
+    if (following !== undefined) {
+      seek(following.start);
+    }
+  }, [seek]);
+
+  const previous = useCallback((): void => {
+    const index = entryIndexAt(TIMELINE, timeRef.current);
+    seek(TIMELINE.entries[Math.max(0, index - 1)]?.start ?? 0);
+  }, [seek]);
+
+  const togglePlay = useCallback((): void => {
+    wake();
+    if (!playing && timeRef.current >= TIMELINE.total) {
+      updateTime(0);
+    }
+    setPlaying(!playing);
+  }, [playing, updateTime, wake]);
+
+  // 再生中は requestAnimationFrame で再生位置を進める
+  useEffect(() => {
+    if (!playing) {
+      return;
+    }
+    let last = performance.now();
+    let frame = requestAnimationFrame(function tick(now: number): void {
+      const advanced = timeRef.current + (now - last) / 1000;
+      last = now;
+      if (advanced >= TIMELINE.total) {
+        updateTime(TIMELINE.total);
+        setPlaying(false);
         return;
       }
-      if (to.slide === SLIDES.length - 1 && to.step === stepsOf(to.slide)) {
-        play("finish");
-      } else if (to.slide > from.slide) {
-        play("next");
-      } else if (to.slide < from.slide || to.step < from.step) {
-        play("prev");
-      } else {
-        play("reveal");
-      }
-      positionRef.current = to;
-      setPosition(to);
-    },
-    [play, wake],
-  );
-
-  const next = useCallback(
-    (): void => go(nextPosition(positionRef.current)),
-    [go],
-  );
-
-  const previous = useCallback(
-    (): void => go(previousPosition(positionRef.current)),
-    [go],
-  );
-
-  const jump = useCallback(
-    (slide: number): void => go({ slide, step: 0 }),
-    [go],
-  );
+      updateTime(advanced);
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [playing, updateTime]);
 
   const updateSound = useCallback(
     (change: Partial<SoundPreference>): void => {
@@ -198,11 +326,6 @@ export function StoryPlayer(props: {
     [wake],
   );
 
-  const toggleAuto = useCallback((): void => {
-    wake();
-    setAuto((value) => !value);
-  }, [wake]);
-
   const toggleFullscreen = useCallback((): void => {
     wake();
     if (document.fullscreenElement !== null) {
@@ -211,15 +334,6 @@ export function StoryPlayer(props: {
       void frameRef.current?.requestFullscreen();
     }
   }, [wake]);
-
-  // 自動再生
-  useEffect(() => {
-    if (!auto) {
-      return;
-    }
-    const timer = setTimeout(next, stepSeconds(position.slide) * 1000);
-    return () => clearTimeout(timer);
-  }, [auto, position, next]);
 
   // キー操作
   useEffect(() => {
@@ -240,7 +354,6 @@ export function StoryPlayer(props: {
       switch (event.key) {
         case "ArrowRight":
         case "PageDown":
-        case " ":
         case "Enter":
           event.preventDefault();
           next();
@@ -250,9 +363,23 @@ export function StoryPlayer(props: {
           event.preventDefault();
           previous();
           return;
-        case "a":
-        case "A":
-          toggleAuto();
+        case " ":
+        case "k":
+        case "K":
+          event.preventDefault();
+          togglePlay();
+          return;
+        case "j":
+        case "J":
+          seek(timeRef.current - SKIP_SECONDS);
+          return;
+        case "l":
+        case "L":
+          seek(timeRef.current + SKIP_SECONDS);
+          return;
+        case "Home":
+          event.preventDefault();
+          seek(0);
           return;
         case "s":
         case "S":
@@ -270,15 +397,13 @@ export function StoryPlayer(props: {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [next, previous, toggleAuto, toggleFullscreen, updateSound]);
+  }, [next, previous, seek, togglePlay, toggleFullscreen, updateSound]);
 
-  const slide = SLIDES[position.slide];
-  if (slide === undefined) {
+  if (entry === undefined) {
     return <div />;
   }
-  const Render = slide.render;
-  const isFirst = position.slide === 0 && position.step === 0;
-  const isLast = nextPosition(position) === undefined;
+  const slide = SLIDES[entry.slide];
+  const atEnd = time >= TIMELINE.total;
 
   return (
     <div
@@ -288,108 +413,104 @@ export function StoryPlayer(props: {
       <div
         className="story-stage"
         onClick={(event) => {
-          if (event.target instanceof Element && event.target.closest("a")) {
+          // 文字を選んでコピーしようとしているときは進めない
+          if (
+            (window.getSelection()?.toString() ?? "") !== "" ||
+            (event.target instanceof Element && event.target.closest("a"))
+          ) {
             return;
           }
           next();
         }}
         role="region"
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}
-        aria-label={slideTitle(slide, lang)}
+        aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
       >
-        <div key={slide.id} className="story-slide">
-          <Render step={position.step} lang={lang} />
-        </div>
+        <SlideView slide={entry.slide} step={entry.step} lang={lang} />
         <div className="story-page-number">
-          {position.slide + 1} / {SLIDES.length}
+          {entry.slide + 1} / {SLIDES.length}
         </div>
-        {auto ? (
-          <div
-            key={`${position.slide}-${position.step}`}
-            className="story-timer"
-            style={{ animationDuration: `${stepSeconds(position.slide)}s` }}
-          />
-        ) : null}
       </div>
       <div className="story-controls">
-        <ControlButton
-          onClick={previous}
-          title={label(lang, "Back (←)", "戻る (←)", "Reen (←)")}
-        >
-          ◀
-        </ControlButton>
-        <ControlButton
-          onClick={next}
-          title={label(lang, "Next (→)", "次へ (→)", "Antaŭen (→)")}
-        >
-          ▶
-        </ControlButton>
-        <ControlButton
-          onClick={toggleAuto}
-          active={auto}
-          title={label(lang, "Autoplay (A)", "自動再生 (A)", "Aŭtomata (A)")}
-        >
-          {auto ? "⏸" : "⏵"}
-          <span className="story-control-text">
-            {label(lang, "Auto", "自動", "Aŭto")}
-          </span>
-        </ControlButton>
-        <div className="story-progress">
-          {SLIDES.map((s, index) => (
-            <button
-              type="button"
-              key={s.id}
-              className={`story-progress-segment ${
-                index < position.slide
-                  ? "is-past"
-                  : index === position.slide
-                    ? "is-current"
-                    : ""
-              }`}
-              style={{ flexGrow: s.duration }}
-              onClick={() => jump(index)}
-              title={slideTitle(s, lang)}
-              aria-label={slideTitle(s, lang)}
-            />
-          ))}
+        <SeekBar time={time} lang={lang} onSeek={seek} />
+        <div className="story-control-row">
+          <ControlButton
+            onClick={togglePlay}
+            active={playing}
+            title={
+              playing
+                ? label(lang, "Pause (k)", "一時停止 (k)", "Paŭzi (k)")
+                : label(lang, "Play (k)", "再生 (k)", "Ludi (k)")
+            }
+          >
+            {playing ? "❚❚" : atEnd ? "↻" : "▶"}
+          </ControlButton>
+          <ControlButton
+            onClick={previous}
+            title={label(lang, "Back (←)", "戻る (←)", "Reen (←)")}
+          >
+            ⏮
+          </ControlButton>
+          <ControlButton
+            onClick={next}
+            title={label(lang, "Next (→)", "次へ (→)", "Antaŭen (→)")}
+          >
+            ⏭
+          </ControlButton>
+          <div className="story-time">
+            <span>{formatTime(time)}</span>
+            <span className="story-time-total">
+              {" / "}
+              {formatTime(TIMELINE.total)}
+            </span>
+            {slide === undefined ? null : (
+              <span className="story-time-chapter">
+                {" · "}
+                {slideTitle(slide, lang)}
+              </span>
+            )}
+          </div>
+          <ControlButton
+            onClick={() => updateSound({ effects: !sound.effects })}
+            active={sound.effects}
+            title={label(
+              lang,
+              "Sound effects (s)",
+              "効果音 (s)",
+              "Sonefektoj (s)",
+            )}
+          >
+            {sound.effects ? "🔔" : "🔕"}
+          </ControlButton>
+          <ControlButton
+            onClick={() => updateSound({ bgm: !sound.bgm })}
+            active={sound.bgm}
+            title={label(lang, "Music (b)", "BGM (b)", "Muziko (b)")}
+          >
+            🎵
+          </ControlButton>
+          <ControlButton
+            onClick={toggleFullscreen}
+            active={fullscreen}
+            title={label(
+              lang,
+              "Full screen (f)",
+              "全画面 (f)",
+              "Plenekrane (f)",
+            )}
+          >
+            ⛶
+          </ControlButton>
         </div>
-        <ControlButton
-          onClick={() => updateSound({ effects: !sound.effects })}
-          active={sound.effects}
-          title={label(
-            lang,
-            "Sound effects (S)",
-            "効果音 (S)",
-            "Sonefektoj (S)",
-          )}
-        >
-          {sound.effects ? "🔔" : "🔕"}
-        </ControlButton>
-        <ControlButton
-          onClick={() => updateSound({ bgm: !sound.bgm })}
-          active={sound.bgm}
-          title={label(lang, "Music (B)", "BGM (B)", "Muziko (B)")}
-        >
-          🎵
-        </ControlButton>
-        <ControlButton
-          onClick={toggleFullscreen}
-          active={fullscreen}
-          title={label(lang, "Full screen (F)", "全画面 (F)", "Plenekrane (F)")}
-        >
-          ⛶
-        </ControlButton>
       </div>
-      {isFirst || isLast ? (
-        <div className="story-hint">
-          {label(
-            lang,
-            "Click or press → to advance · A autoplay · S sound · B music · F full screen",
-            "クリックか → で進む · A 自動再生 · S 効果音 · B BGM · F 全画面",
-            "Klaku aŭ premu → · A aŭtomata · S sono · B muziko · F plenekrane",
-          )}
-        </div>
-      ) : null}
+      <div className="story-hint">
+        {label(
+          lang,
+          "Click or → next · ← back · Space play/pause · J/L ±5s · S sound · B music · F full screen",
+          "クリックか → で次へ · ← 戻る · Space 再生/一時停止 · J/L 5 秒戻る/進む · S 効果音 · B BGM · F 全画面",
+          "Klaku aŭ → · ← reen · Spaceto ludi/paŭzi · J/L ±5s · S sono · B muziko · F plenekrane",
+        )}
+      </div>
     </div>
   );
 }
