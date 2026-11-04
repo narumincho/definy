@@ -681,7 +681,7 @@ export function StoryPlayer(props: {
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}
         aria-label={slide === undefined ? "" : slideTitle(slide, lang)}
       >
-        {/* スライドは 16:9 のまま, 字幕とずんだもんの場所を下と右に空けて, 収まる一番大きい大きさにする */}
+        {/* スライドは収まる一番大きい 16:9 で真ん中に置き, 字幕とずんだもんはその上に重ねる */}
         <div className="story-layout">
           <div className="story-slide-area">
             {leavingSlide === undefined ? null : (

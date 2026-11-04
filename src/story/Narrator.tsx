@@ -171,7 +171,7 @@ function usePreloadParts(): void {
 
 /**
  * 字幕 (常に出す. 英語・エスペラントでも音声は日本語で, 字幕だけ訳す) と, ずんだもん (解説がオンのときだけ).
- * 置き場所はスライドの下と右 (story.css の .story-layout)
+ * 置き場所はスライドの下端と右下 (story.css の .story-layout)
  */
 export function Narrator(props: {
   readonly audio: StoryAudio | null;
