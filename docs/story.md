@@ -5,22 +5,22 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 
 ## ファイル
 
-| ファイル                                                              | 役割                                                                                |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [src/story/slides.tsx](../src/story/slides.tsx)                       | スライドの内容 (`SLIDES`) と関連プロジェクトのリンク (`PROJECTS`). 文は日本語と英語 |
-| [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                            |
-| [src/story/StoryPlayer.tsx](../src/story/StoryPlayer.tsx)             | 再生 (シークバー・再生/一時停止・全画面・キー操作)                                  |
-| [src/story/audio.ts](../src/story/audio.ts)                           | 効果音と BGM (Web Audio API で合成) と解説音声の再生                                |
-| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (日本語だけ)                                                 |
-| [src/story/Narrator.tsx](../src/story/Narrator.tsx)                   | ずんだもんの立ち絵と字幕. 口の形・まばたき・表情                                    |
-| [scripts/generate_story_voice.ts](../scripts/generate_story_voice.ts) | VOICEVOX ENGINE で解説音声を作る                                                    |
-| [src/story/voice_manifest.ts](../src/story/voice_manifest.ts)         | 解説音声の一覧 (長さ・口の形の時刻). スクリプトが作るので手で直さない               |
-| [public/story/voice/](../public/story/voice)                          | 解説音声 (AAC, .m4a)                                                                |
-| [scripts/export_zundamon.ts](../scripts/export_zundamon.ts)           | 立ち絵の PSD から口・目・眉などのパーツを PNG に書き出す                            |
-| [src/story/zundamon_parts.ts](../src/story/zundamon_parts.ts)         | 立ち絵のパーツの位置. スクリプトが作るので手で直さない                              |
-| [public/story/zundamon/](../public/story/zundamon)                    | 立ち絵のパーツ (PNG)                                                                |
-| [src/story/story.css](../src/story/story.css)                         | 見た目                                                                              |
-| [public/story/logos/](../public/story/logos)                          | 言語などのロゴ. [simple-icons](https://simpleicons.org/) 16.36.0 の SVG (CC0)       |
+| ファイル                                                              | 役割                                                                                                                                                                                         |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [src/story/slides.tsx](../src/story/slides.tsx)                       | スライドの内容 (`SLIDES`) と関連プロジェクトのリンク (`PROJECTS`). 文は日本語と英語                                                                                                          |
+| [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                                                                                                                                     |
+| [src/story/StoryPlayer.tsx](../src/story/StoryPlayer.tsx)             | 再生 (シークバー・再生/一時停止・全画面・キー操作)                                                                                                                                           |
+| [src/story/audio.ts](../src/story/audio.ts)                           | 効果音と BGM (Web Audio API で合成) と解説音声の再生                                                                                                                                         |
+| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (日本語だけ)                                                                                                                                                          |
+| [src/story/Narrator.tsx](../src/story/Narrator.tsx)                   | ずんだもんの立ち絵と字幕. 口の形・まばたき・表情                                                                                                                                             |
+| [scripts/generate_story_voice.ts](../scripts/generate_story_voice.ts) | VOICEVOX ENGINE で解説音声を作る                                                                                                                                                             |
+| [src/story/voice_manifest.ts](../src/story/voice_manifest.ts)         | 解説音声の一覧 (長さ・口の形の時刻). スクリプトが作るので手で直さない                                                                                                                        |
+| [public/story/voice/](../public/story/voice)                          | 解説音声 (AAC, .m4a)                                                                                                                                                                         |
+| [scripts/export_zundamon.ts](../scripts/export_zundamon.ts)           | 立ち絵の PSD から口・目・眉などのパーツを PNG に書き出す                                                                                                                                     |
+| [src/story/zundamon_parts.ts](../src/story/zundamon_parts.ts)         | 立ち絵のパーツの位置. スクリプトが作るので手で直さない                                                                                                                                       |
+| [public/story/zundamon/](../public/story/zundamon)                    | 立ち絵のパーツ (PNG)                                                                                                                                                                         |
+| [src/story/story.css](../src/story/story.css)                         | 見た目                                                                                                                                                                                       |
+| [public/story/logos/](../public/story/logos)                          | 言語などのロゴ. [simple-icons](https://simpleicons.org/) 16.36.0 の SVG (CC0). nostr だけは [nostr-logo](https://github.com/mbarulli/nostr-logo) の `nostr-icon-black-transparent.svg` (CC0) |
 
 ## 操作
 
@@ -121,7 +121,7 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 - 口の形: 閉じ = ほほえみ, あ = ほあー, い = にやり, う = お, え = んえー, お = ほう, ん = んー。
 - 表情: 通常 = 基本目 + 基本眉, 笑顔 = にっこり + 上がり眉, 驚き = 〇〇 + 上がり眉, 困り = 基本目 + 困り眉。まばたきは閉じ目 (笑顔のときはしない)。
 - 画面には肩から上だけを出す (スライドを大きく見せるため)。話している間は動かさず (口とまばたきだけ), 解説ボタンでの登場と退出だけ下から出入りさせる (`is-leaving` の 350ms)。
-- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽをずんだもんへ向ける。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとスクリプトがエラーにする)。
+- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す (`clip-path` の三角形 2 枚)。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとスクリプトがエラーにする)。
 
 ## スライドの切り替え
 

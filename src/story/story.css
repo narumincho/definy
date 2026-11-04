@@ -892,10 +892,16 @@
   color: var(--red-text);
 }
 
+/*
+ * 直和型と match の例は, 比較の表の definy の列の下に縦に並べる (definy の機能だと分かるように).
+ * 表の 1 列目 (14em) と 2 列目 (8em) と列の間 (1em × 2) を表の文字の大きさ (1.5em) で足した位置から始める
+ */
 .story-adt {
   display: flex;
-  gap: 1.5em;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin-left: calc((14em + 8em + 2em) * 1.5);
 }
 
 .story-adt > .story-node {
@@ -1485,7 +1491,7 @@
   position: absolute;
   left: 2em;
   right: 11.8em;
-  bottom: 0.9em;
+  bottom: 1.5em;
   padding: 0.45em 0.9em;
   border: 0.14em solid #2b2f36;
   border-radius: 1.2em;
@@ -1500,26 +1506,28 @@
   transform-origin: 100% 70%;
 }
 
+/* しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す. 外側 (枠の色) と内側 (地の色) の 2 枚で描く */
 .story-bubble::before,
 .story-bubble::after {
   content: "";
   position: absolute;
-  top: 55%;
-  border-style: solid;
-  border-color: transparent;
+  clip-path: polygon(0 35%, 100% 0, 0 100%);
 }
 
 .story-bubble::before {
-  right: -1.25em;
-  border-width: 0.6em 0 0.6em 1.25em;
-  border-left-color: #2b2f36;
+  right: -1.35em;
+  top: 0.15em;
+  width: 1.5em;
+  height: 1.15em;
+  background: #2b2f36;
 }
 
 .story-bubble::after {
   right: -0.98em;
-  margin-top: 0.14em;
-  border-width: 0.46em 0 0.46em 1em;
-  border-left-color: #fffdf5;
+  top: 0.36em;
+  width: 1.12em;
+  height: 0.72em;
+  background: #fffdf5;
 }
 
 @keyframes story-bubble-in {

@@ -175,8 +175,9 @@ const PROJECTS = {
   nostr: {
     name: "nostr",
     url: "https://github.com/nostr-protocol/nostr",
-    logo: undefined,
-    color: "#a68cf0",
+    // https://github.com/mbarulli/nostr-logo (CC0). 公式の紫 #662482 は暗い背景で見えにくいので明るくする
+    logo: "nostr",
+    color: "#b07fe0",
   },
   lean: {
     name: "Lean 4",
@@ -1931,6 +1932,15 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
           rel="noreferrer"
         >
           Simple Icons
+        </a>
+        {", "}
+        <a
+          className="story-link"
+          href="https://github.com/mbarulli/nostr-logo"
+          target="_blank"
+          rel="noreferrer"
+        >
+          nostr-logo
         </a>
       </p>
     </div>
