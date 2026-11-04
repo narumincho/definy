@@ -253,13 +253,15 @@
   }
 }
 
+/* 時刻の右に出すスライドの番号 */
 .story-page-number {
-  position: absolute;
-  right: 1.2cqw;
-  bottom: 1cqw;
-  font-size: 1cqw;
-  color: var(--text-muted);
+  margin-left: 0.8rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--overlay-2);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
+  font-size: 0.75rem;
 }
 
 /* 「次へ」で現れる要素. 動きを減らす設定では animation が消えても表示されるようにする */
@@ -1077,20 +1079,6 @@
 
 /* ---- おわりに ---- */
 
-.story-keywords {
-  display: flex;
-  gap: 1em;
-}
-
-.story-keywords span {
-  font-size: 1.8em;
-  padding: 0.4em 0.9em;
-  border-radius: 2em;
-  border: 1px solid var(--green-border);
-  background: var(--green-bg-strong);
-  color: var(--green-text);
-}
-
 /* ---- 操作 ---- */
 
 .story-controls {
@@ -1669,12 +1657,6 @@
 
 /* ---- セルフホストの円グラフ ---- */
 
-.story-layer.is-deploy {
-  border-color: var(--orange-border);
-  background: var(--orange-bg-strong);
-  color: var(--orange-text);
-}
-
 .story-donut-panel {
   display: grid;
   justify-items: center;
@@ -1848,19 +1830,237 @@
   image-rendering: pixelated;
 }
 
-/* ---- デプロイの流れ ---- */
+/* ---- デプロイの様子 ---- */
 
-.story-flow.is-deploy {
-  margin-top: 0.5em;
+.story-deploy {
+  position: relative;
+  flex: 1;
+  min-height: 19em;
 }
 
-.story-flow.is-deploy .story-flow-item {
-  font-size: 1.3em;
-  padding: 1.1em 0.4em;
+.story-deploy-paths {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-.story-flow.is-deploy .story-flow-link {
-  width: 2.2em;
+/* パッケージが飛ぶ弧. 飛んでいる間に線が伸びる */
+.story-deploy-arc {
+  fill: none;
+  stroke: var(--orange-border);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+}
+
+.story-deploy-arc.is-on {
+  opacity: 1;
+  animation: story-fade-in 0.4s ease both;
+}
+
+.story-deploy-code {
+  position: absolute;
+  left: 0;
+  top: 2%;
+  width: 29%;
+  padding: 0.6em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--blue-border);
+  background: var(--bg-inset);
+}
+
+.story-deploy-code-title {
+  font-family: var(--font-mono);
+  font-size: 1.05em;
+  color: var(--yellow-text);
+  margin-bottom: 0.3em;
+}
+
+.story-deploy-code pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre;
+}
+
+.story-deploy-compiler {
+  position: absolute;
+  left: 37%;
+  top: 12%;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 1.15em;
+}
+
+.story-deploy-compiler b,
+.story-deploy-api b {
+  display: block;
+  color: var(--text-primary);
+}
+
+.story-deploy-compiler small,
+.story-deploy-api small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--text-secondary);
+}
+
+.story-deploy-gear {
+  display: inline-block;
+  font-size: 3em;
+  line-height: 1;
+}
+
+.story-deploy-gear.is-spinning {
+  animation: story-spin 1.2s linear infinite;
+}
+
+.story-deploy-package {
+  position: absolute;
+  left: 38%;
+  top: 52%;
+  display: grid;
+  padding: 0.5em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--orange-border);
+  background: var(--orange-bg-strong);
+  color: var(--orange-text);
+  font-family: var(--font-mono);
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+.story-deploy-package small {
+  font-weight: 400;
+  font-size: 0.8em;
+}
+
+/* REST API で雲まで飛ぶパッケージ */
+.story-deploy-parcel {
+  position: absolute;
+  font-size: 2.4em;
+  translate: -50% -50%;
+  animation: story-parcel-fly 1.1s cubic-bezier(0.45, 0, 0.3, 1) both;
+}
+
+@keyframes story-parcel-fly {
+  0% {
+    left: 47%;
+    top: 60%;
+    opacity: 1;
+  }
+  50% {
+    left: 60%;
+    top: 4%;
+  }
+  90% {
+    left: 74%;
+    top: 24%;
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    left: 76%;
+    top: 26%;
+    opacity: 0;
+    scale: 0.3;
+  }
+}
+
+.story-deploy-api {
+  position: absolute;
+  left: 38%;
+  top: 76%;
+  font-size: 1.1em;
+}
+
+.story-deploy-cloud {
+  position: absolute;
+  left: 66%;
+  top: 4%;
+  width: 34%;
+  display: grid;
+  justify-items: center;
+  color: var(--text-muted);
+  font-size: 1.2em;
+  transition:
+    color 0.4s ease,
+    filter 0.4s ease;
+}
+
+.story-deploy-cloud.is-on {
+  color: var(--orange-text);
+  filter: drop-shadow(0 0 1.2em var(--orange-border));
+  transition-delay: 1s;
+}
+
+.story-deploy-cloud-icon {
+  font-size: 4.5em;
+  line-height: 1;
+}
+
+.story-deploy-edge {
+  position: absolute;
+  width: 0.9em;
+  height: 0.9em;
+  margin: -0.45em 0 0 -0.45em;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.story-deploy-edge.is-on {
+  animation: story-edge-on 0.5s ease both;
+}
+
+@keyframes story-edge-on {
+  0% {
+    background: var(--border-strong);
+    box-shadow: none;
+  }
+  60% {
+    background: #fff;
+    box-shadow: 0 0 1.4em var(--orange);
+  }
+  100% {
+    background: var(--orange);
+    box-shadow: 0 0 0.8em var(--orange-border);
+  }
+}
+
+.story-deploy-edges-label {
+  position: absolute;
+  left: 76%;
+  top: 88%;
+  font-size: 1.05em;
+  color: var(--orange-text);
+}
+
+.story-deploy-browser {
+  position: absolute;
+  left: 0;
+  top: 74%;
+  display: grid;
+  gap: 0.3em;
+  padding: 0.5em 0.8em;
+  border-radius: 0.5em;
+  border: 1px solid var(--blue-border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--text-secondary);
+}
+
+.story-deploy-response {
+  color: var(--green-text);
+  font-weight: 700;
+  animation: story-fade-in 0.4s ease 0.9s both;
 }
 
 /* ---- コミットの図 ---- */

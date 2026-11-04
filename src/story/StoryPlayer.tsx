@@ -79,14 +79,14 @@ function readPreference(): SoundPreference {
         return {
           effects: record["effects"] !== false,
           bgm: record["bgm"] === true,
-          voice: record["voice"] === true,
+          voice: record["voice"] !== false,
         };
       }
     }
   } catch {
     // 保存できない環境では既定値を使う
   }
-  return { effects: true, bgm: false, voice: false };
+  return { effects: true, bgm: false, voice: true };
 }
 
 function writePreference(preference: SoundPreference): void {
@@ -260,7 +260,7 @@ export function StoryPlayer(props: {
   const [sound, setSound] = useState<SoundPreference>({
     effects: true,
     bgm: false,
-    voice: false,
+    voice: true,
   });
   const [audio, setAudio] = useState<StoryAudio | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -455,12 +455,16 @@ export function StoryPlayer(props: {
         if (change.voice) {
           audioRef.current?.preloadVoices(VOICE_URLS);
         }
-        // オンにしたら今のステップの解説を今の位置から鳴らす (止まっていれば最初から)
-        const index = entryIndexAt(TIMELINE, timeRef.current);
-        const offset = playingRef.current
-          ? timeRef.current - (TIMELINE.entries[index]?.start ?? 0)
-          : 0;
-        startVoiceAt(index, offset);
+        // 再生中にオンにしたら, 今のステップの解説を今の位置から鳴らす. 止まっているときは鳴らさない
+        if (playingRef.current) {
+          const index = entryIndexAt(TIMELINE, timeRef.current);
+          startVoiceAt(
+            index,
+            timeRef.current - (TIMELINE.entries[index]?.start ?? 0),
+          );
+        } else {
+          audioRef.current?.stopVoice();
+        }
       }
     },
     [startVoiceAt, wake],
@@ -671,14 +675,12 @@ export function StoryPlayer(props: {
         {narratorPresence !== "hidden" ? (
           <Narrator
             leaving={narratorPresence === "leaving"}
+            offset={time - entry.start}
             audio={audio}
             clip={entryVoiceClip(entry)}
             line={narration}
           />
         ) : null}
-        <div className="story-page-number">
-          {entry.slide + 1} / {SLIDES.length}
-        </div>
       </div>
       <div className="story-controls">
         <SeekBar time={time} lang={lang} onSeek={seek} />
@@ -711,6 +713,9 @@ export function StoryPlayer(props: {
             <span className="story-time-total">
               {" / "}
               {formatTime(TIMELINE.total)}
+            </span>
+            <span className="story-page-number">
+              {entry.slide + 1} / {SLIDES.length}
             </span>
             {slide === undefined ? null : (
               <span className="story-time-chapter">

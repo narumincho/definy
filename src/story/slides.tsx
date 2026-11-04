@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useLayoutEffect,
   useRef,
   useState,
@@ -829,8 +828,8 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
         </Reveal>
         <Reveal at={3} step={step} className="story-note is-hot">
           {t(lang, {
-            ja: "予約語が存在しない。let や match も組み込みのパーツで, 構文は文字ではなく木の種類で決まるので, let や if という名前もそのまま使える",
-            en: "There are no reserved words. let and match are just builtin parts; syntax is the kind of tree node, not text, so you can name things let or if",
+            ja: "予約語が存在しない。let や match も core モジュールのパーツで, 構文は文字ではなく木の種類で決まるので, let や if という名前もそのまま使える",
+            en: "There are no reserved words. let and match are just parts of the core module; syntax is the kind of tree node, not text, so you can name things let or if",
           })}
         </Reveal>
       </div>
@@ -1671,46 +1670,25 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-function DeploySlide({ step, lang }: SlideProps): JSX.Element {
-  const items: ReadonlyArray<{
-    readonly at: number;
-    readonly icon: string;
-    readonly name: Text;
-    readonly detail: string;
-  }> = [
-    {
-      at: 0,
-      icon: "📝",
-      name: { ja: "definy で書いたパーツ", en: "A part written in definy" },
-      detail: "fn(request) => response",
-    },
-    {
-      at: 1,
-      icon: "⚙️",
-      name: { ja: "definy 製コンパイラ", en: "Compiler written in definy" },
-      detail: "core.compile-to-wasm",
-    },
-    {
-      at: 1,
-      icon: "📦",
-      name: { ja: "worker.js + app.wasm", en: "worker.js + app.wasm" },
-      detail: "multipart/form-data",
-    },
-    {
-      at: 2,
-      icon: "🔐",
-      name: { ja: "REST API v4", en: "REST API v4" },
-      detail: "api.cloudflare.com",
-    },
-    {
-      at: 2,
-      icon: "☁",
-      name: { ja: "Cloudflare Workers", en: "Cloudflare Workers" },
-      detail: "*.workers.dev",
-    },
+/** デプロイ先のエッジ (世界中のデータセンター) の点. 位置は図の中の割合 */
+const DEPLOY_EDGES: ReadonlyArray<{ readonly x: number; readonly y: number }> =
+  [
+    { x: 66, y: 74 },
+    { x: 72, y: 66 },
+    { x: 78, y: 78 },
+    { x: 83, y: 64 },
+    { x: 88, y: 76 },
+    { x: 93, y: 67 },
+    { x: 97, y: 79 },
   ];
+
+/**
+ * Cloudflare Workers へデプロイされる様子. ステップごとに
+ * コード → コンパイル (歯車が回り, worker.js と app.wasm ができる) → REST API で雲へ飛ぶ (エッジが順に光る) → アクセスすると返事が来る
+ */
+function DeploySlide({ step, lang }: SlideProps): JSX.Element {
   return (
-    <div className="story-body">
+    <div className="story-body is-tight">
       <Heading
         lang={lang}
         kicker={{ ja: "できていること", en: "Already working" }}
@@ -1719,40 +1697,117 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           en: "Deploying to Cloudflare Workers, in definy",
         }}
       />
-      <div className="story-flow is-deploy">
-        {items.map((item, index) => (
-          <Fragment key={item.detail}>
-            {index > 0 ? (
-              <Reveal
-                at={item.at}
-                step={step}
-                delay={index % 2 === 0 ? 0.2 : 0}
-                className="story-flow-link"
-              >
-                <span className="story-packet" />
-              </Reveal>
-            ) : null}
-            <Reveal
-              at={item.at}
-              step={step}
-              delay={index % 2 === 0 ? 0.3 : 0.1}
-              className="story-flow-item"
-            >
-              <div className="story-flow-icon">{item.icon}</div>
-              <div>{t(lang, item.name)}</div>
-              <small>{item.detail}</small>
-            </Reveal>
-          </Fragment>
+      <div className="story-deploy">
+        <svg
+          className="story-deploy-paths"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path d="M 29 30 L 37 30" className="story-net-line" />
+          <path
+            d="M 47 60 C 55 10, 65 5, 74 24"
+            className={`story-deploy-arc ${step >= 2 ? "is-on" : ""}`}
+          />
+          {step >= 3 ? (
+            <path
+              d="M 30 86 C 45 96, 60 96, 74 50"
+              pathLength={100}
+              className="story-net-pulse"
+            />
+          ) : null}
+        </svg>
+
+        <Reveal at={0} step={step} className="story-deploy-code">
+          <div className="story-deploy-code-title">
+            sample.deploy-hello-worker
+          </div>
+          <pre>
+            {`definy.deploy-to-cloudflare-workers(
+  "definy-hello",
+  quote(fn(request) =>
+    { status: 200,
+      body: "Hello from definy!" }))`}
+          </pre>
+        </Reveal>
+
+        <Reveal at={1} step={step} className="story-deploy-compiler">
+          <span
+            className={`story-deploy-gear ${step === 1 ? "is-spinning" : ""}`}
+          >
+            ⚙️
+          </span>
+          <div>
+            <b>
+              {t(lang, { ja: "definy 製コンパイラ", en: "Compiler in definy" })}
+            </b>
+            <small>core.compile-to-wasm</small>
+          </div>
+        </Reveal>
+
+        <Reveal at={1} step={step} delay={0.6} className="story-deploy-package">
+          📦 worker.js + app.wasm
+          <small>Wasm GC</small>
+        </Reveal>
+
+        {step === 2 ? (
+          <div className="story-deploy-parcel" aria-hidden="true">
+            📦
+          </div>
+        ) : null}
+
+        <Reveal at={2} step={step} className="story-deploy-api">
+          <b>REST API v4</b>
+          <small>PUT …/workers/scripts/definy-hello</small>
+          <small>
+            🔑{" "}
+            {t(lang, {
+              ja: "API トークンはシークレット",
+              en: "API token as a secret",
+            })}
+          </small>
+        </Reveal>
+
+        <div className={`story-deploy-cloud ${step >= 2 ? "is-on" : ""}`}>
+          <span className="story-deploy-cloud-icon">☁</span>
+          <b>Cloudflare Workers</b>
+        </div>
+        {DEPLOY_EDGES.map((edge, index) => (
+          <span
+            key={`${edge.x}-${edge.y}`}
+            className={`story-deploy-edge ${step >= 2 ? "is-on" : ""}`}
+            style={{
+              left: `${edge.x}%`,
+              top: `${edge.y}%`,
+              animationDelay: `${1.1 + index * 0.12}s`,
+            }}
+          />
         ))}
-      </div>
-      <div className="story-notes">
-        <Reveal at={3} step={step} className="story-note">
+        <Reveal
+          at={2}
+          step={step}
+          delay={1.6}
+          className="story-deploy-edges-label"
+        >
           {t(lang, {
-            ja: "デプロイは特別な機能ではなく, definy.deploy-to-cloudflare-workers という普通のパーツ。API トークンはシークレットとして渡す",
-            en: "Deploying is not a special feature but an ordinary part, definy.deploy-to-cloudflare-workers. The API token is passed as a secret",
+            ja: "世界中のエッジで動く",
+            en: "runs on edges worldwide",
           })}
         </Reveal>
-        <Reveal at={3} step={step} delay={0.2} className="story-note is-hot">
+
+        <Reveal at={3} step={step} className="story-deploy-browser">
+          <div>🌐 https://definy-hello.…workers.dev</div>
+          <div className="story-deploy-response">200 · Hello from definy!</div>
+        </Reveal>
+      </div>
+      <div className="story-notes">
+        <Reveal at={3} step={step} delay={0.3} className="story-note">
+          {t(lang, {
+            ja: "デプロイは definy.deploy-to-cloudflare-workers という普通のパーツ。HTTP は WASI 0.3 (Preview 3) に倣った wasi.io で送る",
+            en: "Deploying is an ordinary part, definy.deploy-to-cloudflare-workers. HTTP goes through wasi.io, modeled on WASI 0.3 (Preview 3)",
+          })}
+        </Reveal>
+        <Reveal at={3} step={step} delay={0.5} className="story-note is-hot">
           {t(lang, {
             ja: "definy で書いた definy のサーバーも, 約 3 秒でデプロイできる",
             en: "Even a definy server written in definy deploys in about 3 seconds",
@@ -1863,17 +1918,10 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
       <Reveal at={0} step={step}>
         <p className="story-lead">
           {t(lang, {
-            ja: "広く使ってもらうことより, 理想を目指す",
-            en: "Aiming for the ideal, not for adoption",
+            ja: "理想の仕様を目指して開発中",
+            en: "In development, aiming for the ideal specification",
           })}
         </p>
-      </Reveal>
-      <Reveal at={0} step={step} delay={0.4} className="story-keywords">
-        <span>{t(lang, { ja: "壊れない", en: "Unbreakable" })}</span>
-        <span>{t(lang, { ja: "検証できる", en: "Verifiable" })}</span>
-        <span>
-          {t(lang, { ja: "definy で definy を", en: "definy in definy" })}
-        </span>
       </Reveal>
       <Reveal at={1} step={step}>
         <p className="story-wordmark is-small">definy</p>
@@ -1909,9 +1957,18 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
       </Reveal>
       <p className="story-credits">
         {t(lang, {
-          ja: "解説音声: VOICEVOX:ずんだもん · 立ち絵: ",
-          en: "Narration: VOICEVOX:ずんだもん · Character art: ",
+          ja: "解説音声: ",
+          en: "Narration: ",
         })}
+        <a
+          className="story-link"
+          href="https://voicevox.hiroshiba.jp/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          VOICEVOX:ずんだもん
+        </a>
+        {t(lang, { ja: " · 立ち絵: ", en: " · Character art: " })}
         <a
           className="story-link"
           href="https://tachie.net/w/sC90rhbReJ"

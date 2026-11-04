@@ -253,7 +253,14 @@ async function main(): Promise<void> {
       const file = `${key}.m4a`;
       const output = join(VOICE_DIR, file);
 
-      const subtitleSentences = splitSentences(line.subtitle ?? line.speech);
+      // 字幕にはかなの記法 ({...}) を書かない. 記法を使う台詞は subtitle を必ず書く
+      const shown = line.subtitle ?? line.speech;
+      if (shown.includes("{") || shown.includes("}")) {
+        throw new Error(
+          `${slideId}/${step}: 字幕に {} の読み方の記法が入っています. subtitle に普通の文を書いてください`,
+        );
+      }
+      const subtitleSentences = splitSentences(shown);
       const { query, sentenceStarts } = await buildQuery(line.speech);
       if (subtitleSentences.length !== sentenceStarts.length) {
         throw new Error(
