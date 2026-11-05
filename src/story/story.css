@@ -1960,7 +1960,7 @@
   position: absolute;
   left: 0;
   top: 2%;
-  width: 29%;
+  width: 33%;
   padding: 0.6em 0.8em;
   border-radius: 0.5em;
   border: 1px solid var(--blue-border);
@@ -1974,18 +1974,19 @@
   margin-bottom: 0.3em;
 }
 
-.story-deploy-code pre {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.95em;
-  line-height: 1.45;
-  color: var(--text-primary);
-  white-space: pre;
+/* デプロイの式の木は, パネルの下にブラウザの応答が来るので高さを抑える */
+.story-deploy-code .story-real-tree {
+  max-height: 20em;
+}
+
+/* ブラウザの応答が出るステップでは, 場所を空けるために木を少し縮める */
+.story-deploy-code.is-shrunk .story-real-tree {
+  max-height: 11em;
 }
 
 .story-deploy-compiler {
   position: absolute;
-  left: 37%;
+  left: 41.5%;
   top: 12%;
   display: flex;
   align-items: center;
@@ -2140,7 +2141,7 @@
 .story-deploy-browser {
   position: absolute;
   left: 0;
-  top: 74%;
+  top: 77.5%;
   display: grid;
   gap: 0.3em;
   padding: 0.5em 0.8em;

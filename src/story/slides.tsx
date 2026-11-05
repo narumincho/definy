@@ -777,9 +777,13 @@ const SAMPLE_LAYOUT = computeLayout(
  * 実際の式のツリーエディタの描画部品で描いた式 (読むだけ).
  * ツリーの大きさは px で決まるので, パネルの幅に合わせて縮める
  */
-function RealExpressionTree(): JSX.Element {
+function ScaledExpressionTree(props: {
+  readonly layout: ReturnType<typeof computeLayout>;
+  readonly widthPx: number;
+}): JSX.Element {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(1);
   const [fit, setFit] = useState({ scale: 1, height: 0 });
   useLayoutEffect(() => {
     const outer = outerRef.current;
@@ -788,19 +792,44 @@ function RealExpressionTree(): JSX.Element {
       return;
     }
     const update = (): void => {
-      // CSS の max-height (スライドの em) にも収まるようにする
+      // CSS の max-height (スライドの em) にも収まるようにする.
+      // 高さは描画された木の実際の範囲を測る (レイアウト計算の見積もりとは
+      // ずれがあり, scrollHeight にも現れないはみ出しがあるため)
+      const innerRect = inner.getBoundingClientRect();
+      let bottom = innerRect.bottom;
+      for (const el of inner.querySelectorAll("*")) {
+        bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+      }
+      // 非表示 (display: none) の間に測ると 0 になり, 割り算が壊れるので,
+      // 幅も高さも取れていないときは次のリサイズ通知を待つ
+      const currentScale = scaleRef.current > 0 ? scaleRef.current : 1;
+      const treeHeight = (bottom - innerRect.top) / currentScale;
+      if (
+        outer.clientWidth <= 0 ||
+        !Number.isFinite(treeHeight) ||
+        treeHeight <= 0
+      ) {
+        return;
+      }
       const maxHeight = Number.parseFloat(getComputedStyle(outer).maxHeight);
       const scale = Math.min(
-        outer.clientWidth / TREE_WIDTH_PX,
-        Number.isFinite(maxHeight) ? maxHeight / inner.scrollHeight : Infinity,
+        outer.clientWidth / props.widthPx,
+        Number.isFinite(maxHeight) ? maxHeight / treeHeight : Infinity,
       );
-      setFit({ scale, height: inner.scrollHeight * scale });
+      scaleRef.current = scale;
+      const height = treeHeight * scale;
+      setFit((prev) =>
+        Math.abs(prev.scale - scale) < 0.001 &&
+        Math.abs(prev.height - height) < 0.5
+          ? prev
+          : { scale, height },
+      );
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(outer);
     return () => observer.disconnect();
-  }, []);
+  }, [props.widthPx]);
   return (
     <div
       ref={outerRef}
@@ -810,13 +839,70 @@ function RealExpressionTree(): JSX.Element {
       <div
         ref={innerRef}
         className="story-real-tree-inner"
-        style={{ width: TREE_WIDTH_PX, transform: `scale(${fit.scale})` }}
+        style={{ width: props.widthPx, transform: `scale(${fit.scale})` }}
       >
-        <TreeLayoutRenderer node={SAMPLE_LAYOUT} editable={false} />
+        <TreeLayoutRenderer node={props.layout} editable={false} />
       </div>
     </div>
   );
 }
+
+function RealExpressionTree(): JSX.Element {
+  return (
+    <ScaledExpressionTree layout={SAMPLE_LAYOUT} widthPx={TREE_WIDTH_PX} />
+  );
+}
+
+/**
+ * デプロイのスライドに出す式 (sample.deploy-hello-worker).
+ * 本物の式から, ハンドラの中身を説明用に簡略化したもの
+ * (実際は headers も返し, body は文字列を UTF-8 の流れに変換して渡す)
+ */
+const DEPLOY_EXPRESSION = {
+  "#call": {
+    function: {
+      "#part_reference": {
+        part_definition_event_hash: {
+          $part: "definy.deploy-to-cloudflare-workers",
+        },
+      },
+    },
+    arguments: [
+      { name: "worker_name", value: { "#string": "definy-hello" } },
+      {
+        name: "api_token",
+        value: {
+          "#part_reference": {
+            part_definition_event_hash: {
+              $part: "definy.cloudflare-api-token",
+            },
+          },
+        },
+      },
+      {
+        name: "handler",
+        value: {
+          "#quote": {
+            "#function": {
+              parameters: [{ parameter_id: 1, parameter_name: "req" }],
+              body: {
+                "#record": [
+                  { key: "status", value: { "#number": 200 } },
+                  { key: "body", value: { "#string": "Hello from definy!" } },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ],
+  },
+};
+
+const DEPLOY_LAYOUT = computeLayout(
+  expressionToLayoutNode(DEPLOY_EXPRESSION, "story-deploy"),
+  { maxWidth: TREE_WIDTH_PX },
+);
 
 function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
   return (
@@ -1907,17 +1993,18 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           ) : null}
         </svg>
 
-        <Reveal at={0} step={step} className="story-deploy-code">
+        <Reveal
+          at={0}
+          step={step}
+          className={`story-deploy-code ${step >= 3 ? "is-shrunk" : ""}`}
+        >
           <div className="story-deploy-code-title">
             sample.deploy-hello-worker
           </div>
-          <pre>
-            {`definy.deploy-to-cloudflare-workers(
-  "definy-hello",
-  quote(fn(request) =>
-    { status: 200,
-      body: "Hello from definy!" }))`}
-          </pre>
+          <ScaledExpressionTree
+            layout={DEPLOY_LAYOUT}
+            widthPx={TREE_WIDTH_PX}
+          />
         </Reveal>
 
         <Reveal at={1} step={step} className="story-deploy-compiler">
