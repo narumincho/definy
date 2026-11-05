@@ -1906,10 +1906,19 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
         <Reveal at={3} step={step} className="story-self-value">
           <div className="story-self-value-label">
             {t(lang, {
-              ja: "このスライドも definy の値 story.slides",
-              en: "These slides are a definy value: story.slides",
-              eo: "Ankaŭ ĉi tio estas definy-valoro: story.slides",
+              ja: "このスライドも definy の値 ",
+              en: "These slides are a definy value: ",
+              eo: "Ankaŭ ĉi tio estas definy-valoro: ",
             })}
+            <a
+              className="story-link"
+              style={{ color: "inherit" }}
+              href="/part/story.slides"
+              target="_blank"
+              rel="noreferrer"
+            >
+              story.slides
+            </a>
           </div>
           <ScaledExpressionTree layout={SELF_SLIDE_LAYOUT} />
         </Reveal>
