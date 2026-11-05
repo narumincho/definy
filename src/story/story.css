@@ -319,6 +319,12 @@
   text-wrap: balance;
 }
 
+/* 字幕の吹き出しはスライドの下端に重なる. 本文がその下に潜らないよう,
+   字幕があるときはスライドの下の余白を吹き出しの高さ分だけ広げる */
+.story-stage.has-caption .story-slide {
+  padding-bottom: 7em;
+}
+
 .story-body {
   flex: 1;
   display: flex;
@@ -658,6 +664,16 @@
   grid-template-columns: 1fr 1fr;
 }
 
+/* パネルが 1 枚だけのステップでは, その 1 枚を真ん中に大きく置く */
+.story-two.is-solo {
+  grid-template-columns: minmax(0, 58em);
+  justify-content: center;
+}
+
+.story-two.is-solo > .story-reveal:not(.is-on) {
+  display: none;
+}
+
 .story-panel {
   min-width: 0;
   background: var(--surface);
@@ -877,6 +893,17 @@
   line-height: 1.4;
 }
 
+/* 図と表で縦が足りないスライドは行を詰め, 下端が字幕の吹き出しに潜らないようにする */
+.story-body.is-dense .story-compare-row > *,
+.story-body.is-dense .story-table-row > * {
+  padding: 0.38em 0;
+}
+
+/* 表の最後の行は右下のずんだもんと重なる高さなので, そのセルだけ右を空けて手前で折る */
+.story-stage.has-character .story-table-row:last-of-type > .story-yes {
+  padding-right: 8em;
+}
+
 .story-compare-row.story-reveal:not(.is-on) > *,
 .story-table-row.story-reveal:not(.is-on) > * {
   opacity: 0;
@@ -923,6 +950,7 @@
   align-items: flex-start;
   gap: 0.6em;
   margin-left: calc((14em + 8em + 2em) * 1.5);
+  max-width: calc(100% - (14em + 8em + 2em) * 1.5);
 }
 
 .story-adt > .story-node {
@@ -947,6 +975,7 @@
 .story-node.is-match {
   border-color: var(--pink-border);
   background: var(--pink-bg);
+  flex-wrap: wrap;
 }
 
 .story-node.is-arm {
