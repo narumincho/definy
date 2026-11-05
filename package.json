@@ -11,7 +11,7 @@
     "build:schema": "node scripts/generate_seed_schema.ts",
     "build:stage1": "node scripts/regenerate_stage1.ts",
     "check:stage1": "node scripts/regenerate_stage1.ts --check",
-    "deploy": "npm run build && npx wrangler deploy",
+    "deploy": "void deploy --platform cloudflare",
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",

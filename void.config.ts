@@ -51,6 +51,10 @@ export default defineConfig({
       },
     ],
   },
+  // void deploy は既定では vite build しか走らせないので, seed の束 (npm run build:seeds) も作る npm run build にする
+  inference: {
+    build: "npm run build",
+  },
   cloudflare: {
     name: "definy",
     compatibility_date: "2026-02-24",

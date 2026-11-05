@@ -20,9 +20,9 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 
 ## GitHub Actions
 
-| secret                 | 用途                                                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN` | `deploy.yaml` が main への push で `wrangler deploy` するときに使う ([cloudflare-workers-assets.md](cloudflare-workers-assets.md)) |
+| secret                 | 用途                                                                                                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN` | `deploy.yaml` が main への push で `void deploy --platform cloudflare` するときに使う ([cloudflare-workers-assets.md](cloudflare-workers-assets.md)) |
 
 ## 廃止したもの (2026-10-29)
 
