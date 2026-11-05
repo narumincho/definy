@@ -676,6 +676,10 @@ export function StoryPlayer(props: {
       <div
         className={`story-stage has-caption ${
           narratorPresence !== "hidden" ? "has-character" : ""
+        } ${
+          entry.slide === 0 && narratorPresence !== "hidden"
+            ? "has-character-full"
+            : ""
         }`}
         role="region"
         aria-roledescription={label(lang, "slide", "スライド", "lumbildo")}

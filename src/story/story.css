@@ -1649,6 +1649,23 @@
   height: 8.5em;
   overflow: hidden;
   animation: story-zundamon-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+  transition:
+    width 0.85s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 最初のスライドでは全身を見せ, 次のスライドからは下に沈んで隠れる */
+.story-stage.has-character-full .story-zundamon {
+  width: 13.4em;
+  height: 19.6em;
+}
+
+.story-stage.has-character-full .story-caption {
+  width: calc(var(--story-slide-width) - 13.2em);
+}
+
+.story-stage.has-character-full .story-zundamon-figure {
+  margin: 0.7em 0 0 0.2em;
 }
 
 /* 解説ボタンでの登場と退出だけ動かす (話している間は動かさない) */
@@ -1689,6 +1706,7 @@
   position: relative;
   width: 13em;
   margin: -1em 0 0 -1.25em;
+  transition: margin 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
   filter: drop-shadow(0 0.4em 0.8em rgba(0, 0, 0, 0.45));
   transform-origin: 50% 100%;
 }
@@ -1954,6 +1972,67 @@
 .story-deploy-arc.is-on {
   opacity: 1;
   animation: story-fade-in 0.4s ease both;
+}
+
+.story-flow-badge {
+  position: absolute;
+  top: -0.75em;
+  left: -0.75em;
+  z-index: 3;
+  width: 1.6em;
+  height: 1.6em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+.story-flow-badge.is-on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.story-deploy-flow-label {
+  position: absolute;
+  z-index: 2;
+  padding: 0.1em 0.6em;
+  border-radius: 1em;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 1.05em;
+  animation: story-reveal 0.5s ease both;
+}
+
+.story-deploy-flow-label.is-upload {
+  left: 61%;
+  top: 31%;
+}
+
+.story-deploy-flow-label.is-response {
+  left: 24%;
+  top: 70%;
+}
+
+/* API の箱は文字だけなので, バッジを文字から少し離す */
+.story-deploy-api .story-flow-badge {
+  top: -0.9em;
+  left: -1.7em;
+}
+
+/* タイトルは, 全身のずんだもんに場所を空けるため少し左へ寄る */
+.story-center.is-title {
+  transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.story-stage.has-character-full .story-center.is-title {
+  transform: translateX(-4.5em);
 }
 
 .story-deploy-code {
