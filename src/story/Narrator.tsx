@@ -173,6 +173,38 @@ function usePreloadParts(): void {
  * 字幕 (常に出す. 英語・エスペラントでも音声は日本語で, 字幕だけ訳す) と, ずんだもん (解説がオンのときだけ).
  * 置き場所はスライドの下端と右下 (story.css の .story-layout)
  */
+/**
+ * 吹き出しのしっぽ. 吹き出しの右の辺から, ずんだもんの口の方へ出す.
+ * 塗りで吹き出しの枠線を隠し, 2 本の曲線だけを枠の色でなぞる.
+ * 肩から上のときは右へ (is-side), 全身のとき (表紙) は口が高いので右上へ (is-up) 向ける
+ */
+function BubbleTail(): JSX.Element {
+  return (
+    <svg className="story-bubble-tail" viewBox="0 -10 16 26" aria-hidden="true">
+      <g className="is-side">
+        <path
+          className="story-bubble-tail-fill"
+          d="M0 8 L2.4 8 Q9 6.5 15.5 3 Q9.5 11.5 2.4 15 L0 15 Z"
+        />
+        <path
+          className="story-bubble-tail-line"
+          d="M2.4 8 Q9 6.5 15.5 3 Q9.5 11.5 2.4 15"
+        />
+      </g>
+      <g className="is-up">
+        <path
+          className="story-bubble-tail-fill"
+          d="M0 8 L2.4 8 Q7 4 12.5 -9 Q10 7 2.4 15 L0 15 Z"
+        />
+        <path
+          className="story-bubble-tail-line"
+          d="M2.4 8 Q7 4 12.5 -9 Q10 7 2.4 15"
+        />
+      </g>
+    </svg>
+  );
+}
+
 export function Narrator(props: {
   readonly audio: StoryAudio | null;
   readonly clip: VoiceClip | undefined;
@@ -197,6 +229,7 @@ export function Narrator(props: {
         {line === undefined ? null : (
           <div key={`${line.speech}-${sentence}`} className="story-bubble">
             {text}
+            <BubbleTail />
           </div>
         )}
       </div>

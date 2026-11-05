@@ -5,7 +5,8 @@
  * `speech` は VOICEVOX に読ませる文 (英単語などはかなにする. 区切って読まれてしまう名前は
  * `{デファイ'ニイワ}` のように {} の中にアクセント付きのかなで書く. scripts/generate_story_voice.ts),
  * `subtitle` は画面に出す字幕 (省略すると `speech`).
- * `en` / `eo` は英語・エスペラントの字幕 (音声は日本語のまま). 字幕は 1 文ずつ出すので, 日本語の字幕と同じ数の文に分けて書く.
+ * `en` / `eo` は英語・エスペラントの字幕. 英語の音声は `en` をそのまま読ませる (scripts/english_voice.ts), エスペラントの音声は `eoSpeech`.
+ * 字幕は 1 文ずつ出すので, 日本語の字幕と同じ数の文に分けて書く.
  * 変えたら `node scripts/generate_story_voice.ts` で音声を作り直す (docs/story.md)
  */
 
@@ -17,7 +18,7 @@ export type NarrationLine = {
   readonly speech: string;
   readonly subtitle?: string;
   readonly face?: Face;
-  /** 英語の字幕. 日本語の字幕の文と 1 つずつ対応させる */
+  /** 英語の字幕. 日本語の字幕の文と 1 つずつ対応させる. 英語の音声はこれをそのまま読ませる */
   readonly en: readonly string[];
   /** エスペラントの字幕. 日本語の字幕の文と 1 つずつ対応させる */
   readonly eo: readonly string[];
@@ -255,23 +256,23 @@ export const NARRATION: Readonly<
     undefined,
     {
       speech:
-        "ブロックチェーンは全体で合意を取るから、消せないし、電力もたくさん使うのだ。ノスターは{デファイ'ニイニ}近いけど、目的はエスエヌエスなのだ。{デファイ'ニイワ}合意を取らずに検証するだけだから省エネで、運営が問題のある内容を消すこともできるのだ。",
+        "ブロックチェーンは全体で合意を取るから、電力をたくさん使うし、一度書いたら誰にも消せないのだ。ノスターは{デファイ'ニイニ}近いけど、目的はエスエヌエスなのだ。{デファイ'ニイワ}合意を取らずに検証するだけだから省エネで、それぞれのサーバーが、問題のある内容を自分のところから消せるのだ。",
       subtitle:
-        "ブロックチェーンは全体で合意を取るから、消せないし、電力もたくさん使うのだ。nostr は definy に近いけど、目的は SNS なのだ。definy は合意を取らずに検証するだけだから省エネで、運営が問題のある内容を消すこともできるのだ。",
+        "ブロックチェーンは全体で合意を取るから、電力をたくさん使うし、一度書いたら誰にも消せないのだ。nostr は definy に近いけど、目的は SNS なのだ。definy は合意を取らずに検証するだけだから省エネで、それぞれのサーバーが、問題のある内容を自分のところから消せるのだ。",
       en: [
-        "Blockchains reach agreement across the whole network, so nothing can be deleted, and they use a lot of power.",
+        "Blockchains reach agreement across the whole network, so they use a lot of power, and once something is written, nobody can delete it.",
         "nostr is close to definy, but its purpose is social media.",
-        "definy only verifies without reaching agreement, so it saves energy, and operators can still remove problematic content.",
+        "definy only verifies without reaching agreement, so it saves energy, and each server can remove problematic content from itself.",
       ],
       eo: [
-        "Blokĉenoj atingas konsenton tra la tuta reto, do nenio estas forigebla, kaj ili uzas multe da energio.",
+        "Blokĉenoj atingas konsenton tra la tuta reto, do ili uzas multe da energio, kaj kion oni skribis, neniu povas forigi.",
         "nostr similas al definy, sed ĝia celo estas sociaj retoj.",
-        "definy nur kontrolas sen konsento, do ĝi ŝparas energion, kaj operaciantoj tamen povas forigi problemajn enhavojn.",
+        "definy nur kontrolas sen konsento, do ĝi ŝparas energion, kaj ĉiu servilo povas forigi problemajn enhavojn ĉe si.",
       ],
       eoSpeech: [
-        "Blokĉenoj atingas konsenton tra la tuta reto, do nenio estas forigebla, kaj ili uzas multe da energio.",
+        "Blokĉenoj atingas konsenton tra la tuta reto, do ili uzas multe da energio, kaj kion oni skribis, neniu povas forigi.",
         "Nostr similas al defajni, sed ĝia celo estas sociaj retoj.",
-        "Defajni nur kontrolas sen konsento, do ĝi ŝparas energion, kaj operaciantoj tamen povas forigi problemajn enhavojn.",
+        "Defajni nur kontrolas sen konsento, do ĝi ŝparas energion, kaj ĉiu servilo povas forigi problemajn enhavojn ĉe si.",
       ],
     },
   ],

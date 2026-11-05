@@ -11,7 +11,7 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 | [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                                                                                                                                     |
 | [src/story/StoryPlayer.tsx](../src/story/StoryPlayer.tsx)             | 再生 (シークバー・再生/一時停止・全画面・キー操作)                                                                                                                                           |
 | [src/story/audio.ts](../src/story/audio.ts)                           | 効果音と BGM (Web Audio API で合成) と解説音声の再生                                                                                                                                         |
-| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (音声は日本語, 字幕は日本語・英語・エスペラント)                                                                                                                      |
+| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (音声と字幕は日本語・英語・エスペラント)                                                                                                                              |
 | [src/story/Narrator.tsx](../src/story/Narrator.tsx)                   | ずんだもんの立ち絵と字幕. 口の形・まばたき・表情                                                                                                                                             |
 | [scripts/generate_story_voice.ts](../scripts/generate_story_voice.ts) | VOICEVOX ENGINE で解説音声を作る                                                                                                                                                             |
 | [src/story/voice_manifest.ts](../src/story/voice_manifest.ts)         | 解説音声の一覧 (長さ・口の形の時刻). スクリプトが作るので手で直さない                                                                                                                        |
@@ -53,7 +53,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 ## スライドの書き方
 
 - 1 枚は `steps` 回の「次へ」で `<Reveal at={n}>` の要素が順に現れる。`at={0}` は最初から出る。
-- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体の長さはプレイヤーの表示が正 (2026-11-05 時点で 4:51)。台詞や `REVEAL_SECONDS` を変えると変わる。
+- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体の長さはプレイヤーの表示が正 (2026-11-05 時点で日本語 4:54)。台詞や `REVEAL_SECONDS` を変えると変わる。
 - ロゴは単色の SVG を CSS の mask にし, `PROJECTS` の `color` で塗る。ロゴの無いもの (nostr, Lean など) は名前だけ出す。
 - 署名付きイベントのスライドの図はノードの位置を割合 (`NETWORK_NODES`) で持ち, 線は全体に重ねた 1 つの SVG で描く。
   Alice (ライトユーザー) はブラウザからナルミンチョのサーバーへ直接, Bob (データを持ちたい人) は自分で建てたサーバー経由でつなぐ。
@@ -65,7 +65,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 
 ## 数値の出どころ
 
-- 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-04 時点, 4,043 コミット)。
+- 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-05 時点, 4,076 コミット)。
   月ごとの数は `git log --format=%ad --date=format:%Y-%m | sort | uniq -c` で作り直せる。合計や年ごとの数はこの表から求める。
   主な言語は 2019-01〜2020-05 Elm, 2020-06〜2022-12 TypeScript + PureScript, 2023〜2025 Deno・Flutter (Dart) などを試す, 2026-01〜2026-09 Rust, 2026-10 から TypeScript + definy 製コンパイラ (2026-10-18 に Rust 製の stage0 を削除)。
 - definy 自身で書いている割合 (セルフホストのスライドの円グラフ): `node scripts/measure_self_hosting.ts` が `src/story/self_hosting_stats.ts` に書く。
@@ -104,14 +104,25 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 - 止まっているときに解説をオンにしても鳴らさない (再生か, 次へ・戻るで鳴る)。
 - 音声が鳴っていないときにシークバーやJ / L で位置を動かすと, 吹き出しはその位置の文になる。
 - 字幕はどの表示言語でも, 解説がオフでも出す (ずんだもんだけ消え, 吹き出しはしっぽの無い字幕の箱になる)。再生位置から文を決めるので, 音声が無くても台詞に合わせて進む。
-- 英語・エスペラントでも音声は日本語のまま, 字幕だけ訳す。VOICEVOX は日本語の音声なので, 英語の音声は作らない。エスペラントは発音がかなに近く (母音 5 つ, つづりどおり, アクセントは後ろから 2 番目) VOICEVOX でも読ませられそうなので, 試すなら台本・音声・時間軸を言語ごとに持つ。
+- 英語・エスペラントはそれぞれの言語の音声にする (下の「英語の音声」「エスペラントの音声」)。音声が無い台詞は日本語の音声で, 字幕だけ訳す。
 - 解説がオンなら最初の操作で全ての音声を読み込み始める。読み込みが遅れた分は先から鳴らし, 時間軸とずらさない。
+
+## 英語の音声
+
+`lang=en` では, 英語の字幕 (`en`) をそのまま VOICEVOX に渡して読ませる (VOICEVOX ENGINE 0.26 は英単語をカタカナ読みにする)。`voice_manifest.ts` のキーは `en/スライドの id/ステップ`。
+下ごしらえは [scripts/english_voice.ts](../scripts/english_voice.ts)。1 文だけ試すには `node scripts/english_voice.ts "Hi, I'm Zundamon!"` (読ませる文とアクセント句ごとの読みを出す)。
+
+- 数字は日本語で読む (2019 → ニセンジュウキュウ) ので, 英語の言葉に直す。2010〜2099 の 4 桁は年として 2 桁ずつ (twenty nineteen), 1,100 → one thousand one hundred, 0.3 → zero point three, 30% → thirty percent。
+- 2 文字ほどの短い語と短縮形 (it, as, so, no, an, I'm, it's, don't など) は 1 文字ずつ読む (it → アイティー) ので, 辞書 (`READINGS`) で読みを与える。複数形の s を 1 文字で読むもの (projects, machines など), 名前 (definy → デファイニー) も同じ。辞書の読みは `{...}` のかなの記法になる。
+- 括弧は読点にする。辞書の語の後の読点・句点は, 前の句の後の息継ぎにする。
+- 話速は 1.2 (`ENGLISH_SPEED_SCALE`)。カタカナにするとモーラが多く, 日本語より長くなる。
+- 字幕を変えると音声も作り直す。読み違えを見つけたら辞書に足し, `generate_story_voice.ts` の `ENGLISH_VERSION` を上げる。
 
 ## エスペラントの音声
 
-`lang=eo` では, 台詞に `eoSpeech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。英語は日本語の音声。
+`lang=eo` では, 台詞に `eoSpeech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。
 音声は日本語と同じく `node scripts/generate_story_voice.ts` で作り, `voice_manifest.ts` のキーは `eo/スライドの id/ステップ`。
-音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-05 時点で全体は日本語・英語 4:51, エスペラント 5:10。
+音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-05 時点で全体は日本語 4:54, 英語 5:40, エスペラント 5:11。
 
 読ませ方は [scripts/esperanto_voice.ts](../scripts/esperanto_voice.ts)。1 文だけ試すには:
 
@@ -151,7 +162,7 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 - 口の形: 閉じ = ほほえみ, あ = ほあー, い = にやり, う = お, え = んえー, お = ほう, ん = んー。
 - 表情: 通常 = 基本目 + 基本眉, 笑顔 = にっこり + 上がり眉, 驚き = 〇〇 + 上がり眉, 困り = 基本目 + 困り眉。まばたきは閉じ目 (笑顔のときはしない)。
 - 画面には肩から上だけを出す (スライドを大きく見せるため)。話している間は動かさず (口とまばたきだけ), 解説ボタンでの登場と退出だけ下から出入りさせる (`is-leaving` の 350ms)。
-- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す (`clip-path` の三角形 2 枚)。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとき, 字幕に {} の記法が入っているときはスクリプトがエラーにする)。
+- 台詞は漫画の吹き出し (`.story-bubble`) で出す。しっぽ (Narrator.tsx の `BubbleTail`) は SVG で, 吹き出しの右の辺 (角の丸み 0.75em より下のまっすぐなところ) から, ずんだもんの口の方へ出す。塗りで吹き出しの枠線を隠し, 2 本の曲線だけを枠の色でなぞる。肩から上のときは右へ少し上向き, 表紙の全身のときは口が高いので右上へ向ける。吹き出しはずんだもんの箱の少し手前で終え, しっぽだけを立ち絵の前に重ねる。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとき, 字幕に {} の記法が入っているときはスクリプトがエラーにする)。
 
 ## 置き場所
 
@@ -185,12 +196,14 @@ og:image は絶対 URL でないと読まない SNS があるので, 要求の U
 
 ## そのほかの部品
 
-- Cloudflare Workers へのデプロイのスライドは, デプロイされる様子のアニメーション: コード → definy 製コンパイラの歯車が回って worker.js + app.wasm ができる → REST API v4 で雲へ飛ぶ (エッジが順に光る) → ブラウザから開くと返事が来る ([cloudflare-workers.md](cloudflare-workers.md))。
+- Cloudflare Workers へのデプロイのスライドの図は U 字の流れ (5 列 3 段の grid): 上の段を右へ コード → definy 製コンパイラ (歯車が回る) → worker.js + app.wasm, 右端で REST API v4 のアップロードとして下り, 下の段を左へ Cloudflare Workers (エッジが順に光る) → ブラウザに返事が来る ([cloudflare-workers.md](cloudflare-workers.md))。矢印は破線が流れる向きで示す。番号は付けない。
   HTTP は WASI 0.3 (Preview 3) に倣った `wasi.io` で送ると書く ([wasi-io.md](wasi-io.md), [wasi-capability-io.md](wasi-capability-io.md))。WASI 0.3 そのもののランタイムで動くわけではない。
 - バージョン管理のスライドの上の図 (`CommitGraph`) は, main とブランチのコミットが取り込みで合流し, どのコミットもパーツの構文木をハッシュで指す (変わっていないものは共有する) ことを表す。
 
+- 字幕の吹き出し (1〜2 行) はスライドの下端の 6em ほど, ずんだもんは右下の 10.5em × 8.5em に重なる。
+  スライドの下の余白 (`has-caption` の 7em) を超えるとそこに文字が潜るので, 長い文は短くして 1 行に収める。英語・エスペラントは日本語より長くなりやすいので 3 言語とも確かめる。
 - 構造化編集のスライドの式は, エディタと同じ `expressionToLayoutNode` → `computeLayout` → `TreeLayoutRenderer` で描く (読むだけ)。
   ツリーの大きさは px で決まるので, 560px の幅で折り返したものをパネルの幅 (と `max-height`) に収まるよう `transform: scale` で拡大・縮小する。
 - 最後のスライドの QR コード (`public/story/qr-definy.svg`, https://definy.narumincho.com/) は `npx qrcode@1.5.4 -t svg -e M -q 1 -o public/story/qr-definy.svg "https://definy.narumincho.com/"` で作った。
 - 作者のアイコン (`public/story/narumincho.webp`) は narumincho の GitHub のアイコン。タイトルと, 歴史のグラフの最初のコミットに出す。
-- 歴史のスライドの数は 2026-11-04 時点 (見出しにも書く)。作り直すスクリプトは作らない。
+- 歴史のスライドの数は 2026-11-05 時点 (見出しにも書く)。作り直すスクリプトは作らない。
