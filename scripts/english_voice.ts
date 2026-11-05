@@ -39,6 +39,8 @@ const READINGS: Readonly<Record<string, string>> = {
   ids: "アイディ'イズ",
   uses: "ユ'ウジズ",
   once: "ワ'ンス",
+  // 「アニョン」と読んでしまう
+  anyone: "エ'ニイワン",
   "bob's": "ボ'ブズ",
   renaming: "リネ'イミング",
   maybe: "メ'イビイ",

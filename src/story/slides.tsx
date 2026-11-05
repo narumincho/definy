@@ -1132,9 +1132,9 @@ const NETWORK_CAPTIONS: readonly Text[] = [
     eo: "Kiel ĉe nostr, la publika ŝlosilo estas la uzanto-identigilo. Malpezaj uzantoj konektiĝas rekte el la retumilo; tiuj, kiuj volas posedi siajn datumojn, iras tra servilo, kiun ili mem funkciigas",
   },
   {
-    ja: "署名したイベントはサーバーからサーバーへ広がる。どのサーバーでも署名を確かめられる",
-    en: "Signed events spread from server to server, and every server can check the signature",
-    eo: "Subskribitaj eventoj disvastiĝas de servilo al servilo, kaj ĉiu servilo povas kontroli la subskribon",
+    ja: "署名したイベントはサーバーからサーバーへ広がる。誰でも署名を確かめられる",
+    en: "Signed events spread from server to server, and anyone can check the signature",
+    eo: "Subskribitaj eventoj disvastiĝas de servilo al servilo, kaj ĉiu ajn povas kontroli la subskribon",
   },
   {
     ja: "秘密鍵を持たないサーバーは, 他の人のイベントを偽造も改ざんもできない",

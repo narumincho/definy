@@ -128,7 +128,7 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 下ごしらえは [scripts/english_voice.ts](../scripts/english_voice.ts)。1 文だけ試すには `node scripts/english_voice.ts "Hi, I'm Zundamon!"` (読ませる文とアクセント句ごとの読みを出す)。
 
 - 数字は日本語で読む (2019 → ニセンジュウキュウ) ので, 英語の言葉に直す。2010〜2099 の 4 桁は年として 2 桁ずつ (twenty nineteen), 1,100 → one thousand one hundred, 0.3 → zero point three, 30% → thirty percent。
-- 2 文字ほどの短い語と短縮形 (it, as, so, no, an, I'm, it's, don't など) は 1 文字ずつ読む (it → アイティー) ので, 辞書 (`READINGS`) で読みを与える。冠詞の a はエイと読むので「ア」にする。複数形の s を 1 文字で読むもの (projects, machines など), 名前 (definy → デファイニー) も同じ。辞書の読みは `{...}` のかなの記法になる。
+- 2 文字ほどの短い語と短縮形 (it, as, so, no, an, I'm, it's, don't など) は 1 文字ずつ読む (it → アイティー) ので, 辞書 (`READINGS`) で読みを与える。冠詞の a はエイと読むので「ア」にする。anyone はアニョンと読むので「エニイワン」にする。複数形の s を 1 文字で読むもの (projects, machines など), 名前 (definy → デファイニー) も同じ。辞書の読みは `{...}` のかなの記法になる。
 - 括弧は読点にする。辞書の語の後の読点・句点は, 前の句の後の息継ぎにする。
 - 話速は 1.2 (`ENGLISH_SPEED_SCALE`)。カタカナにするとモーラが多く, 日本語より長くなる。
 - 字幕を変えると音声も作り直す。読み違えを見つけたら辞書に足し, `generate_story_voice.ts` の `ENGLISH_VERSION` を上げる。

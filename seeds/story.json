@@ -1482,7 +1482,7 @@
                               {
                                 "key": "speech",
                                 "value": {
-                                  "#string": "ユーザーIDは公開鍵そのものなのだ。ライトユーザーのアリスは、ブラウザから{ナルミ'ンチョノ}サーバーに直接つなぐのだ。データを自分で持ちたいボブは、自分で建てたサーバー経由でつなぐのだ。"
+                                  "#string": "ユーザーIDは公開鍵そのものなのだ。たとえばアリスは、ブラウザから{ナルミ'ンチョノ}サーバーに直接つなぐのだ。データを自分で持ちたいボブは、自分で建てたサーバー経由でつなぐのだ。"
                                 }
                               },
                               {
@@ -1492,7 +1492,7 @@
                                     "tag": "some",
                                     "payload": {
                                       "#some": {
-                                        "#string": "ユーザー ID は公開鍵そのものなのだ。ライトユーザーの Alice は、ブラウザからナルミンチョのサーバーに直接つなぐのだ。データを自分で持ちたい Bob は、自分で建てたサーバー経由でつなぐのだ。"
+                                        "#string": "ユーザー ID は公開鍵そのものなのだ。たとえば Alice は、ブラウザからナルミンチョのサーバーに直接つなぐのだ。データを自分で持ちたい Bob は、自分で建てたサーバー経由でつなぐのだ。"
                                       }
                                     },
                                     "type_part": {
@@ -1523,7 +1523,7 @@
                                       "#string": "Your user ID is your public key itself."
                                     },
                                     {
-                                      "#string": "Alice, a light user, connects from the browser straight to narumincho's server."
+                                      "#string": "For example, Alice connects from the browser straight to narumincho's server."
                                     },
                                     {
                                       "#string": "Bob, who wants to own the data, connects through a self-hosted server."
@@ -1539,7 +1539,7 @@
                                       "#string": "La uzanto-identigilo estas la publika ŝlosilo mem."
                                     },
                                     {
-                                      "#string": "Alice, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de narumincho."
+                                      "#string": "Ekzemple Alice konektiĝas el la retumilo rekte al la servilo de narumincho."
                                     },
                                     {
                                       "#string": "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo."
@@ -1559,7 +1559,7 @@
                                             "#string": "La uzanto-identigilo estas la publika ŝlosilo mem."
                                           },
                                           {
-                                            "#string": "Alis, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de Naruminĉo."
+                                            "#string": "Ekzemple Alis konektiĝas el la retumilo rekte al la servilo de Naruminĉo."
                                           },
                                           {
                                             "#string": "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo."
@@ -1590,7 +1590,7 @@
                               {
                                 "key": "speech",
                                 "value": {
-                                  "#string": "署名したイベントは、サーバーからサーバーへ広がっていくのだ。どのサーバーでも署名を確かめられるのだ。"
+                                  "#string": "署名したイベントは、サーバーからサーバーへ広がっていくのだ。誰でも署名を確かめられるのだ。"
                                 }
                               },
                               {
@@ -1629,7 +1629,7 @@
                                       "#string": "Signed events spread from server to server."
                                     },
                                     {
-                                      "#string": "Any server can check the signature."
+                                      "#string": "Anyone can check the signature."
                                     }
                                   ]
                                 }
@@ -1642,7 +1642,7 @@
                                       "#string": "Subskribitaj eventoj disvastiĝas de servilo al servilo."
                                     },
                                     {
-                                      "#string": "Ĉiu servilo povas kontroli la subskribon."
+                                      "#string": "Ĉiu ajn povas kontroli la subskribon."
                                     }
                                   ]
                                 }
@@ -1659,7 +1659,7 @@
                                             "#string": "Subskribitaj eventoj disvastiĝas de servilo al servilo."
                                           },
                                           {
-                                            "#string": "Ĉiu servilo povas kontroli la subskribon."
+                                            "#string": "Ĉiu ajn povas kontroli la subskribon."
                                           }
                                         ]
                                       }
