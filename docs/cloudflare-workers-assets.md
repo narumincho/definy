@@ -9,7 +9,7 @@ definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Wo
 
 ## 1. アーキテクチャ概要
 
-Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。デプロイは GitHub Actions でのビルドと `wrangler deploy` による Cloudflare Workers へのデプロイに一本化されています。
+Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。デプロイは GitHub Actions からの `void deploy --platform cloudflare` による Cloudflare Workers へのデプロイに一本化されています。
 
 ```
 [ ブラウザ / クライアント ]
@@ -32,13 +32,13 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 
 - **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS が完結します。デプロイは definy のパーツがブラウザから行います ([cloudflare-workers.md](cloudflare-workers.md))。
 - **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build` の最初に `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で `seeds/*.json` から作られ、`dist/client/` にコピーされて D1 データベースの初期化時に自動同期されます。コミットはしません ([build-artifacts.md](build-artifacts.md))。
-- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`npm run build`、`wrangler deploy` を実行します。
+- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci` の後に `void deploy --platform cloudflare` を実行します。ビルド (`npm run build`) は `void deploy` が走らせます。
 
 ---
 
 ## 2. ディレクトリ構成
 
-- `void.config.ts`: Void の設定。`cloudflare` セクションが Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）。D1 の `database_id` はここに固定で書く
+- `void.config.ts`: Void の設定。`cloudflare` セクションが Workers および D1 バインディングのベース設定（Void が Cloudflare Build Output `.cloudflare/output/v0` を生成する際に参照）。D1 の `database_id` はここに固定で書く。`inference.build` は `void deploy` が走らせるビルドのコマンド
 - `public/`
   - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
   - `__definy_seed_bundle.json`: ビルトインシードデータ (`npm run build:seeds` が生成。コミットしない)
@@ -56,7 +56,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 ## 3. 設定 (`void.config.ts` の `cloudflare` セクション)
 
 ```ts
-// Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。
+// Void (Vite 8) が Cloudflare Build Output を生成する際のベース設定。
 // main, assets 等は Void 側で自動設定される。
 // 以前は wrangler.toml に書いていたが、Void / @cloudflare/vite-plugin が
 // TOML を読まなくなったため、void migrate で void.config.ts へ移行した。
@@ -74,7 +74,15 @@ cloudflare: {
 }
 ```
 
-ビルド時、Void により `dist/ssr/wrangler.json` が生成され、`assets`（`directory = "../client"`）や `main = "index.js"` が自動設定されます。
+ビルド時、Void (1.6 以降) は Cloudflare Build Output を `.cloudflare/output/v0` に出します (gitignore 済み)。`workers/default/worker.config.json` に Worker 名・D1 のバインディング・アセットが入り、`bundle/` に Worker のモジュールが入ります。以前の `dist/ssr/wrangler.json` は出なくなりました。
+
+`void deploy` は既定では `vite build` だけを走らせるので、seed の束 (`npm run build:seeds`) も作るよう `inference.build` を `npm run build` にしています。
+
+```ts
+inference: {
+  build: "npm run build",
+},
+```
 
 ---
 
@@ -103,3 +111,13 @@ npm run deploy
 `main` ブランチへの push 時に GitHub Actions で自動デプロイされます。必要な GitHub Actions Secrets:
 
 - `CLOUDFLARE_API_TOKEN`: Cloudflare Workers の編集権限を持つアカウントトークン（アカウント ID は API から自動解決されます）
+
+`deploy.yaml` は `npm ci` の後に `npx void deploy --platform cloudflare` を実行します。`void deploy` がビルド・アップロード・準備完了の確認・トラフィックの切り替えまで行います。
+
+- Worker のバージョンにプレビュー URL が無く、バージョンのメタデータのバインディングも無いと、Void は準備完了を確かめられず、切り替えの前に止まります。そのときは GitHub Actions の変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` (例: `my-team.workers.dev`) を設定します
+- トークンが複数のアカウントに触れるときは `CLOUDFLARE_ACCOUNT_ID` も要ります
+- ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
+
+### `wrangler deploy` を使わない理由
+
+Void 1.6 からビルドが `.cloudflare/output` (Cloudflare Build Output) を出すようになりました。wrangler 4.158 はこの出力があると「Cloudflare CLI (`cf`) 向けのプロジェクトだ」として `wrangler deploy` を止めます (2026-11-05 に main のデプロイがこれで失敗)。`cf` はまだベータ版なので、Void の案内どおり `void deploy --platform cloudflare` を使います。

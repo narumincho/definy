@@ -15,11 +15,12 @@ jobs:
           cache: "npm"
       - name: Install npm dependencies
         run: npm ci
-      - name: Build with Void (Vite 8)
-        run: npm run build
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v4.1.3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          wranglerVersion: "4"
-          command: deploy
+      # Void 1.6 からビルドは Cloudflare Build Output (.cloudflare/output) を出し,
+      # wrangler deploy はそれを拒むので void deploy でデプロイする (docs/cloudflare-workers-assets.md).
+      # ビルド (npm run build) は void deploy が void.config.ts の inference.build で走らせる
+      - name: Build and deploy to Cloudflare Workers (void deploy)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Worker のバージョンにプレビュー URL が無いときの準備完了の確認に使う (無ければ空)
+          CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
+        run: npx void deploy --platform cloudflare
