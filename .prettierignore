@@ -9,3 +9,6 @@ playwright-report
 public
 seeds
 conformance
+
+# Void が自動で書き換えるため整形対象から外す
+void.lock.json

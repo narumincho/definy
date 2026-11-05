@@ -38,7 +38,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 
 ## 2. ディレクトリ構成
 
-- `wrangler.toml`: Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）。D1 の `database_id` はここに固定で書く
+- `void.config.ts`: Void の設定。`cloudflare` セクションが Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）。D1 の `database_id` はここに固定で書く
 - `public/`
   - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
   - `__definy_seed_bundle.json`: ビルトインシードデータ (`npm run build:seeds` が生成。コミットしない)
@@ -53,18 +53,25 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 
 ---
 
-## 3. 設定 (`wrangler.toml`)
+## 3. 設定 (`void.config.ts` の `cloudflare` セクション)
 
-```toml
-# Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。
-# main, [assets], compatibility_date 等は Void 側で自動設定される。
-name = "definy"
-compatibility_flags = ["nodejs_compat"]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "definy-db"
-database_id = "d4c3a982-558e-4d58-95f8-bbc3ca391818"
+```ts
+// Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。
+// main, assets 等は Void 側で自動設定される。
+// 以前は wrangler.toml に書いていたが、Void / @cloudflare/vite-plugin が
+// TOML を読まなくなったため、void migrate で void.config.ts へ移行した。
+cloudflare: {
+  name: "definy",
+  compatibility_date: "2026-02-24",
+  compatibility_flags: ["nodejs_compat"],
+  d1_databases: [
+    {
+      binding: "DB",
+      database_name: "definy-db",
+      database_id: "d4c3a982-558e-4d58-95f8-bbc3ca391818",
+    },
+  ],
+}
 ```
 
 ビルド時、Void により `dist/ssr/wrangler.json` が生成され、`assets`（`directory = "../client"`）や `main = "index.js"` が自動設定されます。
