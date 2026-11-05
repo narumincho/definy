@@ -1,0 +1,3235 @@
+{
+  "$schema": "./schemas/module-seed.schema.json",
+  "module_name": "story",
+  "module_description": [
+    {
+      "language": "en",
+      "text": "The introduction slides at the top of /about: the order of the slides, their titles and Zundamon's narration. The site renders the value of story.slides. See docs/story.md"
+    },
+    {
+      "language": "ja",
+      "text": "/about の上の紹介スライド. スライドの順・題・ずんだもんの台詞. サイトは story.slides の値を描く. docs/story.md を参照"
+    }
+  ],
+  "parts": [
+    {
+      "name": "text",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The same text in Japanese, English and Esperanto"
+        },
+        {
+          "language": "ja",
+          "text": "日本語・英語・エスペラントの同じ文"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "ja",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "en",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "eo",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "face",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Zundamon's face while speaking a line"
+        },
+        {
+          "language": "ja",
+          "text": "台詞を話すときのずんだもんの表情"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "normal",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "happy",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "surprised",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "troubled",
+            "payload_type": {
+              "#none": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "transition",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The animation when a slide appears (the .is-enter-* classes in src/story/story.css, with _ written as -)"
+        },
+        {
+          "language": "ja",
+          "text": "スライドが現れるときのアニメーション (src/story/story.css の .is-enter-*. _ は - にする)"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "zoom",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "wipe_right",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "rise",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "flip",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "pop",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "iris",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "slide_left",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "wipe_down",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "spin",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "slide_right",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "blur",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "shrink",
+            "payload_type": {
+              "#none": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "narration-line",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "One line of Zundamon's narration. speech is read by VOICEVOX ({kana} gives a reading), subtitle is the Japanese subtitle (none: same as speech), en / eo are the subtitles split into the same sentences as the Japanese one (the English voice reads en as is), eo_speech is what the Esperanto voice reads (none: the Japanese voice)"
+        },
+        {
+          "language": "ja",
+          "text": "ずんだもんの台詞 1 つ. speech は VOICEVOX に読ませる文 ({かな} で読みを書く), subtitle は日本語の字幕 (none なら speech), en / eo は日本語と同じ数の文に分けた字幕 (英語の音声は en をそのまま読む), eo_speech はエスペラントの音声で読ませる文 (none なら日本語の音声)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "speech",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "subtitle",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "face",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "story.face"
+                }
+              }
+            }
+          },
+          {
+            "key": "en",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_string": null
+                }
+              }
+            }
+          },
+          {
+            "key": "eo",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_string": null
+                }
+              }
+            }
+          },
+          {
+            "key": "eo_speech",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_list": {
+                        "item_type": {
+                          "#type_string": null
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "slide",
+      "part_type": {
+        "#type_type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "One slide. The picture is drawn by the React component for id (src/story/slides.tsx). steps is the number of Next presses, duration the seconds used in autoplay, narration the line for each step (steps + 1 items)"
+        },
+        {
+          "language": "ja",
+          "text": "スライド 1 枚. 絵は id ごとの React のコンポーネント (src/story/slides.tsx) が描く. steps は「次へ」で進むステップの数, duration は自動再生で使う秒数, narration はステップごとの台詞 (steps + 1 個)"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "id",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "title",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "story.text"
+                }
+              }
+            }
+          },
+          {
+            "key": "duration",
+            "value": {
+              "#type_number": null
+            }
+          },
+          {
+            "key": "steps",
+            "value": {
+              "#type_number": null
+            }
+          },
+          {
+            "key": "transition",
+            "value": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "story.transition"
+                }
+              }
+            }
+          },
+          {
+            "key": "narration",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#type_union": [
+                    {
+                      "tag": "none",
+                      "payload_type": {
+                        "#none": null
+                      }
+                    },
+                    {
+                      "tag": "some",
+                      "payload_type": {
+                        "#some": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "story.narration-line"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "slides",
+      "part_type": {
+        "#type_list": {
+          "item_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "story.slide"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The introduction slides in order. This very value is what /about shows"
+        },
+        {
+          "language": "ja",
+          "text": "紹介スライドの並び. /about はこの値をそのまま描く"
+        }
+      ],
+      "expression": {
+        "#list": [
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "title"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "タイトル"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Title"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Titolo"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 11
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 0
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "zoom",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "こんにちは、ずんだもんなのだ。今日は、{デファイ'ニイッテ}いうプログラミング言語を紹介するのだ。シンプルな純粋関数型の、ビジュアルプログラミング言語なのだ！"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "こんにちは、ずんだもんなのだ。今日は definy (デファイニー) っていうプログラミング言語を紹介するのだ。シンプルな純粋関数型の、ビジュアルプログラミング言語なのだ!"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "happy",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Hi, I'm Zundamon!"
+                                    },
+                                    {
+                                      "#string": "Today I'll introduce a programming language called definy."
+                                    },
+                                    {
+                                      "#string": "It's a simple, purely functional, visual programming language!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Saluton, mi estas Zundamon!"
+                                    },
+                                    {
+                                      "#string": "Hodiaŭ mi prezentos programlingvon nomatan definy."
+                                    },
+                                    {
+                                      "#string": "Ĝi estas simpla, pure funkcia, vida programlingvo!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Saluton, mi estas Zundamon!"
+                                          },
+                                          {
+                                            "#string": "Hodiaŭ mi prezentos programlingvon nomatan defajni."
+                                          },
+                                          {
+                                            "#string": "Ĝi estas simpla, pure funkcia, vida programlingvo!"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "history"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "歴史"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "History"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Historio"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 35
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "wipe_right",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "{デファイ'ニイワ}、2019年1月31日に、大学の研究から始まった個人プロジェクトなのだ。エルム、タイプスクリプトとピュアスクリプト、ディーノやフラッターと、何度も言語を変えて作り直してきたのだ。2023年からの3年間はほとんど手が止まっていたけど、2026年は1年で1100コミットを超えたのだ！"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "definy は 2019 年 1 月 31 日に、大学の研究から始まった個人プロジェクトなのだ。Elm、TypeScript と PureScript、Deno や Flutter と、何度も言語を変えて作り直してきたのだ。2023 年からの 3 年間はほとんど手が止まっていたけど、2026 年は 1 年で 1,100 コミットを超えたのだ!"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy began on January 31, 2019, as a personal project that grew out of university research."
+                                    },
+                                    {
+                                      "#string": "It has been rebuilt again and again in different languages: Elm, TypeScript and PureScript, Deno and Flutter."
+                                    },
+                                    {
+                                      "#string": "For three years from 2023 it barely moved, but 2026 alone passed 1,100 commits!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy komenciĝis la 31-an de januaro 2019 kiel persona projekto el universitata esplorado."
+                                    },
+                                    {
+                                      "#string": "Ĝi estis refarita multfoje en diversaj lingvoj: Elm, TypeScript kaj PureScript, Deno kaj Flutter."
+                                    },
+                                    {
+                                      "#string": "Dum la tri jaroj ekde 2023 ĝi preskaŭ ne moviĝis, sed nur en 2026 ĝi superis 1 100 enmetojn!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Defajni komenciĝis la tridek unuan de januaro du mil dek naŭ kiel persona projekto el universitata esplorado."
+                                          },
+                                          {
+                                            "#string": "Ĝi estis refarita multfoje en diversaj lingvoj: Elm, Tajpskript kaj Pjurskript, Dino kaj Flater."
+                                          },
+                                          {
+                                            "#string": "Dum la tri jaroj ekde du mil dudek tri ĝi preskaŭ ne moviĝis, sed nur en du mil dudek ses ĝi superis mil cent enmetojn!"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "vibe-coding"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "バイブコーディング"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Vibe coding"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Vibe coding"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 20
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 2
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "rise",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "ひとりで作るには大きすぎて、モチベーションが続かなかったのだ。でも、AIに実装を任せるバイブコーディングで、2026年10月だけで481コミットも進んだのだ。ラスト製のコンパイラとサーバーは捨てて、タイプスクリプトと、{デファイ'ニイ}自身で書いたコンパイラに置き換えたのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "ひとりで作るには大きすぎて、モチベーションが続かなかったのだ。でも AI に実装を任せるバイブコーディングで、2026 年 10 月だけで 481 コミットも進んだのだ。Rust 製のコンパイラとサーバーは捨てて、TypeScript と definy 自身で書いたコンパイラに置き換えたのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "surprised",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "It was too big to build alone, and the motivation didn't last."
+                                    },
+                                    {
+                                      "#string": "But with vibe coding, letting AI do the implementation, October 2026 alone saw 481 commits."
+                                    },
+                                    {
+                                      "#string": "The Rust compiler and server were thrown away and replaced with TypeScript and a compiler written in definy itself."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Ĝi estis tro granda por konstrui sola, kaj la motivo ne daŭris."
+                                    },
+                                    {
+                                      "#string": "Sed per vibe coding, lasante la realigon al AI, nur en oktobro 2026 estis 481 enmetoj."
+                                    },
+                                    {
+                                      "#string": "La Rust-kompililo kaj -servilo estis forĵetitaj kaj anstataŭigitaj per TypeScript kaj kompililo verkita en definy mem."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Ĝi estis tro granda por konstrui sola, kaj la motivo ne daŭris."
+                                          },
+                                          {
+                                            "#string": "Sed per vajb koding, lasante la realigon al ejáj, nur en oktobro du mil dudek ses estis kvarcent okdek unu enmetoj."
+                                          },
+                                          {
+                                            "#string": "La Rast-kompililo kaj servilo estis forĵetitaj kaj anstataŭigitaj per Tajpskript kaj kompililo verkita en defajni mem."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "structured-editing"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "構造化編集"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Structured editing"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Struktura redaktado"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 30
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "flip",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "テキストのコードは、書きかけだとすぐ構文エラーになるのだ。{デファイ'ニイワ}コードを文字ではなく構文木のまま持つから、構文エラーがそもそも存在しないのだ。空いている穴は、入るべき型を知っているのだ。それに予約語もないから、レットやイフという名前もそのまま使えるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "テキストのコードは、書きかけだとすぐ構文エラーになるのだ。definy はコードを文字ではなく構文木のまま持つから、構文エラーがそもそも存在しないのだ。空いている穴は、入るべき型を知っているのだ。それに予約語もないから、let や if という名前もそのまま使えるのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Text code turns into a syntax error as soon as it's half-written."
+                                    },
+                                    {
+                                      "#string": "definy keeps code as a syntax tree, not characters, so syntax errors simply don't exist."
+                                    },
+                                    {
+                                      "#string": "An empty hole knows what type belongs in it."
+                                    },
+                                    {
+                                      "#string": "And there are no reserved words, so you can use names like let and if as they are."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Teksta kodo tuj fariĝas sintaksa eraro, kiam ĝi estas duone skribita."
+                                    },
+                                    {
+                                      "#string": "definy tenas kodon kiel sintaksan arbon, ne kiel signojn, do sintaksaj eraroj tute ne ekzistas."
+                                    },
+                                    {
+                                      "#string": "Malplena truo scias, kiu tipo devas eniri."
+                                    },
+                                    {
+                                      "#string": "Kaj ne estas rezervitaj vortoj, do vi povas uzi nomojn kiel let kaj if senŝanĝe."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Teksta kodo tuj fariĝas sintaksa eraro, kiam ĝi estas duone skribita."
+                                          },
+                                          {
+                                            "#string": "Defajni tenas kodon kiel sintaksan arbon, ne kiel signojn, do sintaksaj eraroj tute ne ekzistas."
+                                          },
+                                          {
+                                            "#string": "Malplena truo scias, kiu tipo devas eniri."
+                                          },
+                                          {
+                                            "#string": "Kaj ne estas rezervitaj vortoj, do vi povas uzi nomojn kiel let kaj if senŝanĝe."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "scratch"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "Scratch との違い"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "vs. Scratch"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "kompare kun Scratch"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 25
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "pop",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "スクラッチのようにブロックで組み立てるけど、{デファイ'ニイワ}純粋なのだ。同じ入力なら必ず同じ結果になって、副作用は外から能力として渡すのだ。レコードや{チョクワ'ガタ}みたいな代数的データ型もあって、パターンマッチの漏れも検査してくれるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "Scratch のようにブロックで組み立てるけど、definy は純粋なのだ。同じ入力なら必ず同じ結果になって、副作用は外から能力として渡すのだ。レコードや直和型みたいな代数的データ型もあって、パターンマッチの漏れも検査してくれるのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "You build with blocks like in Scratch, but definy is pure."
+                                    },
+                                    {
+                                      "#string": "The same input always gives the same result, and side effects are passed in from outside as capabilities."
+                                    },
+                                    {
+                                      "#string": "It has algebraic data types like records and unions, and it checks that pattern matches cover every case."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Oni konstruas per blokoj kiel en Scratch, sed definy estas pura."
+                                    },
+                                    {
+                                      "#string": "Sama enigo ĉiam donas saman rezulton, kaj kromefikoj estas transdonataj de ekstere kiel kapabloj."
+                                    },
+                                    {
+                                      "#string": "Ĝi havas algebrajn datumtipojn kiel registrojn kaj sumtipojn, kaj kontrolas, ke ŝablonkongruoj kovras ĉiujn kazojn."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Oni konstruas per blokoj kiel en Skreĉ, sed defajni estas pura."
+                                          },
+                                          {
+                                            "#string": "Sama enigo ĉiam donas saman rezulton, kaj kromefikoj estas transdonataj de ekstere kiel kapabloj."
+                                          },
+                                          {
+                                            "#string": "Ĝi havas algebrajn datumtipojn kiel registrojn kaj sumtipojn, kaj kontrolas, ke ŝablonkongruoj kovras ĉiujn kazojn."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "events"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "署名付きイベント"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Signed events"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Subskribitaj eventoj"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 40
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 4
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "iris",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "ユーザーIDは公開鍵そのものなのだ。ライトユーザーのアリスは、ブラウザから{ナルミ'ンチョノ}サーバーに直接つなぐのだ。データを自分で持ちたいボブは、自分で建てたサーバー経由でつなぐのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "ユーザー ID は公開鍵そのものなのだ。ライトユーザーの Alice は、ブラウザからナルミンチョのサーバーに直接つなぐのだ。データを自分で持ちたい Bob は、自分で建てたサーバー経由でつなぐのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Your user ID is your public key itself."
+                                    },
+                                    {
+                                      "#string": "Alice, a light user, connects from the browser straight to narumincho's server."
+                                    },
+                                    {
+                                      "#string": "Bob, who wants to own the data, connects through a self-hosted server."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "La uzanto-identigilo estas la publika ŝlosilo mem."
+                                    },
+                                    {
+                                      "#string": "Alice, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de narumincho."
+                                    },
+                                    {
+                                      "#string": "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "La uzanto-identigilo estas la publika ŝlosilo mem."
+                                          },
+                                          {
+                                            "#string": "Alis, malpeza uzanto, konektiĝas el la retumilo rekte al la servilo de Naruminĉo."
+                                          },
+                                          {
+                                            "#string": "Bob, kiu volas mem posedi la datumojn, konektiĝas tra memgastigita servilo."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "署名したイベントは、サーバーからサーバーへ広がっていくのだ。どのサーバーでも署名を確かめられるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "none",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Signed events spread from server to server."
+                                    },
+                                    {
+                                      "#string": "Any server can check the signature."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Subskribitaj eventoj disvastiĝas de servilo al servilo."
+                                    },
+                                    {
+                                      "#string": "Ĉiu servilo povas kontroli la subskribon."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Subskribitaj eventoj disvastiĝas de servilo al servilo."
+                                          },
+                                          {
+                                            "#string": "Ĉiu servilo povas kontroli la subskribon."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "悪いサーバーがアリスのふりをしても、秘密鍵がないから署名が合わなくて、すぐにばれるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "悪いサーバーが Alice のふりをしても、秘密鍵がないから署名が合わなくて、すぐにばれるのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "troubled",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Even if a bad server pretends to be Alice, it has no private key, so the signature won't match and it's caught right away."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Eĉ se malbona servilo ŝajnigas esti Alice, ĝi ne havas la privatan ŝlosilon, do la subskribo ne kongruas kaj ĝi tuj malkaŝiĝas."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Eĉ se malbona servilo ŝajnigas esti Alis, ĝi ne havas la privatan ŝlosilon, do la subskribo ne kongruas kaj ĝi tuj malkaŝiĝas."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "サーバーにできるのは、載せないこと、つまり削除だけなのだ。著作権侵害みたいなものには、ちゃんと対応できるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "none",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "All a server can do is not carry something; in other words, delete it."
+                                    },
+                                    {
+                                      "#string": "So things like copyright violations can be handled properly."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Servilo povas nur ne porti ion, alivorte, forigi ĝin."
+                                    },
+                                    {
+                                      "#string": "Do ekzemple kopirajtajn malobservojn oni povas ĝuste trakti."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Servilo povas nur ne porti ion, alivorte, forigi ĝin."
+                                          },
+                                          {
+                                            "#string": "Do ekzemple kopirajtajn malobservojn oni povas ĝuste trakti."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "でも、ボブのサーバーには残っているし、アリスも手元の控えから、別のサーバーへ出し直せるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "でも Bob のサーバーには残っているし、Alice も手元の控えから、別のサーバーへ出し直せるのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "happy",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "But it's still on Bob's server, and Alice can republish it to another server from a local copy."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Sed ĝi ankoraŭ estas en la servilo de Bob, kaj Alice povas republikigi ĝin al alia servilo el loka kopio."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Sed ĝi ankoraŭ estas en la servilo de Bob, kaj Alis povas republikigi ĝin al alia servilo el loka kopio."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "comparison"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "ブロックチェーン・nostr"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Blockchain & nostr"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Blokĉeno kaj nostr"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 20
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "slide_left",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "ブロックチェーンは全体で合意を取るから、電力をたくさん使うし、一度書いたら誰にも消せないのだ。ノスターは{デファイ'ニイニ}近いけど、目的はエスエヌエスなのだ。{デファイ'ニイワ}合意を取らずに検証するだけだから省エネで、それぞれのサーバーが、問題のある内容を自分のところから消せるのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "ブロックチェーンは全体で合意を取るから、電力をたくさん使うし、一度書いたら誰にも消せないのだ。nostr は definy に近いけど、目的は SNS なのだ。definy は合意を取らずに検証するだけだから省エネで、それぞれのサーバーが、問題のある内容を自分のところから消せるのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Blockchains reach agreement across the whole network, so they use a lot of power, and once something is written, nobody can delete it."
+                                    },
+                                    {
+                                      "#string": "nostr is close to definy, but its purpose is social media."
+                                    },
+                                    {
+                                      "#string": "definy only verifies without reaching agreement, so it saves energy, and each server can remove problematic content from itself."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Blokĉenoj atingas konsenton tra la tuta reto, do ili uzas multe da energio, kaj kion oni skribis, neniu povas forigi."
+                                    },
+                                    {
+                                      "#string": "nostr similas al definy, sed ĝia celo estas sociaj retoj."
+                                    },
+                                    {
+                                      "#string": "definy nur kontrolas sen konsento, do ĝi ŝparas energion, kaj ĉiu servilo povas forigi problemajn enhavojn ĉe si."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Blokĉenoj atingas konsenton tra la tuta reto, do ili uzas multe da energio, kaj kion oni skribis, neniu povas forigi."
+                                          },
+                                          {
+                                            "#string": "Nostr similas al defajni, sed ĝia celo estas sociaj retoj."
+                                          },
+                                          {
+                                            "#string": "Defajni nur kontrolas sen konsento, do ĝi ŝparas energion, kaj ĉiu servilo povas forigi problemajn enhavojn ĉe si."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "version-control"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "バージョン管理"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Version control"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Versikontrolo"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 30
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "wipe_down",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "{デファイ'ニイワ}、バージョン管理の仕組みも自分で持っているのだ。コミットは親をたどってつながって、ブランチを取り込むこともできるのだ。ギットはテキストファイルのぎょうの差分を扱うけど、{デファイ'ニイワ}構文木のまま、パーツ単位で扱うのだ。参照はアイディーだから名前を変えても壊れないし、コミットは全部署名されているのだ。通信は、ジーアールピーシー互換のコネクトアールピーシーなのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "definy は、バージョン管理の仕組みも自分で持っているのだ。コミットは親をたどってつながって、ブランチを取り込むこともできるのだ。Git はテキストファイルの行の差分を扱うけど、definy は構文木のまま、パーツ単位で扱うのだ。参照は ID だから名前を変えても壊れないし、コミットは全部署名されているのだ。通信は gRPC 互換の Connect-RPC なのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy has its own version control, too."
+                                    },
+                                    {
+                                      "#string": "Commits link to their parents, and branches can be merged."
+                                    },
+                                    {
+                                      "#string": "Git handles line diffs of text files, but definy works part by part, right on the syntax tree."
+                                    },
+                                    {
+                                      "#string": "References are IDs, so renaming never breaks anything, and every commit is signed."
+                                    },
+                                    {
+                                      "#string": "It talks over Connect-RPC, which is compatible with gRPC."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy havas ankaŭ sian propran versikontrolon."
+                                    },
+                                    {
+                                      "#string": "Enmetoj ligiĝas al siaj gepatroj, kaj branĉoj estas kunfandeblaj."
+                                    },
+                                    {
+                                      "#string": "Git traktas liniajn diferencojn de tekstaj dosieroj, sed definy laboras po parto, rekte sur la sintaksa arbo."
+                                    },
+                                    {
+                                      "#string": "Referencoj estas identigiloj, do renomado neniam rompas ion, kaj ĉiu enmeto estas subskribita."
+                                    },
+                                    {
+                                      "#string": "Ĝi komunikas per Connect-RPC, kongrua kun gRPC."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Defajni havas ankaŭ sian propran versikontrolon."
+                                          },
+                                          {
+                                            "#string": "Enmetoj ligiĝas al siaj gepatroj, kaj branĉoj estas kunfandeblaj."
+                                          },
+                                          {
+                                            "#string": "Git traktas liniajn diferencojn de tekstaj dosieroj, sed defajni laboras po parto, rekte sur la sintaksa arbo."
+                                          },
+                                          {
+                                            "#string": "Referencoj estas identigiloj, do renomado neniam rompas ion, kaj ĉiu enmeto estas subskribita."
+                                          },
+                                          {
+                                            "#string": "Ĝi komunikas per Konekt ar pi si, kongrua kun ĝi ar pi si."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "self-hosting"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "セルフホスト"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Self-hosting"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Memgastigo"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 30
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "spin",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "目標は、{デファイ'ニイデ}{デファイ'ニイオ}表現することなのだ。型チェッカーや、ワズムのコンパイラ、イベントの規則やアールピーシーの処理は、もう{デファイ'ニイデ}書いてあるのだ。実はこのスライドも、並びや台詞は{デファイ'ニイノ}値で書いてあるのだ。今はコードのおよそ3割、ユーアイを除くと6割近くが{デファイ'ニイセエ}なのだ。2027年中には、ユーアイまでいけるかもしれないのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "目標は、definy で definy を表現することなのだ。型チェッカーや Wasm のコンパイラ、イベントの規則や RPC の処理は、もう definy で書いてあるのだ。実はこのスライドも、並びや台詞は definy の値で書いてあるのだ。今はコードのおよそ 3 割、UI を除くと 6 割近くが definy 製なのだ。2027 年中には UI までいけるかもしれないのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "The goal is to express definy in definy."
+                                    },
+                                    {
+                                      "#string": "The type checker, the Wasm compiler, the event rules and the RPC handlers are already written in definy."
+                                    },
+                                    {
+                                      "#string": "In fact, the order and narration of these very slides are a definy value too."
+                                    },
+                                    {
+                                      "#string": "Right now about 30% of the code, or nearly 60% excluding the UI, is made in definy."
+                                    },
+                                    {
+                                      "#string": "Maybe even the UI by the end of 2027."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "La celo estas esprimi definy en definy."
+                                    },
+                                    {
+                                      "#string": "La tipkontrolilo, la Wasm-kompililo, la eventaj reguloj kaj la RPC-traktiloj jam estas verkitaj en definy."
+                                    },
+                                    {
+                                      "#string": "Fakte ankaŭ la ordo kaj rakontado de ĉi tiuj lumbildoj estas definy-valoro."
+                                    },
+                                    {
+                                      "#string": "Nun ĉirkaŭ 30 % de la kodo, aŭ preskaŭ 60 % sen la fasado, estas farita en definy."
+                                    },
+                                    {
+                                      "#string": "Eble eĉ la fasado ĝis la fino de 2027."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "La celo estas esprimi defajni en defajni."
+                                          },
+                                          {
+                                            "#string": "La tipkontrolilo, la Ŭazm-kompililo, la eventaj reguloj kaj la ar pi si traktiloj jam estas verkitaj en defajni."
+                                          },
+                                          {
+                                            "#string": "Fakte ankaŭ la ordo kaj rakontado de ĉi tiuj lumbildoj estas defajni-valoro."
+                                          },
+                                          {
+                                            "#string": "Nun ĉirkaŭ tridek procentoj de la kodo, aŭ preskaŭ sesdek procentoj sen la fasado, estas farita en defajni."
+                                          },
+                                          {
+                                            "#string": "Eble eĉ la fasado ĝis la fino de du mil dudek sep."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "deploy"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "デプロイ"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Deploy"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Disponigo"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 20
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "slide_right",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "クラウドフレアワーカーズへのデプロイも、{デファイ'ニイデ}書いた普通のパーツなのだ。{デファイ'ニイ}製のコンパイラでワズムにして、ワジのプレビュースリーに倣った入出力で、レストエーピーアイに送るのだ。{デファイ'ニイデ}書いた{デファイ'ニイノ}サーバーも、3秒くらいでデプロイできるのだ！"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "Cloudflare Workers へのデプロイも、definy で書いた普通のパーツなのだ。definy 製のコンパイラで Wasm にして、WASI 0.3 (Preview 3) に倣った入出力で、REST API に送るのだ。definy で書いた definy のサーバーも、3 秒くらいでデプロイできるのだ!"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "happy",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Deploying to Cloudflare Workers is also just an ordinary part written in definy."
+                                    },
+                                    {
+                                      "#string": "The definy compiler turns it into Wasm and sends it to the REST API, with I/O modeled on WASI 0.3 (Preview 3)."
+                                    },
+                                    {
+                                      "#string": "Even the definy server written in definy deploys in about 3 seconds!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Ankaŭ disponigo al Cloudflare Workers estas nur ordinara parto verkita en definy."
+                                    },
+                                    {
+                                      "#string": "La definy-kompililo faras el ĝi Wasm kaj sendas ĝin al la REST API, kun enigo kaj eligo modelitaj laŭ WASI 0.3 (Preview 3)."
+                                    },
+                                    {
+                                      "#string": "Eĉ la definy-servilo verkita en definy estas disponigata en ĉirkaŭ 3 sekundoj!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Ankaŭ disponigo al Klaŭdfler Ŭorkers estas nur ordinara parto verkita en defajni."
+                                          },
+                                          {
+                                            "#string": "La defajni-kompililo faras el ĝi Ŭazm kaj sendas ĝin al la Rest ej pi aj, kun enigo kaj eligo modelitaj laŭ Ŭazi nul komo tri, privju tri."
+                                          },
+                                          {
+                                            "#string": "Eĉ la defajni-servilo verkita en defajni estas disponigata en ĉirkaŭ tri sekundoj!"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "proof"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "証明"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Proofs"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Pruvoj"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 30
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 3
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "blur",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "エーアイが書くコードが増えるほど、正しいことを機械で確かめられるのが大事になるのだ。最近はエーアイが数学の証明にリーンを使っていて、イドリスツーやニクシス、エイチファイブアイ、キュードスみたいなプロジェクトもあるのだ。{デファイ'ニイモ}構文をシンプルに絞って、いつか証明に取り組みたいのだ。"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "AI が書くコードが増えるほど、正しいことを機械で確かめられるのが大事になるのだ。最近は AI が数学の証明に Lean を使っていて、Idris 2 や nyxis、h5i、qedos みたいなプロジェクトもあるのだ。definy も構文をシンプルに絞って、いつか証明に取り組みたいのだ。"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "normal",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "The more code AI writes, the more it matters that machines can check it's correct."
+                                    },
+                                    {
+                                      "#string": "Lately AI uses Lean for math proofs, and there are projects like Idris 2, nyxis, h5i and qedos."
+                                    },
+                                    {
+                                      "#string": "definy keeps its syntax simple too, and someday wants to take on proofs."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "Ju pli da kodo AI skribas, des pli gravas, ke maŝinoj povu kontroli ĝian ĝustecon."
+                                    },
+                                    {
+                                      "#string": "Lastatempe AI uzas Lean por matematikaj pruvoj, kaj ekzistas projektoj kiel Idris 2, nyxis, h5i kaj qedos."
+                                    },
+                                    {
+                                      "#string": "Ankaŭ definy tenas sian sintakson simpla kaj iam volas alfronti pruvojn."
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Ju pli da kodo ejáj skribas, des pli gravas, ke maŝinoj povu kontroli ĝian ĝustecon."
+                                          },
+                                          {
+                                            "#string": "Lastatempe ejáj uzas Lin por matematikaj pruvoj, kaj ekzistas projektoj kiel Idris du, Niksis, ejĉ fajv aj kaj Kedos."
+                                          },
+                                          {
+                                            "#string": "Ankaŭ defajni tenas sian sintakson simpla kaj iam volas alfronti pruvojn."
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "id",
+                "value": {
+                  "#string": "closing"
+                }
+              },
+              {
+                "key": "title",
+                "value": {
+                  "#record": [
+                    {
+                      "key": "ja",
+                      "value": {
+                        "#string": "おわりに"
+                      }
+                    },
+                    {
+                      "key": "en",
+                      "value": {
+                        "#string": "Closing"
+                      }
+                    },
+                    {
+                      "key": "eo",
+                      "value": {
+                        "#string": "Fino"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "duration",
+                "value": {
+                  "#number": 20
+                }
+              },
+              {
+                "key": "steps",
+                "value": {
+                  "#number": 1
+                }
+              },
+              {
+                "key": "transition",
+                "value": {
+                  "#variant": {
+                    "tag": "shrink",
+                    "payload": {
+                      "#none": null
+                    },
+                    "type_part": {
+                      "#none": null
+                    }
+                  }
+                }
+              },
+              {
+                "key": "narration",
+                "value": {
+                  "#list": [
+                    {
+                      "#variant": {
+                        "tag": "none",
+                        "payload": {
+                          "#none": null
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    },
+                    {
+                      "#variant": {
+                        "tag": "some",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "speech",
+                                "value": {
+                                  "#string": "{デファイ'ニイワ}、理想の仕様を目指して開発中なのだ。気になったら、キューアールコードから触ってみてほしいのだ。聞いてくれて、ありがとうなのだ！"
+                                }
+                              },
+                              {
+                                "key": "subtitle",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "definy は理想の仕様を目指して開発中なのだ。気になったら QR コードから触ってみてほしいのだ。聞いてくれて、ありがとうなのだ!"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "face",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "happy",
+                                    "payload": {
+                                      "#none": null
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "key": "en",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy is in development, aiming for the ideal specification."
+                                    },
+                                    {
+                                      "#string": "If you're curious, try it from the QR code."
+                                    },
+                                    {
+                                      "#string": "Thanks for listening!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo",
+                                "value": {
+                                  "#list": [
+                                    {
+                                      "#string": "definy estas evoluigata, celante la idealan specifon."
+                                    },
+                                    {
+                                      "#string": "Se vi scivolas, provu ĝin per la QR-kodo."
+                                    },
+                                    {
+                                      "#string": "Dankon pro la aŭskultado!"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "eo_speech",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "some",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#string": "Defajni estas evoluigata, celante la idealan specifon."
+                                          },
+                                          {
+                                            "#string": "Se vi scivolas, provu ĝin per la kju ar kodo."
+                                          },
+                                          {
+                                            "#string": "Dankon pro la aŭskultado!"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#none": null
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#none": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

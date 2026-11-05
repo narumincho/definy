@@ -303,6 +303,21 @@ export const BUILTIN_MODULES: ReadonlyArray<BuiltinModuleItem> = [
       eo: "Triangula areo, salutoj kaj ekzemploj.",
     },
   },
+  {
+    id: "story",
+    name: "story",
+    icon: "🎬",
+    title: {
+      en: "Introduction Slides",
+      ja: "紹介スライド",
+      eo: "Enkondukaj Lumbildoj",
+    },
+    desc: {
+      en: "The order, titles and Zundamon's narration of the slides at the top of this page. The page draws the value story.slides.",
+      ja: "このページの上のスライドの順・題・ずんだもんの台詞。ページは値 story.slides を描いている。",
+      eo: "La ordo, titoloj kaj rakontado de la lumbildoj supre de ĉi tiu paĝo. La paĝo desegnas la valoron story.slides.",
+    },
+  },
 ];
 
 export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [

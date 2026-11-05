@@ -1,5 +1,5 @@
 /**
- * 英語の字幕 (narration.ts の `en`) を VOICEVOX (日本語の音声合成) にそのまま読ませるための下ごしらえ.
+ * 英語の字幕 (seeds/story.json の `story.slides` の台詞の `en`) を VOICEVOX (日本語の音声合成) にそのまま読ませるための下ごしらえ.
  *
  * VOICEVOX ENGINE (0.26 で確認) は英単語をカタカナ読みにして読むので, 英文はほぼそのまま渡せる. ただし
  * - 数字は日本語で読む (2019 → ニセンジュウキュウ) → 英語の言葉に直す (twenty nineteen)
@@ -21,6 +21,8 @@ const READINGS: Readonly<Record<string, string>> = {
   // 数字を言葉にした one を「オン・イー」と読む
   one: "ワ'ン",
   "narumincho's": "ナル'ミンチョズ",
+  // 冠詞の a を「エイ」と 1 文字ずつ読んでしまう
+  a: "ア'",
   hi: "ハ'イ",
   "i'm": "ア'イム",
   "i'll": "ア'イル",

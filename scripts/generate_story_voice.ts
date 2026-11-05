@@ -4,7 +4,7 @@
  *   node scripts/generate_story_voice.ts
  *
  * - VOICEVOX を起動しておく (ENGINE が http://127.0.0.1:50021 で待ち受ける. VOICEVOX_URL で変えられる)
- * - 台詞は src/story/narration.ts. 文・話者・話速が同じ音声は作り直さない.
+ * - 台詞は definy の値 `story.slides` (seeds/story.json. src/story/narration.ts が読む). 文・話者・話速が同じ音声は作り直さない.
  *   `{デファイ'ニイワ}` のように {} で囲んだところは, アクセント付きのかなとして読ませる
  * - 英語の音声は英語の字幕 (`en`) をそのまま読ませる (数字と読み違える語だけ直す. scripts/english_voice.ts).
  *   エスペラントの音声は `eoSpeech` (scripts/esperanto_voice.ts)
@@ -32,7 +32,7 @@ const SYNTHESIS_VERSION = 3;
 /** エスペラントの読ませ方 (scripts/esperanto_voice.ts) を変えたら上げる. エスペラントの音声を作り直す */
 const ESPERANTO_VERSION = 1;
 /** 英語の読ませ方 (scripts/english_voice.ts) を変えたら上げる. 英語の音声を作り直す */
-const ENGLISH_VERSION = 2;
+const ENGLISH_VERSION = 3;
 
 const ROOT = resolve(import.meta.dirname, "..");
 const VOICE_DIR = join(ROOT, "public", "story", "voice");

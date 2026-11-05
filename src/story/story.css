@@ -1886,6 +1886,35 @@
   padding: 0.45em 0.8em;
 }
 
+/* セルフホストの見出しの右に, このスライド自身の値 (story.slides の 1 つ) を出す */
+.story-self-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2em;
+}
+
+.story-self-value {
+  /* 下の円グラフの欄と同じ幅 */
+  flex: 0 1 27.2em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+/* 2 行になると見出しの行が高くなり, 下の本文が吹き出しに潜るので 1 行に収める */
+.story-self-value-label {
+  font-size: 1.1em;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--green-text);
+}
+
+.story-self-value .story-real-tree {
+  max-height: 5.2em;
+}
+
 .story-goal {
   padding: 0.5em 0.9em;
   border-radius: 0.4em;

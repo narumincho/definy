@@ -11,50 +11,30 @@ import { expressionToLayoutNode } from "../tree_layout/ast_to_layout.ts";
 import { computeLayout } from "../tree_layout/engine.ts";
 import { TreeLayoutRenderer } from "../tree_layout/TreeLayoutRenderer.tsx";
 import { SELF_HOSTING_STATS } from "./self_hosting_stats.ts";
+import {
+  slideExpression,
+  STORY_SLIDES,
+  type SlideValue,
+  type Text,
+} from "./story_value.ts";
 
 /**
- * 紹介スライド (/about の上) の内容.
+ * 紹介スライド (/about の上) の絵.
+ * スライドの並び・題・秒数・ステップの数・切り替え・台詞は definy の値 `story.slides` (seeds/story.json. src/story/story_value.ts).
  * 1 枚のスライドは `steps` 回の「次へ」で要素が順に現れる (`<Reveal at={n}>`).
  * 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む (src/story/timeline.ts).
  * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/story/story.css の .story-slide)
  */
-
-type Text = {
-  readonly ja: string;
-  readonly en: string;
-  readonly eo: string;
-};
 
 export type SlideProps = {
   readonly step: number;
   readonly lang: LanguageCode;
 };
 
-export type Slide = {
-  readonly id: string;
-  readonly title: Text;
-  /** 自動再生で このスライドに使う秒数 */
-  readonly duration: number;
-  /** 最初の表示の後に「次へ」で進むステップの数 */
-  readonly steps: number;
+/** スライド 1 枚. 絵以外 (題・秒数・ステップの数・切り替え・台詞) は definy の値 `story.slides` から読む */
+export type Slide = SlideValue & {
   readonly render: (props: SlideProps) => JSX.Element;
-  /** このスライドが現れるときの切り替えのアニメーション (src/story/story.css の .is-enter-*) */
-  readonly transition: SlideTransition;
 };
-
-export type SlideTransition =
-  | "zoom"
-  | "wipe-right"
-  | "rise"
-  | "flip"
-  | "pop"
-  | "iris"
-  | "slide-left"
-  | "wipe-down"
-  | "spin"
-  | "slide-right"
-  | "blur"
-  | "shrink";
 
 function t(lang: LanguageCode, text: Text): string {
   return label(lang, text.en, text.ja, text.eo);
@@ -781,7 +761,8 @@ const SAMPLE_LAYOUT = computeLayout(
  */
 function ScaledExpressionTree(props: {
   readonly layout: ReturnType<typeof computeLayout>;
-  readonly widthPx: number;
+  /** 描く幅. 省くと描いた木の実際の幅 (組んだときの見積もりより狭いことがある) に合わせる */
+  readonly widthPx?: number;
 }): JSX.Element {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -805,7 +786,12 @@ function ScaledExpressionTree(props: {
       // 非表示 (display: none) の間に測ると 0 になり, 割り算が壊れるので,
       // 幅も高さも取れていないときは次のリサイズ通知を待つ
       const currentScale = scaleRef.current > 0 ? scaleRef.current : 1;
-      const treeHeight = (bottom - innerRect.top) / currentScale;
+      // 幅に合わせるときは transform の影響を受けない offset の大きさで測る
+      // (スライドが回転しながら現れる間に測ると, 外接する矩形が大きくなるため)
+      const treeHeight =
+        props.widthPx === undefined
+          ? inner.offsetHeight
+          : (bottom - innerRect.top) / currentScale;
       if (
         outer.clientWidth <= 0 ||
         !Number.isFinite(treeHeight) ||
@@ -813,9 +799,10 @@ function ScaledExpressionTree(props: {
       ) {
         return;
       }
+      const treeWidth = props.widthPx ?? inner.offsetWidth;
       const maxHeight = Number.parseFloat(getComputedStyle(outer).maxHeight);
       const scale = Math.min(
-        outer.clientWidth / props.widthPx,
+        outer.clientWidth / treeWidth,
         Number.isFinite(maxHeight) ? maxHeight / treeHeight : Infinity,
       );
       scaleRef.current = scale;
@@ -841,7 +828,10 @@ function ScaledExpressionTree(props: {
       <div
         ref={innerRef}
         className="story-real-tree-inner"
-        style={{ width: props.widthPx, transform: `scale(${fit.scale})` }}
+        style={{
+          width: props.widthPx ?? "max-content",
+          transform: `scale(${fit.scale})`,
+        }}
       >
         <TreeLayoutRenderer node={props.layout} editable={false} />
       </div>
@@ -1885,6 +1875,16 @@ function DonutChart(props: { readonly lang: LanguageCode }): JSX.Element {
   );
 }
 
+/** セルフホストのスライドで見せる, このスライド自身の値 (story.slides の中の 1 つ. 読める大きさで見出しの横に収まるよう, id と切り替えのアニメーションだけにする) */
+const SELF_SLIDE_LAYOUT = computeLayout(
+  expressionToLayoutNode(
+    slideExpression("self-hosting", ["id", "transition"]),
+    "story",
+  ),
+  // 項目が 1 行に並ぶよう広い幅で組み, 見出しの横の低い場所に収める
+  { maxWidth: 1200 },
+);
+
 function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
   const doneCount = SELF_HOSTING_LAYERS.filter((l) => l.done).length;
   const total = SELF_HOSTING_SLICES.reduce((sum, s) => sum + s.value, 0);
@@ -1892,15 +1892,28 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
     SELF_HOSTING_STATS.definy + SELF_HOSTING_STATS.typescriptHost;
   return (
     <div className="story-body is-tight">
-      <Heading
-        lang={lang}
-        kicker={{ ja: "目標", en: "Goal", eo: "Celo" }}
-        text={{
-          ja: "definy で definy を表現する",
-          en: "Express definy in definy",
-          eo: "Esprimi definy en definy",
-        }}
-      />
+      <div className="story-self-heading">
+        <Heading
+          lang={lang}
+          kicker={{ ja: "目標", en: "Goal", eo: "Celo" }}
+          text={{
+            ja: "definy で definy を表現する",
+            en: "Express definy in definy",
+            eo: "Esprimi definy en definy",
+          }}
+        />
+        {/* このスライドの並び・題・台詞も definy の値 story.slides. その中のこのスライドの値をエディタと同じ木で描く */}
+        <Reveal at={3} step={step} className="story-self-value">
+          <div className="story-self-value-label">
+            {t(lang, {
+              ja: "このスライドも definy の値 story.slides",
+              en: "These slides are a definy value: story.slides",
+              eo: "Ankaŭ ĉi tio estas definy-valoro: story.slides",
+            })}
+          </div>
+          <ScaledExpressionTree layout={SELF_SLIDE_LAYOUT} />
+        </Reveal>
+      </div>
       <div className="story-two is-wide-left">
         <div className="story-layers is-compact">
           {SELF_HOSTING_LAYERS.map((layer, index) => (
@@ -2368,120 +2381,30 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-export const SLIDES: readonly Slide[] = [
+/** スライドの id ごとの絵. 並びや題などは definy の値 `story.slides` (seeds/story.json) で決める */
+const RENDERERS: Readonly<Record<string, (props: SlideProps) => JSX.Element>> =
   {
-    id: "title",
-    title: { ja: "タイトル", en: "Title", eo: "Titolo" },
-    duration: 11,
-    steps: 0,
-    render: TitleSlide,
-    transition: "zoom",
-  },
-  {
-    id: "history",
-    title: { ja: "歴史", en: "History", eo: "Historio" },
-    duration: 35,
-    steps: 3,
-    render: HistorySlide,
-    transition: "wipe-right",
-  },
-  {
-    id: "vibe-coding",
-    title: { ja: "バイブコーディング", en: "Vibe coding", eo: "Vibe coding" },
-    duration: 20,
-    steps: 2,
-    render: VibeCodingSlide,
-    transition: "rise",
-  },
-  {
-    id: "structured-editing",
-    title: {
-      ja: "構造化編集",
-      en: "Structured editing",
-      eo: "Struktura redaktado",
-    },
-    duration: 30,
-    steps: 3,
-    render: StructuredEditingSlide,
-    transition: "flip",
-  },
-  {
-    id: "scratch",
-    title: {
-      ja: "Scratch との違い",
-      en: "vs. Scratch",
-      eo: "kompare kun Scratch",
-    },
-    duration: 25,
-    steps: 3,
-    render: ScratchSlide,
-    transition: "pop",
-  },
-  {
-    id: "events",
-    title: {
-      ja: "署名付きイベント",
-      en: "Signed events",
-      eo: "Subskribitaj eventoj",
-    },
-    duration: 40,
-    steps: 4,
-    render: EventsSlide,
-    transition: "iris",
-  },
-  {
-    id: "comparison",
-    title: {
-      ja: "ブロックチェーン・nostr",
-      en: "Blockchain & nostr",
-      eo: "Blokĉeno kaj nostr",
-    },
-    duration: 20,
-    steps: 3,
-    render: ComparisonSlide,
-    transition: "slide-left",
-  },
-  {
-    id: "version-control",
-    title: { ja: "バージョン管理", en: "Version control", eo: "Versikontrolo" },
-    duration: 30,
-    steps: 3,
-    render: VersionControlSlide,
-    transition: "wipe-down",
-  },
-  {
-    id: "self-hosting",
-    title: { ja: "セルフホスト", en: "Self-hosting", eo: "Memgastigo" },
-    duration: 30,
-    steps: 3,
-    render: SelfHostingSlide,
-    transition: "spin",
-  },
-  {
-    id: "deploy",
-    title: { ja: "デプロイ", en: "Deploy", eo: "Disponigo" },
-    duration: 20,
-    steps: 3,
-    render: DeploySlide,
-    transition: "slide-right",
-  },
-  {
-    id: "proof",
-    title: { ja: "証明", en: "Proofs", eo: "Pruvoj" },
-    duration: 30,
-    steps: 3,
-    render: ProofSlide,
-    transition: "blur",
-  },
-  {
-    id: "closing",
-    title: { ja: "おわりに", en: "Closing", eo: "Fino" },
-    duration: 20,
-    steps: 1,
-    render: ClosingSlide,
-    transition: "shrink",
-  },
-];
+    title: TitleSlide,
+    history: HistorySlide,
+    "vibe-coding": VibeCodingSlide,
+    "structured-editing": StructuredEditingSlide,
+    scratch: ScratchSlide,
+    events: EventsSlide,
+    comparison: ComparisonSlide,
+    "version-control": VersionControlSlide,
+    "self-hosting": SelfHostingSlide,
+    deploy: DeploySlide,
+    proof: ProofSlide,
+    closing: ClosingSlide,
+  };
+
+export const SLIDES: readonly Slide[] = STORY_SLIDES.map((slide) => {
+  const render = RENDERERS[slide.id];
+  if (render === undefined) {
+    throw new Error(`story.slides のスライド ${slide.id} の絵がありません`);
+  }
+  return { ...slide, render };
+});
 
 export function slideTitle(slide: Slide, lang: LanguageCode): string {
   return t(lang, slide.title);

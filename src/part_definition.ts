@@ -287,6 +287,15 @@ function evaluateDefinitionCall(call: unknown): unknown {
 }
 
 /**
+ * リテラルの式 (数値・文字列・真偽値・リスト・レコード・Variant) を評価して値 (docs/value-encoding.md) にする.
+ * リテラルでない式が入っていれば `undefined`
+ */
+export function evaluateLiteral(expression: unknown): unknown {
+  const value = evaluate(expression);
+  return value === UNSUPPORTED ? undefined : value;
+}
+
+/**
  * パーツの定義の式を評価して `core.part-content` の値 (形は確かめていない) にする.
  * ここで評価できない形の式なら `undefined`
  */
