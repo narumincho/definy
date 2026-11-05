@@ -116,6 +116,7 @@ npm run deploy
 
 - Worker のバージョンにプレビュー URL が無く、バージョンのメタデータのバインディングも無いと、Void は準備完了を確かめられず、切り替えの前に止まります。そのときは GitHub Actions の変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` (例: `my-team.workers.dev`) を設定します
 - トークンが複数のアカウントに触れるときは `CLOUDFLARE_ACCOUNT_ID` も要ります
+- ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
 
 ### `wrangler deploy` を使わない理由
 
