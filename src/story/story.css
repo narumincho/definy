@@ -302,6 +302,23 @@
   gap: 1.2em;
 }
 
+/* 改行は日本語の文節の切れ目で起きるようにし, 末尾に 1 文字だけ残るような行を避ける */
+.story-slide {
+  line-break: strict;
+}
+
+.story-slide
+  :is(h2, p, li, .story-lead, .story-lead-left, .story-sub, .story-note),
+.story-bubble {
+  word-break: auto-phrase;
+  text-wrap: pretty;
+}
+
+/* 見出しとリードは行の長さを均す (text-wrap: pretty よりこちらを勝たせる) */
+.story-slide :is(h2, .story-lead) {
+  text-wrap: balance;
+}
+
 .story-body {
   flex: 1;
   display: flex;
@@ -1471,48 +1488,21 @@
 /* ---- 置き場所: スライド・字幕・ずんだもん ---- */
 
 /*
- * スライドは 16:9 のまま, 下に字幕の帯 (スライドの幅の --story-band 倍の高さ),
- * 右にずんだもんの列 (スライドの幅の --story-side 倍の幅) を空け, ステージに収まる一番大きい大きさで真ん中に置く.
- * 横長のステージではずんだもんを右の列に, そうでなければ字幕の帯の右端に置く (下の @container).
- * 100cqw / 100cqh はステージの大きさ. 子の要素が var() で使ったときにステージを基準に決まる
+ * スライドはステージに収まる一番大きい 16:9 で真ん中に置く.
+ * 字幕とずんだもんは場所を空けず, スライドの下端と右下に重ねる.
+ * その分スライドは小さくならず, 図も文字も大きく出る.
+ * 100cqw / 100cqh はステージの大きさ. 子の要素が var() で使ったときにステージを基準に決まる.
+ * --story-block-* はスライドの矩形そのもの (字幕とずんだもんの置き場所の基準)
  */
 .story-layout {
-  --story-band: 0;
-  --story-side: 0;
-  --story-slide-width: min(
-    100cqw / (1 + var(--story-side)),
-    100cqh / (0.5625 + var(--story-band))
-  );
+  --story-slide-width: min(100cqw, 100cqh / 0.5625);
   --story-slide-height: calc(var(--story-slide-width) * 0.5625);
-  --story-block-width: calc(var(--story-slide-width) * (1 + var(--story-side)));
-  --story-block-height: calc(
-    var(--story-slide-width) * (0.5625 + var(--story-band))
-  );
+  --story-block-width: var(--story-slide-width);
+  --story-block-height: var(--story-slide-height);
   --story-block-left: calc((100cqw - var(--story-block-width)) / 2);
   --story-block-top: calc((100cqh - var(--story-block-height)) / 2);
   position: absolute;
   inset: 0;
-}
-
-/* 字幕だけ: 帯は 6em (2 行まで) */
-.story-stage.has-caption .story-layout {
-  --story-band: calc(6 / 80);
-}
-
-/* ずんだもんを帯の右端に置くときは, 立ち絵が入るよう帯を 7em にする */
-.story-stage.has-caption.has-character .story-layout {
-  --story-band: calc(7 / 80);
-}
-
-/*
- * 横長 (幅 / 高さ が 1.74 より大きい. 16:9 の画面で操作 UI を除いたときなど) では,
- * ずんだもんを右の列 (10.5em) に置く方がスライドが大きくなる
- */
-@container story-stage (min-aspect-ratio: 1.74) {
-  .story-stage.has-caption.has-character .story-layout {
-    --story-band: calc(6 / 80);
-    --story-side: calc(10.5 / 80);
-  }
 }
 
 .story-slide-area {
@@ -1529,11 +1519,6 @@
     width 0.4s ease;
 }
 
-.story-stage.has-caption .story-slide-area {
-  border-radius: 0.6cqw;
-  box-shadow: 0 0 0 1px var(--border);
-}
-
 /* ---- 字幕とずんだもん (Narrator.tsx) ---- */
 
 /* 1em はスライドの 1em と同じ (スライドの幅の 1/80) */
@@ -1544,31 +1529,24 @@
   font-size: calc(var(--story-slide-width) / 80);
 }
 
-/* スライドの下の字幕の帯. 吹き出しを縦の真ん中に置く */
+/* スライドの下端に重ねる字幕. 吹き出しを下端に置く */
 .story-caption {
   position: absolute;
   left: var(--story-block-left);
-  top: calc(var(--story-block-top) + var(--story-slide-height));
+  bottom: calc(100cqh - var(--story-block-top) - var(--story-block-height));
   width: var(--story-slide-width);
-  height: calc(var(--story-slide-width) * var(--story-band));
   box-sizing: border-box;
-  padding: 0 1em;
+  padding: 0 1em 0.9em;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
 }
 
-/* ずんだもんが帯の右端にいるときは, その分だけ帯を短くする */
+/* ずんだもんが右下にいるときは, その分だけ字幕を短くする */
 .story-stage.has-character .story-caption {
   width: calc(var(--story-slide-width) - 8.6em);
   justify-content: flex-start;
   padding-right: 1.4em;
-}
-
-@container story-stage (min-aspect-ratio: 1.74) {
-  .story-stage.has-character .story-caption {
-    width: var(--story-slide-width);
-  }
 }
 
 /* 漫画の吹き出し. しっぽは右のずんだもんへ向ける. ずんだもんがいないときは字幕の箱 */
@@ -1588,7 +1566,7 @@
   transform-origin: 100% 70%;
 }
 
-/* ずんだもんがいるときは, しっぽがずんだもんに届くよう帯いっぱいに伸ばす */
+/* ずんだもんがいるときは, しっぽがずんだもんに届くよう字幕の幅いっぱいに伸ばす */
 .story-stage.has-character .story-bubble {
   flex: 1;
 }
@@ -1633,15 +1611,11 @@
   }
 }
 
-/*
- * 立ち絵は肩から上だけを, スライドと帯を合わせた範囲の右下に出す.
- * 帯の右端に置くときは帯の高さ (7em) に合わせて縮める
- */
+/* 立ち絵は肩から上だけを, スライドの右下に重ねて出す */
 .story-zundamon {
   position: absolute;
   right: calc(100cqw - var(--story-block-left) - var(--story-block-width));
   bottom: calc(100cqh - var(--story-block-top) - var(--story-block-height));
-  font-size: calc(7 / 8.5 * 1em);
   width: 10.5em;
   height: 8.5em;
   overflow: hidden;
@@ -1657,12 +1631,6 @@
   to {
     opacity: 1;
     transform: none;
-  }
-}
-
-@container story-stage (min-aspect-ratio: 1.74) {
-  .story-zundamon {
-    font-size: 1em;
   }
 }
 

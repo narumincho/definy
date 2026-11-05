@@ -1934,7 +1934,15 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
                 eo: "Kompililo en definy",
               })}
             </b>
-            <small>core.compile-to-wasm</small>
+            <a
+              className="story-link"
+              style={{ color: "inherit" }}
+              href="/part/core.compile-to-wasm"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <small>core.compile-to-wasm</small>
+            </a>
           </div>
         </Reveal>
 
@@ -1951,7 +1959,15 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
 
         <Reveal at={2} step={step} className="story-deploy-api">
           <b>REST API v4</b>
-          <small>PUT …/workers/scripts/definy-hello</small>
+          <a
+            className="story-link"
+            style={{ color: "inherit" }}
+            href="https://developers.cloudflare.com/api/resources/workers/subresources/beta/subresources/workers/methods/update/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <small>PUT …/workers/scripts/definy-hello</small>
+          </a>
           <small>
             🔑{" "}
             {t(lang, {
@@ -1964,7 +1980,15 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
 
         <div className={`story-deploy-cloud ${step >= 2 ? "is-on" : ""}`}>
           <span className="story-deploy-cloud-icon">☁</span>
-          <b>Cloudflare Workers</b>
+          <a
+            className="story-link"
+            style={{ color: "inherit" }}
+            href="https://www.cloudflare.com/ja-jp/developer-platform/products/workers/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <b>Cloudflare Workers</b>
+          </a>
         </div>
         {DEPLOY_EDGES.map((edge, index) => (
           <span
@@ -1998,9 +2022,22 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
       <div className="story-notes">
         <Reveal at={3} step={step} delay={0.3} className="story-note">
           {t(lang, {
-            ja: "デプロイは definy.deploy-to-cloudflare-workers という普通のパーツ。HTTP は WASI 0.3 (Preview 3) に倣った wasi.io で送る",
-            en: "Deploying is an ordinary part, definy.deploy-to-cloudflare-workers. HTTP goes through wasi.io, modeled on WASI 0.3 (Preview 3)",
-            eo: "Disponigo estas ordinara parto, definy.deploy-to-cloudflare-workers. HTTP iras tra wasi.io, modelita laŭ WASI 0.3 (Preview 3)",
+            ja: "デプロイは definy.deploy-to-cloudflare-workers という普通のパーツ。HTTP は ",
+            en: "Deploying is an ordinary part, definy.deploy-to-cloudflare-workers. HTTP goes through wasi.io, modeled on ",
+            eo: "Disponigo estas ordinara parto, definy.deploy-to-cloudflare-workers. HTTP iras tra wasi.io, modelita laŭ ",
+          })}
+          <a
+            className="story-link"
+            href="https://wasi.dev/releases/wasi-p3"
+            target="_blank"
+            rel="noreferrer"
+          >
+            WASI 0.3 (Preview 3)
+          </a>
+          {t(lang, {
+            ja: " に倣った wasi.io で送る",
+            en: "",
+            eo: "",
           })}
         </Reveal>
         <Reveal at={3} step={step} delay={0.5} className="story-note is-hot">
