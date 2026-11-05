@@ -86,6 +86,7 @@ describe("exportSeeds", () => {
         "wasi",
         "wasm",
         "sample",
+        "story",
       ];
       expect([...exportedModules].sort()).toEqual([...expectedModules].sort());
 
@@ -98,7 +99,7 @@ describe("exportSeeds", () => {
 
         expect(exportedContent).toBe(originalContent);
       }
-      for (const name of ["definy", "sample"]) {
+      for (const name of ["definy", "sample", "story"]) {
         expect(
           await readFile(join(tempDir, "projects", `${name}.json`), "utf-8"),
         ).toBe(await readFile(`seeds/projects/${name}.json`, "utf-8"));

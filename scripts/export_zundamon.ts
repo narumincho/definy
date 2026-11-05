@@ -57,7 +57,7 @@ const MOUTHS: Readonly<Record<string, string>> = {
   o: "*ほう",
 };
 
-/** 表情 (src/story/narration.ts の Face) ごとの目と眉. 閉じた目はまばたき用 */
+/** 表情 (src/story/story_value.ts の Face. definy の型 `story.face`) ごとの目と眉. 閉じた目はまばたき用 */
 const FACES: Readonly<
   Record<string, { readonly eyes: string; readonly brows: string }>
 > = {

@@ -11,50 +11,30 @@ import { expressionToLayoutNode } from "../tree_layout/ast_to_layout.ts";
 import { computeLayout } from "../tree_layout/engine.ts";
 import { TreeLayoutRenderer } from "../tree_layout/TreeLayoutRenderer.tsx";
 import { SELF_HOSTING_STATS } from "./self_hosting_stats.ts";
+import {
+  slideExpression,
+  STORY_SLIDES,
+  type SlideValue,
+  type Text,
+} from "./story_value.ts";
 
 /**
- * 紹介スライド (/about の上) の内容.
+ * 紹介スライド (/about の上) の絵.
+ * スライドの並び・題・秒数・ステップの数・切り替え・台詞は definy の値 `story.slides` (seeds/story.json. src/story/story_value.ts).
  * 1 枚のスライドは `steps` 回の「次へ」で要素が順に現れる (`<Reveal at={n}>`).
  * 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む (src/story/timeline.ts).
  * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/story/story.css の .story-slide)
  */
-
-type Text = {
-  readonly ja: string;
-  readonly en: string;
-  readonly eo: string;
-};
 
 export type SlideProps = {
   readonly step: number;
   readonly lang: LanguageCode;
 };
 
-export type Slide = {
-  readonly id: string;
-  readonly title: Text;
-  /** 自動再生で このスライドに使う秒数 */
-  readonly duration: number;
-  /** 最初の表示の後に「次へ」で進むステップの数 */
-  readonly steps: number;
+/** スライド 1 枚. 絵以外 (題・秒数・ステップの数・切り替え・台詞) は definy の値 `story.slides` から読む */
+export type Slide = SlideValue & {
   readonly render: (props: SlideProps) => JSX.Element;
-  /** このスライドが現れるときの切り替えのアニメーション (src/story/story.css の .is-enter-*) */
-  readonly transition: SlideTransition;
 };
-
-export type SlideTransition =
-  | "zoom"
-  | "wipe-right"
-  | "rise"
-  | "flip"
-  | "pop"
-  | "iris"
-  | "slide-left"
-  | "wipe-down"
-  | "spin"
-  | "slide-right"
-  | "blur"
-  | "shrink";
 
 function t(lang: LanguageCode, text: Text): string {
   return label(lang, text.en, text.ja, text.eo);
@@ -326,7 +306,7 @@ function TitleSlide({ lang }: SlideProps): JSX.Element {
 }
 
 /**
- * `git log` の月ごとのコミット数 (2026-11-04 時点). 無い月は 0.
+ * `git log` の月ごとのコミット数 (2026-11-05 時点). 無い月は 0.
  * 作り直すには `git log --format=%ad --date=format:%Y-%m | sort | uniq -c`
  */
 const COMMITS_BY_MONTH: Readonly<Record<string, number>> = {
@@ -399,7 +379,7 @@ const COMMITS_BY_MONTH: Readonly<Record<string, number>> = {
   "2026-08": 86,
   "2026-09": 133,
   "2026-10": 481,
-  "2026-11": 77,
+  "2026-11": 110,
 };
 
 /** 最初のコミット (`git log --reverse`) */
@@ -502,9 +482,9 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
       <Heading
         lang={lang}
         kicker={{
-          ja: "これまで (2026-11-04 時点)",
-          en: "History (as of 2026-11-04)",
-          eo: "Historio (je 2026-11-04)",
+          ja: "これまで (2026-11-05 時点)",
+          en: "History (as of 2026-11-05)",
+          eo: "Historio (je 2026-11-05)",
         }}
         text={{
           ja: `${formatCount(TOTAL_COMMITS)} コミットから読む definy の歴史`,
@@ -554,18 +534,20 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
               en: "First commit",
               eo: "Unua enmeto",
             })}
-            <code>
-              {FIRST_COMMIT.date} {FIRST_COMMIT.time}
-            </code>
-            <span className="story-first-commit-author">
-              <img
-                src="/story/narumincho.webp"
-                alt=""
-                width={24}
-                height={24}
-                className="story-avatar"
-              />
-              narumincho
+            <span className="story-first-commit-row">
+              <code>
+                {FIRST_COMMIT.date} {FIRST_COMMIT.time}
+              </code>
+              <span className="story-first-commit-author">
+                <img
+                  src="/story/narumincho.webp"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="story-avatar"
+                />
+                narumincho
+              </span>
             </span>
           </span>
         </Reveal>
@@ -626,17 +608,17 @@ function HistorySlide({ step, lang }: SlideProps): JSX.Element {
         <Reveal at={2} step={step} className="story-callout">
           🎓{" "}
           {t(lang, {
-            ja: `${FIRST_COMMIT.date}, 大学の研究から始まった個人プロジェクト`,
-            en: `${FIRST_COMMIT.date}: started as a personal project from university research`,
-            eo: `${FIRST_COMMIT.date}: komenciĝis kiel persona projekto el universitata esplorado`,
+            ja: "大学の研究から始まった",
+            en: "Began in university research",
+            eo: "Komenciĝis el universitata esplorado",
           })}
         </Reveal>
         <Reveal at={3} step={step} className="story-callout is-quiet">
           💤{" "}
           {t(lang, {
-            ja: `2023〜2025 年: 手が止まった 3 年 (${commitsIn(2023, 2025)} コミット)`,
-            en: `2023–2025: three quiet years (${commitsIn(2023, 2025)} commits)`,
-            eo: `2023–2025: tri trankvilaj jaroj (${commitsIn(2023, 2025)} enmetoj)`,
+            ja: "2023〜2025 年: 手が止まった 3 年",
+            en: "2023–2025: three quiet years",
+            eo: "2023–2025: tri trankvilaj jaroj",
           })}
         </Reveal>
         <Reveal at={3} step={step} delay={0.3} className="story-callout is-hot">
@@ -723,9 +705,9 @@ function VibeCodingSlide({ step, lang }: SlideProps): JSX.Element {
       </div>
       <Reveal at={2} step={step} className="story-note">
         {t(lang, {
-          ja: "Rust 製のコンパイラ・サーバーを捨てて, TypeScript と definy 自身で書いたコンパイラ (Wasm) に置き換えるところまで来た (2026-10)",
-          en: "Far enough to throw away the Rust compiler and server and replace them with TypeScript and a Wasm compiler written in definy (Oct 2026)",
-          eo: "Sufiĉe for por forĵeti la Rust-kompililon kaj -servilon kaj anstataŭigi ilin per TypeScript kaj Wasm-kompililo verkita en definy (okt. 2026)",
+          ja: "2026-10: Rust 製のコンパイラとサーバーを捨て, TypeScript と definy 製のコンパイラへ",
+          en: "Oct 2026: the Rust compiler and server gave way to TypeScript and a compiler in definy",
+          eo: "Okt. 2026: TypeScript kaj kompililo en definy anstataŭis la Rust-kompililon kaj -servilon",
         })}
       </Reveal>
     </div>
@@ -779,7 +761,8 @@ const SAMPLE_LAYOUT = computeLayout(
  */
 function ScaledExpressionTree(props: {
   readonly layout: ReturnType<typeof computeLayout>;
-  readonly widthPx: number;
+  /** 描く幅. 省くと描いた木の実際の幅 (組んだときの見積もりより狭いことがある) に合わせる */
+  readonly widthPx?: number;
 }): JSX.Element {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -803,7 +786,12 @@ function ScaledExpressionTree(props: {
       // 非表示 (display: none) の間に測ると 0 になり, 割り算が壊れるので,
       // 幅も高さも取れていないときは次のリサイズ通知を待つ
       const currentScale = scaleRef.current > 0 ? scaleRef.current : 1;
-      const treeHeight = (bottom - innerRect.top) / currentScale;
+      // 幅に合わせるときは transform の影響を受けない offset の大きさで測る
+      // (スライドが回転しながら現れる間に測ると, 外接する矩形が大きくなるため)
+      const treeHeight =
+        props.widthPx === undefined
+          ? inner.offsetHeight
+          : (bottom - innerRect.top) / currentScale;
       if (
         outer.clientWidth <= 0 ||
         !Number.isFinite(treeHeight) ||
@@ -811,9 +799,10 @@ function ScaledExpressionTree(props: {
       ) {
         return;
       }
+      const treeWidth = props.widthPx ?? inner.offsetWidth;
       const maxHeight = Number.parseFloat(getComputedStyle(outer).maxHeight);
       const scale = Math.min(
-        outer.clientWidth / props.widthPx,
+        outer.clientWidth / treeWidth,
         Number.isFinite(maxHeight) ? maxHeight / treeHeight : Infinity,
       );
       scaleRef.current = scale;
@@ -839,7 +828,10 @@ function ScaledExpressionTree(props: {
       <div
         ref={innerRef}
         className="story-real-tree-inner"
-        style={{ width: props.widthPx, transform: `scale(${fit.scale})` }}
+        style={{
+          width: props.widthPx ?? "max-content",
+          transform: `scale(${fit.scale})`,
+        }}
       >
         <TreeLayoutRenderer node={props.layout} editable={false} />
       </div>
@@ -949,15 +941,15 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
         <Reveal at={2} step={step} className="story-note">
           {t(lang, {
             ja: "コードは文字列ではなく構文木として保存。壊れた状態をそもそも作れない",
-            en: "Code is stored as a syntax tree, not text — broken states cannot be written",
-            eo: "Kodo estas konservata kiel sintaksa arbo, ne kiel teksto — rompitajn statojn oni ne povas skribi",
+            en: "Code is stored as a syntax tree, not text: broken states can't exist",
+            eo: "Kodo estas konservata kiel sintaksa arbo, ne teksto: rompitaj statoj ne eblas",
           })}
         </Reveal>
         <Reveal at={3} step={step} className="story-note is-hot">
           {t(lang, {
-            ja: "予約語が存在しない。let や match も core モジュールのパーツで, 構文は文字ではなく木の種類で決まるので, let や if という名前もそのまま使える",
-            en: "There are no reserved words. let and match are just parts of the core module; syntax is the kind of tree node, not text, so you can name things let or if",
-            eo: "Ne ekzistas rezervitaj vortoj. let kaj match estas nur partoj de la modulo core; sintakso estas la speco de arba nodo, ne teksto, do vi povas nomi aferojn let aŭ if",
+            ja: "予約語がない。let や match もただのパーツなので, let や if という名前も使える",
+            en: "No reserved words: let and match are just parts, so you can name things let or if",
+            eo: "Neniuj rezervitaj vortoj: let kaj match estas nur partoj, do nomoj let aŭ if eblas",
           })}
         </Reveal>
       </div>
@@ -1140,9 +1132,9 @@ const NETWORK_CAPTIONS: readonly Text[] = [
     eo: "Kiel ĉe nostr, la publika ŝlosilo estas la uzanto-identigilo. Malpezaj uzantoj konektiĝas rekte el la retumilo; tiuj, kiuj volas posedi siajn datumojn, iras tra servilo, kiun ili mem funkciigas",
   },
   {
-    ja: "署名したイベントはサーバーからサーバーへ広がる。どのサーバーでも署名を確かめられる",
-    en: "Signed events spread from server to server, and every server can check the signature",
-    eo: "Subskribitaj eventoj disvastiĝas de servilo al servilo, kaj ĉiu servilo povas kontroli la subskribon",
+    ja: "署名したイベントはサーバーからサーバーへ広がる。誰でも署名を確かめられる",
+    en: "Signed events spread from server to server, and anyone can check the signature",
+    eo: "Subskribitaj eventoj disvastiĝas de servilo al servilo, kaj ĉiu ajn povas kontroli la subskribon",
   },
   {
     ja: "秘密鍵を持たないサーバーは, 他の人のイベントを偽造も改ざんもできない",
@@ -1466,16 +1458,20 @@ function ComparisonSlide({ step, lang }: SlideProps): JSX.Element {
     },
     {
       name: { ja: "削除", en: "Deletion", eo: "Forigo" },
-      blockchain: { ja: "できない", en: "impossible", eo: "neebla" },
+      blockchain: {
+        ja: "できない (消すとチェーンが壊れる)",
+        en: "impossible (it would break the chain)",
+        eo: "neebla (tio rompus la ĉenon)",
+      },
       nostr: {
         ja: "リレー次第 (依頼はできる)",
         en: "up to each relay",
         eo: "laŭ ĉiu relajso",
       },
       definy: {
-        ja: "運営が著作権侵害などを削除できる",
-        en: "operators can remove e.g. copyright violations",
-        eo: "operaciantoj povas forigi ekz. kopirajtajn malobservojn",
+        ja: "サーバーごとに著作権侵害などを消せる",
+        en: "each server can drop e.g. copyright violations",
+        eo: "ĉiu servilo povas forigi ekz. kopirajtajn malobservojn",
       },
     },
     {
@@ -1656,20 +1652,20 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
       name: {
         ja: "保存するもの",
         en: "What is stored",
-        eo: "Kio estas konservata",
+        eo: "Konservaĵo",
       },
       git: { ja: "テキストファイル", en: "text files", eo: "tekstaj dosieroj" },
       definy: {
         ja: "構文木のまま (決定論的 CBOR, SHA-256 で内容を指す)",
-        en: "syntax trees as is (deterministic CBOR, addressed by SHA-256)",
-        eo: "sintaksaj arboj senŝanĝe (determinisma CBOR, adresataj per SHA-256)",
+        en: "syntax trees, as CBOR addressed by SHA-256",
+        eo: "sintaksaj arboj, CBOR adresata per SHA-256",
       },
     },
     {
       name: {
         ja: "差分と取り込み",
         en: "Diff & merge",
-        eo: "Diferencoj kaj kunfando",
+        eo: "Diferenco, kunfando",
       },
       git: {
         ja: "行の差分。文字の衝突",
@@ -1678,16 +1674,16 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
       },
       definy: {
         ja: "パーツ (関数・型) 単位。名前を変えても参照は ID なので壊れない",
-        en: "per part (function / type); references are IDs, so renames never break",
-        eo: "po parto (funkcio / tipo); referencoj estas identigiloj, do renomado neniam rompas",
+        en: "per part; references are IDs, safe from renames",
+        eo: "po parto; referencoj per identigiloj eltenas renomadon",
       },
     },
     {
       name: { ja: "誰のコミットか", en: "Who committed", eo: "Kiu enmetis" },
       git: {
         ja: "名前とメールは自己申告 (署名は任意)",
-        en: "self-reported name/email (signing optional)",
-        eo: "mem deklarita nomo/retpoŝto (subskribo nedeviga)",
+        en: "self-reported; signing optional",
+        eo: "mem deklarita; subskribo nedeviga",
       },
       definy: {
         ja: "全てのコミットが Ed25519 で署名されたイベント",
@@ -1704,8 +1700,8 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
       },
       definy: {
         ja: "Connect-RPC (gRPC 互換, HTTP + JSON)。サーバーに無い式だけ送る",
-        en: "Connect-RPC (gRPC-compatible, HTTP + JSON); only missing trees are sent",
-        eo: "Connect-RPC (kongrua kun gRPC, HTTP + JSON); nur mankantaj arboj estas senditaj",
+        en: "Connect-RPC (like gRPC), missing trees only",
+        eo: "Connect-RPC, nur mankantaj arboj",
       },
     },
   ];
@@ -1879,6 +1875,16 @@ function DonutChart(props: { readonly lang: LanguageCode }): JSX.Element {
   );
 }
 
+/** セルフホストのスライドで見せる, このスライド自身の値 (story.slides の中の 1 つ. 読める大きさで見出しの横に収まるよう, id と切り替えのアニメーションだけにする) */
+const SELF_SLIDE_LAYOUT = computeLayout(
+  expressionToLayoutNode(
+    slideExpression("self-hosting", ["id", "transition"]),
+    "story",
+  ),
+  // 項目が 1 行に並ぶよう広い幅で組み, 見出しの横の低い場所に収める
+  { maxWidth: 1200 },
+);
+
 function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
   const doneCount = SELF_HOSTING_LAYERS.filter((l) => l.done).length;
   const total = SELF_HOSTING_SLICES.reduce((sum, s) => sum + s.value, 0);
@@ -1886,15 +1892,37 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
     SELF_HOSTING_STATS.definy + SELF_HOSTING_STATS.typescriptHost;
   return (
     <div className="story-body is-tight">
-      <Heading
-        lang={lang}
-        kicker={{ ja: "目標", en: "Goal", eo: "Celo" }}
-        text={{
-          ja: "definy で definy を表現する",
-          en: "Express definy in definy",
-          eo: "Esprimi definy en definy",
-        }}
-      />
+      <div className="story-self-heading">
+        <Heading
+          lang={lang}
+          kicker={{ ja: "目標", en: "Goal", eo: "Celo" }}
+          text={{
+            ja: "definy で definy を表現する",
+            en: "Express definy in definy",
+            eo: "Esprimi definy en definy",
+          }}
+        />
+        {/* このスライドの並び・題・台詞も definy の値 story.slides. その中のこのスライドの値をエディタと同じ木で描く */}
+        <Reveal at={3} step={step} className="story-self-value">
+          <div className="story-self-value-label">
+            {t(lang, {
+              ja: "このスライドも definy の値 ",
+              en: "These slides are a definy value: ",
+              eo: "Ankaŭ ĉi tio estas definy-valoro: ",
+            })}
+            <a
+              className="story-link"
+              style={{ color: "inherit" }}
+              href="/part/story.slides"
+              target="_blank"
+              rel="noreferrer"
+            >
+              story.slides
+            </a>
+          </div>
+          <ScaledExpressionTree layout={SELF_SLIDE_LAYOUT} />
+        </Reveal>
+      </div>
       <div className="story-two is-wide-left">
         <div className="story-layers is-compact">
           {SELF_HOSTING_LAYERS.map((layer, index) => (
@@ -1909,6 +1937,10 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
               {t(lang, layer.name)}
             </Reveal>
           ))}
+          {/* 右下はずんだもんが重なるので, 目標は残りの層 (UI) の下に置く */}
+          <Reveal at={3} step={step} delay={0.3} className="story-goal">
+            {t(lang, SELF_HOSTING_TARGET)}
+          </Reveal>
         </div>
         <Reveal at={2} step={step} className="story-donut-panel">
           <DonutChart lang={lang} />
@@ -1931,30 +1963,39 @@ function SelfHostingSlide({ step, lang }: SlideProps): JSX.Element {
               eo: `${percent(SELF_HOSTING_STATS.definy, withoutUi)} sen la fasado. Proksimuma grando laŭ vortoj (${SELF_HOSTING_STATS.measuredAt})`,
             })}
           </div>
-          <Reveal at={3} step={step} delay={0.3} className="story-goal">
-            {t(lang, SELF_HOSTING_TARGET)}
-          </Reveal>
         </Reveal>
       </div>
     </div>
   );
 }
 
-/** デプロイ先のエッジ (世界中のデータセンター) の点. 位置は図の中の割合 */
-const DEPLOY_EDGES: ReadonlyArray<{ readonly x: number; readonly y: number }> =
-  [
-    { x: 66, y: 74 },
-    { x: 72, y: 66 },
-    { x: 78, y: 78 },
-    { x: 83, y: 64 },
-    { x: 88, y: 76 },
-    { x: 93, y: 67 },
-    { x: 97, y: 79 },
-  ];
+/** デプロイ先のエッジ (世界中のデータセンター) の点の数 */
+const DEPLOY_EDGE_COUNT = 7;
+
+/** 図の中の流れの矢印. 破線が矢印の向きに流れる */
+function DeployArrow(props: {
+  readonly at: number;
+  readonly step: number;
+  readonly delay?: number;
+  readonly direction: "right" | "down" | "left";
+  readonly className?: string;
+}): JSX.Element {
+  return (
+    <Reveal
+      at={props.at}
+      step={props.step}
+      delay={props.delay ?? 0}
+      className={`story-deploy-arrow is-${props.direction} ${props.className ?? ""}`}
+    >
+      <span className="story-deploy-arrow-line" />
+    </Reveal>
+  );
+}
 
 /**
- * Cloudflare Workers へデプロイされる様子. ステップごとに
- * コード → コンパイル (歯車が回り, worker.js と app.wasm ができる) → REST API で雲へ飛ぶ (エッジが順に光る) → アクセスすると返事が来る
+ * Cloudflare Workers へデプロイされる様子. 左上から右へ進み, 右端で下りて, 下の段を左へ戻る U 字の流れ.
+ * ステップごとに コード → コンパイル (歯車が回り, worker.js と app.wasm ができる)
+ * → REST API で Cloudflare へ (エッジが順に光る) → アクセスすると返事が来る
  */
 function DeploySlide({ step, lang }: SlideProps): JSX.Element {
   return (
@@ -1973,51 +2014,7 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
         }}
       />
       <div className="story-deploy">
-        <svg
-          className="story-deploy-paths"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path d="M 29 30 L 37 30" className="story-net-line" />
-          {step >= 1 ? (
-            <path d="M 45 25 L 45 49" className="story-net-line" />
-          ) : null}
-          {step >= 2 ? (
-            <path d="M 43 65 L 43 74" className="story-net-line" />
-          ) : null}
-          <path
-            d="M 47 60 C 55 10, 65 5, 74 24"
-            className={`story-deploy-arc ${step >= 2 ? "is-on" : ""}`}
-          />
-          {step >= 3 ? (
-            <path
-              d="M 30 86 C 45 96, 60 96, 74 50"
-              pathLength={100}
-              className="story-net-pulse"
-            />
-          ) : null}
-        </svg>
-
-        {step >= 2 ? (
-          <div className="story-deploy-flow-label is-upload">
-            {t(lang, { ja: "アップロード", en: "Upload", eo: "Alŝuto" })}
-          </div>
-        ) : null}
-        {step >= 3 ? (
-          <div className="story-deploy-flow-label is-response">
-            {t(lang, { ja: "応答", en: "Response", eo: "Respondo" })}
-          </div>
-        ) : null}
-
-        <Reveal
-          at={0}
-          step={step}
-          className={`story-deploy-code ${step >= 3 ? "is-shrunk" : ""}`}
-        >
-          <span className={`story-flow-badge ${step >= 0 ? "is-on" : ""}`}>
-            1
-          </span>
+        <Reveal at={0} step={step} className="story-deploy-code">
           <div className="story-deploy-code-title">
             sample.deploy-hello-worker
           </div>
@@ -2027,10 +2024,14 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           />
         </Reveal>
 
+        <DeployArrow
+          at={1}
+          step={step}
+          direction="right"
+          className="is-to-compiler"
+        />
+
         <Reveal at={1} step={step} className="story-deploy-compiler">
-          <span className={`story-flow-badge ${step >= 1 ? "is-on" : ""}`}>
-            2
-          </span>
           <span
             className={`story-deploy-gear ${step === 1 ? "is-spinning" : ""}`}
           >
@@ -2056,22 +2057,43 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           </div>
         </Reveal>
 
+        <DeployArrow
+          at={1}
+          step={step}
+          delay={0.4}
+          direction="right"
+          className="is-to-package"
+        />
+
         <Reveal at={1} step={step} delay={0.6} className="story-deploy-package">
           📦 worker.js + app.wasm
-          <small>Wasm GC</small>
+          <small>
+            Wasm GC ·{" "}
+            <a
+              className="story-link"
+              style={{ color: "inherit" }}
+              href="https://wasi.dev/releases/wasi-p3"
+              target="_blank"
+              rel="noreferrer"
+            >
+              WASI 0.3
+            </a>
+            {t(lang, {
+              ja: " に倣った入出力",
+              en: "-style I/O",
+              eo: "-stila eneligo",
+            })}
+          </small>
         </Reveal>
 
-        {step === 2 ? (
-          <div className="story-deploy-parcel" aria-hidden="true">
-            📦
-          </div>
-        ) : null}
-
         <Reveal at={2} step={step} className="story-deploy-api">
-          <span className={`story-flow-badge ${step >= 2 ? "is-on" : ""}`}>
-            3
-          </span>
-          <b>REST API v4</b>
+          <b>
+            {t(lang, {
+              ja: "REST API v4 でアップロード",
+              en: "Upload via REST API v4",
+              eo: "Alŝuto per REST API v4",
+            })}
+          </b>
           <a
             className="story-link"
             style={{ color: "inherit" }}
@@ -2091,74 +2113,74 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           </small>
         </Reveal>
 
-        <div className={`story-deploy-cloud ${step >= 2 ? "is-on" : ""}`}>
-          <span className="story-deploy-cloud-icon">☁</span>
-          <a
-            className="story-link"
-            style={{ color: "inherit" }}
-            href="https://www.cloudflare.com/ja-jp/developer-platform/products/workers/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <b>Cloudflare Workers</b>
-          </a>
-        </div>
-        {DEPLOY_EDGES.map((edge, index) => (
-          <span
-            key={`${edge.x}-${edge.y}`}
-            className={`story-deploy-edge ${step >= 2 ? "is-on" : ""}`}
-            style={{
-              left: `${edge.x}%`,
-              top: `${edge.y}%`,
-              animationDelay: `${1.1 + index * 0.12}s`,
-            }}
-          />
-        ))}
-        <Reveal
+        <DeployArrow
           at={2}
           step={step}
-          delay={1.6}
-          className="story-deploy-edges-label"
-        >
-          {t(lang, {
-            ja: "世界中のエッジで動く",
-            en: "runs on edges worldwide",
-            eo: "funkcias ĉe randaj serviloj tra la mondo",
-          })}
-        </Reveal>
+          direction="down"
+          className="is-to-cloud"
+        />
 
-        <Reveal at={3} step={step} className="story-deploy-browser">
-          <span className="story-flow-badge is-on">4</span>
-          <div>🌐 https://definy-hello.…workers.dev</div>
+        <div className={`story-deploy-cloud ${step >= 2 ? "is-on" : ""}`}>
+          <span className="story-deploy-cloud-icon">☁</span>
+          <div>
+            <a
+              className="story-link"
+              style={{ color: "inherit" }}
+              href="https://www.cloudflare.com/ja-jp/developer-platform/products/workers/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <b>Cloudflare Workers</b>
+            </a>
+            <div className="story-deploy-edges">
+              {Array.from({ length: DEPLOY_EDGE_COUNT }, (_, index) => (
+                <span
+                  key={index}
+                  className={`story-deploy-edge ${step >= 2 ? "is-on" : ""}`}
+                  style={{ animationDelay: `${0.6 + index * 0.12}s` }}
+                />
+              ))}
+              <Reveal
+                at={2}
+                step={step}
+                delay={1.4}
+                className="story-deploy-edges-label"
+              >
+                {t(lang, {
+                  ja: "世界中のエッジで動く",
+                  en: "runs on edges worldwide",
+                  eo: "tra la tuta mondo",
+                })}
+              </Reveal>
+            </div>
+          </div>
+        </div>
+
+        <DeployArrow
+          at={3}
+          step={step}
+          direction="left"
+          className="is-to-browser"
+        />
+
+        <Reveal at={3} step={step} delay={0.3} className="story-deploy-browser">
+          <div>🌐 definy-hello.…workers.dev</div>
           <div className="story-deploy-response">200 · Hello from definy!</div>
         </Reveal>
       </div>
       <div className="story-notes">
-        <Reveal at={3} step={step} delay={0.3} className="story-note">
+        <Reveal at={3} step={step} delay={0.5} className="story-note">
           {t(lang, {
-            ja: "デプロイは definy.deploy-to-cloudflare-workers という普通のパーツ。HTTP は ",
-            en: "Deploying is an ordinary part, definy.deploy-to-cloudflare-workers. HTTP goes through wasi.io, modeled on ",
-            eo: "Disponigo estas ordinara parto, definy.deploy-to-cloudflare-workers. HTTP iras tra wasi.io, modelita laŭ ",
-          })}
-          <a
-            className="story-link"
-            href="https://wasi.dev/releases/wasi-p3"
-            target="_blank"
-            rel="noreferrer"
-          >
-            WASI 0.3 (Preview 3)
-          </a>
-          {t(lang, {
-            ja: " に倣った wasi.io で送る",
-            en: "",
-            eo: "",
+            ja: "デプロイは definy.deploy-to-cloudflare-workers という普通のパーツ",
+            en: "Deploying is an ordinary part: definy.deploy-to-cloudflare-workers",
+            eo: "Disponigo estas ordinara parto: definy.deploy-to-cloudflare-workers",
           })}
         </Reveal>
-        <Reveal at={3} step={step} delay={0.5} className="story-note is-hot">
+        <Reveal at={3} step={step} delay={0.7} className="story-note is-hot">
           {t(lang, {
             ja: "definy で書いた definy のサーバーも, 約 3 秒でデプロイできる",
             en: "Even a definy server written in definy deploys in about 3 seconds",
-            eo: "Eĉ definy-servilo verkita en definy estas disponigata en ĉirkaŭ 3 sekundoj",
+            eo: "Eĉ definy-servilo verkita en definy disponiĝas en ĉirkaŭ 3 sekundoj",
           })}
         </Reveal>
       </div>
@@ -2252,13 +2274,15 @@ function ProofSlide({ step, lang }: SlideProps): JSX.Element {
           </Reveal>
         ))}
       </div>
-      <Reveal at={3} step={step} className="story-note is-hot">
-        {t(lang, {
-          ja: "definy: 構文の機能を絞ってシンプルに保つ → 安全で, 機械が検査・証明しやすい (qedos の考えに近い)",
-          en: "definy: keep the syntax small and simple → safe and easy for machines to check and prove (close to qedos)",
-          eo: "definy: teni la sintakson malgranda kaj simpla → sekure kaj facile kontrolebla kaj pruvebla de maŝinoj (proksima al qedos)",
-        })}
-      </Reveal>
+      <div className="story-notes">
+        <Reveal at={3} step={step} className="story-note is-hot">
+          {t(lang, {
+            ja: "definy: 構文の機能を絞ってシンプルに保つ → 安全で, 機械が検査・証明しやすい (qedos の考えに近い)",
+            en: "definy: a small, simple syntax → easy for machines to check and prove (like qedos)",
+            eo: "definy: simpla sintakso → facile kontrolebla kaj pruvebla (kiel qedos)",
+          })}
+        </Reveal>
+      </div>
     </div>
   );
 }
@@ -2283,16 +2307,15 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
       <Reveal at={1} step={step}>
         <p className="story-wordmark is-small">definy</p>
       </Reveal>
-      <Reveal at={1} step={step} delay={0.5} className="story-qr">
+      <Reveal at={1} step={step} delay={0.3} className="story-qr">
         <img
           src="/story/qr-definy.svg"
           alt="https://definy.narumincho.com/ の QR コード"
           width={160}
           height={160}
         />
-        <div>definy.narumincho.com</div>
       </Reveal>
-      <Reveal at={1} step={step} delay={0.3}>
+      <Reveal at={1} step={step} delay={0.6}>
         <p className="story-sub story-closing-links">
           <a
             className="story-link"
@@ -2367,120 +2390,30 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-export const SLIDES: readonly Slide[] = [
+/** スライドの id ごとの絵. 並びや題などは definy の値 `story.slides` (seeds/story.json) で決める */
+const RENDERERS: Readonly<Record<string, (props: SlideProps) => JSX.Element>> =
   {
-    id: "title",
-    title: { ja: "タイトル", en: "Title", eo: "Titolo" },
-    duration: 11,
-    steps: 0,
-    render: TitleSlide,
-    transition: "zoom",
-  },
-  {
-    id: "history",
-    title: { ja: "歴史", en: "History", eo: "Historio" },
-    duration: 35,
-    steps: 3,
-    render: HistorySlide,
-    transition: "wipe-right",
-  },
-  {
-    id: "vibe-coding",
-    title: { ja: "バイブコーディング", en: "Vibe coding", eo: "Vibe coding" },
-    duration: 20,
-    steps: 2,
-    render: VibeCodingSlide,
-    transition: "rise",
-  },
-  {
-    id: "structured-editing",
-    title: {
-      ja: "構造化編集",
-      en: "Structured editing",
-      eo: "Struktura redaktado",
-    },
-    duration: 30,
-    steps: 3,
-    render: StructuredEditingSlide,
-    transition: "flip",
-  },
-  {
-    id: "scratch",
-    title: {
-      ja: "Scratch との違い",
-      en: "vs. Scratch",
-      eo: "kompare kun Scratch",
-    },
-    duration: 25,
-    steps: 3,
-    render: ScratchSlide,
-    transition: "pop",
-  },
-  {
-    id: "events",
-    title: {
-      ja: "署名付きイベント",
-      en: "Signed events",
-      eo: "Subskribitaj eventoj",
-    },
-    duration: 40,
-    steps: 4,
-    render: EventsSlide,
-    transition: "iris",
-  },
-  {
-    id: "comparison",
-    title: {
-      ja: "ブロックチェーン・nostr",
-      en: "Blockchain & nostr",
-      eo: "Blokĉeno kaj nostr",
-    },
-    duration: 20,
-    steps: 3,
-    render: ComparisonSlide,
-    transition: "slide-left",
-  },
-  {
-    id: "version-control",
-    title: { ja: "バージョン管理", en: "Version control", eo: "Versikontrolo" },
-    duration: 30,
-    steps: 3,
-    render: VersionControlSlide,
-    transition: "wipe-down",
-  },
-  {
-    id: "self-hosting",
-    title: { ja: "セルフホスト", en: "Self-hosting", eo: "Memgastigo" },
-    duration: 30,
-    steps: 3,
-    render: SelfHostingSlide,
-    transition: "spin",
-  },
-  {
-    id: "deploy",
-    title: { ja: "デプロイ", en: "Deploy", eo: "Disponigo" },
-    duration: 20,
-    steps: 3,
-    render: DeploySlide,
-    transition: "slide-right",
-  },
-  {
-    id: "proof",
-    title: { ja: "証明", en: "Proofs", eo: "Pruvoj" },
-    duration: 30,
-    steps: 3,
-    render: ProofSlide,
-    transition: "blur",
-  },
-  {
-    id: "closing",
-    title: { ja: "おわりに", en: "Closing", eo: "Fino" },
-    duration: 20,
-    steps: 1,
-    render: ClosingSlide,
-    transition: "shrink",
-  },
-];
+    title: TitleSlide,
+    history: HistorySlide,
+    "vibe-coding": VibeCodingSlide,
+    "structured-editing": StructuredEditingSlide,
+    scratch: ScratchSlide,
+    events: EventsSlide,
+    comparison: ComparisonSlide,
+    "version-control": VersionControlSlide,
+    "self-hosting": SelfHostingSlide,
+    deploy: DeploySlide,
+    proof: ProofSlide,
+    closing: ClosingSlide,
+  };
+
+export const SLIDES: readonly Slide[] = STORY_SLIDES.map((slide) => {
+  const render = RENDERERS[slide.id];
+  if (render === undefined) {
+    throw new Error(`story.slides のスライド ${slide.id} の絵がありません`);
+  }
+  return { ...slide, render };
+});
 
 export function slideTitle(slide: Slide, lang: LanguageCode): string {
   return t(lang, slide.title);

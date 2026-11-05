@@ -7,11 +7,13 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 
 | ファイル                                                              | 役割                                                                                                                                                                                         |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [src/story/slides.tsx](../src/story/slides.tsx)                       | スライドの内容 (`SLIDES`) と関連プロジェクトのリンク (`PROJECTS`). 文は日本語と英語                                                                                                          |
+| [seeds/story.json](../seeds/story.json)                               | definy のモジュール `story`. スライドの並び・題・秒数・ステップの数・切り替え・ずんだもんの台詞を definy の値 `story.slides` で書く (下の「スライドは definy の値」)                         |
+| [src/story/story_value.ts](../src/story/story_value.ts)               | `story.slides` の式をその場で評価して TypeScript の値にする                                                                                                                                  |
+| [src/story/slides.tsx](../src/story/slides.tsx)                       | スライドの絵 (id ごとの React のコンポーネント) と関連プロジェクトのリンク (`PROJECTS`)                                                                                                      |
 | [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                                                                                                                                     |
 | [src/story/StoryPlayer.tsx](../src/story/StoryPlayer.tsx)             | 再生 (シークバー・再生/一時停止・全画面・キー操作)                                                                                                                                           |
 | [src/story/audio.ts](../src/story/audio.ts)                           | 効果音と BGM (Web Audio API で合成) と解説音声の再生                                                                                                                                         |
-| [src/story/narration.ts](../src/story/narration.ts)                   | ずんだもんの解説の台本 (音声は日本語, 字幕は日本語・英語・エスペラント)                                                                                                                      |
+| [src/story/narration.ts](../src/story/narration.ts)                   | `story.slides` の台詞をスライドの id で引く. 字幕の文の分け方                                                                                                                                |
 | [src/story/Narrator.tsx](../src/story/Narrator.tsx)                   | ずんだもんの立ち絵と字幕. 口の形・まばたき・表情                                                                                                                                             |
 | [scripts/generate_story_voice.ts](../scripts/generate_story_voice.ts) | VOICEVOX ENGINE で解説音声を作る                                                                                                                                                             |
 | [src/story/voice_manifest.ts](../src/story/voice_manifest.ts)         | 解説音声の一覧 (長さ・口の形の時刻). スクリプトが作るので手で直さない                                                                                                                        |
@@ -53,7 +55,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 ## スライドの書き方
 
 - 1 枚は `steps` 回の「次へ」で `<Reveal at={n}>` の要素が順に現れる。`at={0}` は最初から出る。
-- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体の長さはプレイヤーの表示が正 (2026-11-05 時点で 4:51)。台詞や `REVEAL_SECONDS` を変えると変わる。
+- 台詞の無いスライドは `duration` 秒をステップの数 + 1 で等分する。台詞のあるスライド (今は全て) は, 要素が現れるだけのステップを 1.2 秒 (`REVEAL_SECONDS`) で済ませ, 台詞のあるステップを「音声の長さ + 0.4 秒」にする。全体の長さはプレイヤーの表示が正 (2026-11-05 時点で日本語 4:54)。台詞や `REVEAL_SECONDS` を変えると変わる。
 - ロゴは単色の SVG を CSS の mask にし, `PROJECTS` の `color` で塗る。ロゴの無いもの (nostr, Lean など) は名前だけ出す。
 - 署名付きイベントのスライドの図はノードの位置を割合 (`NETWORK_NODES`) で持ち, 線は全体に重ねた 1 つの SVG で描く。
   Alice (ライトユーザー) はブラウザからナルミンチョのサーバーへ直接, Bob (データを持ちたい人) は自分で建てたサーバー経由でつなぐ。
@@ -65,7 +67,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 
 ## 数値の出どころ
 
-- 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-04 時点, 4,043 コミット)。
+- 月ごとのコミット数 (`COMMITS_BY_MONTH`)・最初のコミット (2019-01-31 13:36)・言語の移り変わり: `git log` (2026-11-05 時点, 4,076 コミット)。
   月ごとの数は `git log --format=%ad --date=format:%Y-%m | sort | uniq -c` で作り直せる。合計や年ごとの数はこの表から求める。
   主な言語は 2019-01〜2020-05 Elm, 2020-06〜2022-12 TypeScript + PureScript, 2023〜2025 Deno・Flutter (Dart) などを試す, 2026-01〜2026-09 Rust, 2026-10 から TypeScript + definy 製コンパイラ (2026-10-18 に Rust 製の stage0 を削除)。
 - definy 自身で書いている割合 (セルフホストのスライドの円グラフ): `node scripts/measure_self_hosting.ts` が `src/story/self_hosting_stats.ts` に書く。
@@ -76,22 +78,35 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 - セルフホストの到達状況: [self-hosting.md](self-hosting.md)。
 - セルフホストを終える目標の時期 (`SELF_HOSTING_TARGET`) は仮の値。
 
+## スライドは definy の値
+
+スライドの並び・題・秒数・ステップの数・切り替えのアニメーション・ずんだもんの台詞は, definy のモジュール `story` (プロジェクト `story`. seeds/story.json が正本) の値 `story.slides : list(story.slide)` で書く (2026-11-06 から)。
+サイトはこの値を描くだけで, スライドの絵 (図や表) は id ごとの React のコンポーネント (`RENDERERS`) に残す。
+
+- 型: `story.slide` (`id`, `title: story.text`, `duration`, `steps`, `transition: story.transition`, `narration: list(option(story.narration-line))`), `story.narration-line` (`speech`, `subtitle: option(string)`, `face: story.face`, `en`, `eo`, `eo_speech: option(list(string))`), `story.text` (`ja` / `en` / `eo`)。definy のタグは `_` で書き (`wipe_right`), TypeScript では `-` にする
+- 読み方: [src/story/story_value.ts](../src/story/story_value.ts) が seed の式 (リテラルだけ) を `evaluateLiteral` (src/part_definition.ts) でその場で評価し, 形を確かめて TypeScript の値にする。評価器も Wasm も使わないので, ビルドにも Node のスクリプト (音声の生成) にもそのまま読める
+- 型の検査: 値が `story.slide` の型に合うことは definy の型チェッカーが seed の全パーツと一緒に確かめる (src/self_hosted_type_check.test.ts の「accepts every seed part」。タグを書き間違えるとここで落ちる)
+- 直し方: seeds/story.json を直接直すか, definy のエディタでプロジェクト `story` を直して `npm run export:seeds` で書き戻す ([seed-export.md](seed-export.md))。直したら `npm run build:seeds` で指紋を更新し, 台詞を変えたら音声を作り直す
+- セルフホストのスライド (「definy で definy を表現する」) は, 最後のステップで「このスライドも definy の値 story.slides」と出し, `story.slides` の中のこのスライドの式 (`id` と `transition` だけ) をエディタと同じ木の描画 (`ScaledExpressionTree`) で見せる。台詞でも「並びや台詞は definy の値で書いてある」と言う
+  - 見出しの右の低い場所に入れるので, 木は広い幅 (`maxWidth: 1200`) で組んで項目を 1 行に並べ, 描いた木の実際の幅に合わせて縮める (`widthPx` を省く)。組んだときの幅の見積もりは実際より広い。大きさは transform の影響を受けない `offsetWidth` / `offsetHeight` で測る (このスライドは回転しながら現れるので, 外接する矩形で測ると大きすぎる)
+  - ラベルが 2 行になると見出しの行が高くなり, 下の本文が吹き出しに潜る。1 行 (`white-space: nowrap`) に収まる文にする
+
 ## ずんだもんの解説
 
 最初のスライド (タイトル) ではずんだもんは全身で立ち、タイトルの文字は少し左へ寄って場所を空ける。次のスライドへ進むと、立ち絵の枠が縮んで下に沈み、通常の右下の姿 (上半身だけ) になる (`.story-stage.has-character-full`)。
 
 VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, 配信する (ブラウザから VOICEVOX は呼ばない)。
 
-1. 台本は `src/story/narration.ts` に, スライドの id ごと・ステップの順に書く。語尾は「〜なのだ」。
+1. 台本は definy の値 `story.slides` (seeds/story.json) の各スライドの `narration` に, ステップの順に書く (台詞の無いステップは `none`)。語尾は「〜なのだ」。
    全てのスライドにある。要素を先に全部出してから話せるよう, 台詞は基本的にスライドの最後のステップに置く (署名付きイベントのスライドだけはステップごと)。
-   `speech` は読ませる文 (definy は「デファイニー」のようにかなで書く), `subtitle` は字幕, `face` は表情。
+   `speech` は読ませる文 (definy は「デファイニー」のようにかなで書く), `subtitle` は字幕 (`none` なら `speech`), `face` は表情。
    `en` / `eo` は英語・エスペラントの字幕で, 日本語の字幕と同じ数の文の配列で書く (同じ時刻で 1 文ずつ切り替える。英語は略語の . で文を分けられないので配列にした)。数が違うと生成スクリプトがエラーにする。
 2. VOICEVOX を起動して `node scripts/generate_story_voice.ts` を実行する。
    ENGINE (`http://127.0.0.1:50021`, `VOICEVOX_URL` で変えられる) の `/audio_query` → `/synthesis` で WAV を作り, macOS の `afconvert` で AAC にする。
    話者はずんだもん (ノーマル, ID 3), 話速 1.15。ファイル名は文・話者・話速・`SYNTHESIS_VERSION` のハッシュなので, 変えていない台詞は作り直さない。使わなくなった音声は消す。
    VOICEVOX が区切って読む名前は `{デファイ'ニイワ}` のように {} の中にアクセント付きのかな (AquesTalk 風) で書き, `/accent_phrases?is_kana=true` で読ませる。
    助詞もかなに含める ({} の外の「は」だけを読ませると「ハ」になる)。{} の前で文が終わるときは息継ぎ (pau) を足す。
-   読み間違えやすかったもの: 行 → くだり (「ぎょう」と書く), 直和型 → なおかずがた, Deno → デノ (「ディーノ」と書く)。台詞を変えたら `audio_query` の `kana` で読みを確かめる。
+   読み間違えやすかったもの: 行 → くだり (「ぎょう」と書く), 値 → ね (「あたい」と書く), 直和型 → なおかずがた, Deno → デノ (「ディーノ」と書く)。台詞を変えたら `audio_query` の `kana` で読みを確かめる。
 3. `src/story/voice_manifest.ts` に長さと口の形の時刻が書かれる。口の形は audio_query のモーラの母音 (a i u e o, ん, m/b/p の子音で閉じる) から求める。
 
 再生のしかた:
@@ -104,14 +119,25 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 - 止まっているときに解説をオンにしても鳴らさない (再生か, 次へ・戻るで鳴る)。
 - 音声が鳴っていないときにシークバーやJ / L で位置を動かすと, 吹き出しはその位置の文になる。
 - 字幕はどの表示言語でも, 解説がオフでも出す (ずんだもんだけ消え, 吹き出しはしっぽの無い字幕の箱になる)。再生位置から文を決めるので, 音声が無くても台詞に合わせて進む。
-- 英語・エスペラントでも音声は日本語のまま, 字幕だけ訳す。VOICEVOX は日本語の音声なので, 英語の音声は作らない。エスペラントは発音がかなに近く (母音 5 つ, つづりどおり, アクセントは後ろから 2 番目) VOICEVOX でも読ませられそうなので, 試すなら台本・音声・時間軸を言語ごとに持つ。
+- 英語・エスペラントはそれぞれの言語の音声にする (下の「英語の音声」「エスペラントの音声」)。音声が無い台詞は日本語の音声で, 字幕だけ訳す。
 - 解説がオンなら最初の操作で全ての音声を読み込み始める。読み込みが遅れた分は先から鳴らし, 時間軸とずらさない。
+
+## 英語の音声
+
+`lang=en` では, 英語の字幕 (`en`) をそのまま VOICEVOX に渡して読ませる (VOICEVOX ENGINE 0.26 は英単語をカタカナ読みにする)。`voice_manifest.ts` のキーは `en/スライドの id/ステップ`。
+下ごしらえは [scripts/english_voice.ts](../scripts/english_voice.ts)。1 文だけ試すには `node scripts/english_voice.ts "Hi, I'm Zundamon!"` (読ませる文とアクセント句ごとの読みを出す)。
+
+- 数字は日本語で読む (2019 → ニセンジュウキュウ) ので, 英語の言葉に直す。2010〜2099 の 4 桁は年として 2 桁ずつ (twenty nineteen), 1,100 → one thousand one hundred, 0.3 → zero point three, 30% → thirty percent。
+- 2 文字ほどの短い語と短縮形 (it, as, so, no, an, I'm, it's, don't など) は 1 文字ずつ読む (it → アイティー) ので, 辞書 (`READINGS`) で読みを与える。冠詞の a はエイと読むので「ア」にする。anyone はアニョンと読むので「エニイワン」にする。複数形の s を 1 文字で読むもの (projects, machines など), 名前 (definy → デファイニー) も同じ。辞書の読みは `{...}` のかなの記法になる。
+- 括弧は読点にする。辞書の語の後の読点・句点は, 前の句の後の息継ぎにする。
+- 話速は 1.2 (`ENGLISH_SPEED_SCALE`)。カタカナにするとモーラが多く, 日本語より長くなる。
+- 字幕を変えると音声も作り直す。読み違えを見つけたら辞書に足し, `generate_story_voice.ts` の `ENGLISH_VERSION` を上げる。
 
 ## エスペラントの音声
 
-`lang=eo` では, 台詞に `eoSpeech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。英語は日本語の音声。
+`lang=eo` では, 台詞に `eo_speech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。
 音声は日本語と同じく `node scripts/generate_story_voice.ts` で作り, `voice_manifest.ts` のキーは `eo/スライドの id/ステップ`。
-音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-05 時点で全体は日本語・英語 4:51, エスペラント 5:10。
+音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-06 時点で全体は日本語 4:59, 英語 5:48, エスペラント 5:16。
 
 読ませ方は [scripts/esperanto_voice.ts](../scripts/esperanto_voice.ts)。1 文だけ試すには:
 
@@ -151,7 +177,7 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 - 口の形: 閉じ = ほほえみ, あ = ほあー, い = にやり, う = お, え = んえー, お = ほう, ん = んー。
 - 表情: 通常 = 基本目 + 基本眉, 笑顔 = にっこり + 上がり眉, 驚き = 〇〇 + 上がり眉, 困り = 基本目 + 困り眉。まばたきは閉じ目 (笑顔のときはしない)。
 - 画面には肩から上だけを出す (スライドを大きく見せるため)。話している間は動かさず (口とまばたきだけ), 解説ボタンでの登場と退出だけ下から出入りさせる (`is-leaving` の 350ms)。
-- 台詞は漫画の吹き出し (`.story-bubble`) で出し, しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す (`clip-path` の三角形 2 枚)。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとき, 字幕に {} の記法が入っているときはスクリプトがエラーにする)。
+- 台詞は漫画の吹き出し (`.story-bubble`) で出す。しっぽ (Narrator.tsx の `BubbleTail`) は SVG で, 吹き出しの右の辺 (角の丸み 0.75em より下のまっすぐなところ) から, ずんだもんの口の方へ出す。塗りで吹き出しの枠線を隠し, 2 本の曲線だけを枠の色でなぞる。肩から上のときは右へ少し上向き, 表紙の全身のときは口が高いので右上へ向ける。吹き出しはずんだもんの箱の少し手前で終え, しっぽだけを立ち絵の前に重ねる。字幕は 1 文ずつ出す: 生成スクリプトが文ごとにアクセント句を作って各文の始まる時刻を `voice_manifest.ts` の `sentences` に書き, 再生位置で切り替える (字幕と読み上げの文の数が違うとき, 字幕に {} の記法が入っているときはスクリプトがエラーにする)。
 
 ## 置き場所
 
@@ -185,12 +211,14 @@ og:image は絶対 URL でないと読まない SNS があるので, 要求の U
 
 ## そのほかの部品
 
-- Cloudflare Workers へのデプロイのスライドは, デプロイされる様子のアニメーション: コード → definy 製コンパイラの歯車が回って worker.js + app.wasm ができる → REST API v4 で雲へ飛ぶ (エッジが順に光る) → ブラウザから開くと返事が来る ([cloudflare-workers.md](cloudflare-workers.md))。
+- Cloudflare Workers へのデプロイのスライドの図は U 字の流れ (5 列 3 段の grid): 上の段を右へ コード → definy 製コンパイラ (歯車が回る) → worker.js + app.wasm, 右端で REST API v4 のアップロードとして下り, 下の段を左へ Cloudflare Workers (エッジが順に光る) → ブラウザに返事が来る ([cloudflare-workers.md](cloudflare-workers.md))。矢印は破線が流れる向きで示す。番号は付けない。
   HTTP は WASI 0.3 (Preview 3) に倣った `wasi.io` で送ると書く ([wasi-io.md](wasi-io.md), [wasi-capability-io.md](wasi-capability-io.md))。WASI 0.3 そのもののランタイムで動くわけではない。
 - バージョン管理のスライドの上の図 (`CommitGraph`) は, main とブランチのコミットが取り込みで合流し, どのコミットもパーツの構文木をハッシュで指す (変わっていないものは共有する) ことを表す。
 
+- 字幕の吹き出し (1〜2 行) はスライドの下端の 6em ほど, ずんだもんは右下の 10.5em × 8.5em に重なる。
+  スライドの下の余白 (`has-caption` の 7em) を超えるとそこに文字が潜るので, 長い文は短くして 1 行に収める。英語・エスペラントは日本語より長くなりやすいので 3 言語とも確かめる。
 - 構造化編集のスライドの式は, エディタと同じ `expressionToLayoutNode` → `computeLayout` → `TreeLayoutRenderer` で描く (読むだけ)。
   ツリーの大きさは px で決まるので, 560px の幅で折り返したものをパネルの幅 (と `max-height`) に収まるよう `transform: scale` で拡大・縮小する。
 - 最後のスライドの QR コード (`public/story/qr-definy.svg`, https://definy.narumincho.com/) は `npx qrcode@1.5.4 -t svg -e M -q 1 -o public/story/qr-definy.svg "https://definy.narumincho.com/"` で作った。
 - 作者のアイコン (`public/story/narumincho.webp`) は narumincho の GitHub のアイコン。タイトルと, 歴史のグラフの最初のコミットに出す。
-- 歴史のスライドの数は 2026-11-04 時点 (見出しにも書く)。作り直すスクリプトは作らない。
+- 歴史のスライドの数は 2026-11-05 時点 (見出しにも書く)。作り直すスクリプトは作らない。

@@ -6,7 +6,15 @@ import {
   syncPartTypeParameterNames,
 } from "./part_type.ts";
 
-const SEED_MODULES = ["core", "std", "sample", "definy", "wasi", "wasm"];
+const SEED_MODULES = [
+  "core",
+  "std",
+  "sample",
+  "definy",
+  "wasi",
+  "wasm",
+  "story",
+];
 
 describe("partType と型の式の相互変換", () => {
   it("seed の全パーツの型が往復で変わらない", () => {

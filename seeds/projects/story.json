@@ -1,0 +1,17 @@
+{
+  "project_name": "story",
+  "project_description": [
+    {
+      "language": "en",
+      "text": "The introduction slides of definy (/about), written as definy values"
+    },
+    {
+      "language": "ja",
+      "text": "definy の紹介スライド (/about). definy の値で書いている"
+    }
+  ],
+  "message": "紹介スライドの構成と台詞を definy の値にする",
+  "modules": [
+    "story"
+  ]
+}

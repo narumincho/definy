@@ -586,7 +586,6 @@
 }
 
 .story-first-commit code {
-  display: block;
   font-family: var(--font-mono);
   color: var(--yellow-text);
 }
@@ -619,14 +618,15 @@
   color: #b9d09b;
 }
 
+/* 1 段に収める (折り返すと上のグラフが押しつぶされる) */
 .story-callouts {
   display: flex;
   gap: 1.2em;
-  flex-wrap: wrap;
 }
 
 .story-callout {
-  font-size: 1.45em;
+  font-size: 1.3em;
+  white-space: nowrap;
   padding: 0.6em 0.9em;
   border-radius: 0.4em;
   border: 1px solid var(--border-strong);
@@ -1108,12 +1108,12 @@
 }
 
 .story-card {
-  padding: 1em;
+  padding: 0.8em;
   border-radius: 0.5em;
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  font-size: 1.3em;
-  line-height: 1.45;
+  font-size: 1.2em;
+  line-height: 1.4;
   color: var(--text-secondary);
 }
 
@@ -1571,11 +1571,13 @@
   justify-content: center;
 }
 
-/* ずんだもんが右下にいるときは, その分だけ字幕を短くする */
+/* ずんだもんが右下にいるときは, その分だけ字幕を短くする.
+   吹き出しはずんだもんの箱 (10.5em) の少し手前で終え, しっぽだけをずんだもんの前に重ねる */
 .story-stage.has-character .story-caption {
+  z-index: 1;
   width: calc(var(--story-slide-width) - 8.6em);
   justify-content: flex-start;
-  padding-right: 1.4em;
+  padding-right: 2.3em;
 }
 
 /* 漫画の吹き出し. しっぽは右のずんだもんへ向ける. ずんだもんがいないときは字幕の箱 */
@@ -1583,7 +1585,7 @@
   position: relative;
   padding: 0.45em 0.9em;
   border: 0.14em solid #2b2f36;
-  border-radius: 1.2em;
+  border-radius: 0.75em;
   background: #fffdf5;
   color: #1e2025;
   font-size: 1.2em;
@@ -1605,28 +1607,42 @@
   text-align: center;
 }
 
-/* しっぽは吹き出しの上の方から, 右上のずんだもんの口へ少し上向きに出す. 外側 (枠の色) と内側 (地の色) の 2 枚で描く */
-.story-stage.has-character .story-bubble::before,
-.story-stage.has-character .story-bubble::after {
-  content: "";
+/* しっぽ (Narrator.tsx の BubbleTail). ずんだもんがいるときだけ出す.
+   SVG の 1 単位は 0.1em. x = 3 が吹き出しの外側の右端, y = 0 が外側の上端になるよう置く
+   (枠の太さは 0.14em). 角の丸み (0.75em) より下の, まっすぐな右の辺から出す */
+.story-bubble-tail {
+  display: none;
   position: absolute;
-  clip-path: polygon(0 35%, 100% 0, 0 100%);
+  left: calc(100% - 0.16em);
+  top: -1.14em;
+  width: 1.6em;
+  height: 2.6em;
+  overflow: visible;
 }
 
-.story-bubble::before {
-  right: -1.35em;
-  top: 0.15em;
-  width: 1.5em;
-  height: 1.15em;
-  background: #2b2f36;
+.story-stage.has-character .story-bubble-tail {
+  display: block;
 }
 
-.story-bubble::after {
-  right: -0.98em;
-  top: 0.36em;
-  width: 1.12em;
-  height: 0.72em;
-  background: #fffdf5;
+.story-bubble-tail-fill {
+  fill: #fffdf5;
+}
+
+.story-bubble-tail-line {
+  fill: none;
+  stroke: #2b2f36;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.story-bubble-tail .is-up,
+.story-stage.has-character-full .story-bubble-tail .is-side {
+  display: none;
+}
+
+.story-stage.has-character-full .story-bubble-tail .is-up {
+  display: inline;
 }
 
 @keyframes story-bubble-in {
@@ -1718,7 +1734,7 @@
   pointer-events: none;
 }
 
-/* 構造化編集のスライドの下の 2 つの補足 */
+/* スライドの下の補足 (構造化編集・デプロイ・証明). 字幕の吹き出しに重ならないよう小さめにする */
 .story-notes {
   margin-top: auto;
   display: grid;
@@ -1753,13 +1769,15 @@
   color: var(--text-secondary);
 }
 
-/* 最後のスライドのクレジット */
+/* 最後のスライドのクレジット. 右下のずんだもんに重ならないよう左右を空けて真ん中に置く (長い言語は 2 行になる) */
 .story-credits {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  padding: 0 5.5em;
   margin: 0;
+  text-wrap: balance;
   font-size: 1.05em;
   color: var(--text-muted);
 }
@@ -1868,6 +1886,35 @@
   padding: 0.45em 0.8em;
 }
 
+/* セルフホストの見出しの右に, このスライド自身の値 (story.slides の 1 つ) を出す */
+.story-self-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2em;
+}
+
+.story-self-value {
+  /* 下の円グラフの欄と同じ幅 */
+  flex: 0 1 27.2em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+/* 2 行になると見出しの行が高くなり, 下の本文が吹き出しに潜るので 1 行に収める */
+.story-self-value-label {
+  font-size: 1.1em;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--green-text);
+}
+
+.story-self-value .story-real-tree {
+  max-height: 5.2em;
+}
+
 .story-goal {
   padding: 0.5em 0.9em;
   border-radius: 0.4em;
@@ -1896,10 +1943,16 @@
   align-items: center;
 }
 
+/* 日時と作者は 1 行に並べる (2 行目より下は年の目盛りと棒に重なるため) */
+.story-first-commit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+
 .story-first-commit-author {
   display: flex;
   align-items: center;
-  margin-top: 0.2em;
   font-family: var(--font-mono);
   color: var(--text-secondary);
 }
@@ -1923,107 +1976,20 @@
 
 /* ---- 最後のスライドの QR コード ---- */
 
+/* QR コードは最後のスライドの真ん中に置く. URL はその下のリンクに 1 度だけ書く */
 .story-qr {
-  position: absolute;
-  right: 0;
-  bottom: 3em;
   display: grid;
   justify-items: center;
-  gap: 0.4em;
-  font-size: 1.1em;
-  color: var(--text-secondary);
 }
 
 .story-qr img {
+  display: block;
   width: 11em;
   height: 11em;
   padding: 0.5em;
   background: #fff;
   border-radius: 0.5em;
   image-rendering: pixelated;
-}
-
-/* ---- デプロイの様子 ---- */
-
-.story-deploy {
-  position: relative;
-  flex: 1;
-  min-height: 19em;
-}
-
-.story-deploy-paths {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-/* パッケージが飛ぶ弧. 飛んでいる間に線が伸びる */
-.story-deploy-arc {
-  fill: none;
-  stroke: var(--orange-border);
-  stroke-width: 2;
-  stroke-dasharray: 6 6;
-  vector-effect: non-scaling-stroke;
-  opacity: 0;
-}
-
-.story-deploy-arc.is-on {
-  opacity: 1;
-  animation: story-fade-in 0.4s ease both;
-}
-
-.story-flow-badge {
-  position: absolute;
-  top: -0.75em;
-  left: -0.75em;
-  z-index: 3;
-  width: 1.6em;
-  height: 1.6em;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.95em;
-  font-weight: 700;
-}
-
-.story-flow-badge.is-on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
-}
-
-.story-deploy-flow-label {
-  position: absolute;
-  z-index: 2;
-  padding: 0.1em 0.6em;
-  border-radius: 1em;
-  background: var(--bg-inset);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 1.05em;
-  animation: story-reveal 0.5s ease both;
-}
-
-.story-deploy-flow-label.is-upload {
-  left: 61%;
-  top: 31%;
-}
-
-.story-deploy-flow-label.is-response {
-  left: 24%;
-  top: 70%;
-}
-
-/* API の箱は文字だけなので, バッジを文字から少し離す */
-.story-deploy-api .story-flow-badge {
-  top: -0.9em;
-  left: -1.7em;
 }
 
 /* タイトルは, 全身のずんだもんに場所を空けるため少し左へ寄る */
@@ -2035,15 +2001,33 @@
   transform: translateX(-4.5em);
 }
 
+/* ---- デプロイの様子 ---- */
+
+/* U 字の流れ: 上の段を右へ (コード → コンパイラ → パッケージ), 右端で下り (REST API),
+   下の段を左へ戻る (Cloudflare Workers → ブラウザ). 5 列 3 段の grid に置く */
+.story-deploy {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) 3.2em minmax(0, 1fr) 3.2em minmax(
+      0,
+      1.15fr
+    );
+  grid-template-rows: auto 1fr auto;
+  row-gap: 0.9em;
+  align-items: center;
+}
+
 .story-deploy-code {
-  position: absolute;
-  left: 0;
-  top: 2%;
-  width: 33%;
+  grid-column: 1;
+  grid-row: 1 / 3;
+  align-self: stretch;
+  min-height: 0;
   padding: 0.6em 0.8em;
   border-radius: 0.5em;
   border: 1px solid var(--blue-border);
   background: var(--bg-inset);
+  overflow: hidden;
 }
 
 .story-deploy-code-title {
@@ -2053,23 +2037,134 @@
   margin-bottom: 0.3em;
 }
 
-/* デプロイの式の木は, パネルの下にブラウザの応答が来るので高さを抑える */
 .story-deploy-code .story-real-tree {
-  max-height: 20em;
+  max-height: 8.5em;
 }
 
-/* ブラウザの応答が出るステップでは, 場所を空けるために木を少し縮める */
-.story-deploy-code.is-shrunk .story-real-tree {
-  max-height: 11em;
+/* 矢印. 線は破線で, 矢印の向きに流れる. 先は ::after の三角 */
+.story-deploy-arrow {
+  position: relative;
+  --arrow-color: var(--accent);
+}
+
+.story-deploy-arrow-line {
+  position: absolute;
+  display: block;
+  background-image: repeating-linear-gradient(
+    var(--arrow-angle),
+    var(--arrow-color) 0 0.6em,
+    transparent 0.6em 1em
+  );
+  animation: story-deploy-flow 0.6s linear infinite;
+}
+
+.story-deploy-arrow-line::after {
+  content: "";
+  position: absolute;
+  border: 0.55em solid transparent;
+}
+
+.story-deploy-arrow.is-right,
+.story-deploy-arrow.is-left {
+  align-self: center;
+  height: 1.1em;
+}
+
+.story-deploy-arrow.is-right .story-deploy-arrow-line,
+.story-deploy-arrow.is-left .story-deploy-arrow-line {
+  top: 50%;
+  height: 0.25em;
+  margin-top: -0.125em;
+}
+
+.story-deploy-arrow.is-right .story-deploy-arrow-line {
+  --arrow-angle: 90deg;
+  left: 0.4em;
+  right: 1em;
+}
+
+.story-deploy-arrow.is-right .story-deploy-arrow-line::after {
+  left: 100%;
+  top: 50%;
+  margin-top: -0.55em;
+  border-left: 0.8em solid var(--arrow-color);
+  border-right-width: 0;
+}
+
+.story-deploy-arrow.is-left .story-deploy-arrow-line {
+  --arrow-angle: 270deg;
+  left: 1em;
+  right: 0.4em;
+  animation-direction: reverse;
+}
+
+.story-deploy-arrow.is-left .story-deploy-arrow-line::after {
+  right: 100%;
+  top: 50%;
+  margin-top: -0.55em;
+  border-right: 0.8em solid var(--arrow-color);
+  border-left-width: 0;
+}
+
+.story-deploy-arrow.is-down {
+  align-self: stretch;
+  justify-self: center;
+  width: 1.1em;
+  min-height: 3em;
+}
+
+.story-deploy-arrow.is-down .story-deploy-arrow-line {
+  --arrow-angle: 180deg;
+  left: 50%;
+  width: 0.25em;
+  margin-left: -0.125em;
+  top: 0.2em;
+  bottom: 0.9em;
+}
+
+.story-deploy-arrow.is-down .story-deploy-arrow-line::after {
+  top: 100%;
+  left: 50%;
+  margin-left: -0.55em;
+  border-top: 0.8em solid var(--arrow-color);
+  border-bottom-width: 0;
+}
+
+.story-deploy-arrow.is-to-compiler {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.story-deploy-arrow.is-to-package {
+  grid-column: 4;
+  grid-row: 1;
+  --arrow-color: var(--orange-border);
+}
+
+.story-deploy-arrow.is-to-cloud {
+  grid-column: 5;
+  grid-row: 2;
+  --arrow-color: var(--orange-border);
+}
+
+.story-deploy-arrow.is-to-browser {
+  grid-column: 2;
+  grid-row: 3;
+  --arrow-color: var(--green-border);
+}
+
+@keyframes story-deploy-flow {
+  to {
+    background-position: 1em 1em;
+  }
 }
 
 .story-deploy-compiler {
-  position: absolute;
-  left: 41.5%;
-  top: 12%;
+  grid-column: 3;
+  grid-row: 1;
   display: flex;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.5em;
   font-size: 1.15em;
 }
 
@@ -2089,7 +2184,7 @@
 
 .story-deploy-gear {
   display: inline-block;
-  font-size: 3em;
+  font-size: 2.6em;
   line-height: 1;
 }
 
@@ -2098,10 +2193,10 @@
 }
 
 .story-deploy-package {
-  position: absolute;
-  left: 38%;
-  top: 52%;
+  grid-column: 5;
+  grid-row: 1;
   display: grid;
+  gap: 0.2em;
   padding: 0.5em 0.8em;
   border-radius: 0.5em;
   border: 1px solid var(--orange-border);
@@ -2117,75 +2212,56 @@
   font-size: 0.8em;
 }
 
-/* REST API で雲まで飛ぶパッケージ */
-.story-deploy-parcel {
-  position: absolute;
-  font-size: 2.4em;
-  translate: -50% -50%;
-  animation: story-parcel-fly 1.1s cubic-bezier(0.45, 0, 0.3, 1) both;
-}
-
-@keyframes story-parcel-fly {
-  0% {
-    left: 47%;
-    top: 60%;
-    opacity: 1;
-  }
-  50% {
-    left: 60%;
-    top: 4%;
-  }
-  90% {
-    left: 74%;
-    top: 24%;
-    opacity: 1;
-    scale: 1;
-  }
-  100% {
-    left: 76%;
-    top: 26%;
-    opacity: 0;
-    scale: 0.3;
-  }
-}
-
+/* REST API の説明は, 右端で下りる矢印の左に右寄せで置く */
 .story-deploy-api {
-  position: absolute;
-  left: 38%;
-  top: 76%;
+  grid-column: 3 / 5;
+  grid-row: 2;
+  justify-self: end;
+  text-align: right;
   font-size: 1.1em;
+  padding-right: 0.4em;
 }
 
 .story-deploy-cloud {
-  position: absolute;
-  left: 66%;
-  top: 4%;
-  width: 34%;
-  display: grid;
-  justify-items: center;
+  grid-column: 3 / 6;
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.5em 1em;
+  border-radius: 0.5em;
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text-muted);
   font-size: 1.2em;
   transition:
     color 0.4s ease,
-    filter 0.4s ease;
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
 .story-deploy-cloud.is-on {
   color: var(--orange-text);
-  filter: drop-shadow(0 0 1.2em var(--orange-border));
-  transition-delay: 1s;
+  border-color: var(--orange-border);
+  box-shadow: 0 0 1.5em var(--orange-bg-strong);
+  transition-delay: 0.4s;
 }
 
 .story-deploy-cloud-icon {
-  font-size: 4.5em;
+  font-size: 2.8em;
   line-height: 1;
 }
 
+.story-deploy-edges {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-top: 0.35em;
+}
+
 .story-deploy-edge {
-  position: absolute;
-  width: 0.9em;
-  height: 0.9em;
-  margin: -0.45em 0 0 -0.45em;
+  width: 0.7em;
+  height: 0.7em;
   border-radius: 50%;
   background: var(--border-strong);
 }
@@ -2210,25 +2286,22 @@
 }
 
 .story-deploy-edges-label {
-  position: absolute;
-  left: 76%;
-  top: 88%;
-  font-size: 1.05em;
+  margin-left: 0.4em;
+  font-size: 0.85em;
   color: var(--orange-text);
 }
 
 .story-deploy-browser {
-  position: absolute;
-  left: 0;
-  top: 77.5%;
+  grid-column: 1;
+  grid-row: 3;
   display: grid;
   gap: 0.3em;
   padding: 0.5em 0.8em;
   border-radius: 0.5em;
-  border: 1px solid var(--blue-border);
+  border: 1px solid var(--green-border);
   background: var(--surface);
   font-family: var(--font-mono);
-  font-size: 1em;
+  font-size: 1.05em;
   color: var(--text-secondary);
 }
 

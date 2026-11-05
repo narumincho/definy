@@ -25,8 +25,7 @@ import { VOICE_CLIPS, type VoiceClip } from "./voice_manifest.ts";
 import "./story.css";
 
 /**
- * その区間の解説音声. エスペラントはエスペラントの音声 (`eo/` で始まるキー) があればそれを, 無ければ日本語の音声を使う.
- * 英語は日本語の音声 (字幕だけ訳す)
+ * その区間の解説音声. 英語・エスペラントはその言語の音声 (`en/` / `eo/` で始まるキー) があればそれを, 無ければ日本語の音声を使う
  */
 function voiceClipOf(
   lang: LanguageCode,
@@ -38,7 +37,7 @@ function voiceClipOf(
     return undefined;
   }
   return (
-    (lang === "eo" ? VOICE_CLIPS[`eo/${id}/${step}`] : undefined) ??
+    (lang === "ja" ? undefined : VOICE_CLIPS[`${lang}/${id}/${step}`]) ??
     VOICE_CLIPS[`${id}/${step}`]
   );
 }
