@@ -830,7 +830,7 @@ function StructuredEditingSlide({ step, lang }: SlideProps): JSX.Element {
           eo: "Struktura redaktado: neniuj sintaksaj eraroj",
         }}
       />
-      <div className="story-two is-wide-right">
+      <div className={`story-two is-wide-right ${step === 0 ? "is-solo" : ""}`}>
         <Reveal at={0} step={step} className="story-panel">
           <div className="story-panel-label">
             {t(lang, {
@@ -926,7 +926,7 @@ function ScratchSlide({ step, lang }: SlideProps): JSX.Element {
     },
   ];
   return (
-    <div className="story-body">
+    <div className="story-body is-tight is-dense">
       <Heading
         lang={lang}
         kicker={{ ja: "特徴 2", en: "Feature 2", eo: "Trajto 2" }}
@@ -1624,7 +1624,7 @@ function VersionControlSlide({ step, lang }: SlideProps): JSX.Element {
     },
   ];
   return (
-    <div className="story-body is-tight">
+    <div className="story-body is-tight is-dense">
       <Heading
         lang={lang}
         kicker={{ ja: "特徴 4", en: "Feature 4", eo: "Trajto 4" }}
