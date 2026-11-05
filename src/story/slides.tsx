@@ -275,7 +275,7 @@ function ProjectLink(props: {
 
 function TitleSlide({ lang }: SlideProps): JSX.Element {
   return (
-    <div className="story-center">
+    <div className="story-center is-title">
       <div className="story-title-orbit" aria-hidden="true">
         <span />
         <span />
@@ -1980,6 +1980,12 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           aria-hidden="true"
         >
           <path d="M 29 30 L 37 30" className="story-net-line" />
+          {step >= 1 ? (
+            <path d="M 45 25 L 45 49" className="story-net-line" />
+          ) : null}
+          {step >= 2 ? (
+            <path d="M 43 65 L 43 74" className="story-net-line" />
+          ) : null}
           <path
             d="M 47 60 C 55 10, 65 5, 74 24"
             className={`story-deploy-arc ${step >= 2 ? "is-on" : ""}`}
@@ -1993,11 +1999,25 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
           ) : null}
         </svg>
 
+        {step >= 2 ? (
+          <div className="story-deploy-flow-label is-upload">
+            {t(lang, { ja: "アップロード", en: "Upload", eo: "Alŝuto" })}
+          </div>
+        ) : null}
+        {step >= 3 ? (
+          <div className="story-deploy-flow-label is-response">
+            {t(lang, { ja: "応答", en: "Response", eo: "Respondo" })}
+          </div>
+        ) : null}
+
         <Reveal
           at={0}
           step={step}
           className={`story-deploy-code ${step >= 3 ? "is-shrunk" : ""}`}
         >
+          <span className={`story-flow-badge ${step >= 0 ? "is-on" : ""}`}>
+            1
+          </span>
           <div className="story-deploy-code-title">
             sample.deploy-hello-worker
           </div>
@@ -2008,6 +2028,9 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
         </Reveal>
 
         <Reveal at={1} step={step} className="story-deploy-compiler">
+          <span className={`story-flow-badge ${step >= 1 ? "is-on" : ""}`}>
+            2
+          </span>
           <span
             className={`story-deploy-gear ${step === 1 ? "is-spinning" : ""}`}
           >
@@ -2045,6 +2068,9 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
         ) : null}
 
         <Reveal at={2} step={step} className="story-deploy-api">
+          <span className={`story-flow-badge ${step >= 2 ? "is-on" : ""}`}>
+            3
+          </span>
           <b>REST API v4</b>
           <a
             className="story-link"
@@ -2102,6 +2128,7 @@ function DeploySlide({ step, lang }: SlideProps): JSX.Element {
         </Reveal>
 
         <Reveal at={3} step={step} className="story-deploy-browser">
+          <span className="story-flow-badge is-on">4</span>
           <div>🌐 https://definy-hello.…workers.dev</div>
           <div className="story-deploy-response">200 · Hello from definy!</div>
         </Reveal>
