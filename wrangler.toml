@@ -1,9 +1,0 @@
-# Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。
-# main, [assets], compatibility_date 等は Void 側で自動設定される。
-name = "definy"
-compatibility_flags = ["nodejs_compat"]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "definy-db"
-database_id = "d4c3a982-558e-4d58-95f8-bbc3ca391818"

@@ -1,6 +1,6 @@
 # 環境変数
 
-definy が読む環境変数の一覧です。`wrangler.toml` に `[vars]` は無く, Worker には D1 の `DB` と静的アセットの `ASSETS` が binding として渡ります。
+definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 設定に `vars` は無く, Worker には D1 の `DB` と静的アセットの `ASSETS` が binding として渡ります。
 
 ## Worker (実行時, `worker/types.ts` の `Env`)
 

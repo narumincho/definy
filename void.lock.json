@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source": {
+    "name": "definy",
+    "compatibility_date": "2026-02-24",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "definy-db",
+        "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818"
+      }
+    ]
+  },
+  "resolved": {
+    "name": "definy",
+    "compatibility_date": "2026-02-24",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "definy-db",
+        "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818"
+      }
+    ]
+  },
+  "text": "{\n  // Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。\n  // main, assets 等は Void 側で自動設定される。\n  // 以前は wrangler.toml に書いていたが、Void / @cloudflare/vite-plugin が\n  // TOML を読まなくなったため JSONC に移行した。\n  // compatibility_date は移行前 (自動設定されていた値) のまま固定し、\n  // ランタイムの意味を変えないようにしている。\n  \"name\": \"definy\",\n  \"compatibility_date\": \"2026-02-24\",\n  \"compatibility_flags\": [\"nodejs_compat\"],\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"definy-db\",\n      \"database_id\": \"d4c3a982-558e-4d58-95f8-bbc3ca391818\",\n    },\n  ],\n}\n"
+}

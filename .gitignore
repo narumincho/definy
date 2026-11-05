@@ -21,3 +21,5 @@ playwright-report/
 
 # ずんだもん立ち絵素材などの配布物そのものはリポジトリに入れない (docs/story.md)
 *.psd
+.void-wrangler.jsonc
+.cloudflare
