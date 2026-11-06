@@ -25,12 +25,23 @@ describe("パフォーマンス記録の統合", () => {
       const db = createSqliteD1Database();
       await store.seedD1(db, await loadTestSeedBundle());
       const env: Env = { DB: db, DEFINY_PERF_TOKEN: PERF_TOKEN };
+      // 本番 (Workers) と同じく ExecutionContext を渡し、waitUntil に登録された
+      // 書き込みを集める。登録された Promise が完了すれば記録が残るはず
+      const waited: Array<Promise<unknown>> = [];
+      const ctx = {
+        waitUntil: (promise: Promise<unknown>) => {
+          waited.push(promise);
+        },
+      };
       const fetchFn = (async (input: string, init?: RequestInit) => {
         const path = String(input).replace(/^https:\/\/example\.test/, "");
         return handleWorkerRequest(
           new Request(`https://definy.local${path}`, init),
           env,
           store,
+          undefined,
+          undefined,
+          ctx,
         );
       }) as typeof fetch;
       const client = new DefinyClient({
@@ -66,6 +77,10 @@ describe("パフォーマンス記録の統合", () => {
       });
       expect(commit.status).toBe("accepted");
       await client.listEvents({ limit: 1 });
+
+      // 記録の書き込みが waitUntil に登録され、その完了で記録が残ること
+      expect(waited.length).toBeGreaterThan(0);
+      await Promise.all(waited);
 
       // 記録の書き込みはレスポンスを待たせないので、届くまで少し待つ
       let submit: PerfRecord | undefined;

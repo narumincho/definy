@@ -42,6 +42,16 @@ export type D1Database = {
   readonly exec: (query: string) => Promise<D1ExecResult>;
 };
 
+/**
+ * Cloudflare Workers の ExecutionContext のうち使う部分だけを抜き出した構造型。
+ * `waitUntil` に渡した Promise は、レスポンスを返した後も完了するまで実行が
+ * 保証される (逆に、登録されていない非同期処理はレスポンス後に打ち切られ得る)。
+ * `@cloudflare/workers-types` には依存しない方針なので自前で定義する
+ */
+export type ExecutionContext = {
+  readonly waitUntil: (promise: Promise<unknown>) => void;
+};
+
 export type Env = {
   readonly ASSETS?: Fetcher;
   readonly DB?: D1Database;

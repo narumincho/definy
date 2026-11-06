@@ -24,7 +24,7 @@ import {
 import { verifyEd25519 } from "./ed25519.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import type { Env } from "./types.ts";
+import type { Env, ExecutionContext } from "./types.ts";
 
 export type { Env } from "./types.ts";
 export { defaultStore, WorkerStore } from "./store.ts";
@@ -92,7 +92,9 @@ function toResponse(
  * Worker のリクエストハンドラー. どう処理するか (ルーティング, `/healthz`, RPC, `/virtual/wasm/`) は definy の
  * `definy.handle-request` (`wasm/service.wasm`) が決め, ここはストア・署名・HTTP などの能力を渡すだけ (docs/service.md).
  * テスト用にストアと fetch を差し替えられる. `serveAsset` は静的アセットを返す
- * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す)
+ * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す).
+ * `ctx` (ExecutionContext) はパフォーマンス記録の書き込み完了を `waitUntil` で
+ * 保証するために使う (無い環境では書き込みは投げっぱなしになる)
  */
 export async function handleWorkerRequest(
   request: Request,
@@ -102,6 +104,7 @@ export async function handleWorkerRequest(
   serveAsset: (() => Promise<Response>) | undefined = env.ASSETS
     ? () => env.ASSETS!.fetch(request)
     : undefined,
+  ctx?: ExecutionContext | undefined,
 ): Promise<Response> {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -157,10 +160,17 @@ export async function handleWorkerRequest(
         // パフォーマンス記録 (docs/performance-observability.md)。
         // 対象は SubmitEvent だけ: 読み取りのリクエストでは D1 に一切書かない
         // というストアの決まり (worker/d1.test.ts) を守るため。
-        // D1 が無いときは受け口自体が無く、計装も入らない
+        // D1 が無いときは受け口自体が無く、計装も入らない。
+        // 書き込みの完了は ctx の waitUntil で保証する (レスポンス後に
+        // 打ち切られて記録が残らなかったことがあるため)
         recordPerf:
           pathname === "/definy.v1.EventService/SubmitEvent"
-            ? createPerfSink(env.DB)
+            ? createPerfSink(
+                env.DB,
+                ctx === undefined
+                  ? undefined
+                  : (promise) => ctx.waitUntil(promise),
+              )
             : undefined,
       },
     );
@@ -221,7 +231,14 @@ async function httpFetch(
 }
 
 export default {
-  fetch(request: Request, env: Env): Promise<Response> {
-    return handleWorkerRequest(request, env);
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return handleWorkerRequest(
+      request,
+      env,
+      defaultStore,
+      fetch,
+      undefined,
+      ctx,
+    );
   },
 };
