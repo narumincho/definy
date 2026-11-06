@@ -41329,6 +41329,31 @@
                           }
                         ]
                       }
+                    },
+                    {
+                      "name": "commit",
+                      "type": {
+                        "#type_union": [
+                          {
+                            "tag": "none",
+                            "payload_type": {
+                              "#none": null
+                            }
+                          },
+                          {
+                            "tag": "some",
+                            "payload_type": {
+                              "#some": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.stored-commit"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
                     }
                   ],
                   "return_type": {
@@ -41354,11 +41379,11 @@
       "description": [
         {
           "language": "en",
-          "text": "What definy.check-commit checks for a project commit (docs/service.md): the parts with their definitions and the latest commits of the main branches as the type environment. none if it is not a project commit (definy.submit-verified-event checks that the contents are in the CAS first)"
+          "text": "What definy.check-commit checks for a project commit (docs/service.md): the parts with their definitions and the latest commits of the main branches as the type environment. none if it is not a project commit (definy.submit-verified-event checks that the contents are in the CAS first). The decoded commit is also passed to then, so the caller can put it in the commit cache once it is stored instead of decoding it again on the next submit"
         },
         {
           "language": "ja",
-          "text": "プロジェクトのコミットについて definy.check-commit が検査するもの (docs/service.md): パーツと定義の式, 型環境にする各 main ブランチの最新のコミット。プロジェクトのコミットでなければ none (CAS に中身があるかは definy.submit-verified-event が先に確かめる)"
+          "text": "プロジェクトのコミットについて definy.check-commit が検査するもの (docs/service.md): パーツと定義の式, 型環境にする各 main ブランチの最新のコミット。プロジェクトのコミットでなければ none (CAS に中身があるかは definy.submit-verified-event が先に確かめる)。decode したコミットも then に渡し, 保存した後にコミットキャッシュへ入れられるようにする (次の提出で decode し直さないため)"
         }
       ],
       "expression": {
@@ -41416,6 +41441,20 @@
                       "arguments": [
                         {
                           "name": "input",
+                          "value": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "name": "commit",
                           "value": {
                             "#variant": {
                               "tag": "none",
@@ -42236,6 +42275,24 @@
                                                                                           }
                                                                                         }
                                                                                       ]
+                                                                                    }
+                                                                                  },
+                                                                                  "type_part": {
+                                                                                    "#none": null
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "commit",
+                                                                              "value": {
+                                                                                "#variant": {
+                                                                                  "tag": "some",
+                                                                                  "payload": {
+                                                                                    "#some": {
+                                                                                      "#variable": {
+                                                                                        "variable_id": 2
+                                                                                      }
                                                                                     }
                                                                                   },
                                                                                   "type_part": {
@@ -72028,6 +72085,31 @@
                           }
                         }
                       }
+                    },
+                    {
+                      "name": "commit",
+                      "type": {
+                        "#type_union": [
+                          {
+                            "tag": "none",
+                            "payload_type": {
+                              "#none": null
+                            }
+                          },
+                          {
+                            "tag": "some",
+                            "payload_type": {
+                              "#some": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.stored-commit"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
                     }
                   ],
                   "return_type": {
@@ -72053,11 +72135,11 @@
       "description": [
         {
           "language": "en",
-          "text": "If the signed event is a project commit, check it (definy.check-commit-input) and pass the reasons to reject it to then (empty if none or if it is not a project commit)"
+          "text": "If the signed event is a project commit, check it (definy.check-commit-input) and pass the reasons to reject it to then (empty if none or if it is not a project commit). The decoded commit is also passed to then (none if it is not a project commit)"
         },
         {
           "language": "ja",
-          "text": "署名済みイベントがプロジェクトのコミットなら検査し (definy.check-commit-input), 拒否する理由を then に渡す (無いときとプロジェクトのコミットでないときは空)"
+          "text": "署名済みイベントがプロジェクトのコミットなら検査し (definy.check-commit-input), 拒否する理由を then に渡す (無いときとプロジェクトのコミットでないときは空)。decode したコミットも then に渡す (プロジェクトのコミットでなければ none)"
         }
       ],
       "expression": {
@@ -72098,6 +72180,10 @@
                         {
                           "parameter_id": 2,
                           "parameter_name": "input"
+                        },
+                        {
+                          "parameter_id": 10,
+                          "parameter_name": "commit"
                         }
                       ],
                       "body": {
@@ -72129,6 +72215,14 @@
                                       "name": "errors",
                                       "value": {
                                         "#list": []
+                                      }
+                                    },
+                                    {
+                                      "name": "commit",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 10
+                                        }
                                       }
                                     }
                                   ]
@@ -72405,6 +72499,14 @@
                                                                                       "value": {
                                                                                         "#variable": {
                                                                                           "variable_id": 5
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "name": "commit",
+                                                                                      "value": {
+                                                                                        "#variable": {
+                                                                                          "variable_id": 10
                                                                                         }
                                                                                       }
                                                                                     }
@@ -73501,11 +73603,11 @@
       "description": [
         {
           "language": "en",
-          "text": "The rest of SubmitEvent after verifying the signature: check the event with the rules (core.check-event) and the facts the server has, and if accepted, look for the contents missing from the CAS, check it with the type checker and store it"
+          "text": "The rest of SubmitEvent after verifying the signature: check the event with the rules (core.check-event) and the facts the server has, and if accepted, look for the contents missing from the CAS, check it with the type checker and store it. An accepted commit is also written to the commit cache (write_cached_commits) with the stored-commit decoded during the check, so the next submit does not decode it again"
         },
         {
           "language": "ja",
-          "text": "SubmitEvent の署名を確かめた後: サーバーの事実のもとで規則 (core.check-event) で検査し, 受け付けるなら CAS に足りない中身を探し, 型チェッカーで検査して保存する"
+          "text": "SubmitEvent の署名を確かめた後: サーバーの事実のもとで規則 (core.check-event) で検査し, 受け付けるなら CAS に足りない中身を探し, 型チェッカーで検査して保存する。受け付けたコミットは, 検査のときに decode した stored-commit をコミットキャッシュにも書く (write_cached_commits)。次の提出で decode し直さないため"
         }
       ],
       "expression": {
@@ -73862,6 +73964,10 @@
                                                         {
                                                           "parameter_id": 1025,
                                                           "parameter_name": "errors"
+                                                        },
+                                                        {
+                                                          "parameter_id": 1027,
+                                                          "parameter_name": "commit"
                                                         }
                                                       ],
                                                       "body": {
@@ -74016,144 +74122,380 @@
                                                                             }
                                                                           ],
                                                                           "body": {
-                                                                            "#call": {
-                                                                              "function": {
-                                                                                "#part_reference": {
-                                                                                  "part_definition_event_hash": {
-                                                                                    "$part": "definy.json-response"
-                                                                                  }
+                                                                            "#match": {
+                                                                              "target": {
+                                                                                "#variable": {
+                                                                                  "variable_id": 1027
                                                                                 }
                                                                               },
-                                                                              "arguments": [
+                                                                              "arms": [
                                                                                 {
-                                                                                  "name": "status",
-                                                                                  "value": {
-                                                                                    "#number": 200
+                                                                                  "pattern": {
+                                                                                    "#variant": {
+                                                                                      "tag": "none",
+                                                                                      "payload": {
+                                                                                        "#any": null
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "body": {
+                                                                                    "#call": {
+                                                                                      "function": {
+                                                                                        "#part_reference": {
+                                                                                          "part_definition_event_hash": {
+                                                                                            "$part": "definy.json-response"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "arguments": [
+                                                                                        {
+                                                                                          "name": "status",
+                                                                                          "value": {
+                                                                                            "#number": 200
+                                                                                          }
+                                                                                        },
+                                                                                        {
+                                                                                          "name": "body",
+                                                                                          "value": {
+                                                                                            "#variant": {
+                                                                                              "tag": "object",
+                                                                                              "payload": {
+                                                                                                "#some": {
+                                                                                                  "#list": [
+                                                                                                    {
+                                                                                                      "#record": [
+                                                                                                        {
+                                                                                                          "key": "key",
+                                                                                                          "value": {
+                                                                                                            "#string": "eventHash"
+                                                                                                          }
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "key": "value",
+                                                                                                          "value": {
+                                                                                                            "#variant": {
+                                                                                                              "tag": "string",
+                                                                                                              "payload": {
+                                                                                                                "#some": {
+                                                                                                                  "#variable": {
+                                                                                                                    "variable_id": 1026
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "type_part": {
+                                                                                                                "#some": {
+                                                                                                                  "$part": "definy.json"
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "#record": [
+                                                                                                        {
+                                                                                                          "key": "key",
+                                                                                                          "value": {
+                                                                                                            "#string": "status"
+                                                                                                          }
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "key": "value",
+                                                                                                          "value": {
+                                                                                                            "#variant": {
+                                                                                                              "tag": "string",
+                                                                                                              "payload": {
+                                                                                                                "#some": {
+                                                                                                                  "#string": "accepted"
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "type_part": {
+                                                                                                                "#some": {
+                                                                                                                  "$part": "definy.json"
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "#record": [
+                                                                                                        {
+                                                                                                          "key": "key",
+                                                                                                          "value": {
+                                                                                                            "#string": "missingContentHashes"
+                                                                                                          }
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "key": "value",
+                                                                                                          "value": {
+                                                                                                            "#variant": {
+                                                                                                              "tag": "array",
+                                                                                                              "payload": {
+                                                                                                                "#some": {
+                                                                                                                  "#call": {
+                                                                                                                    "function": {
+                                                                                                                      "#part_reference": {
+                                                                                                                        "part_definition_event_hash": {
+                                                                                                                          "$part": "definy.json-string-array"
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    "arguments": [
+                                                                                                                      {
+                                                                                                                        "name": "items",
+                                                                                                                        "value": {
+                                                                                                                          "#list": []
+                                                                                                                        }
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                        "name": "index",
+                                                                                                                        "value": {
+                                                                                                                          "#number": 0
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    ]
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "type_part": {
+                                                                                                                "#some": {
+                                                                                                                  "$part": "definy.json"
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              },
+                                                                                              "type_part": {
+                                                                                                "#some": {
+                                                                                                  "$part": "definy.json"
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      ]
+                                                                                    }
                                                                                   }
                                                                                 },
                                                                                 {
-                                                                                  "name": "body",
-                                                                                  "value": {
+                                                                                  "pattern": {
                                                                                     "#variant": {
-                                                                                      "tag": "object",
+                                                                                      "tag": "some",
+                                                                                      "payload": {
+                                                                                        "#any": null
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "body": {
+                                                                                    "#variant": {
+                                                                                      "tag": "write_cached_commits",
                                                                                       "payload": {
                                                                                         "#some": {
-                                                                                          "#list": [
+                                                                                          "#record": [
                                                                                             {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "key",
-                                                                                                  "value": {
-                                                                                                    "#string": "eventHash"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#variant": {
-                                                                                                      "tag": "string",
-                                                                                                      "payload": {
-                                                                                                        "#some": {
-                                                                                                          "#variable": {
-                                                                                                            "variable_id": 1026
-                                                                                                          }
-                                                                                                        }
-                                                                                                      },
-                                                                                                      "type_part": {
-                                                                                                        "#some": {
-                                                                                                          "$part": "definy.json"
-                                                                                                        }
-                                                                                                      }
-                                                                                                    }
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            },
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "key",
-                                                                                                  "value": {
-                                                                                                    "#string": "status"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#variant": {
-                                                                                                      "tag": "string",
-                                                                                                      "payload": {
-                                                                                                        "#some": {
-                                                                                                          "#string": "accepted"
-                                                                                                        }
-                                                                                                      },
-                                                                                                      "type_part": {
-                                                                                                        "#some": {
-                                                                                                          "$part": "definy.json"
-                                                                                                        }
-                                                                                                      }
-                                                                                                    }
-                                                                                                  }
-                                                                                                }
-                                                                                              ]
-                                                                                            },
-                                                                                            {
-                                                                                              "#record": [
-                                                                                                {
-                                                                                                  "key": "key",
-                                                                                                  "value": {
-                                                                                                    "#string": "missingContentHashes"
-                                                                                                  }
-                                                                                                },
-                                                                                                {
-                                                                                                  "key": "value",
-                                                                                                  "value": {
-                                                                                                    "#variant": {
-                                                                                                      "tag": "array",
-                                                                                                      "payload": {
-                                                                                                        "#some": {
-                                                                                                          "#call": {
-                                                                                                            "function": {
-                                                                                                              "#part_reference": {
-                                                                                                                "part_definition_event_hash": {
-                                                                                                                  "$part": "definy.json-string-array"
-                                                                                                                }
+                                                                                              "key": "entries",
+                                                                                              "value": {
+                                                                                                "#list": [
+                                                                                                  {
+                                                                                                    "#record": [
+                                                                                                      {
+                                                                                                        "key": "event_hash",
+                                                                                                        "value": {
+                                                                                                          "#record_get": {
+                                                                                                            "record": {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 1
                                                                                                               }
                                                                                                             },
-                                                                                                            "arguments": [
-                                                                                                              {
-                                                                                                                "name": "items",
-                                                                                                                "value": {
-                                                                                                                  "#list": []
-                                                                                                                }
-                                                                                                              },
-                                                                                                              {
-                                                                                                                "name": "index",
-                                                                                                                "value": {
-                                                                                                                  "#number": 0
-                                                                                                                }
-                                                                                                              }
-                                                                                                            ]
+                                                                                                            "key": "event_hash"
                                                                                                           }
                                                                                                         }
                                                                                                       },
-                                                                                                      "type_part": {
-                                                                                                        "#some": {
-                                                                                                          "$part": "definy.json"
+                                                                                                      {
+                                                                                                        "key": "commit",
+                                                                                                        "value": {
+                                                                                                          "#variable": {
+                                                                                                            "variable_id": 1027
+                                                                                                          }
                                                                                                         }
                                                                                                       }
+                                                                                                    ]
+                                                                                                  }
+                                                                                                ]
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "key": "then",
+                                                                                              "value": {
+                                                                                                "#function": {
+                                                                                                  "parameters": [
+                                                                                                    {
+                                                                                                      "parameter_id": 1028,
+                                                                                                      "parameter_name": "written"
+                                                                                                    }
+                                                                                                  ],
+                                                                                                  "body": {
+                                                                                                    "#call": {
+                                                                                                      "function": {
+                                                                                                        "#part_reference": {
+                                                                                                          "part_definition_event_hash": {
+                                                                                                            "$part": "definy.json-response"
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "arguments": [
+                                                                                                        {
+                                                                                                          "name": "status",
+                                                                                                          "value": {
+                                                                                                            "#number": 200
+                                                                                                          }
+                                                                                                        },
+                                                                                                        {
+                                                                                                          "name": "body",
+                                                                                                          "value": {
+                                                                                                            "#variant": {
+                                                                                                              "tag": "object",
+                                                                                                              "payload": {
+                                                                                                                "#some": {
+                                                                                                                  "#list": [
+                                                                                                                    {
+                                                                                                                      "#record": [
+                                                                                                                        {
+                                                                                                                          "key": "key",
+                                                                                                                          "value": {
+                                                                                                                            "#string": "eventHash"
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                          "key": "value",
+                                                                                                                          "value": {
+                                                                                                                            "#variant": {
+                                                                                                                              "tag": "string",
+                                                                                                                              "payload": {
+                                                                                                                                "#some": {
+                                                                                                                                  "#variable": {
+                                                                                                                                    "variable_id": 1026
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              "type_part": {
+                                                                                                                                "#some": {
+                                                                                                                                  "$part": "definy.json"
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      ]
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                      "#record": [
+                                                                                                                        {
+                                                                                                                          "key": "key",
+                                                                                                                          "value": {
+                                                                                                                            "#string": "status"
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                          "key": "value",
+                                                                                                                          "value": {
+                                                                                                                            "#variant": {
+                                                                                                                              "tag": "string",
+                                                                                                                              "payload": {
+                                                                                                                                "#some": {
+                                                                                                                                  "#string": "accepted"
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              "type_part": {
+                                                                                                                                "#some": {
+                                                                                                                                  "$part": "definy.json"
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      ]
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                      "#record": [
+                                                                                                                        {
+                                                                                                                          "key": "key",
+                                                                                                                          "value": {
+                                                                                                                            "#string": "missingContentHashes"
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                          "key": "value",
+                                                                                                                          "value": {
+                                                                                                                            "#variant": {
+                                                                                                                              "tag": "array",
+                                                                                                                              "payload": {
+                                                                                                                                "#some": {
+                                                                                                                                  "#call": {
+                                                                                                                                    "function": {
+                                                                                                                                      "#part_reference": {
+                                                                                                                                        "part_definition_event_hash": {
+                                                                                                                                          "$part": "definy.json-string-array"
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    },
+                                                                                                                                    "arguments": [
+                                                                                                                                      {
+                                                                                                                                        "name": "items",
+                                                                                                                                        "value": {
+                                                                                                                                          "#list": []
+                                                                                                                                        }
+                                                                                                                                      },
+                                                                                                                                      {
+                                                                                                                                        "name": "index",
+                                                                                                                                        "value": {
+                                                                                                                                          "#number": 0
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    ]
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              "type_part": {
+                                                                                                                                "#some": {
+                                                                                                                                  "$part": "definy.json"
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      ]
+                                                                                                                    }
+                                                                                                                  ]
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "type_part": {
+                                                                                                                "#some": {
+                                                                                                                  "$part": "definy.json"
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      ]
                                                                                                     }
                                                                                                   }
                                                                                                 }
-                                                                                              ]
+                                                                                              }
                                                                                             }
                                                                                           ]
                                                                                         }
                                                                                       },
                                                                                       "type_part": {
-                                                                                        "#some": {
-                                                                                          "$part": "definy.json"
-                                                                                        }
+                                                                                        "#none": null
                                                                                       }
                                                                                     }
                                                                                   }
