@@ -59,6 +59,16 @@ export default defineConfig({
     name: "definy",
     // CI の void deploy はアカウントの一覧を読めないトークンで動くので, デプロイ先のアカウントを固定する
     account_id: "6a8354084cc02bb1c5f9ca1bb3442704",
+    // Worker のトラフィックの設定. 書かないと void deploy はダッシュボードで付けた設定を
+    // 安全に引き継げないとして止まるので, 今の本番の設定をそのまま書く (docs/cloudflare-workers-assets.md)
+    // - definy.narumincho.com: カスタムドメイン
+    // - *-definy.narumincho.com: definy のパーツの HTTP サーバー ({sub}-definy.narumincho.com) のルート
+    routes: [
+      { pattern: "definy.narumincho.com", custom_domain: true },
+      { pattern: "*-definy.narumincho.com/*", zone_name: "narumincho.com" },
+    ],
+    workers_dev: true,
+    preview_urls: false,
     compatibility_date: "2026-02-24",
     compatibility_flags: ["nodejs_compat"],
     d1_databases: [
