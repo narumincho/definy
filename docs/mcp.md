@@ -1,6 +1,51 @@
 # MCP サーバー
 
 AI エージェントが definy を読み書きするための MCP (Model Context Protocol) サーバー。
+2 つある。
+
+- **Worker の `/mcp` (definy 製, 2026-11-06)**: definy サーバー自身が MCP の Streamable HTTP で答える。
+  処理は全て definy の関数 (`definy.handle-mcp`) で, TypeScript は無い。
+  MCP を操作の主役にして TypeScript を無くしていく計画 ([mcp-self-hosting.md](mcp-self-hosting.md)) の 1 段目
+- **stdio の MCP サーバー (`mcp/`, TypeScript)**: 下の「stdio の MCP サーバー」以降。
+  署名の検証付きの読み取りと, 専用アカウントの書き込みがある。Worker の `/mcp` に移し終えたら消す
+
+## Worker の `/mcp` (definy 製)
+
+```sh
+claude mcp add --transport http definy https://definy.narumincho.com/mcp
+```
+
+- `definy.handle-request` が `/mcp` を `definy.handle-mcp` に渡す ([service.md](service.md))。
+  `POST` で JSON-RPC のメッセージを 1 つ受け, `application/json` で返す (SSE は使わない。`POST` 以外は `405`)。
+  JSON でない本文は `400` と `-32700`。セッション (`Mcp-Session-Id`) は使わない
+- `definy.mcp-handle-message`: `id` か `method` の無いメッセージ (通知とレスポンス) は本文なしの `202`。
+  `initialize` (求められたプロトコルのバージョンをそのまま返す。無ければ `2025-06-18`), `ping`, `tools/list`, `tools/call`。
+  他のメソッドは `-32601`
+- ツール (`definy.mcp-tools`) は, 今は Connect-RPC の読み取りのメソッドをそのまま呼ぶもの。
+  `tools/call` は `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
+  テキストにして返す。ステータスが `200` でなければ `isError` (本文は Connect のエラー `{code, message}`)
+
+  | ツール                        | RPC                               |
+  | :---------------------------- | :-------------------------------- |
+  | `definy_get_project_branches` | `EventService/GetProjectBranches` |
+  | `definy_get_events`           | `EventService/GetEvents`          |
+  | `definy_get_event`            | `EventService/GetEvent`           |
+  | `definy_get_content`          | `EventService/GetContent`         |
+  | `definy_check_missing_hashes` | `EventService/CheckMissingHashes` |
+
+- RPC のハンドラーは最後に `respond` を返す `definy.service-io` なので, `definy.service-io-then-respond(io, respond)` で
+  最後の `respond` だけを差し替える。`definy.service-io` の全てのタグの `then` を包み直す式で, 型の宣言から機械的に作った
+  (タグを足したらこのパーツにも足す。全てのタグがあるかは `worker/mcp_endpoint.test.ts` が確かめる)
+- JSON をテキストにするのも definy (`definy.json-to-string`。空白なし)。文字列は UTF-8 のバイトを見て
+  `"` `\` と制御文字 (`\n` `\r` `\t` 以外は `\u00XX`) をエスケープし, それ以外のバイトはそのまま (`definy.json-escape-range`。
+  再帰が深くならないように半分ずつ)。HTTP の本文の JSON は今までどおりホストが `JSON.stringify` する。
+  ローカルの dev サーバーで `GetEvents` 500 件 (約 210KB) は RPC で 25ms, ツールで 70ms (差はテキストにする時間)
+- 読み取りはサーバー自身のストアを読むので, stdio 版のような「受け取ったイベントの署名の検証」は無い
+  (保存するときに `SubmitEvent` が検証している)。別の人のサーバーを信用せずに読みたいときは自分で Worker を立てる
+- テストは `worker/mcp_endpoint.test.ts`
+
+## stdio の MCP サーバー (`mcp/`)
+
 実装は `mcp/` にあり、依存パッケージを増やさず、最小限の JSON-RPC を自前で実装し、
 署名・検証・デコードは `src/` の既存コードを再利用する。
 
