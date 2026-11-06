@@ -36,6 +36,29 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
     Worker の専用アカウントと同じ仕組みで手元の鍵の署名になる ([mcp.md](mcp.md))
 - 静的アセット (今の React の UI) は配らない。UI は 5 段目でサーバーが返す HTML にする
 
+## 式の実行 (`definy_run_expression`)
+
+公開サーバーでは式を実行しないので, 手元のサーバーだけのツール。
+
+```json
+{ "expression": "@local.double(value: 21)", "project": "sample", "branch": "w" }
+```
+
+は `42` を返す。
+
+- 中身は definy の `definy.mcp-run-expression`。式は `definy.parse-expression-text` で読み,
+  definy 製の評価器 `core.eval-value` で評価する (stage1 でコンパイルはしない)
+- `project` (と `branch`。既定は `main`) を渡すと, そのブランチのコミットのパーツを全て使う。
+  それ以外のパーツは, 参照をたどって最新の main のコミットから読む
+  (`definy.collect-evaluation-parts`。ユーザーが作った定義のパーツの評価と同じもの)
+- 値は `definy.value-literal` でリテラルの式にしてから `definy.expression-text` で書く。
+  浮動小数は値をちょうど表す最も少ない 10 進の桁 (17 桁まで) の `float(仮数, 指数)`。
+  クロージャは捕捉した変数を除いた `fn` の式。unit は `{}`
+- 型検査はまだしない。止まらない式は返らない (手元のサーバーなので, 止めるにはサーバーを止める)
+- 実行してよいかはホストの能力 `read_host_settings` の `run_expressions` で決まる。
+  `cli/serve.ts` が `DEFINY_RUN_EXPRESSIONS: "1"` を渡す。Worker はこれを設定しないので, 公開サーバーの `/mcp` は
+  "Running expressions is disabled on this server" のエラーを返す
+
 ## 安全
 
 `127.0.0.1` だけで待ち受けても, ブラウザで開いた他のサイトのページからのリクエストは届く。`cli/local_security.ts` で次を確かめる。

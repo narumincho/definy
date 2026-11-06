@@ -179,6 +179,7 @@ export async function startLocalServer(options: {
     DB: db,
     DEFINY_MCP_ACCOUNT_SECRET_KEY: account.secretKeyBase64,
     DEFINY_MCP_ACCOUNT_NAME: account.accountName,
+    DEFINY_RUN_EXPRESSIONS: "1",
   };
   const fetchFn = options.fetchFn ?? fetch;
 

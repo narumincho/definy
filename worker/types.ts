@@ -65,6 +65,11 @@ export type Env = {
   /** `/mcp` の専用アカウントの名前 (アカウントを作るときに使う) */
   readonly DEFINY_MCP_ACCOUNT_NAME?: string;
   /**
+   * "1" なら MCP の `definy_run_expression` で式を実行する. 手元の definy サーバー (`npm run serve`) だけが設定する.
+   * 公開サーバーでは式を実行しない (docs/local-server.md)
+   */
+  readonly DEFINY_RUN_EXPRESSIONS?: string;
+  /**
    * パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の
    * Bearer トークン。未設定ならエンドポイントは無効 (docs/performance-observability.md)
    */

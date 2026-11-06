@@ -101,6 +101,7 @@ describe("definy.handle-mcp", () => {
       "definy_whoami",
       "definy_create_branch",
       "definy_commit_parts",
+      "definy_run_expression",
       "definy_get_project_branches",
       "definy_get_events",
       "definy_get_event",
@@ -513,6 +514,78 @@ describe("書き込みのツール (専用アカウント)", () => {
       "only the account that created the branch can commit to it",
     );
   }, 60_000);
+});
+
+describe("definy_run_expression", () => {
+  const run = async (args: unknown, env: Env) => {
+    const json = (await (
+      await mcp(
+        {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: { name: "definy_run_expression", arguments: args },
+        },
+        {},
+        env,
+      )
+    ).json()) as ToolCallResult;
+    return { text: json.result.content[0]!.text, isError: json.result.isError };
+  };
+  const local = (): Env => ({
+    DB: createSqliteD1Database(),
+    DEFINY_RUN_EXPRESSIONS: "1",
+  });
+
+  it("公開サーバー (DEFINY_RUN_EXPRESSIONS が無い) では式を実行しない", async () => {
+    const result = await run(
+      { expression: "@core.plus(left: 1, right: 2)" },
+      { DB: createSqliteD1Database() },
+    );
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain("Running expressions is disabled");
+  });
+
+  it("式を評価して値を definy のテキストで返す", async () => {
+    const env = local();
+    expect(
+      await run({ expression: "@core.plus(left: 1, right: 2)" }, env),
+    ).toEqual({ text: "3", isError: false });
+    expect(
+      await run(
+        {
+          expression: '@std.string-join(items: ["a", "b"], separator: "-")',
+        },
+        env,
+      ),
+    ).toEqual({ text: '"a-b"', isError: false });
+    expect(
+      await run(
+        {
+          expression:
+            '[float(15, -1), {x: true}, #some("s"), #none, fn(x$0) => $0]',
+        },
+        env,
+      ),
+    ).toEqual({
+      text: '[\n  float(15, -1),\n  {x: true},\n  #some("s"),\n  #none,\n  fn(x$0) =>\n    $0\n]',
+      isError: false,
+    });
+  });
+
+  it("書き方の誤りや無いブランチは isError", async () => {
+    const env = local();
+    expect(await run({ expression: "1 2" }, env)).toEqual({
+      text: "The expression could not be read: unexpected text after the expression at byte 2",
+      isError: true,
+    });
+    expect(
+      await run({ expression: "1", project: "sample", branch: "nope" }, env),
+    ).toEqual({
+      text: "Branch nope of project sample was not found",
+      isError: true,
+    });
+  });
 });
 
 describe("definy_perf_recent_submits", () => {

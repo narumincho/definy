@@ -94,6 +94,18 @@ describe("definy serve (手元の definy サーバー)", () => {
         auth,
       );
       expect(committed.body).toContain("Committed 1 part changes");
+      // 手元のサーバーでは, ブランチのパーツを使う式を実行できる
+      const ran = await post(
+        server.origin,
+        "/mcp",
+        callTool("definy_run_expression", {
+          project: "sample",
+          branch: "w",
+          expression: "@local.double(value: 21)",
+        }),
+        auth,
+      );
+      expect(JSON.parse(ran.body).result.content[0].text).toBe("42");
     } finally {
       await server.close();
     }
