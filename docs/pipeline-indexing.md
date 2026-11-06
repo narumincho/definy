@@ -115,6 +115,53 @@ list-append) が節約分を上回った。支配項は探索の漸近計算量�
 どのパスが重いかを提出の中で数える仕組みから要る。
 3b・3c も同じ理由で保留し、進め方を再検討する。
 
+## パス別測定と decode 重複の排除 (2026-11-06)
+
+3a の結論 (支配項は探索の漸近計算量ではなく定数コスト) を受けて、
+提出をパス別に測った (service-io のセグメント別 wasm 時間 +
+サブパスの直接計測)。支配項は型検査でも探索でもなく、
+`definy.decode-stored-commit` (definy 規模のコミット 1 つで約 400ms、
+半分強は `core.module-part-ids` のパーツ ID 導出) が 1 回の提出の
+流れで複数回走ることだった:
+
+- `definy.read-commit-check-input` が対象コミットを signed bytes から
+  直接 decode する (検査に必須の 1 回)
+- 保存されたコミットはコミットキャッシュに入らないため、次の提出の
+  `definy.read-commit-summaries` → `definy.read-commits` が、保存された
+  ばかりの definy 規模のコミットをキャッシュミスとして decode し直す
+
+対策: decode した stored-commit を
+`read-commit-check-input` → `definy.check-commit` →
+`definy.submit-verified-event` と引き渡し、保存が済んだら
+`write_cached_commits` でコミットキャッシュにも書く。decode は
+対象コミットにつき 1 回で済み、次回以降の提出はキャッシュから読む
+(check-input 側の `read-commits` も元々キャッシュ経由なので、
+最新のコミットが常にキャッシュに載るようになる)。
+
+効果 (同じ計測ハーネスでの A/B、温かい definy コピー 859 パーツ、
+中央値): wasm 合計 約 1,220ms → 約 920ms (約 25% 減)。
+`read_cached_commits` 応答後のセグメントは 約 355ms → 約 46ms で、
+コミットキャッシュは全ヒット + 保存時の書き込み 1 回だけになった。
+残る definy 規模の decode は対象コミット自身の 1 回 (約 400ms) のみ。
+
+残るフォローアップ:
+
+- `core.module-part-ids` の導出そのものの回避 (decode 1 回あたり
+  約 217ms): パーツ ID は (モジュール名, パーツ名) の純関数だが、
+  導出をやめてホスト側の結果と照合する形にすると
+  [service.md](service.md) の「検査は definy 側の責務」との兼ね合いが
+  あるため、未着手。やるなら責務の確認から。
+- 最終セグメント内の未分離の約 430〜490ms (測定時の VM 換算):
+  `resolve-commit-contents` の fold 群などが候補。切り分けには
+  フェーズ境界への計装が要る。
+- 管理者向けのパフォーマンス確認 (ユーザー提案、2026-11-06):
+  今回のパス別測定は `worker/service_io.ts` に一時計装を入れて
+  行ったが、これを常設にし、ホスト側で service-io セグメント別の
+  実行時間を常時集計して、管理者向けページまたは MCP ツールから
+  直近の提出の内訳を見られるようにする案。調査のたびに計装を
+  入れ直さずに済む。集計の粒度・保持期間・管理者判定
+  ([rpc-authorization.md](rpc-authorization.md)) の設計が要る。
+
 ## 等価性
 
 - パーツ ID はプロジェクト内で一意 (モジュール ID とパーツ名から決まる)

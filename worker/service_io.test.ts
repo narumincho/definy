@@ -183,6 +183,7 @@ async function sqlStore(
     ServiceIoHost,
     | "runSql"
     | "readCachedCommits"
+    | "writeCachedCommits"
     | "readCachedDefinitions"
     | "writeCachedDefinitions"
     | "readCachedResolutions"
@@ -264,6 +265,13 @@ async function sqlStore(
               }),
             })),
         );
+      },
+      // 受け付けたコミットは definy がコミットキャッシュにも書く (docs/service.md)
+      writeCachedCommits: (entries) => {
+        log.push(
+          `cache commits ${entries.map((entry) => entry.event_hash).join(",")}`,
+        );
+        return Promise.resolve();
       },
     },
   };
@@ -716,6 +724,8 @@ describe("handleRpcInDefiny", () => {
       "sql SELECT cas_contents hash-x,hash-x2",
       "cache definitions hash-x,hash-x2",
       "sql INSERT events e2,…,…,project_commit,1000000,1000000",
+      // 受け付けたコミットは, 検査時に decode した stored-commit をキャッシュにも書く
+      "cache commits e2",
     ]);
 
     expect(
