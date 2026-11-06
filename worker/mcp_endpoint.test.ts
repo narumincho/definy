@@ -99,6 +99,7 @@ describe("definy.handle-mcp", () => {
       "definy_get_part",
       "definy_whoami",
       "definy_create_branch",
+      "definy_commit_parts",
       "definy_get_project_branches",
       "definy_get_events",
       "definy_get_event",
@@ -373,6 +374,141 @@ describe("書き込みのツール (専用アカウント)", () => {
       ),
     ).toBe(
       partsOf((await call("definy_get_project", { project: "sample" })).text),
+    );
+  }, 60_000);
+
+  it("definy_commit_parts はテキストの型と式でパーツを変え, 足し, 消す", async () => {
+    const credentials = await generateAccountCredentials("mcp-bot");
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_MCP_ACCOUNT_SECRET_KEY: credentials.secretKeyBase64,
+      DEFINY_MCP_ACCOUNT_NAME: "mcp-bot",
+    };
+    const store = new WorkerStore();
+    const call = async (name: string, args: unknown) => {
+      const json = (await (
+        await mcp(
+          {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name, arguments: args },
+          },
+          {},
+          env,
+          store,
+        )
+      ).json()) as ToolCallResult;
+      return {
+        text: json.result.content[0]!.text,
+        isError: json.result.isError,
+      };
+    };
+    const created = await call("definy_create_branch", {
+      project: "sample",
+      branch: "mcp-work",
+    });
+    expect(created.isError, created.text).toBe(false);
+
+    const committed = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "mcp-work",
+      message: "Change parts from MCP",
+      changes: [
+        { part: "sample.prime-numbers", expression: "[2, 3, 5, 7, 11, 13]" },
+        {
+          part: "sample.add-one",
+          type: "Fn(value: Number) -> Number",
+          expression: "fn(value$0) => @core.plus(left: $0, right: 1)",
+          description: "Add one",
+        },
+        {
+          part: "extra.answer",
+          type: "Number",
+          expression: "@sample.add-one(value: 41)",
+        },
+        { part: "sample.greet", delete: true },
+      ],
+    });
+    expect(committed.isError, committed.text).toBe(false);
+    expect(committed.text).toContain(
+      "Committed 4 part changes to branch mcp-work of project sample",
+    );
+
+    const project = (
+      await call("definy_get_project", {
+        project: "sample",
+        branch: "mcp-work",
+      })
+    ).text;
+    expect(project).toContain("modules: sample, extra\n");
+    expect(project).toContain(
+      "\nsample.add-one: Fn(value: Number) -> Number  // (en) Add one\n",
+    );
+    expect(project).toContain("\nextra.answer: Number");
+    expect(project).not.toContain("sample.greet");
+    const prime = await call("definy_get_part", {
+      part: "sample.prime-numbers",
+      project: "sample",
+      branch: "mcp-work",
+    });
+    expect(prime.text).toContain("expression:\n[2, 3, 5, 7, 11, 13]");
+    // 説明と型は今のまま
+    expect(prime.text).toContain("type:\nList<Number>\n");
+    const answer = await call("definy_get_part", {
+      part: "extra.answer",
+      project: "sample",
+      branch: "mcp-work",
+    });
+    expect(answer.text).toContain("expression:\n@sample.add-one(value: 41)");
+
+    // 続けてコミットしても (同じ秒でも) 新しいコミットが最新になる
+    const again = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "mcp-work",
+      changes: [{ part: "extra.answer", expression: "42" }],
+    });
+    expect(again.isError, again.text).toBe(false);
+    expect(
+      (
+        await call("definy_get_part", {
+          part: "extra.answer",
+          project: "sample",
+          branch: "mcp-work",
+        })
+      ).text,
+    ).toContain("expression:\n42");
+
+    // 型が合わないコミットはサーバーが受け付けない
+    const wrong = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "mcp-work",
+      changes: [{ part: "sample.prime-numbers", expression: '"not a list"' }],
+    });
+    expect(wrong.isError).toBe(true);
+    expect(wrong.text).toContain(
+      "part 'sample.prime-numbers': type error: type_mismatch",
+    );
+    // テキストの誤りはコミットする前に返す
+    expect(
+      await call("definy_commit_parts", {
+        project: "sample",
+        branch: "mcp-work",
+        changes: [{ part: "sample.prime-numbers", expression: "[1, " }],
+      }),
+    ).toEqual({
+      text: "The expression of sample.prime-numbers: expected an expression at byte 4",
+      isError: true,
+    });
+    // 作成者でないブランチ (main) にはコミットできない
+    const main = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "main",
+      changes: [{ part: "sample.prime-numbers", expression: "[2]" }],
+    });
+    expect(main.isError).toBe(true);
+    expect(main.text).toContain(
+      "only the account that created the branch can commit to it",
     );
   }, 60_000);
 });

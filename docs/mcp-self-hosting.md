@@ -20,7 +20,8 @@ TypeScript を無くしていく。
    - 1b-1 (2026-11-06): パーツの中身を読めるツール (`definy_get_project`, `definy_get_part`) と式のテキスト ([expression-text.md](expression-text.md))
    - 1b-2a (2026-11-06): Worker に Ed25519 で署名する能力を足し (専用アカウントの鍵は Worker の secret), CBOR を書く関数と
      `definy_whoami`, `definy_create_branch`
-   - 1b-2b: 式のテキストを読む関数 (2 段目の前倒し) と, パーツを変えるコミット (`definy_commit_parts`)
+   - 1b-2b (2026-11-06): 式のテキストを読む関数 (`definy.parse-expression-text`。2 段目の前倒し) と,
+     パーツを変えるコミット (`definy_commit_parts`)
    - 1b-3: 性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消す
 2. **AI が式を読み書きしやすくする**: 式のテキスト形式 (今はプロジェクトの外の `dtx.mjs` で JSON と変換している) の
    表示と読み取りを definy に入れ, ツールで式をテキストで受け渡す。式を実行するツールも足し,

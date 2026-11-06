@@ -31,6 +31,7 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す                     |
   | `definy_whoami`               | `definy.mcp-whoami`: 書き込みに使う専用アカウント (アカウント ID, 名前, サーバーにもうあるか)                                                         |
   | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し |
+  | `definy_commit_parts`         | `definy.mcp-commit-parts`: 専用アカウントのブランチにパーツの変更・追加・削除をコミットする。型と式は definy のテキストで渡す                         |
   | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                                                 |
   | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                                          |
   | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                                           |
@@ -70,11 +71,25 @@ npx wrangler secret put DEFINY_MCP_ACCOUNT_NAME         # アカウントの名�
   `sign_mcp_account` で署名を頼む ([service.md](service.md))。secret が無ければ書き込みのツールは理由を返す
 - `definy.mcp-with-account`: サーバーにまだ専用アカウントが無ければ, 先に `create_account` のイベントを出す
 - `definy.mcp-submit-content`: イベントの中身を CBOR にして ([cbor.md](cbor.md)) 署名し, `SubmitEvent` と同じ `definy.submit-event` に渡す。
-  なので署名・規則・型検査は外から `SubmitEvent` したときと全く同じに確かめられる。時刻は `read_time` の秒
+  なので署名・規則・型検査は外から `SubmitEvent` したときと全く同じに確かめられる。時刻は `read_time` の秒 (親のコミットより後にする。下の `definy_commit_parts`)
 - `definy_create_branch` は元のブランチの最新のコミットのイベントを読み直して (`definy.read-commit-content`), 中身 (モジュールの説明と
   パーツの content hash) をそのまま使い, `branch`, `message`, `parent_commit_hash` (元のコミット) だけを変える。
   同じ名前のブランチが既にあれば作らない
-- パーツを変えるコミット (`definy_commit_parts`) は, 式をテキストで受け取るための読み取りを作ってから足す ([mcp-self-hosting.md](mcp-self-hosting.md))
+- `definy_commit_parts` (2026-11-06) は `changes` の各項目 `{part: "モジュール.名前", type?, expression?, description?, delete?}` を順に
+  ブランチの最新のコミットに重ねる。
+  - `type` と `expression` は definy のテキスト ([expression-text.md](expression-text.md)。`definy_get_part` が返すのと同じ書き方) で,
+    `definy.parse-expression-text` で読む。読めなければコミットする前に理由とバイトの位置を返す
+  - 省いた項目は今のまま。空の文字列は型や式を無くす。`description` は英語の説明 1 つに置き換える。
+    新しいパーツは公開, 新しいモジュールは説明なしの公開で足す。パーツは今の位置のまま置き換え, 新しいパーツはモジュールの最後に足す
+  - 新しい中身は定義の式 (`definy.part-definition-expression`。`src/part_definition.ts` の `partDefinitionExpression` と同じ
+    `core.define-part(...)` / `core.define-type(...)`。[part-definition.md](part-definition.md)) にし,
+    `core.expression-to-value` → `definy.value-to-cbor` → `definy.cbor-encode` の CBOR の SHA-256 (`core.sha256`) を content hash にして
+    `definy.store-write-contents` で CAS に置く
+  - コミットは `SubmitEvent` と同じ検査を通るので, 型が合わなければ `part 'sample.prime-numbers': type error: type_mismatch (...)`,
+    作成者でないブランチ (例えば `main`) なら `only the account that created the branch can commit to it` が返る
+  - 同じ秒の 2 つのコミットは先のものが最新のままになる ([event.md](event.md)) ので, `definy.mcp-submit-content` はイベントの時刻を
+    親のコミットの時刻 (`after_time_ms`) の 1 秒以上後にする (サーバーは 10 分先までの時刻を受け付ける)。
+    続けてコミットするエージェントの変更が消えないようにするため
 
 ## stdio の MCP サーバー (`mcp/`)
 
