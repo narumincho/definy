@@ -115,12 +115,12 @@ npm run deploy
 
 `deploy.yaml` は `npm ci` の後に `npx void deploy --platform cloudflare` を実行します。`void deploy` がビルド・アップロード・準備完了の確認・トラフィックの切り替えまで行います。
 
-- definy は `preview_urls: false` なので Worker のバージョンにプレビュー URL がありません。このとき Void は新しいバージョンを 0% で載せ, `https://definy.<サブドメイン>.workers.dev/__void/ready` で準備完了を確かめてから切り替えます。サブドメインは環境変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` で渡す必要があり, 無いと「the uploaded Worker Version has no preview URL, so Void cannot verify readiness」で止まります (2026-11-06 のデプロイがこれで失敗)。秘密ではないので `deploy.yaml` に `narumincho` と直接書いています
+- definy は `preview_urls: false` なので Worker のバージョンにプレビュー URL がありません。このとき Void は新しいバージョンを 0% で載せ, 準備完了を確かめてから切り替えます。確認先は `@void/deploy-cloudflare` が決めます: `workers_dev` が有効なら `https://definy.<サブドメイン>.workers.dev/__void/ready` (サブドメインを環境変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` で渡す必要がありました) ですが, definy は `workers_dev: false` なので `routes` の `custom_domain` から `https://definy.narumincho.com/__void/ready` が選ばれます。かつては workers.dev 経由で, サブドメインが無いと「the uploaded Worker Version has no preview URL, so Void cannot verify readiness」で止まり (2026-11-06 のデプロイがこれで失敗), その後 workers.dev 自体がエッジ側で無効 (error 1042) になって確認が永遠に通らなくなりデプロイが 2 回失敗したため, カスタムドメイン経由に切り替えました
 - デプロイ先のアカウントは `void.config.ts` の `cloudflare.account_id` で固定しています。無いと Void はトークンで見えるアカウントの一覧から選ぼうとしますが、CI のトークンは一覧を読めないので「Cloudflare authentication is required」で止まります (2026-11-05 のデプロイがこれで失敗)
 - Worker のトラフィックの設定 (`routes`, `workers_dev`, `preview_urls`) は `void.config.ts` の `cloudflare` に必ず書きます。書かないと Void は「ダッシュボードで付けた設定を引き継ぐ」扱いにしますが, まだ Void でデプロイしたことのない Worker では前の設定を読めないので「the existing Worker has dashboard-managed routes or visibility that Void cannot safely republish」で止まります (2026-11-06 のデプロイがこれで失敗。コードは `@void/deploy-cloudflare` の `resolvePreservedTraffic`)。今の本番の設定は次のとおりです
   - `definy.narumincho.com`: カスタムドメイン (`custom_domain: true`)。このホストだけ専用の証明書 (`definy.narumincho.com`, `*.definy.narumincho.com`) が出ていることから判断しました
   - `*-definy.narumincho.com/*`: パーツの HTTP サーバー (`{sub}-definy.narumincho.com`) 用のルート。こちらはゾーンの共通の証明書 (`*.narumincho.com`) です
-  - `workers_dev: true` (`definy.narumincho.workers.dev`), `preview_urls: false`
+  - `workers_dev: false` (workers.dev は無効。準備完了の確認はカスタムドメイン経由), `preview_urls: false`
   - ダッシュボードでドメインやルートを変えたら `void.config.ts` も合わせます。合わせないと次のデプロイで設定が上書きされます
 - ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
 
