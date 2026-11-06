@@ -117,6 +117,11 @@ npm run deploy
 
 - Worker のバージョンにプレビュー URL が無く、バージョンのメタデータのバインディングも無いと、Void は準備完了を確かめられず、切り替えの前に止まります。そのときは GitHub Actions の変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` (例: `my-team.workers.dev`) を設定します
 - デプロイ先のアカウントは `void.config.ts` の `cloudflare.account_id` で固定しています。無いと Void はトークンで見えるアカウントの一覧から選ぼうとしますが、CI のトークンは一覧を読めないので「Cloudflare authentication is required」で止まります (2026-11-05 のデプロイがこれで失敗)
+- Worker のトラフィックの設定 (`routes`, `workers_dev`, `preview_urls`) は `void.config.ts` の `cloudflare` に必ず書きます。書かないと Void は「ダッシュボードで付けた設定を引き継ぐ」扱いにしますが, まだ Void でデプロイしたことのない Worker では前の設定を読めないので「the existing Worker has dashboard-managed routes or visibility that Void cannot safely republish」で止まります (2026-11-06 のデプロイがこれで失敗。コードは `@void/deploy-cloudflare` の `resolvePreservedTraffic`)。今の本番の設定は次のとおりです
+  - `definy.narumincho.com`: カスタムドメイン (`custom_domain: true`)。このホストだけ専用の証明書 (`definy.narumincho.com`, `*.definy.narumincho.com`) が出ていることから判断しました
+  - `*-definy.narumincho.com/*`: パーツの HTTP サーバー (`{sub}-definy.narumincho.com`) 用のルート。こちらはゾーンの共通の証明書 (`*.narumincho.com`) です
+  - `workers_dev: true` (`definy.narumincho.workers.dev`), `preview_urls: false`
+  - ダッシュボードでドメインやルートを変えたら `void.config.ts` も合わせます。合わせないと次のデプロイで設定が上書きされます
 - ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
 
 ### `wrangler deploy` を使わない理由

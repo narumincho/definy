@@ -3,6 +3,18 @@
   "source": {
     "name": "definy",
     "account_id": "6a8354084cc02bb1c5f9ca1bb3442704",
+    "routes": [
+      {
+        "pattern": "definy.narumincho.com",
+        "custom_domain": true
+      },
+      {
+        "pattern": "*-definy.narumincho.com/*",
+        "zone_name": "narumincho.com"
+      }
+    ],
+    "workers_dev": true,
+    "preview_urls": false,
     "compatibility_date": "2026-02-24",
     "compatibility_flags": [
       "nodejs_compat"
@@ -17,6 +29,7 @@
   },
   "resolved": {
     "name": "definy",
+    "account_id": "6a8354084cc02bb1c5f9ca1bb3442704",
     "compatibility_date": "2026-02-24",
     "compatibility_flags": [
       "nodejs_compat"
@@ -28,7 +41,18 @@
         "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818"
       }
     ],
-    "account_id": "6a8354084cc02bb1c5f9ca1bb3442704"
+    "routes": [
+      {
+        "pattern": "definy.narumincho.com",
+        "custom_domain": true
+      },
+      {
+        "pattern": "*-definy.narumincho.com/*",
+        "zone_name": "narumincho.com"
+      }
+    ],
+    "workers_dev": true,
+    "preview_urls": false
   },
-  "text": "{\n  \"name\": \"definy\",\n  \"compatibility_date\": \"2026-02-24\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\"\n  ],\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"definy-db\",\n      \"database_id\": \"d4c3a982-558e-4d58-95f8-bbc3ca391818\"\n    }\n  ],\n  \"account_id\": \"6a8354084cc02bb1c5f9ca1bb3442704\"\n}\n"
+  "text": "{\n  \"name\": \"definy\",\n  \"account_id\": \"6a8354084cc02bb1c5f9ca1bb3442704\",\n  \"compatibility_date\": \"2026-02-24\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\"\n  ],\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"definy-db\",\n      \"database_id\": \"d4c3a982-558e-4d58-95f8-bbc3ca391818\"\n    }\n  ],\n  \"routes\": [\n    {\n      \"pattern\": \"definy.narumincho.com\",\n      \"custom_domain\": true\n    },\n    {\n      \"pattern\": \"*-definy.narumincho.com/*\",\n      \"zone_name\": \"narumincho.com\"\n    }\n  ],\n  \"workers_dev\": true,\n  \"preview_urls\": false\n}\n"
 }
