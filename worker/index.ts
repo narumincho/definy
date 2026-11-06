@@ -154,6 +154,9 @@ export async function handleWorkerRequest(
           ),
         readRequestText: readBody,
         readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
+        readHostSettings: () => ({
+          runExpressions: env.DEFINY_RUN_EXPRESSIONS === "1",
+        }),
         ...createMcpAccountHost(env),
         readPerfRecords: async (query) => {
           const { status, body } = await readPerfRecordsResponse(env, query);

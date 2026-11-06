@@ -78,6 +78,11 @@ export type ServiceIoHost = {
    */
   readonly readMcpAccount?: () => Promise<McpAccount | null>;
   /**
+   * ホストの設定 (`read_host_settings`). `runExpressions` は MCP の `definy_run_expression` で式を実行してよいか
+   * (手元の definy サーバーだけ. docs/local-server.md). 省くと全て false
+   */
+  readonly readHostSettings?: () => { readonly runExpressions: boolean };
+  /**
    * MCP サーバーの専用アカウントの秘密鍵で `message` に Ed25519 で署名する (`sign_mcp_account`).
    * 何に署名するかは definy が決める. 秘密鍵が無ければ `null`
    */
@@ -707,6 +712,13 @@ async function runServiceIoLoop(
                   account_name: account.accountName,
                 }),
           ),
+        ]);
+        break;
+      }
+      case "read_host_settings": {
+        const settings = host.readHostSettings?.() ?? { runExpressions: false };
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument({ run_expressions: settings.runExpressions }),
         ]);
         break;
       }

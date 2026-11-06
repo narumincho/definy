@@ -33,6 +33,7 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   | `definy_whoami`               | `definy.mcp-whoami`: 書き込みに使う専用アカウント (アカウント ID, 名前, サーバーにもうあるか)                                                         |
   | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し |
   | `definy_commit_parts`         | `definy.mcp-commit-parts`: 専用アカウントのブランチにパーツの変更・追加・削除をコミットする。型と式は definy のテキストで渡す                         |
+  | `definy_run_expression`       | `definy.mcp-run-expression`: definy のテキストの式を評価して値をテキストで返す。手元の definy サーバーだけ ([local-server.md](local-server.md))       |
   | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                                                 |
   | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                                          |
   | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                                           |

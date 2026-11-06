@@ -10,6 +10,7 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 | `DEFINY_PERF_TOKEN`             | パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) と MCP の `definy_perf_recent_submits` の Bearer トークン。未設定なら無効 ([performance-observability.md](performance-observability.md)) |
 | `DEFINY_MCP_ACCOUNT_SECRET_KEY` | `/mcp` の書き込みツールが署名に使う専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe Base64)。`DEFINY_MCP_ACCOUNT_NAME` と両方無ければ書き込みは無効 ([mcp.md](mcp.md))                                       |
 | `DEFINY_MCP_ACCOUNT_NAME`       | `/mcp` の専用アカウントの名前 (アカウントを作るときに使う)                                                                                                                                                            |
+| `DEFINY_RUN_EXPRESSIONS`        | `"1"` なら MCP の `definy_run_expression` で式を実行する。手元の definy サーバー (`npm run serve`) が設定する。公開サーバーでは設定しない ([local-server.md](local-server.md))                                        |
 
 本番では Cloudflare のダッシュボードか `wrangler secret put` で設定する。ローカルではリポジトリ直下の `.env` (gitignore 済み) に書けば Void (Vite) の dev サーバーが読み込む。
 
