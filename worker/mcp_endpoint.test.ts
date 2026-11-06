@@ -94,6 +94,8 @@ describe("definy.handle-mcp", () => {
       };
     };
     expect(json.result.tools.map((t) => t.name)).toEqual([
+      "definy_get_project",
+      "definy_get_part",
       "definy_get_project_branches",
       "definy_get_events",
       "definy_get_event",
@@ -193,6 +195,84 @@ describe("definy.handle-mcp", () => {
     const response = await mcp(undefined, { method: "GET", body: null });
     expect(response.status).toBe(405);
     expect(response.headers.get("Allow")).toBe("POST");
+  });
+});
+
+/** ツールを呼んでテキストの結果を返す */
+async function callTool(
+  name: string,
+  args: unknown,
+): Promise<{ readonly text: string; readonly isError: boolean }> {
+  const json = (await (
+    await mcp({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name, arguments: args },
+    })
+  ).json()) as ToolCallResult;
+  return { text: json.result.content[0]!.text, isError: json.result.isError };
+}
+
+describe("パーツの中身を読むツール", () => {
+  it("definy_get_part は型と式を definy のテキストで返す", async () => {
+    const { text, isError } = await callTool("definy_get_part", {
+      part: "std.number-to-string",
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("std.number-to-string (project definy, branch main");
+    expect(text).toContain("type:\nFn(value: Number) -> String\n");
+    expect(text).toContain(
+      "expression:\nfn(value$0) =>\n  match @core.less-than(left: $0, right: 0) {\n    true =>\n",
+    );
+    // パーツの参照は名前で書く
+    expect(text).toContain(
+      "@std.number-to-string(value: @core.minus(left: 0, right: $0))",
+    );
+  });
+
+  it("型のパーツは Union{...} や Record{...} で書く", async () => {
+    const { text } = await callTool("definy_get_part", {
+      part: "core.expression",
+      project: "definy",
+    });
+    expect(text).toContain("type:\nType\n");
+    expect(text).toContain("  #type_number,\n");
+    expect(text).toContain(
+      "  #type_list(Record{item_type: @core.expression}),\n",
+    );
+  });
+
+  it("definy_get_project はパーツと型の一覧を返す", async () => {
+    const { text, isError } = await callTool("definy_get_project", {
+      project: "sample",
+    });
+    expect(isError).toBe(false);
+    expect(text).toMatch(
+      /^project sample, branch main, commit \S+, modules: sample\n/,
+    );
+    expect(text).toContain("\nsample.prime-numbers: List<Number>  // (en) ");
+  });
+
+  it("無いパーツやプロジェクトは isError", async () => {
+    expect(await callTool("definy_get_part", { part: "nothing.x" })).toEqual({
+      text: "Part nothing.x was not found",
+      isError: true,
+    });
+    expect(await callTool("definy_get_part", { part: "nodot" })).toEqual({
+      text: "part must be in the form 'module.name', e.g. 'core.plus'",
+      isError: true,
+    });
+    expect(
+      await callTool("definy_get_project", { project: "sample", branch: "x" }),
+    ).toEqual({
+      text: "Branch x of project sample was not found (definy_get_project_branches lists them)",
+      isError: true,
+    });
+    expect(await callTool("definy_get_project", {})).toEqual({
+      text: "project is required",
+      isError: true,
+    });
   });
 });
 

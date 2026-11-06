@@ -21,18 +21,29 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
 - `definy.mcp-handle-message`: `id` か `method` の無いメッセージ (通知とレスポンス) は本文なしの `202`。
   `initialize` (求められたプロトコルのバージョンをそのまま返す。無ければ `2025-06-18`), `ping`, `tools/list`, `tools/call`。
   他のメソッドは `-32601`
-- ツール (`definy.mcp-tools`) は, 今は Connect-RPC の読み取りのメソッドをそのまま呼ぶもの。
-  `tools/call` は `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
-  テキストにして返す。ステータスが `200` でなければ `isError` (本文は Connect のエラー `{code, message}`)
+- ツール (`definy.mcp-tools`) は名前・説明・入力の JSON Schema・処理 (`handler: (arguments, request) -> definy.service-io`) の組。
+  `tools/call` は処理を動かし, 最後の `respond` をツールの結果にする (`definy.mcp-tool-result`):
+  本文をテキストにし, ステータスが `200` でなければ `isError`。テキストを返す処理は `definy.mcp-text` / `definy.mcp-text-error` (`400`) を使う
 
-  | ツール                        | RPC                               |
-  | :---------------------------- | :-------------------------------- |
-  | `definy_get_project_branches` | `EventService/GetProjectBranches` |
-  | `definy_get_events`           | `EventService/GetEvents`          |
-  | `definy_get_event`            | `EventService/GetEvent`           |
-  | `definy_get_content`          | `EventService/GetContent`         |
-  | `definy_check_missing_hashes` | `EventService/CheckMissingHashes` |
+  | ツール                        | 処理                                                                                                                              |
+  | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+  | `definy_get_project`          | `definy.mcp-get-project`: ブランチ (省略時は `main`) の全てのパーツを「`モジュール.名前`: 型 // 説明」の行で返す                  |
+  | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す |
+  | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                             |
+  | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                      |
+  | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                       |
+  | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                     |
+  | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                             |
 
+  RPC のツールは `definy.mcp-rpc-tool` が `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
+  テキストにして返す (エラーの本文は Connect のエラー `{code, message}`)
+
+- パーツの中身を読むツールは, 型検査と同じ方法で中身を求める (`definy.read-part-contents`: `definy.read-resolutions` →
+  `definy.read-definitions` → `definy.resolve-commit-contents`。[service.md](service.md)「定義の式の評価」)。
+  読み取りのリクエストなのでキャッシュには書かない。型と式は definy のテキスト ([expression-text.md](expression-text.md)) で書き,
+  パーツの参照はそのコミットと各プロジェクトの `main` の最新のコミットのパーツの名前にする (`definy.commit-part-names`)。
+  コミットのパーツの `name` は既に `モジュール.名前` の形 (`definy.stored-commit-part`)。
+  テストの D1 で `sample` は 20ms ほど, `definy` (core などを含む約 900 パーツ) は 1 秒ほど
 - RPC のハンドラーは最後に `respond` を返す `definy.service-io` なので, `definy.service-io-then-respond(io, respond)` で
   最後の `respond` だけを差し替える。`definy.service-io` の全てのタグの `then` を包み直す式で, 型の宣言から機械的に作った
   (タグを足したらこのパーツにも足す。全てのタグがあるかは `worker/mcp_endpoint.test.ts` が確かめる)

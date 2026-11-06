@@ -17,9 +17,9 @@ TypeScript を無くしていく。
 
 1. **Worker の `/mcp` を definy で書く** ([mcp.md](mcp.md))
    - 1a (2026-11-06): JSON-RPC の処理 (`definy.handle-mcp`) と, 読み取りの RPC をそのまま呼ぶツール
-   - 1b: パーツの中身を読めるツール (プロジェクトのブランチの内容, パーツ 1 つの型と式),
-     書き込み (専用アカウントの鍵を Worker の secret に置いて署名する。[secret.md](secret.md)),
-     性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消す
+   - 1b-1 (2026-11-06): パーツの中身を読めるツール (`definy_get_project`, `definy_get_part`) と式のテキスト ([expression-text.md](expression-text.md))
+   - 1b-2: 書き込み (Worker に Ed25519 で署名する能力を足し, 専用アカウントの鍵を Worker の secret に置く。[secret.md](secret.md))
+   - 1b-3: 性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消す
 2. **AI が式を読み書きしやすくする**: 式のテキスト形式 (今はプロジェクトの外の `dtx.mjs` で JSON と変換している) の
    表示と読み取りを definy に入れ, ツールで式をテキストで受け渡す。式を実行するツールも足し,
    エージェントが vitest なしで動きを確かめられるようにする
