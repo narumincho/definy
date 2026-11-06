@@ -13,7 +13,7 @@
         "zone_name": "narumincho.com"
       }
     ],
-    "workers_dev": true,
+    "workers_dev": false,
     "preview_urls": false,
     "compatibility_date": "2026-02-24",
     "compatibility_flags": [
@@ -30,17 +30,6 @@
   "resolved": {
     "name": "definy",
     "account_id": "6a8354084cc02bb1c5f9ca1bb3442704",
-    "compatibility_date": "2026-02-24",
-    "compatibility_flags": [
-      "nodejs_compat"
-    ],
-    "d1_databases": [
-      {
-        "binding": "DB",
-        "database_name": "definy-db",
-        "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818"
-      }
-    ],
     "routes": [
       {
         "pattern": "definy.narumincho.com",
@@ -51,8 +40,19 @@
         "zone_name": "narumincho.com"
       }
     ],
-    "workers_dev": true,
-    "preview_urls": false
+    "workers_dev": false,
+    "preview_urls": false,
+    "compatibility_date": "2026-02-24",
+    "compatibility_flags": [
+      "nodejs_compat"
+    ],
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "definy-db",
+        "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818"
+      }
+    ]
   },
-  "text": "{\n  \"name\": \"definy\",\n  \"account_id\": \"6a8354084cc02bb1c5f9ca1bb3442704\",\n  \"compatibility_date\": \"2026-02-24\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\"\n  ],\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"definy-db\",\n      \"database_id\": \"d4c3a982-558e-4d58-95f8-bbc3ca391818\"\n    }\n  ],\n  \"routes\": [\n    {\n      \"pattern\": \"definy.narumincho.com\",\n      \"custom_domain\": true\n    },\n    {\n      \"pattern\": \"*-definy.narumincho.com/*\",\n      \"zone_name\": \"narumincho.com\"\n    }\n  ],\n  \"workers_dev\": true,\n  \"preview_urls\": false\n}\n"
+  "text": "{\n  \"name\": \"definy\",\n  \"account_id\": \"6a8354084cc02bb1c5f9ca1bb3442704\",\n  \"routes\": [\n    {\n      \"pattern\": \"definy.narumincho.com\",\n      \"custom_domain\": true\n    },\n    {\n      \"pattern\": \"*-definy.narumincho.com/*\",\n      \"zone_name\": \"narumincho.com\"\n    }\n  ],\n  \"workers_dev\": false,\n  \"preview_urls\": false,\n  \"compatibility_date\": \"2026-02-24\",\n  \"compatibility_flags\": [\n    \"nodejs_compat\"\n  ],\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"definy-db\",\n      \"database_id\": \"d4c3a982-558e-4d58-95f8-bbc3ca391818\"\n    }\n  ]\n}\n"
 }

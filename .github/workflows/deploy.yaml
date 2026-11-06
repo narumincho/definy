@@ -21,7 +21,7 @@ jobs:
       - name: Build and deploy to Cloudflare Workers (void deploy)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # preview_urls: false でバージョンにプレビュー URL が無いので, Void は
-          # https://definy.narumincho.workers.dev で準備完了を確かめる. そのためのアカウントのサブドメイン (秘密ではない)
-          CLOUDFLARE_WORKERS_SUBDOMAIN: narumincho
+          # preview_urls: false でバージョンにプレビュー URL が無いので, Void は準備完了を
+          # 確かめる必要がある. void.config.ts で workers_dev: false にしているため, 確認先は
+          # workers.dev ではなくカスタムドメイン (https://definy.narumincho.com/__void/ready) になる
         run: npx void deploy --platform cloudflare

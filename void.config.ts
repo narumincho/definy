@@ -63,11 +63,15 @@ export default defineConfig({
     // 安全に引き継げないとして止まるので, 今の本番の設定をそのまま書く (docs/cloudflare-workers-assets.md)
     // - definy.narumincho.com: カスタムドメイン
     // - *-definy.narumincho.com: definy のパーツの HTTP サーバー ({sub}-definy.narumincho.com) のルート
+    // - workers_dev は false: workers.dev は無効にし, void deploy の準備完了の確認 (readiness) は
+    //   workers.dev ではなくカスタムドメイン経由にするため (@void/deploy-cloudflare は workers_dev が
+    //   false のときに routes の custom_domain から確認先を選ぶ). workers.dev 側の状態 (無効化など) に
+    //   デプロイが左右されなくなる (docs/cloudflare-workers-assets.md)
     routes: [
       { pattern: "definy.narumincho.com", custom_domain: true },
       { pattern: "*-definy.narumincho.com/*", zone_name: "narumincho.com" },
     ],
-    workers_dev: true,
+    workers_dev: false,
     preview_urls: false,
     compatibility_date: "2026-02-24",
     compatibility_flags: ["nodejs_compat"],
