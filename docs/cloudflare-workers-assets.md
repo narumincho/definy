@@ -115,7 +115,7 @@ npm run deploy
 
 `deploy.yaml` は `npm ci` の後に `npx void deploy --platform cloudflare` を実行します。`void deploy` がビルド・アップロード・準備完了の確認・トラフィックの切り替えまで行います。
 
-- Worker のバージョンにプレビュー URL が無く、バージョンのメタデータのバインディングも無いと、Void は準備完了を確かめられず、切り替えの前に止まります。そのときは GitHub Actions の変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` (例: `my-team.workers.dev`) を設定します
+- definy は `preview_urls: false` なので Worker のバージョンにプレビュー URL がありません。このとき Void は新しいバージョンを 0% で載せ, `https://definy.<サブドメイン>.workers.dev/__void/ready` で準備完了を確かめてから切り替えます。サブドメインは環境変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` で渡す必要があり, 無いと「the uploaded Worker Version has no preview URL, so Void cannot verify readiness」で止まります (2026-11-06 のデプロイがこれで失敗)。秘密ではないので `deploy.yaml` に `narumincho` と直接書いています
 - デプロイ先のアカウントは `void.config.ts` の `cloudflare.account_id` で固定しています。無いと Void はトークンで見えるアカウントの一覧から選ぼうとしますが、CI のトークンは一覧を読めないので「Cloudflare authentication is required」で止まります (2026-11-05 のデプロイがこれで失敗)
 - Worker のトラフィックの設定 (`routes`, `workers_dev`, `preview_urls`) は `void.config.ts` の `cloudflare` に必ず書きます。書かないと Void は「ダッシュボードで付けた設定を引き継ぐ」扱いにしますが, まだ Void でデプロイしたことのない Worker では前の設定を読めないので「the existing Worker has dashboard-managed routes or visibility that Void cannot safely republish」で止まります (2026-11-06 のデプロイがこれで失敗。コードは `@void/deploy-cloudflare` の `resolvePreservedTraffic`)。今の本番の設定は次のとおりです
   - `definy.narumincho.com`: カスタムドメイン (`custom_domain: true`)。このホストだけ専用の証明書 (`definy.narumincho.com`, `*.definy.narumincho.com`) が出ていることから判断しました
