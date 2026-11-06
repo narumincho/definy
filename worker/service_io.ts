@@ -238,29 +238,46 @@ const MAX_STEPS = 1000;
  * パフォーマンス記録の集計 (docs/performance-observability.md)。
  * service-io の要求のタグごとに、wasm の実行時間 (`then` を呼ぶ時間) と
  * ホストが要求を行うのにかかった時間をはかる。調査のための測定で、処理の結果には影響しない
+ *
+ * wasm の時間は、要求の境界 (beginRequest と finish) で時計を読んで区間の
+ * 経過をはかり、そこから区間内に測ったホスト時間を差し引いて求める。
+ * Cloudflare Workers の `performance.now()` は同期実行中は進まず、I/O の
+ * 境界で実時間に追いつく仕様のため、`callClosure` の前後を同期的に挟んで
+ * 測ると本番では差分が常に 0 になってしまう。境界は I/O の直後なので、
+ * 間にあった同期的な wasm 実行ぶんが境界の差分として現れる。
+ * ホスト時間を差し引くのは二重計上を避けるためで、wasm とホストの合計は
+ * 区間の経過と一致する (docs/performance-observability.md)
  */
-class ServiceIoPerfCollector {
+export class ServiceIoPerfCollector {
   readonly #sink: (record: ServiceIoPerfRecord) => void;
   readonly #method: string;
   readonly #path: string;
+  readonly #now: () => number;
   readonly #startedAtMs: number;
   readonly #segments = new Map<
     string,
     { tag: string; count: number; wasmMs: number; hostMs: number }
   >();
-  /** 今サービスしている要求のタグ。最初の呼び出しは `entry` */
+  /** 今開いている区間のタグ。最初の区間は最初の呼び出し (`entry`) */
   #currentTag = "entry";
+  /** 前の境界で時計を読んだ値。区間はここから始まる */
+  #boundaryAt: number;
+  /** 今開いている区間に {@link ServiceIoPerfCollector.addHost} で足されたホスト時間 */
+  #intervalHostMs = 0;
   #finished = false;
 
   constructor(
     sink: (record: ServiceIoPerfRecord) => void,
     method: string,
     path: string,
+    now: () => number = () => performance.now(),
   ) {
     this.#sink = sink;
     this.#method = method;
     this.#path = path;
+    this.#now = now;
     this.#startedAtMs = Date.now();
+    this.#boundaryAt = now();
     this.#segment("entry").count = 1;
   }
 
@@ -278,18 +295,32 @@ class ServiceIoPerfCollector {
     return segment;
   }
 
-  /** 要求 `tag` のサービスを始める */
+  /** 要求 `tag` のサービスを始める。前の区間はここで閉じる */
   beginRequest(tag: string): void {
+    this.#closeInterval();
     this.#currentTag = tag;
     this.#segment(tag).count += 1;
   }
 
-  addWasm(ms: number): void {
-    this.#segment(this.#currentTag).wasmMs += ms;
-  }
-
   addHost(ms: number): void {
     this.#segment(this.#currentTag).hostMs += ms;
+    this.#intervalHostMs += ms;
+  }
+
+  /**
+   * 今開いている区間を閉じ、wasm の実行時間を区間のタグに帰属させる。
+   * 区間の経過から区間内のホスト時間を引いた残りが wasm の時間。
+   * 時計の粒度などで残りが負になることはないはずだが、負なら 0 とする
+   */
+  #closeInterval(): void {
+    const now = this.#now();
+    const elapsed = now - this.#boundaryAt;
+    this.#boundaryAt = now;
+    const wasmMs = elapsed - this.#intervalHostMs;
+    this.#intervalHostMs = 0;
+    if (wasmMs > 0) {
+      this.#segment(this.#currentTag).wasmMs += wasmMs;
+    }
   }
 
   /** 記録を 1 回だけ受け口に渡す。受け口の例外は握り潰す */
@@ -298,6 +329,7 @@ class ServiceIoPerfCollector {
       return;
     }
     this.#finished = true;
+    this.#closeInterval();
     const segments = [...this.#segments.values()].map((segment) => ({
       ...segment,
     }));
@@ -315,24 +347,6 @@ class ServiceIoPerfCollector {
       // 記録の失敗でリクエストを壊さない
     }
   }
-}
-
-/** `callClosure` の時間を {@link ServiceIoPerfCollector} に集めるインスタンス */
-function timedInstance(
-  instance: CompiledFunctionInstance,
-  perf: ServiceIoPerfCollector,
-): CompiledFunctionInstance {
-  return {
-    ...instance,
-    callClosure: (closure, argumentValues) => {
-      const start = performance.now();
-      try {
-        return instance.callClosure(closure, argumentValues);
-      } finally {
-        perf.addWasm(performance.now() - start);
-      }
-    },
-  };
 }
 
 /** ホストの能力にかかる時間を {@link ServiceIoPerfCollector} に集めるホスト */
@@ -397,7 +411,6 @@ export async function handleRequestInDefiny(
           request.method,
           request.path,
         );
-  const start = performance.now();
   let first: ValueRef;
   try {
     first = instance.call({
@@ -413,8 +426,7 @@ export async function handleRequestInDefiny(
     perf?.finish(null);
     throw error;
   }
-  // 最初の呼び出し (entry) の wasm 時間
-  perf?.addWasm(performance.now() - start);
+  // 最初の呼び出し (entry) の時間は、集計の最初の区間として最初の要求の境界で閉じる
   return runServiceIo(instance, first, host, perf);
 }
 
@@ -449,13 +461,11 @@ export async function seedStoreInDefiny(
 
 /** `definy.service-io` の要求をホストで行って `then` に渡し, 結果が出るまで続ける */
 async function runServiceIo(
-  rawInstance: CompiledFunctionInstance,
+  instance: CompiledFunctionInstance,
   start: ValueRef,
   rawHost: ServiceIoHost,
   perf?: ServiceIoPerfCollector,
 ): Promise<ServiceResult> {
-  const instance =
-    perf === undefined ? rawInstance : timedInstance(rawInstance, perf);
   const host = perf === undefined ? rawHost : timedHost(rawHost, perf);
   try {
     return await runServiceIoLoop(instance, start, host, perf);
