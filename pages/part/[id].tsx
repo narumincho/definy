@@ -132,10 +132,12 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
   // 他のアカウントのブランチでは, 自分のブランチを作るまで編集できない
   const projectName = projectOfModule(part.moduleName) ?? "";
   const editState = projectName === "" ? null : editStateFor(projectName);
+  // プロジェクトが分からない (モジュールとブランチを読み込む前) うちは編集させない.
+  // 読み込む前に編集すると, モジュール名をプロジェクト名にした別のドラフトに入ってしまい,
+  // 後の編集と食い違う (docs/branch.md「ドラフトコミット」)
   const canEdit =
-    editState === null ||
-    editState.kind === "own_branch" ||
-    editState.kind === "new_project";
+    editState !== null &&
+    (editState.kind === "own_branch" || editState.kind === "new_project");
 
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
