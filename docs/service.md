@@ -9,8 +9,8 @@
   `request` はメソッド, パス, 全てのヘッダー, `storage` (`cloudflare-d1` / `none`), `has_assets` (静的アセットがあるか)。本文は `read_request_json` で読む
   1. `OPTIONS` は CORS のヘッダー (`definy.cors-headers`) で `204`
   2. `/healthz` ([healthz.md](healthz.md)。IP のバージョンは `definy.client-ip-version`)
-  3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まる) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)
-  4. `definy.ensure-seeded` でストアに seed を入れてから ([database.md](database.md)), `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
+  3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まるか `/mcp`) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)
+  4. `definy.ensure-seeded` でストアに seed を入れてから ([database.md](database.md)), `/mcp` は `definy.handle-mcp` ([mcp.md](mcp.md)), `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
      `/definy.v1.` は `definy.handle-rpc`。無いメソッドは `unimplemented` (`Endpoint <パス> is not implemented`)
 - RPC は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
   definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, 無いメソッドは `#none` (`unimplemented`)。
