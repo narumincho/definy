@@ -53,6 +53,17 @@ async function loginAsSystemAccount(page: Page): Promise<void> {
 }
 
 /**
+ * パーツのページを開き, 編集できるようになるまで待つ. モジュールとブランチを読み込むまでは
+ * どのドラフトに入れるか分からないので編集できない (名前が入力欄でなく文字で出る)
+ */
+async function openEditablePart(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await expect(page.locator("input.def-name-input")).toBeVisible({
+    timeout: 15000,
+  });
+}
+
+/**
  * 関数 `functionName` を呼び出す式のカプセル.
  * 呼び出しには見出しのバッジが無いので, 呼び出す関数 (ID が `.fn` で終わるノード) を含むいちばん内側のカプセルを探す
  */
@@ -1557,7 +1568,7 @@ test.describe("definy UI E2E", () => {
     };
 
     // 式の根の関数に引数を足すと, パーツの型にも同じ名前の number 型の引数が増える
-    await page.goto("/part/std.url-path");
+    await openEditablePart(page, "/part/std.url-path");
     await expect(valueTree).toBeVisible({ timeout: 15000 });
     await valueTree.locator(".tree-badge", { hasText: /^fn$/ }).click();
     await option("add-parameter").click();
@@ -1570,7 +1581,7 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
 
     // 型の関数の引数名はその場で変えられ, 式の引数名と呼び出し側も変わる
-    await page.goto("/part/std.url-path");
+    await openEditablePart(page, "/part/std.url-path");
     await expect(typeTree).toBeVisible({ timeout: 15000 });
     await typeTree.locator(".tree-badge", { hasText: /^x$/ }).click();
     const input = typeTree.locator(".tree-badge input[type=text]");
@@ -1586,7 +1597,7 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
 
     // 型の関数から引数を消すと, 式の引数と呼び出し側の引数も消える
-    await page.goto("/part/std.url-path");
+    await openEditablePart(page, "/part/std.url-path");
     await expect(typeTree).toBeVisible({ timeout: 15000 });
     await typeTree.locator(".tree-badge", { hasText: /^function$/ }).click();
     await option("delete-parameter base").click();
