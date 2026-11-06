@@ -38,13 +38,20 @@
   `callClosure` とホストの能力を薄く包んで `performance.now()` で測る。
   受け口が無ければ計装自体が入らず、従来と完全に同じ動きになる
 - 受け口は `worker/index.ts` が SubmitEvent のときだけ渡す。
-  実体は `worker/perf_store.ts` の `createPerfSink` で、
-  D1 への書き込みはレスポンスを待たせない (投げっぱなし)。
-  Workers には `waitUntil` を渡す経路が今の構成 (Void の middleware) に
-  無いため、書き込みの完了は保証しない。記録は付随情報なので、
-  落ちてもよいものとして扱う
-- 記録の失敗 (D1 の障害など) は全て握り潰され、本体のリクエストを
-  失敗させることは決してない。集計側の例外も同様
+  実体は `worker/perf_store.ts` の `createPerfSink` で、書き込みは
+  レスポンスを待たせないが、書き込みの Promise を ExecutionContext の
+  `waitUntil` に登録し、レスポンスを返した後も完了まで実行されることを
+  保証する。Workers では `waitUntil` に登録されていない非同期処理は
+  レスポンス後に打ち切られ得る。当初は登録しておらず、ローカルでは
+  記録が残るのに本番では有効化後の提出が 1 件も記録されなかったため、
+  この形に改めた。ExecutionContext は `worker/index.ts` の fetch と
+  Void の middleware (`middleware/01.definy.ts`) の両方の経路から
+  `handleWorkerRequest` へ渡している。`waitUntil` が無い環境
+  (テストなど) では投げっぱなしになる
+- 記録の失敗 (D1 の障害など) が本体のリクエストを失敗させることは
+  決してない。ただし握り潰しはせず `console.error` でログに残す
+  (本番で記録が残らないときに、waitUntil 以外の原因でも追えるように)。
+  集計側の例外も同様
 - オーバーヘッドは、要求とホスト呼び出しごとに `performance.now()` を
   2 回呼ぶことと、リクエストの終わりに INSERT + 剪定の DELETE を
   1 バッチ書くことだけ。提出そのものが数十〜数千 ms の処理なので、

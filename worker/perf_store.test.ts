@@ -2,10 +2,11 @@
  * パフォーマンス記録 (docs/performance-observability.md) のテスト:
  * - 記録を保存して新しい順に読み戻せる
  * - 保持上限 (直近 {@link PERF_RECORD_LIMIT} 件) が効く
- * - 記録の失敗が呼び出し側に伝わらない (受け口は握り潰す)
+ * - 記録の失敗が呼び出し側に伝わらない (受け口は例外を投げず、ログに残す)
+ * - `waitUntil` があれば書き込みが登録され、完了すれば記録が残る
  * - 読み取りエンドポイントはトークンが無ければ 404、違えば 401、正しければ 200
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ServiceIoPerfRecord } from "./service_io.ts";
 import {
   createPerfSink,
@@ -106,16 +107,81 @@ describe("記録の失敗の分離", () => {
     );
   });
 
-  it("受け口 (createPerfSink) は失敗しても例外を投げない", async () => {
-    const sink = createPerfSink(brokenDb);
-    expect(sink).toBeDefined();
-    expect(() => sink?.(record(1))).not.toThrow();
-    // 非同期の書き込みが失敗しても、未処理の rejection にならないこと
-    await new Promise((resolve) => setTimeout(resolve, 10));
+  it("受け口 (createPerfSink) は失敗しても例外を投げず、ログに残す", async () => {
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      const sink = createPerfSink(brokenDb);
+      expect(sink).toBeDefined();
+      expect(() => sink?.(record(1))).not.toThrow();
+      // 非同期の書き込みが失敗しても、未処理の rejection にならないこと
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      // 握り潰しはせず、原因を追えるようにログに残すこと
+      expect(errorLog).toHaveBeenCalled();
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 
   it("D1 が無ければ受け口自体が無い", () => {
     expect(createPerfSink(undefined)).toBeUndefined();
+  });
+});
+
+describe("waitUntil への登録", () => {
+  it("waitUntil があると書き込みが登録され、完了すれば読み戻せる", async () => {
+    const db = createSqliteD1Database();
+    const waited: Array<Promise<unknown>> = [];
+    const sink = createPerfSink(db, (promise) => {
+      waited.push(promise);
+    });
+    sink?.(record(1));
+    // 書き込みの Promise がその場で waitUntil に登録されること
+    expect(waited).toHaveLength(1);
+    await Promise.all(waited);
+    const records = await readRecentPerfRecords(db, { limit: 20 });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.startedAtMs).toBe(1_700_000_000_001);
+  });
+
+  it("waitUntil が無くても従来どおり記録される (投げっぱなし)", async () => {
+    const db = createSqliteD1Database();
+    const sink = createPerfSink(db);
+    sink?.(record(1));
+    // 投げっぱなしなので、届くまで少し待つ
+    let records = await readRecentPerfRecords(db, { limit: 20 });
+    for (let i = 0; i < 50 && records.length === 0; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      records = await readRecentPerfRecords(db, { limit: 20 });
+    }
+    expect(records).toHaveLength(1);
+  });
+
+  it("waitUntil があっても失敗は例外にならず、登録された Promise も reject しない", async () => {
+    const brokenDb = {
+      exec: () => Promise.reject(new Error("d1 is broken")),
+      prepare: () => {
+        throw new Error("d1 is broken");
+      },
+      batch: () => Promise.reject(new Error("d1 is broken")),
+    } as unknown as D1Database;
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      const waited: Array<Promise<unknown>> = [];
+      const sink = createPerfSink(brokenDb, (promise) => {
+        waited.push(promise);
+      });
+      expect(() => sink?.(record(1))).not.toThrow();
+      expect(waited).toHaveLength(1);
+      // 書き込みの失敗はログに残るだけで、waitUntil 側にも伝わらないこと
+      await expect(Promise.all(waited)).resolves.toBeDefined();
+      expect(errorLog).toHaveBeenCalled();
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 });
 

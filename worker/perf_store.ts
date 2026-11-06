@@ -97,19 +97,34 @@ export async function recordPerfRecord(
 
 /**
  * {@link ServiceIoHost.recordPerf} に渡す受け口を作る。`db` が無ければ `undefined`。
- * 書き込みはレスポンスを待たせない (投げっぱなし) で、失敗しても何もしない。
- * 記録は付随情報なので、書き込みが間に合わなくてもよい
+ * 書き込みはレスポンスを待たせないが、`waitUntil` があれば書き込みの Promise を
+ * 登録し、レスポンスを返した後も完了まで実行されることを保証する (Workers では
+ * `waitUntil` に登録されていない非同期処理はレスポンス後に打ち切られ得て、
+ * 実際に本番で記録が残らなかった)。`waitUntil` が無い環境 (テストなど) では
+ * 投げっぱなしになる。書き込みが失敗してもリクエストには影響しないが、
+ * 原因を追えるように握り潰さずログにだけは残す
  */
 export function createPerfSink(
   db: D1Database | undefined,
+  waitUntil?: ((promise: Promise<unknown>) => void) | undefined,
 ): ((record: ServiceIoPerfRecord) => void) | undefined {
   if (db === undefined) {
     return undefined;
   }
   return (record) => {
-    void recordPerfRecord(db, record).catch(() => {
-      // 記録できなくてもリクエストには影響しない
+    const written = recordPerfRecord(db, record).catch((error: unknown) => {
+      console.error("failed to record a performance record:", error);
     });
+    if (waitUntil !== undefined) {
+      try {
+        waitUntil(written);
+      } catch (error) {
+        console.error(
+          "failed to register a performance record write with waitUntil:",
+          error,
+        );
+      }
+    }
   };
 }
 

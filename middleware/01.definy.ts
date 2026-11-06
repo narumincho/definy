@@ -1,6 +1,6 @@
 import { defineMiddleware } from "void";
 import { defaultStore, handleWorkerRequest } from "../worker/index.ts";
-import type { Env } from "../worker/types.ts";
+import type { Env, ExecutionContext } from "../worker/types.ts";
 import {
   languageFromAcceptLanguage,
   parseLanguageCode,
@@ -15,8 +15,24 @@ export default defineMiddleware((c, next) =>
     defaultStore,
     fetch,
     () => servePage(c, next),
+    executionContextOf(c),
   ),
 );
+
+/**
+ * コンテキストから ExecutionContext を取る (パフォーマンス記録の書き込み完了を
+ * `waitUntil` で保証するために `handleWorkerRequest` へ渡す)。
+ * ExecutionContext が無い環境では Hono の getter が例外を投げるので, その場合は undefined
+ */
+function executionContextOf(
+  c: Parameters<Parameters<typeof defineMiddleware>[0]>[0],
+): ExecutionContext | undefined {
+  try {
+    return c.executionCtx;
+  } catch {
+    return undefined;
+  }
+}
 
 async function servePage(
   c: Parameters<Parameters<typeof defineMiddleware>[0]>[0],
