@@ -17,9 +17,12 @@ TypeScript を無くしていく。
 
 1. **Worker の `/mcp` を definy で書く** ([mcp.md](mcp.md))
    - 1a (2026-11-06): JSON-RPC の処理 (`definy.handle-mcp`) と, 読み取りの RPC をそのまま呼ぶツール
-   - 1b: パーツの中身を読めるツール (プロジェクトのブランチの内容, パーツ 1 つの型と式),
-     書き込み (専用アカウントの鍵を Worker の secret に置いて署名する。[secret.md](secret.md)),
-     性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消す
+   - 1b-1 (2026-11-06): パーツの中身を読めるツール (`definy_get_project`, `definy_get_part`) と式のテキスト ([expression-text.md](expression-text.md))
+   - 1b-2a (2026-11-06): Worker に Ed25519 で署名する能力を足し (専用アカウントの鍵は Worker の secret), CBOR を書く関数と
+     `definy_whoami`, `definy_create_branch`
+   - 1b-2b (2026-11-06): 式のテキストを読む関数 (`definy.parse-expression-text`。2 段目の前倒し) と,
+     パーツを変えるコミット (`definy_commit_parts`)
+   - 1b-3 (2026-11-06): 性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消した
 2. **AI が式を読み書きしやすくする**: 式のテキスト形式 (今はプロジェクトの外の `dtx.mjs` で JSON と変換している) の
    表示と読み取りを definy に入れ, ツールで式をテキストで受け渡す。式を実行するツールも足し,
    エージェントが vitest なしで動きを確かめられるようにする
@@ -30,5 +33,5 @@ TypeScript を無くしていく。
 
 ## 気をつけること
 
-- Worker のリソース上限: 大きなプロジェクトへのコミットは上限に達することがある (2026-11-03 に stdio 版で確認。[mcp.md](mcp.md))
+- Worker のリソース上限: 大きなプロジェクトへのコミットは上限に達することがある (2026-11-03 に消した stdio 版で確認。[mcp.md](mcp.md))
 - TypeScript のテストを消した後の検証: 適合テストや E2E を definy の式とツールで書けるようにしてから消す

@@ -24,6 +24,13 @@ definy 製の評価器 `core.eval-value` が返すのは, 型の無い値の表�
   型チェッカーがそれぞれ `some` だけ / `none` だけの直和型と推論して腕どうしの型が合わない (`type_mismatch (expected: some(string), actual: none)`)。
   型引数 `T` を渡して `option<T>` を期待する位置に置くと合う
 
+## 逆向き (`core.*-to-value`, 2026-11-06)
+
+同じ型について, 型の付いた値を `core.value` にするパーツ (`core.part-content-to-value` など。`(value: その型) -> core.value`) も
+同じスクリプトが作る。形は必ず合うので `option` ではない。直和型の中身の無いタグは中身を `unit` にする。
+`/mcp` の書き込みツールがイベントの中身を CBOR にするのに使う ([cbor.md](cbor.md))。`src/value_decoders.test.ts` が
+`core.value-to-*` と逆になっているかを確かめる
+
 ## 型の宣言から生成する
 
 `core.value-to-*` は手で書かず, 型パーツの宣言 (`core.expression` など) から `scripts/generate_value_decoders.ts` が作って

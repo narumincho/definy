@@ -58,6 +58,13 @@ export type Env = {
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   /**
+   * `/mcp` の書き込みツールが署名に使う専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe Base64).
+   * 無ければ書き込みは無効 (docs/mcp.md)
+   */
+  readonly DEFINY_MCP_ACCOUNT_SECRET_KEY?: string;
+  /** `/mcp` の専用アカウントの名前 (アカウントを作るときに使う) */
+  readonly DEFINY_MCP_ACCOUNT_NAME?: string;
+  /**
    * パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の
    * Bearer トークン。未設定ならエンドポイントは無効 (docs/performance-observability.md)
    */

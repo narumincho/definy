@@ -10,8 +10,7 @@ import { WorkerStore, handleWorkerRequest } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import { readRecentPerfRecords, type PerfRecord } from "./perf_store.ts";
-import { DefinyClient } from "../mcp/definy_client.ts";
-import { createTools } from "../mcp/tools.ts";
+import { DefinyClient } from "./test_definy_client.ts";
 import type { Env } from "./types.ts";
 
 const PERF_TOKEN = "perf-test-token";
@@ -114,21 +113,6 @@ describe("パフォーマンス記録の統合", () => {
       expect(
         viaEndpoint.some((r) => r.path.includes("SubmitEvent")),
       ).toBeTruthy();
-
-      // MCP ツールとしても返る
-      const tool = createTools(client).find(
-        (t) => t.name === "definy_perf_recent_submits",
-      );
-      expect(tool).toBeDefined();
-      const result = await tool!.handler({});
-      expect(result.isError).toBeUndefined();
-      const parsed = JSON.parse(result.content[0]?.text ?? "null") as Array<{
-        path: string;
-        segments: Array<{ tag: string }>;
-      }>;
-      expect(parsed.length).toBeGreaterThan(0);
-      expect(parsed[0]?.path).toContain("SubmitEvent");
-      expect(parsed[0]?.segments.length).toBeGreaterThan(0);
 
       // トークンが違えば読めない
       const wrongClient = new DefinyClient({

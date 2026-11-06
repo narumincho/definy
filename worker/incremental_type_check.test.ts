@@ -11,7 +11,7 @@ import {
 import type { DecodedPart } from "../src/decoded_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
-import { DefinyClient } from "../mcp/definy_client.ts";
+import { DefinyClient } from "./test_definy_client.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";

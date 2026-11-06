@@ -73,6 +73,26 @@ export type ServiceIoHost = {
   /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
   readonly readAdminAccountIds: () => string;
   /**
+   * MCP サーバーの専用アカウント (`read_mcp_account`. docs/mcp.md). 秘密鍵が設定されていなければ `null`.
+   * 省くと `null`
+   */
+  readonly readMcpAccount?: () => Promise<McpAccount | null>;
+  /**
+   * MCP サーバーの専用アカウントの秘密鍵で `message` に Ed25519 で署名する (`sign_mcp_account`).
+   * 何に署名するかは definy が決める. 秘密鍵が無ければ `null`
+   */
+  readonly signMcpAccount?: (message: Uint8Array) => Promise<Uint8Array | null>;
+  /**
+   * ホストが記録したパフォーマンス記録を読む (`read_perf_records`. docs/performance-observability.md).
+   * `authorization` は MCP のリクエストの `Authorization` ヘッダー. ホストが `DEFINY_PERF_TOKEN` と比べ,
+   * `/__definy/perf/recent-submits` と同じステータスと JSON の本文を返す. 省くと `404`
+   */
+  readonly readPerfRecords?: (query: {
+    readonly authorization: string;
+    readonly limit: number;
+    readonly pathContains: string;
+  }) => Promise<{ readonly status: number; readonly body: string }>;
+  /**
    * この isolate がもうストアに seed を入れたか (`read_seed_status`) と, 期待する seed の指紋.
    * 入れていなければ, 入れ終わる (`markSeeded`) まで他のリクエストを待たせる
    */
@@ -105,6 +125,12 @@ export type ServiceIoHost = {
    * definy の処理には影響しない。ここで例外を投げても握り潰される
    */
   readonly recordPerf?: ((record: ServiceIoPerfRecord) => void) | undefined;
+};
+
+/** MCP サーバーの専用アカウント (`definy.mcp-account`) */
+export type McpAccount = {
+  readonly accountId: string;
+  readonly accountName: string;
 };
 
 /** service-io の要求 1 種類分の時間 (docs/performance-observability.md) */
@@ -657,6 +683,54 @@ async function runServiceIoLoop(
       case "read_admin_account_ids": {
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(host.readAdminAccountIds()),
+        ]);
+        break;
+      }
+      case "read_mcp_account": {
+        const account = (await host.readMcpAccount?.()) ?? null;
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            account === null
+              ? variant("none")
+              : variant("some", {
+                  account_id: account.accountId,
+                  account_name: account.accountName,
+                }),
+          ),
+        ]);
+        break;
+      }
+      case "read_perf_records": {
+        const read = (key: string) =>
+          instance.read(instance.recordField(payload, key));
+        const result = (await host.readPerfRecords?.({
+          authorization: String(read("authorization")),
+          limit: Number(read("limit")),
+          pathContains: String(read("path_contains")),
+        })) ?? {
+          status: 404,
+          body: JSON.stringify({
+            code: "not_found",
+            message: "the perf endpoint is not enabled",
+          }),
+        };
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument({ status: result.status, body: result.body }),
+        ]);
+        break;
+      }
+      case "sign_mcp_account": {
+        const value = instance.read(instance.recordField(payload, "message"));
+        const signature =
+          (await host.signMcpAccount?.(
+            Uint8Array.from(Array.isArray(value) ? value.map(Number) : []),
+          )) ?? null;
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            signature === null
+              ? variant("none")
+              : variant("some", [...signature]),
+          ),
         ]);
         break;
       }
