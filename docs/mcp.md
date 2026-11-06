@@ -25,15 +25,17 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   `tools/call` は処理を動かし, 最後の `respond` をツールの結果にする (`definy.mcp-tool-result`):
   本文をテキストにし, ステータスが `200` でなければ `isError`。テキストを返す処理は `definy.mcp-text` / `definy.mcp-text-error` (`400`) を使う
 
-  | ツール                        | 処理                                                                                                                              |
-  | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-  | `definy_get_project`          | `definy.mcp-get-project`: ブランチ (省略時は `main`) の全てのパーツを「`モジュール.名前`: 型 // 説明」の行で返す                  |
-  | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す |
-  | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                             |
-  | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                      |
-  | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                       |
-  | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                     |
-  | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                             |
+  | ツール                        | 処理                                                                                                                                                  |
+  | :---------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `definy_get_project`          | `definy.mcp-get-project`: ブランチ (省略時は `main`) の全てのパーツを「`モジュール.名前`: 型 // 説明」の行で返す                                      |
+  | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す                     |
+  | `definy_whoami`               | `definy.mcp-whoami`: 書き込みに使う専用アカウント (アカウント ID, 名前, サーバーにもうあるか)                                                         |
+  | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し |
+  | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                                                 |
+  | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                                          |
+  | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                                           |
+  | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                                         |
+  | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                                                 |
 
   RPC のツールは `definy.mcp-rpc-tool` が `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
   テキストにして返す (エラーの本文は Connect のエラー `{code, message}`)
@@ -54,6 +56,25 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
 - 読み取りはサーバー自身のストアを読むので, stdio 版のような「受け取ったイベントの署名の検証」は無い
   (保存するときに `SubmitEvent` が検証している)。別の人のサーバーを信用せずに読みたいときは自分で Worker を立てる
 - テストは `worker/mcp_endpoint.test.ts`
+
+### 書き込み (専用アカウント, 2026-11-06)
+
+書き込みは, Worker の secret にある**専用アカウント**の鍵で署名する (stdio 版と同じ GitHub Apps 型の考え方。下の「署名と信頼のモデル」)。
+
+```sh
+npx wrangler secret put DEFINY_MCP_ACCOUNT_SECRET_KEY   # 秘密鍵 (ブラウザのログインと同じ URL-safe Base64)
+npx wrangler secret put DEFINY_MCP_ACCOUNT_NAME         # アカウントの名前
+```
+
+- 秘密鍵はホスト (`worker/mcp_account.ts`) だけが持ち, definy には渡さない。definy は `read_mcp_account` でアカウント ID と名前を読み,
+  `sign_mcp_account` で署名を頼む ([service.md](service.md))。secret が無ければ書き込みのツールは理由を返す
+- `definy.mcp-with-account`: サーバーにまだ専用アカウントが無ければ, 先に `create_account` のイベントを出す
+- `definy.mcp-submit-content`: イベントの中身を CBOR にして ([cbor.md](cbor.md)) 署名し, `SubmitEvent` と同じ `definy.submit-event` に渡す。
+  なので署名・規則・型検査は外から `SubmitEvent` したときと全く同じに確かめられる。時刻は `read_time` の秒
+- `definy_create_branch` は元のブランチの最新のコミットのイベントを読み直して (`definy.read-commit-content`), 中身 (モジュールの説明と
+  パーツの content hash) をそのまま使い, `branch`, `message`, `parent_commit_hash` (元のコミット) だけを変える。
+  同じ名前のブランチが既にあれば作らない
+- パーツを変えるコミット (`definy_commit_parts`) は, 式をテキストで受け取るための読み取りを作ってから足す ([mcp-self-hosting.md](mcp-self-hosting.md))
 
 ## stdio の MCP サーバー (`mcp/`)
 

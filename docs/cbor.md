@@ -49,6 +49,19 @@ definy の文字列は UTF-8 のバイト列なので, バイト列から文字�
 - `SubmitEvent` の型検査の入力 (`definy.read-commit-check-input`) も, 受け取ったイベントを同じ関数で読む
 - `definy.store-write-event` は definy が読んだメタデータ (イベントハッシュ, アカウント, 種類, 時刻) も渡すので, ストアは保存のときに署名を確かめ直さない
 
+## CBOR を書く (`definy.cbor-encode`, 2026-11-06)
+
+`/mcp` の書き込みツール ([mcp.md](mcp.md)) が SignedEvent を作るために, CBOR を書く関数も definy に足した。
+
+- `definy.cbor-encode(item) -> list<number>`: `definy.cbor-read` の逆。引数は一番短い形 (`definy.cbor-head-bytes`)。
+  マップのエントリーは並べた順のまま (TypeScript の `encodeCborItem` と同じく, キーを並べ替えない)。
+  配列とマップは要素を半分ずつ書いて結合する (`definy.cbor-encode-items` / `-entries`)
+- `definy.value-to-cbor(value: core.value)`: `definy.cbor-to-value` の逆。バリアントはキーが `#タグ` のマップで, 中身が `unit` なら `null`。
+  レコードはマップ, 浮動小数・関数など CBOR にしない値は `null`
+- 型の付いた値は `core.*-to-value` ([value-decoder.md](value-decoder.md)) で `core.value` にしてから書く
+- SignedEvent: `definy.event-inner-cbor(account_id_bytes, time_seconds, content)` を書いて署名し,
+  `definy.signed-event-cbor(signature, event_binary)` を書く (`src/auth.ts` の `signEvent` と同じ形)
+
 ## TypeScript の CBOR エンコーダーの修正
 
 `encodeCborItem` は 2^32 以上の整数を 4 バイトに切り詰めていた。seed のパーツの式の数のリテラル (`4503599627370495` など) が

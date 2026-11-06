@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import type { Env } from "./types.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
+import { generateAccountCredentials } from "../src/auth.ts";
 
 const origin = "https://definy.workers.dev";
 
@@ -96,6 +97,8 @@ describe("definy.handle-mcp", () => {
     expect(json.result.tools.map((t) => t.name)).toEqual([
       "definy_get_project",
       "definy_get_part",
+      "definy_whoami",
+      "definy_create_branch",
       "definy_get_project_branches",
       "definy_get_events",
       "definy_get_event",
@@ -274,6 +277,104 @@ describe("パーツの中身を読むツール", () => {
       isError: true,
     });
   });
+});
+
+describe("書き込みのツール (専用アカウント)", () => {
+  it("鍵が無ければ書き込みは無効", async () => {
+    expect((await callTool("definy_whoami", {})).text).toContain(
+      "Writing is disabled on this server",
+    );
+    const created = await callTool("definy_create_branch", {
+      project: "sample",
+      branch: "x",
+    });
+    expect(created.isError).toBe(true);
+    expect(created.text).toContain("Writing is disabled on this server");
+  });
+
+  it("definy_create_branch は専用アカウントのブランチを作り, 中身は元のブランチと同じ", async () => {
+    const credentials = await generateAccountCredentials("mcp-bot");
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_MCP_ACCOUNT_SECRET_KEY: credentials.secretKeyBase64,
+      DEFINY_MCP_ACCOUNT_NAME: "mcp-bot",
+    };
+    const store = new WorkerStore();
+    const call = async (name: string, args: unknown) => {
+      const json = (await (
+        await mcp(
+          {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name, arguments: args },
+          },
+          {},
+          env,
+          store,
+        )
+      ).json()) as ToolCallResult;
+      return {
+        text: json.result.content[0]!.text,
+        isError: json.result.isError,
+      };
+    };
+
+    expect((await call("definy_whoami", {})).text).toBe(
+      `account id: ${credentials.accountId}\naccount name: mcp-bot\ncreated on this server: no (it is created on the first write)`,
+    );
+    const created = await call("definy_create_branch", {
+      project: "sample",
+      branch: "mcp-work",
+    });
+    expect(created.isError, created.text).toBe(false);
+    expect(created.text).toContain(
+      `Created branch mcp-work of project sample from main (owned by account ${credentials.accountId})`,
+    );
+    expect((await call("definy_whoami", {})).text).toContain(
+      "created on this server: yes",
+    );
+
+    // 同じ名前のブランチはもう作れない
+    expect(
+      await call("definy_create_branch", {
+        project: "sample",
+        branch: "mcp-work",
+      }),
+    ).toEqual({
+      text: "Branch mcp-work already exists in project sample",
+      isError: true,
+    });
+
+    // 新しいブランチの作成者は専用アカウントで, 中身は main と同じ
+    const branches = JSON.parse(
+      (await call("definy_get_project_branches", {})).text,
+    ) as {
+      readonly branches: ReadonlyArray<{
+        readonly projectName: string;
+        readonly branch: string;
+        readonly creatorAccountId: string;
+      }>;
+    };
+    expect(
+      branches.branches.find(
+        (b) => b.projectName === "sample" && b.branch === "mcp-work",
+      )?.creatorAccountId,
+    ).toBe(credentials.accountId);
+    const partsOf = (text: string) => text.split("\n").slice(1).join("\n");
+    expect(
+      partsOf(
+        (
+          await call("definy_get_project", {
+            project: "sample",
+            branch: "mcp-work",
+          })
+        ).text,
+      ),
+    ).toBe(
+      partsOf((await call("definy_get_project", { project: "sample" })).text),
+    );
+  }, 60_000);
 });
 
 describe("definy.json-to-string", () => {

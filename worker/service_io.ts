@@ -73,6 +73,16 @@ export type ServiceIoHost = {
   /** 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空文字列). 区切るのは definy */
   readonly readAdminAccountIds: () => string;
   /**
+   * MCP サーバーの専用アカウント (`read_mcp_account`. docs/mcp.md). 秘密鍵が設定されていなければ `null`.
+   * 省くと `null`
+   */
+  readonly readMcpAccount?: () => Promise<McpAccount | null>;
+  /**
+   * MCP サーバーの専用アカウントの秘密鍵で `message` に Ed25519 で署名する (`sign_mcp_account`).
+   * 何に署名するかは definy が決める. 秘密鍵が無ければ `null`
+   */
+  readonly signMcpAccount?: (message: Uint8Array) => Promise<Uint8Array | null>;
+  /**
    * この isolate がもうストアに seed を入れたか (`read_seed_status`) と, 期待する seed の指紋.
    * 入れていなければ, 入れ終わる (`markSeeded`) まで他のリクエストを待たせる
    */
@@ -105,6 +115,12 @@ export type ServiceIoHost = {
    * definy の処理には影響しない。ここで例外を投げても握り潰される
    */
   readonly recordPerf?: ((record: ServiceIoPerfRecord) => void) | undefined;
+};
+
+/** MCP サーバーの専用アカウント (`definy.mcp-account`) */
+export type McpAccount = {
+  readonly accountId: string;
+  readonly accountName: string;
 };
 
 /** service-io の要求 1 種類分の時間 (docs/performance-observability.md) */
@@ -657,6 +673,35 @@ async function runServiceIoLoop(
       case "read_admin_account_ids": {
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(host.readAdminAccountIds()),
+        ]);
+        break;
+      }
+      case "read_mcp_account": {
+        const account = (await host.readMcpAccount?.()) ?? null;
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            account === null
+              ? variant("none")
+              : variant("some", {
+                  account_id: account.accountId,
+                  account_name: account.accountName,
+                }),
+          ),
+        ]);
+        break;
+      }
+      case "sign_mcp_account": {
+        const value = instance.read(instance.recordField(payload, "message"));
+        const signature =
+          (await host.signMcpAccount?.(
+            Uint8Array.from(Array.isArray(value) ? value.map(Number) : []),
+          )) ?? null;
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            signature === null
+              ? variant("none")
+              : variant("some", [...signature]),
+          ),
         ]);
         break;
       }

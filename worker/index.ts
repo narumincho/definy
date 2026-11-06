@@ -22,6 +22,7 @@ import {
   WorkerStore,
 } from "./store.ts";
 import { verifyEd25519 } from "./ed25519.ts";
+import { createMcpAccountHost } from "./mcp_account.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
 import type { Env, ExecutionContext } from "./types.ts";
@@ -152,6 +153,7 @@ export async function handleWorkerRequest(
           ),
         readRequestText: readBody,
         readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
+        ...createMcpAccountHost(env),
         httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
         readSeedStatus: seed.readSeedStatus,
         readSeedBundle: seed.readSeedBundle,

@@ -46,6 +46,8 @@
 | `read_request_text`        | `then: (body: string) -> ...`                                                                  | リクエストの本文を文字列で読む (`Authorization` の署名を確かめるのは definy の `definy.read-rpc-authorization`. [rpc-authorization.md](rpc-authorization.md))                                                         |
 | `read_admin_account_ids`   | `then: (admin_account_ids: string) -> ...`                                                     | 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (無ければ空. 区切るのは definy)                                                                                                                                                   |
 | `http_fetch`               | `request: definy.http-fetch-request`, `then: (result: definy.http-fetch-result) -> ...`        | HTTP リクエストを送る (リダイレクトは追わない)。送れなければ `failed(理由)`                                                                                                                                           |
+| `read_mcp_account`         | `then: (account: option<definy.mcp-account>) -> ...`                                           | `/mcp` の書き込みツールの専用アカウント (アカウント ID と名前)。secret `DEFINY_MCP_ACCOUNT_SECRET_KEY` と `DEFINY_MCP_ACCOUNT_NAME` が無ければ `none` ([mcp.md](mcp.md))                                              |
+| `sign_mcp_account`         | `message`, `then: (signature: option<list<number>>) -> ...`                                    | 専用アカウントの秘密鍵で `message` に Ed25519 で署名する。何に署名するかは definy が決め, 秘密鍵は definy に渡さない (`worker/mcp_account.ts`)                                                                        |
 
 - 処理が使えるのはホストが用意した要求だけ (能力)。書き込みも, 署名の検証や保存そのものはホストが行い,
   何をどの順に確かめて何を返すかを definy が決める。HTTP はまだ TypeScript。

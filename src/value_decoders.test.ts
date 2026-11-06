@@ -84,7 +84,44 @@ describe("core.value-to-*", () => {
       "value-to-project-commit",
       "value-to-project-commit-module",
       "value-to-module-commit-part",
+      "part-content-to-value",
+      "localized-text-to-value",
+      "visibility-to-value",
+      "expression-to-value",
+      "callee-to-value",
+      "match-arm-to-value",
+      "pattern-to-value",
+      "event-content-to-value",
+      "project-commit-to-value",
+      "project-commit-module-to-value",
+      "module-commit-part-to-value",
     ]);
+  });
+
+  it("core.*-to-value は core.value-to-* の逆", () => {
+    const content = {
+      description: [{ language: "en", text: "A number" }],
+      visibility: { "#private": null },
+      part_type: {
+        "#some": { "#type_list": { item_type: { "#type_number": null } } },
+      },
+      expression: {
+        "#some": {
+          "#match": {
+            target: { "#variable": { variable_id: 0 } },
+            arms: [
+              {
+                pattern: { "#any": null },
+                body: { "#list": [{ "#number": -3 }] },
+              },
+            ],
+          },
+        },
+      },
+    };
+    expect(callCoreDecoder("part-content-to-value", content)).toEqual(
+      toCoreValue(content),
+    );
   });
 
   it("core.value-to-expression は seed の definy の全パーツの式を読める", () => {
