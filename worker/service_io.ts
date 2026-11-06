@@ -99,6 +99,37 @@ export type ServiceIoHost = {
       }
     | { readonly failed: string }
   >;
+  /**
+   * パフォーマンス記録の受け口 (任意. docs/performance-observability.md)。
+   * リクエストの処理が終わったときに 1 回だけ呼ばれる。時間を測るのはホスト側の都合で、
+   * definy の処理には影響しない。ここで例外を投げても握り潰される
+   */
+  readonly recordPerf?: ((record: ServiceIoPerfRecord) => void) | undefined;
+};
+
+/** service-io の要求 1 種類分の時間 (docs/performance-observability.md) */
+export type ServiceIoPerfSegment = {
+  /** 要求のタグ (`sql`, `read_cached_commits` など。最初の呼び出しは `entry`) */
+  readonly tag: string;
+  /** そのタグの要求が出た回数 */
+  readonly count: number;
+  /** その要求に応答してから次の要求が出るまでの wasm の実行時間 (ミリ秒) */
+  readonly wasmMs: number;
+  /** その要求をホストが行うのにかかった時間 (ミリ秒) */
+  readonly hostMs: number;
+};
+
+/** 1 リクエスト分のパフォーマンス記録 ({@link ServiceIoHost.recordPerf} に渡す) */
+export type ServiceIoPerfRecord = {
+  readonly method: string;
+  readonly path: string;
+  /** definy が決めた HTTP ステータス。`serve_asset` のときと例外で終わったときは `null` */
+  readonly status: number | null;
+  /** 処理を始めた時刻 (Unix エポックからのミリ秒) */
+  readonly startedAtMs: number;
+  readonly totalWasmMs: number;
+  readonly totalHostMs: number;
+  readonly segments: ReadonlyArray<ServiceIoPerfSegment>;
 };
 
 /** `definy.commit-cache-entry` (`commit` は `option<definy.stored-commit>` の definy の値) */
@@ -178,6 +209,151 @@ export type ServiceResult =
 const MAX_STEPS = 1000;
 
 /**
+ * パフォーマンス記録の集計 (docs/performance-observability.md)。
+ * service-io の要求のタグごとに、wasm の実行時間 (`then` を呼ぶ時間) と
+ * ホストが要求を行うのにかかった時間をはかる。調査のための測定で、処理の結果には影響しない
+ */
+class ServiceIoPerfCollector {
+  readonly #sink: (record: ServiceIoPerfRecord) => void;
+  readonly #method: string;
+  readonly #path: string;
+  readonly #startedAtMs: number;
+  readonly #segments = new Map<
+    string,
+    { tag: string; count: number; wasmMs: number; hostMs: number }
+  >();
+  /** 今サービスしている要求のタグ。最初の呼び出しは `entry` */
+  #currentTag = "entry";
+  #finished = false;
+
+  constructor(
+    sink: (record: ServiceIoPerfRecord) => void,
+    method: string,
+    path: string,
+  ) {
+    this.#sink = sink;
+    this.#method = method;
+    this.#path = path;
+    this.#startedAtMs = Date.now();
+    this.#segment("entry").count = 1;
+  }
+
+  #segment(tag: string): {
+    tag: string;
+    count: number;
+    wasmMs: number;
+    hostMs: number;
+  } {
+    let segment = this.#segments.get(tag);
+    if (segment === undefined) {
+      segment = { tag, count: 0, wasmMs: 0, hostMs: 0 };
+      this.#segments.set(tag, segment);
+    }
+    return segment;
+  }
+
+  /** 要求 `tag` のサービスを始める */
+  beginRequest(tag: string): void {
+    this.#currentTag = tag;
+    this.#segment(tag).count += 1;
+  }
+
+  addWasm(ms: number): void {
+    this.#segment(this.#currentTag).wasmMs += ms;
+  }
+
+  addHost(ms: number): void {
+    this.#segment(this.#currentTag).hostMs += ms;
+  }
+
+  /** 記録を 1 回だけ受け口に渡す。受け口の例外は握り潰す */
+  finish(status: number | null): void {
+    if (this.#finished) {
+      return;
+    }
+    this.#finished = true;
+    const segments = [...this.#segments.values()].map((segment) => ({
+      ...segment,
+    }));
+    try {
+      this.#sink({
+        method: this.#method,
+        path: this.#path,
+        status,
+        startedAtMs: this.#startedAtMs,
+        totalWasmMs: segments.reduce((sum, segment) => sum + segment.wasmMs, 0),
+        totalHostMs: segments.reduce((sum, segment) => sum + segment.hostMs, 0),
+        segments,
+      });
+    } catch {
+      // 記録の失敗でリクエストを壊さない
+    }
+  }
+}
+
+/** `callClosure` の時間を {@link ServiceIoPerfCollector} に集めるインスタンス */
+function timedInstance(
+  instance: CompiledFunctionInstance,
+  perf: ServiceIoPerfCollector,
+): CompiledFunctionInstance {
+  return {
+    ...instance,
+    callClosure: (closure, argumentValues) => {
+      const start = performance.now();
+      try {
+        return instance.callClosure(closure, argumentValues);
+      } finally {
+        perf.addWasm(performance.now() - start);
+      }
+    },
+  };
+}
+
+/** ホストの能力にかかる時間を {@link ServiceIoPerfCollector} に集めるホスト */
+function timedHost(
+  host: ServiceIoHost,
+  perf: ServiceIoPerfCollector,
+): ServiceIoHost {
+  return new Proxy(host, {
+    get(target, name) {
+      const value = Reflect.get(target, name) as unknown;
+      if (typeof value !== "function") {
+        return value;
+      }
+      return (...args: Array<unknown>) => {
+        const start = performance.now();
+        const done = (): void => {
+          perf.addHost(performance.now() - start);
+        };
+        try {
+          const result = (value as (...a: Array<unknown>) => unknown).apply(
+            target,
+            args,
+          );
+          if (result instanceof Promise) {
+            return result.then(
+              (resolved) => {
+                done();
+                return resolved;
+              },
+              (error: unknown) => {
+                done();
+                throw error;
+              },
+            );
+          }
+          done();
+          return result;
+        } catch (error) {
+          done();
+          throw error;
+        }
+      };
+    },
+  });
+}
+
+/**
  * HTTP リクエストを, コンパイルした `definy.handle-request` (`service`) で処理する (docs/service.md).
  * 何を返すかは definy が決め, ここは `definy.service-io` の要求をホスト (`host`) で行って `then` に渡すだけ
  */
@@ -187,9 +363,18 @@ export async function handleRequestInDefiny(
   host: ServiceIoHost,
 ): Promise<ServiceResult> {
   const instance = instantiateCompiledFunction(service);
-  return runServiceIo(
-    instance,
-    instance.call({
+  const perf =
+    host.recordPerf === undefined
+      ? undefined
+      : new ServiceIoPerfCollector(
+          host.recordPerf,
+          request.method,
+          request.path,
+        );
+  const start = performance.now();
+  let first: ValueRef;
+  try {
+    first = instance.call({
       request: instance.writeArgument({
         method: request.method,
         path: request.path,
@@ -197,9 +382,14 @@ export async function handleRequestInDefiny(
         storage: request.storage,
         has_assets: request.hasAssets,
       }),
-    }),
-    host,
-  );
+    });
+  } catch (error) {
+    perf?.finish(null);
+    throw error;
+  }
+  // 最初の呼び出し (entry) の wasm 時間
+  perf?.addWasm(performance.now() - start);
+  return runServiceIo(instance, first, host, perf);
 }
 
 /** ストアの seed を入れる能力 (`definy.ensure-seeded`) */
@@ -233,16 +423,37 @@ export async function seedStoreInDefiny(
 
 /** `definy.service-io` の要求をホストで行って `then` に渡し, 結果が出るまで続ける */
 async function runServiceIo(
+  rawInstance: CompiledFunctionInstance,
+  start: ValueRef,
+  rawHost: ServiceIoHost,
+  perf?: ServiceIoPerfCollector,
+): Promise<ServiceResult> {
+  const instance =
+    perf === undefined ? rawInstance : timedInstance(rawInstance, perf);
+  const host = perf === undefined ? rawHost : timedHost(rawHost, perf);
+  try {
+    return await runServiceIoLoop(instance, start, host, perf);
+  } catch (error) {
+    // 例外で終わったリクエストも記録する (ステータスは無い)
+    perf?.finish(null);
+    throw error;
+  }
+}
+
+async function runServiceIoLoop(
   instance: CompiledFunctionInstance,
   start: ValueRef,
   host: ServiceIoHost,
+  perf?: ServiceIoPerfCollector,
 ): Promise<ServiceResult> {
   let pointer = start;
   for (let step = 0; step < MAX_STEPS; step++) {
     const { tag, payload } = instance.variant(pointer);
     if (tag === "serve_asset") {
+      perf?.finish(null);
       return { type: "serve_asset" };
     }
+    perf?.beginRequest(tag);
     if (payload === null) {
       throw new Error(`definy.service-io の ${tag} にペイロードがありません`);
     }
@@ -253,12 +464,14 @@ async function runServiceIo(
           readonly headers: ReadonlyArray<HttpHeader>;
           readonly body: DefinyValue;
         };
-        return {
+        const result: ServiceResult = {
           type: "respond",
           status: response.status,
           headers: response.headers,
           body: httpBody(response.body),
         };
+        perf?.finish(response.status);
+        return result;
       }
       case "read_seed_status": {
         const status = await host.readSeedStatus();

@@ -287,5 +287,39 @@ export function createTools(
         return jsonResult(event === null ? null : eventSummary(event));
       },
     },
+    {
+      name: "definy_perf_recent_submits",
+      description:
+        "Operator-only performance investigation: the recent SubmitEvent records the definy server host has recorded (newest first). Each record has the total wasm/host milliseconds and a per-segment breakdown: for every service-io request tag, how often it occurred, the wasm ms spent running after it was answered, and the host ms spent servicing it. Unlike the other read tools this is operational data reported by the server itself (not signature-verified event data), so treat it as informational. Requires DEFINY_PERF_TOKEN on both the MCP server and the definy server (docs/performance-observability.md).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "Max records (default 20, max 200)",
+          },
+          allRequests: {
+            type: "boolean",
+            description:
+              "Include requests other than SubmitEvent too (default false)",
+          },
+        },
+      },
+      handler: async (args) => {
+        try {
+          const records = await client.listRecentPerfRecords({
+            limit: numberArg(args, "limit") ?? 20,
+            ...(args["allRequests"] === true
+              ? {}
+              : { pathContains: "SubmitEvent" }),
+          });
+          return jsonResult(records);
+        } catch (error) {
+          return errorResult(
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      },
+    },
   ];
 }
