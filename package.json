@@ -11,6 +11,7 @@
     "build:stage1": "node scripts/regenerate_stage1.ts",
     "check:stage1": "node scripts/regenerate_stage1.ts --check",
     "deploy": "void deploy --platform cloudflare",
+    "serve": "node cli/definy.ts serve",
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",

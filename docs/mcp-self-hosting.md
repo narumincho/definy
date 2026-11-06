@@ -54,6 +54,8 @@ TypeScript を無くしていく。
 
 2. **手元の definy サーバー**: Node.js の小さなホスト (能力を渡すだけ) で service の wasm を動かし, SQLite のストアと
    手元の鍵の署名を渡す。MCP のツールに式の実行 (`definy_run_expression`。テキストの式を型検査してコンパイルし, 値をテキストで返す) を足す
+   - サーバー: `npm run serve` (`cli/`, [local-server.md](local-server.md)) — 済
+   - 式の実行のツール — まだ
 3. **公開サーバーとの同期**: push / pull のツールと CLI のコマンド
 4. **正本を `seeds/*.json` から definy のストアに移す**: core や definy の変更も手元のサーバーの `commit_parts` で入れ,
    公開サーバーに push する。ビルドとブートストラップはストアから読む

@@ -65,11 +65,23 @@ describe("core.sha256", () => {
 });
 
 describe("core.bytes-to-base64url", () => {
-  for (const length of [0, 1, 2, 3, 32]) {
+  // 200000 バイト: 1 バイトずつ再帰するとスタックが溢れる長さ (半分に分けて符号化する)
+  for (const length of [0, 1, 2, 3, 4, 5, 32, 200_000]) {
     it(`${length} バイトがパディング無しの Base64URL になる`, () => {
-      const bytes = Array.from({ length }, (_, i) => 255 - i * 3);
+      const bytes = Array.from({ length }, (_, i) => (255 - i * 3) & 255);
       expect(callSeedPart("core", "bytes-to-base64url", { bytes })).toBe(
         bytesToUrlSafeBase64NoPad(Uint8Array.from(bytes)),
+      );
+    });
+  }
+});
+
+describe("std.bytes-to-base64", () => {
+  for (const length of [0, 1, 2, 3, 4, 5, 32, 200_000]) {
+    it(`${length} バイトがパディング付きの Base64 になる`, () => {
+      const bytes = Array.from({ length }, (_, i) => (i * 7 + 3) % 256);
+      expect(callSeedPart("std", "bytes-to-base64", { bytes })).toBe(
+        Buffer.from(bytes).toString("base64"),
       );
     });
   }

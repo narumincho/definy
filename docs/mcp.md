@@ -1,5 +1,7 @@
 # MCP サーバー
 
+手元で動かすサーバー (`npm run serve`, `http://127.0.0.1:<port>/mcp`) は [local-server.md](local-server.md)。
+
 AI エージェントが definy を読み書きするための MCP (Model Context Protocol) サーバー。
 definy サーバー (Worker) 自身が `/mcp` で MCP の Streamable HTTP に答える (2026-11-06)。
 処理は全て definy の関数 (`definy.handle-mcp`) で, TypeScript は無い。

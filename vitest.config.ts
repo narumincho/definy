@@ -17,7 +17,11 @@ export default new WebAssembly.Module(readFileSync(${JSON.stringify(file)}));`;
     },
   ],
   test: {
-    include: ["src/**/*.test.{ts,tsx}", "worker/**/*.test.ts"],
+    include: [
+      "src/**/*.test.{ts,tsx}",
+      "worker/**/*.test.ts",
+      "cli/**/*.test.ts",
+    ],
     globalSetup: ["src/test_global_setup.ts"],
   },
 });
