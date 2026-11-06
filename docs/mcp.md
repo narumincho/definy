@@ -59,6 +59,14 @@ MCP サーバーは、definy サーバーから受け取ったイベントをブ
 - `definy_list_events`: イベントの一覧 (それぞれ検証状態付き)
 - `definy_get_event`: イベント 1 件 (検証状態とデコードした中身)
 
+運用 (検証なし。サーバーのホストが記録した運用データで、上の読み取りとは別扱い):
+
+- `definy_perf_recent_submits`: サーバーのホストが記録した直近の SubmitEvent の
+  パフォーマンス記録 (合計と service-io セグメント別の wasm / ホスト時間)。
+  パフォーマンス調査用。イベントと違い署名検証は無く、サーバーの申告をそのまま返す。
+  サーバーと MCP の両方に同じ `DEFINY_PERF_TOKEN` が必要
+  ([performance-observability.md](performance-observability.md))
+
 書き込み (専用アカウントの署名。鍵が設定されているときだけ有効):
 
 - `definy_whoami`: 専用アカウントのアカウント ID と名前、サーバーにアカウントがあるか
@@ -86,8 +94,9 @@ MCP サーバーは、definy サーバーから受け取ったイベントをブ
 
 ## 設定
 
-| 環境変数                    | 意味                                                              | 省略時                          |
-| --------------------------- | ----------------------------------------------------------------- | ------------------------------- |
-| `DEFINY_SERVER_URL`         | 接続先の definy サーバーの URL                                    | `https://definy.narumincho.com` |
-| `DEFINY_ACCOUNT_SECRET_KEY` | 専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe base64) | 無し (書き込み無効)             |
-| `DEFINY_ACCOUNT_NAME`       | 専用アカウントの名前 (アカウント作成に使う)                       | 無し (書き込み無効)             |
+| 環境変数                    | 意味                                                              | 省略時                                             |
+| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| `DEFINY_SERVER_URL`         | 接続先の definy サーバーの URL                                    | `https://definy.narumincho.com`                    |
+| `DEFINY_ACCOUNT_SECRET_KEY` | 専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe base64) | 無し (書き込み無効)                                |
+| `DEFINY_ACCOUNT_NAME`       | 専用アカウントの名前 (アカウント作成に使う)                       | 無し (書き込み無効)                                |
+| `DEFINY_PERF_TOKEN`         | パフォーマンス記録の読み取りトークン (サーバー側と一致させる)     | 無し (`definy_perf_recent_submits` がエラーになる) |

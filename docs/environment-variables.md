@@ -4,9 +4,10 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 
 ## Worker (実行時, `worker/types.ts` の `Env`)
 
-| 環境変数                   | 用途                                                                                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DEFINY_ADMIN_ACCOUNT_IDS` | 管理者のアカウント ID (カンマ・空白区切り)。`HttpProxyService/Fetch` (CORS の仲介) を使える。未設定なら誰も管理者ではない ([rpc-authorization.md](rpc-authorization.md)) |
+| 環境変数                   | 用途                                                                                                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFINY_ADMIN_ACCOUNT_IDS` | 管理者のアカウント ID (カンマ・空白区切り)。`HttpProxyService/Fetch` (CORS の仲介) を使える。未設定なら誰も管理者ではない ([rpc-authorization.md](rpc-authorization.md))                       |
+| `DEFINY_PERF_TOKEN`        | パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の Bearer トークン。未設定ならエンドポイントは無効 ([performance-observability.md](performance-observability.md)) |
 
 本番では Cloudflare のダッシュボードか `wrangler secret put` で設定する。ローカルではリポジトリ直下の `.env` (gitignore 済み) に書けば Void (Vite) の dev サーバーが読み込む。
 

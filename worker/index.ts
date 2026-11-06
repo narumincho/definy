@@ -11,6 +11,11 @@ import {
   type ServiceResult,
 } from "./service_io.ts";
 import {
+  createPerfSink,
+  handlePerfRecentRequest,
+  PERF_RECENT_PATH,
+} from "./perf_store.ts";
+import {
   defaultStore,
   requireDb,
   runD1Statements,
@@ -100,6 +105,11 @@ export async function handleWorkerRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   const { pathname } = url;
+  // パフォーマンス記録の読み取りだけはホストの運用エンドポイントとしてここで受ける。
+  // 記録はホスト私用のデータで、definy のルーティングには乗せない (docs/performance-observability.md)
+  if (pathname === PERF_RECENT_PATH) {
+    return handlePerfRecentRequest(request, env);
+  }
   const headers: HttpHeader[] = [];
   request.headers.forEach((value, name) => {
     headers.push({ name, value });
@@ -144,6 +154,14 @@ export async function handleWorkerRequest(
         readSeedBundle: seed.readSeedBundle,
         markSeeded: seed.markSeeded,
         readRequestJson: async () => parseJsonObject(await readBody()),
+        // パフォーマンス記録 (docs/performance-observability.md)。
+        // 対象は SubmitEvent だけ: 読み取りのリクエストでは D1 に一切書かない
+        // というストアの決まり (worker/d1.test.ts) を守るため。
+        // D1 が無いときは受け口自体が無く、計装も入らない
+        recordPerf:
+          pathname === "/definy.v1.EventService/SubmitEvent"
+            ? createPerfSink(env.DB)
+            : undefined,
       },
     );
   } catch (e) {

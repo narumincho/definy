@@ -77,16 +77,82 @@ export type ProjectSnapshot = {
   }>;
 };
 
+/** パフォーマンス記録のセグメント 1 種類分 (サーバーのホストが記録したもの) */
+export type PerfSegment = {
+  readonly tag: string;
+  readonly count: number;
+  readonly wasmMs: number;
+  readonly hostMs: number;
+};
+
+/**
+ * パフォーマンス記録 1 件。イベントとは違い、サーバーのホストが記録した
+ * 運用データで、署名検証の対象ではない (docs/performance-observability.md)
+ */
+export type PerfRecord = {
+  readonly id: number;
+  readonly startedAtMs: number;
+  readonly method: string;
+  readonly path: string;
+  readonly status: number | null;
+  readonly totalWasmMs: number;
+  readonly totalHostMs: number;
+  readonly segments: ReadonlyArray<PerfSegment>;
+};
+
+/** パフォーマンス記録を返すホストのエンドポイントのパス (`worker/perf_store.ts` の `PERF_RECENT_PATH`) */
+const PERF_RECENT_PATH = "/__definy/perf/recent-submits";
+
 export class DefinyClient {
   readonly #baseUrl: string;
   readonly #fetchFn: typeof fetch;
+  readonly #perfToken: string | undefined;
 
   constructor(params: {
     readonly baseUrl: string;
     readonly fetchFn?: typeof fetch;
+    /** パフォーマンス記録の読み取りトークン (環境変数 `DEFINY_PERF_TOKEN`) */
+    readonly perfToken?: string | undefined;
   }) {
     this.#baseUrl = params.baseUrl.replace(/\/$/, "");
     this.#fetchFn = params.fetchFn ?? fetch;
+    this.#perfToken = params.perfToken;
+  }
+
+  /**
+   * サーバーのホストが記録した直近のパフォーマンス記録 (新しい順)。
+   * イベントの読み取りと違い署名検証は無く、サーバーの申告をそのまま返す
+   * (運用者の調査用)。トークンが無ければ例外
+   */
+  async listRecentPerfRecords(params: {
+    readonly limit?: number | undefined;
+    readonly pathContains?: string | undefined;
+  }): Promise<ReadonlyArray<PerfRecord>> {
+    if (this.#perfToken === undefined || this.#perfToken === "") {
+      throw new Error(
+        "DEFINY_PERF_TOKEN is not set, so perf records cannot be read",
+      );
+    }
+    const query = new URLSearchParams();
+    if (params.limit !== undefined) {
+      query.set("limit", String(params.limit));
+    }
+    if (params.pathContains !== undefined) {
+      query.set("pathContains", params.pathContains);
+    }
+    const res = await this.#fetchFn(
+      `${this.#baseUrl}${PERF_RECENT_PATH}?${query.toString()}`,
+      { headers: { Authorization: `Bearer ${this.#perfToken}` } },
+    );
+    if (!res.ok) {
+      throw new Error(
+        `listing perf records failed: ${res.status} ${await res.text()}`,
+      );
+    }
+    const body = (await res.json()) as {
+      readonly records?: ReadonlyArray<PerfRecord>;
+    };
+    return body.records ?? [];
   }
 
   async #rpc<T>(method: string, body: unknown): Promise<T> {

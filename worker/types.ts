@@ -47,6 +47,11 @@ export type Env = {
   readonly DB?: D1Database;
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
+  /**
+   * パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の
+   * Bearer トークン。未設定ならエンドポイントは無効 (docs/performance-observability.md)
+   */
+  readonly DEFINY_PERF_TOKEN?: string;
 };
 
 /**
