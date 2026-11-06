@@ -62,6 +62,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 // TOML を読まなくなったため、void migrate で void.config.ts へ移行した。
 cloudflare: {
   name: "definy",
+  account_id: "6a8354084cc02bb1c5f9ca1bb3442704",
   compatibility_date: "2026-02-24",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: [
@@ -115,7 +116,7 @@ npm run deploy
 `deploy.yaml` は `npm ci` の後に `npx void deploy --platform cloudflare` を実行します。`void deploy` がビルド・アップロード・準備完了の確認・トラフィックの切り替えまで行います。
 
 - Worker のバージョンにプレビュー URL が無く、バージョンのメタデータのバインディングも無いと、Void は準備完了を確かめられず、切り替えの前に止まります。そのときは GitHub Actions の変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` (例: `my-team.workers.dev`) を設定します
-- トークンが複数のアカウントに触れるときは `CLOUDFLARE_ACCOUNT_ID` も要ります
+- デプロイ先のアカウントは `void.config.ts` の `cloudflare.account_id` で固定しています。無いと Void はトークンで見えるアカウントの一覧から選ぼうとしますが、CI のトークンは一覧を読めないので「Cloudflare authentication is required」で止まります (2026-11-05 のデプロイがこれで失敗)
 - ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
 
 ### `wrangler deploy` を使わない理由

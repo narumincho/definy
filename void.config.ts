@@ -57,6 +57,8 @@ export default defineConfig({
   },
   cloudflare: {
     name: "definy",
+    // CI の void deploy はアカウントの一覧を読めないトークンで動くので, デプロイ先のアカウントを固定する
+    account_id: "6a8354084cc02bb1c5f9ca1bb3442704",
     compatibility_date: "2026-02-24",
     compatibility_flags: ["nodejs_compat"],
     d1_databases: [
