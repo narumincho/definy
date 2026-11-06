@@ -22,7 +22,7 @@ TypeScript を無くしていく。
      `definy_whoami`, `definy_create_branch`
    - 1b-2b (2026-11-06): 式のテキストを読む関数 (`definy.parse-expression-text`。2 段目の前倒し) と,
      パーツを変えるコミット (`definy_commit_parts`)
-   - 1b-3: 性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消す
+   - 1b-3 (2026-11-06): 性能ログ (`definy_perf_recent_submits`) を移し, stdio 版 (`mcp/`) を消した
 2. **AI が式を読み書きしやすくする**: 式のテキスト形式 (今はプロジェクトの外の `dtx.mjs` で JSON と変換している) の
    表示と読み取りを definy に入れ, ツールで式をテキストで受け渡す。式を実行するツールも足し,
    エージェントが vitest なしで動きを確かめられるようにする
@@ -33,5 +33,5 @@ TypeScript を無くしていく。
 
 ## 気をつけること
 
-- Worker のリソース上限: 大きなプロジェクトへのコミットは上限に達することがある (2026-11-03 に stdio 版で確認。[mcp.md](mcp.md))
+- Worker のリソース上限: 大きなプロジェクトへのコミットは上限に達することがある (2026-11-03 に消した stdio 版で確認。[mcp.md](mcp.md))
 - TypeScript のテストを消した後の検証: 適合テストや E2E を definy の式とツールで書けるようにしてから消す

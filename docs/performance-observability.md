@@ -98,11 +98,13 @@ Worker の環境変数 `DEFINY_PERF_TOKEN` と一致する
 perf の読み取りを RPC にするには、definy 側に新しい RPC と
 記録を読むための service-io の能力を足すシード変更が要り、
 ホスト私用のデータを読むためだけには見合わない。
+(2026-11-06 に MCP を Worker の `/mcp` に移したときは、トークンの確かめと読み取りをホストに残したまま、
+結果だけを渡す能力 `read_perf_records` を足した。definy は記録の SQL を知らない)
 代わりに、漏れてもイベントデータには触れない (時間の内訳だけ)
 読み取り専用のトークンをホストの環境変数で管理する形にした。
 
-本番で有効にするには、サーバー (secret) と MCP サーバーの両方に
-同じ `DEFINY_PERF_TOKEN` を設定する。設定しなければ機能ごと無効で、
+本番で有効にするには、サーバーの secret に `DEFINY_PERF_TOKEN` を設定し、
+MCP のクライアントは同じトークンを `Authorization` ヘッダーに付ける。設定しなければ機能ごと無効で、
 既存の動作には影響しない。
 
 残課題: トークンのローテーションは再設定と再デプロイで行う前提。
@@ -111,7 +113,9 @@ perf の読み取りを RPC にするには、definy 側に新しい RPC と
 
 ### MCP ツール
 
-`definy_perf_recent_submits` (`mcp/tools.ts`) が主たる読み取り経路。
+`definy_perf_recent_submits` (Worker の `/mcp`。definy の `definy.mcp-perf-recent-submits` がホストの能力
+`read_perf_records` で読む。[mcp.md](mcp.md)) が主たる読み取り経路。MCP のクライアントは
+`Authorization: Bearer <DEFINY_PERF_TOKEN>` のヘッダーを付けて接続する。
 調査は AI エージェントが MCP 経由で行うのが主なので、ページ (UI) は
 作らなかった。人が直接見る必要が出たら、このエンドポイントの上に
 薄いページを足せばよい。

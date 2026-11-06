@@ -16,7 +16,7 @@ export const PERF_RECORD_LIMIT = 200;
  * 直近のパフォーマンス記録を返す、ホストの運用エンドポイントのパス。
  * ルーティングは definy が決めるのが原則だが、記録はホスト私用のデータなので
  * 例外的にホストがこのパスだけを先に受ける (`worker/index.ts`)。
- * MCP クライアント (`mcp/definy_client.ts`) もこのパスを使う
+ * テスト用のクライアント (`worker/test_definy_client.ts`) もこのパスを使う
  */
 export const PERF_RECENT_PATH = "/__definy/perf/recent-submits";
 
@@ -214,40 +214,62 @@ function tokenMatches(provided: string, expected: string): boolean {
 }
 
 /**
- * {@link PERF_RECENT_PATH} へのリクエストを処理する。
- * 認証は環境変数 `DEFINY_PERF_TOKEN` の Bearer トークン。未設定なら
- * エンドポイント自体が無いものとして 404 を返す (docs/performance-observability.md)
+ * パフォーマンス記録を読む. 認証は環境変数 `DEFINY_PERF_TOKEN` の Bearer トークン (`authorization` は
+ * `Authorization` ヘッダーの値)。未設定ならエンドポイント自体が無いものとして 404 を返す
+ * (docs/performance-observability.md)。{@link PERF_RECENT_PATH} と MCP の `definy_perf_recent_submits`
+ * (definy の `read_perf_records`) が使う
  */
+export async function readPerfRecordsResponse(
+  env: Env,
+  query: {
+    readonly authorization: string;
+    readonly limit?: number | undefined;
+    readonly pathContains?: string | undefined;
+  },
+): Promise<{ readonly status: number; readonly body: unknown }> {
+  const token = env.DEFINY_PERF_TOKEN;
+  if (token === undefined || token === "") {
+    return {
+      status: 404,
+      body: { code: "not_found", message: "the perf endpoint is not enabled" },
+    };
+  }
+  if (!tokenMatches(query.authorization, `Bearer ${token}`)) {
+    return {
+      status: 401,
+      body: {
+        code: "unauthenticated",
+        message: "a valid perf token is required",
+      },
+    };
+  }
+  if (env.DB === undefined) {
+    return {
+      status: 500,
+      body: { code: "internal", message: "the D1 binding DB is required" },
+    };
+  }
+  const limit = query.limit;
+  const records = await readRecentPerfRecords(env.DB, {
+    limit:
+      limit !== undefined && Number.isFinite(limit) && limit > 0
+        ? limit
+        : undefined,
+    pathContains: query.pathContains,
+  });
+  return { status: 200, body: { records } };
+}
+
+/** {@link PERF_RECENT_PATH} へのリクエストを処理する ({@link readPerfRecordsResponse}) */
 export async function handlePerfRecentRequest(
   request: Request,
   env: Env,
 ): Promise<Response> {
-  const token = env.DEFINY_PERF_TOKEN;
-  if (token === undefined || token === "") {
-    return jsonResponse(404, {
-      code: "not_found",
-      message: "the perf endpoint is not enabled",
-    });
-  }
-  const authorization = request.headers.get("Authorization") ?? "";
-  if (!tokenMatches(authorization, `Bearer ${token}`)) {
-    return jsonResponse(401, {
-      code: "unauthenticated",
-      message: "a valid perf token is required",
-    });
-  }
-  if (env.DB === undefined) {
-    return jsonResponse(500, {
-      code: "internal",
-      message: "the D1 binding DB is required",
-    });
-  }
   const url = new URL(request.url);
-  const limitParam = Number(url.searchParams.get("limit") ?? "");
-  const records = await readRecentPerfRecords(env.DB, {
-    limit:
-      Number.isFinite(limitParam) && limitParam > 0 ? limitParam : undefined,
+  const { status, body } = await readPerfRecordsResponse(env, {
+    authorization: request.headers.get("Authorization") ?? "",
+    limit: Number(url.searchParams.get("limit") ?? ""),
     pathContains: url.searchParams.get("pathContains") ?? undefined,
   });
-  return jsonResponse(200, { records });
+  return jsonResponse(status, body);
 }

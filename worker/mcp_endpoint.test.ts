@@ -6,6 +6,7 @@ import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import type { Env } from "./types.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { generateAccountCredentials } from "../src/auth.ts";
+import { recordPerfRecord } from "./perf_store.ts";
 
 const origin = "https://definy.workers.dev";
 
@@ -105,6 +106,7 @@ describe("definy.handle-mcp", () => {
       "definy_get_event",
       "definy_get_content",
       "definy_check_missing_hashes",
+      "definy_perf_recent_submits",
     ]);
     for (const tool of json.result.tools) {
       expect(tool.inputSchema.type).toBe("object");
@@ -511,6 +513,69 @@ describe("書き込みのツール (専用アカウント)", () => {
       "only the account that created the branch can commit to it",
     );
   }, 60_000);
+});
+
+describe("definy_perf_recent_submits", () => {
+  it("MCP のリクエストの Authorization ヘッダーでパフォーマンス記録を読み, 既定では SubmitEvent に絞る", async () => {
+    const db = createSqliteD1Database();
+    for (const path of [
+      "/definy.v1.EventService/SubmitEvent",
+      "/definy.v1.EventService/GetEvents",
+    ]) {
+      await recordPerfRecord(db, {
+        method: "POST",
+        path,
+        status: 200,
+        startedAtMs: 1_700_000_000_000,
+        totalWasmMs: 12.5,
+        totalHostMs: 3,
+        segments: [{ tag: "sql", count: 2, wasmMs: 10, hostMs: 3 }],
+      });
+    }
+    const env: Env = { DB: db, DEFINY_PERF_TOKEN: "perf-secret" };
+    const call = async (args: unknown, authorization?: string) => {
+      const json = (await (
+        await mcp(
+          {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name: "definy_perf_recent_submits", arguments: args },
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(authorization === undefined
+                ? {}
+                : { Authorization: authorization }),
+            },
+          },
+          env,
+        )
+      ).json()) as ToolCallResult;
+      return {
+        text: json.result.content[0]!.text,
+        isError: json.result.isError,
+      };
+    };
+    const paths = (text: string) =>
+      (
+        JSON.parse(text) as { records: ReadonlyArray<{ path: string }> }
+      ).records.map((r) => r.path);
+
+    const submits = await call({}, "Bearer perf-secret");
+    expect(submits.isError).toBe(false);
+    expect(paths(submits.text)).toEqual([
+      "/definy.v1.EventService/SubmitEvent",
+    ]);
+    const all = await call({ allRequests: true }, "Bearer perf-secret");
+    expect(paths(all.text)).toHaveLength(2);
+    expect(await call({}, "Bearer nope")).toEqual({
+      text: '{"code":"unauthenticated","message":"a valid perf token is required"}',
+      isError: true,
+    });
+    expect((await call({})).isError).toBe(true);
+  });
 });
 
 describe("definy.json-to-string", () => {

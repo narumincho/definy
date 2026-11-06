@@ -14,7 +14,7 @@ import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import { WorkerStore, handleWorkerRequest } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
-import { DefinyClient } from "../mcp/definy_client.ts";
+import { DefinyClient } from "./test_definy_client.ts";
 import type { Env } from "./types.ts";
 import type { DecodedPart } from "../src/decoded_event.ts";
 
@@ -22,11 +22,18 @@ const setup = async (): Promise<{
   client: DefinyClient;
   credentials: AccountCredentials;
   db: ReturnType<typeof createSqliteD1Database>;
+  fetchFn: typeof fetch;
 }> => {
   const store = new WorkerStore();
   const db = createSqliteD1Database();
   await store.seedD1(db, await loadTestSeedBundle());
-  const env: Env = { DB: db };
+  const credentials = await generateAccountCredentials("cache-tester");
+  // MCP の書き込みのツール (docs/mcp.md) も同じアカウントで署名する
+  const env: Env = {
+    DB: db,
+    DEFINY_MCP_ACCOUNT_SECRET_KEY: credentials.secretKeyBase64,
+    DEFINY_MCP_ACCOUNT_NAME: "cache-tester",
+  };
   const fetchFn = (async (input: string, init?: RequestInit) => {
     const path = String(input).replace(/^https:\/\/example\.test/, "");
     return handleWorkerRequest(
@@ -36,9 +43,8 @@ const setup = async (): Promise<{
     );
   }) as typeof fetch;
   const client = new DefinyClient({ baseUrl: "https://example.test", fetchFn });
-  const credentials = await generateAccountCredentials("cache-tester");
   await client.submitAccountCreation(credentials);
-  return { client, credentials, db };
+  return { client, credentials, db, fetchFn };
 };
 
 const cachedHashes = async (
@@ -234,7 +240,7 @@ describe("解決キャッシュ", () => {
   }, 600_000);
 
   it("2 回目の提出ではキャッシュが使われても結果が同じになる", async () => {
-    const { client, credentials } = await setup();
+    const { client, credentials, fetchFn } = await setup();
     const created = await client.submitCommit({
       credentials,
       projectName: "cacheproj",
@@ -259,14 +265,22 @@ describe("解決キャッシュ", () => {
     });
     expect(created.status).toBe("accepted");
     // 同じ内容のコミットを別ブランチに送る (解決キャッシュが温かい状態)
-    const { createWriteTools } = await import("../mcp/write_tools.ts");
-    const tools = new Map(
-      createWriteTools(client, credentials).map((t) => [t.name, t]),
-    );
-    await tools.get("definy_create_branch")!.handler({
-      project: "cacheproj",
-      branch: "copy",
-    });
+    const branched = (await (
+      await fetchFn("https://example.test/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: {
+            name: "definy_create_branch",
+            arguments: { project: "cacheproj", branch: "copy" },
+          },
+        }),
+      })
+    ).json()) as { readonly result: { readonly isError: boolean } };
+    expect(branched.result.isError).toBe(false);
     const snapshot = (await client.getProjectSnapshot("cacheproj", "copy"))!;
     expect(snapshot.modules[0]?.parts[0]?.content?.expression).toEqual({
       "#string": "hi",

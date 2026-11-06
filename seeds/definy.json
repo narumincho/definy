@@ -3649,6 +3649,68 @@
                 ]
               }
             }
+          },
+          {
+            "tag": "read_perf_records",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "authorization",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "limit",
+                    "value": {
+                      "#type_number": null
+                    }
+                  },
+                  {
+                    "key": "path_contains",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "then",
+                    "value": {
+                      "#type_function": {
+                        "parameters": [
+                          {
+                            "name": "result",
+                            "type": {
+                              "#type_record": [
+                                {
+                                  "key": "status",
+                                  "value": {
+                                    "#type_number": null
+                                  }
+                                },
+                                {
+                                  "key": "body",
+                                  "value": {
+                                    "#type_string": null
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.service-io"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
           }
         ]
       }
@@ -48784,6 +48846,159 @@
                       }
                     }
                   }
+                },
+                {
+                  "pattern": {
+                    "#variant": {
+                      "tag": "read_perf_records",
+                      "payload": {
+                        "#bind": {
+                          "variable_id": 68,
+                          "variable_name": "payload"
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "read_perf_records",
+                      "payload": {
+                        "#some": {
+                          "#record": [
+                            {
+                              "key": "authorization",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 68
+                                    }
+                                  },
+                                  "key": "authorization"
+                                }
+                              }
+                            },
+                            {
+                              "key": "limit",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 68
+                                    }
+                                  },
+                                  "key": "limit"
+                                }
+                              }
+                            },
+                            {
+                              "key": "path_contains",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 68
+                                    }
+                                  },
+                                  "key": "path_contains"
+                                }
+                              }
+                            },
+                            {
+                              "key": "then",
+                              "value": {
+                                "#function": {
+                                  "parameters": [
+                                    {
+                                      "parameter_id": 69,
+                                      "parameter_name": "result"
+                                    }
+                                  ],
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.service-io-then-respond"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "io",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 68
+                                                    }
+                                                  },
+                                                  "key": "then"
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "result",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 69
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "respond",
+                                          "value": {
+                                            "#function": {
+                                              "parameters": [
+                                                {
+                                                  "parameter_id": 70,
+                                                  "parameter_name": "response"
+                                                }
+                                              ],
+                                              "body": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "response",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 70
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "type_part": {
+                        "#some": {
+                          "$part": "definy.service-io"
+                        }
+                      }
+                    }
+                  }
                 }
               ]
             }
@@ -52928,6 +53143,314 @@
                               "#string": "EventService/CheckMissingHashes"
                             }
                           },
+                          {
+                            "name": "arguments",
+                            "value": {
+                              "#variable": {
+                                "variable_id": 0
+                              }
+                            }
+                          },
+                          {
+                            "name": "request",
+                            "value": {
+                              "#variable": {
+                                "variable_id": 1
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "#record": [
+              {
+                "key": "name",
+                "value": {
+                  "#string": "definy_perf_recent_submits"
+                }
+              },
+              {
+                "key": "description",
+                "value": {
+                  "#string": "Operator-only performance investigation: the recent SubmitEvent records the definy server host has recorded (newest first). Each record has the total wasm/host milliseconds and a per-segment breakdown: for every service-io request tag, how often it occurred, the wasm ms spent running after it was answered, and the host ms spent servicing it. This is operational data reported by the server itself, so treat it as informational. The MCP connection must send 'Authorization: Bearer <DEFINY_PERF_TOKEN of the server>' (docs/performance-observability.md)."
+                }
+              },
+              {
+                "key": "input_schema",
+                "value": {
+                  "#variant": {
+                    "tag": "object",
+                    "payload": {
+                      "#some": {
+                        "#list": [
+                          {
+                            "#record": [
+                              {
+                                "key": "key",
+                                "value": {
+                                  "#string": "type"
+                                }
+                              },
+                              {
+                                "key": "value",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "string",
+                                    "payload": {
+                                      "#some": {
+                                        "#string": "object"
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#some": {
+                                        "$part": "definy.json"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "#record": [
+                              {
+                                "key": "key",
+                                "value": {
+                                  "#string": "properties"
+                                }
+                              },
+                              {
+                                "key": "value",
+                                "value": {
+                                  "#variant": {
+                                    "tag": "object",
+                                    "payload": {
+                                      "#some": {
+                                        "#list": [
+                                          {
+                                            "#record": [
+                                              {
+                                                "key": "key",
+                                                "value": {
+                                                  "#string": "limit"
+                                                }
+                                              },
+                                              {
+                                                "key": "value",
+                                                "value": {
+                                                  "#variant": {
+                                                    "tag": "object",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#list": [
+                                                          {
+                                                            "#record": [
+                                                              {
+                                                                "key": "key",
+                                                                "value": {
+                                                                  "#string": "type"
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "value",
+                                                                "value": {
+                                                                  "#variant": {
+                                                                    "tag": "string",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#string": "number"
+                                                                      }
+                                                                    },
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.json"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          },
+                                                          {
+                                                            "#record": [
+                                                              {
+                                                                "key": "key",
+                                                                "value": {
+                                                                  "#string": "description"
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "value",
+                                                                "value": {
+                                                                  "#variant": {
+                                                                    "tag": "string",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#string": "Max records (default 20, max 200)"
+                                                                      }
+                                                                    },
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.json"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.json"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          {
+                                            "#record": [
+                                              {
+                                                "key": "key",
+                                                "value": {
+                                                  "#string": "allRequests"
+                                                }
+                                              },
+                                              {
+                                                "key": "value",
+                                                "value": {
+                                                  "#variant": {
+                                                    "tag": "object",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#list": [
+                                                          {
+                                                            "#record": [
+                                                              {
+                                                                "key": "key",
+                                                                "value": {
+                                                                  "#string": "type"
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "value",
+                                                                "value": {
+                                                                  "#variant": {
+                                                                    "tag": "string",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#string": "boolean"
+                                                                      }
+                                                                    },
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.json"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          },
+                                                          {
+                                                            "#record": [
+                                                              {
+                                                                "key": "key",
+                                                                "value": {
+                                                                  "#string": "description"
+                                                                }
+                                                              },
+                                                              {
+                                                                "key": "value",
+                                                                "value": {
+                                                                  "#variant": {
+                                                                    "tag": "string",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#string": "Include requests other than SubmitEvent too (default false)"
+                                                                      }
+                                                                    },
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.json"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.json"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "type_part": {
+                                      "#some": {
+                                        "$part": "definy.json"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "type_part": {
+                      "#some": {
+                        "$part": "definy.json"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "key": "handler",
+                "value": {
+                  "#function": {
+                    "parameters": [
+                      {
+                        "parameter_id": 0,
+                        "parameter_name": "arguments"
+                      },
+                      {
+                        "parameter_id": 1,
+                        "parameter_name": "request"
+                      }
+                    ],
+                    "body": {
+                      "#call": {
+                        "function": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "definy.mcp-perf-recent-submits"
+                            }
+                          }
+                        },
+                        "arguments": [
                           {
                             "name": "arguments",
                             "value": {
@@ -107483,6 +108006,461 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "mcp-perf-recent-submits",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "arguments",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.json"
+                  }
+                }
+              }
+            },
+            {
+              "name": "request",
+              "type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.http-request"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.service-io"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The definy_perf_recent_submits MCP tool (read_perf_records with the Authorization header of the MCP request)"
+        },
+        {
+          "language": "ja",
+          "text": "MCP の definy_perf_recent_submits ツール (MCP のリクエストの Authorization ヘッダーで read_perf_records を読む)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "arguments"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "request"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "read_perf_records",
+              "payload": {
+                "#some": {
+                  "#record": [
+                    {
+                      "key": "authorization",
+                      "value": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.http-header-get"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "headers",
+                                  "value": {
+                                    "#record_get": {
+                                      "record": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      },
+                                      "key": "headers"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "name",
+                                  "value": {
+                                    "#string": "authorization"
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#number": 0
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 2,
+                                      "variable_name": "value"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "none",
+                                  "payload": {
+                                    "#any": null
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#string": ""
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "key": "limit",
+                      "value": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.json-get-number"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "key",
+                                  "value": {
+                                    "#string": "limit"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 3,
+                                      "variable_name": "limit"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "none",
+                                  "payload": {
+                                    "#any": null
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#number": 20
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "key": "path_contains",
+                      "value": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "definy.json-get"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "key",
+                                  "value": {
+                                    "#string": "allRequests"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 4,
+                                      "variable_name": "value"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#match": {
+                                  "target": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "pattern": {
+                                        "#variant": {
+                                          "tag": "boolean",
+                                          "payload": {
+                                            "#bind": {
+                                              "variable_id": 5,
+                                              "variable_name": "all"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "body": {
+                                        "#match": {
+                                          "target": {
+                                            "#variable": {
+                                              "variable_id": 5
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "pattern": {
+                                                "#boolean": true
+                                              },
+                                              "body": {
+                                                "#string": ""
+                                              }
+                                            },
+                                            {
+                                              "pattern": {
+                                                "#boolean": false
+                                              },
+                                              "body": {
+                                                "#string": "SubmitEvent"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "pattern": {
+                                        "#any": null
+                                      },
+                                      "body": {
+                                        "#string": "SubmitEvent"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "none",
+                                  "payload": {
+                                    "#any": null
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#string": "SubmitEvent"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "key": "then",
+                      "value": {
+                        "#function": {
+                          "parameters": [
+                            {
+                              "parameter_id": 6,
+                              "parameter_name": "result"
+                            }
+                          ],
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.equal"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#record_get": {
+                                          "record": {
+                                            "#variable": {
+                                              "variable_id": 6
+                                            }
+                                          },
+                                          "key": "status"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#number": 200
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#boolean": true
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.mcp-text"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "text",
+                                          "value": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 6
+                                                }
+                                              },
+                                              "key": "body"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#boolean": false
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.mcp-text-error"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "text",
+                                          "value": {
+                                            "#record_get": {
+                                              "record": {
+                                                "#variable": {
+                                                  "variable_id": 6
+                                                }
+                                              },
+                                              "key": "body"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "definy.service-io"
                 }
               }
             }

@@ -13,6 +13,7 @@ import {
 import {
   createPerfSink,
   handlePerfRecentRequest,
+  readPerfRecordsResponse,
   PERF_RECENT_PATH,
 } from "./perf_store.ts";
 import {
@@ -154,6 +155,10 @@ export async function handleWorkerRequest(
         readRequestText: readBody,
         readAdminAccountIds: () => env.DEFINY_ADMIN_ACCOUNT_IDS ?? "",
         ...createMcpAccountHost(env),
+        readPerfRecords: async (query) => {
+          const { status, body } = await readPerfRecordsResponse(env, query);
+          return { status, body: JSON.stringify(body) };
+        },
         httpFetch: (fetchRequest) => httpFetch(fetchRequest, fetchFn),
         readSeedStatus: seed.readSeedStatus,
         readSeedBundle: seed.readSeedBundle,

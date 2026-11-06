@@ -4,12 +4,12 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 
 ## Worker (実行時, `worker/types.ts` の `Env`)
 
-| 環境変数                        | 用途                                                                                                                                                                                           |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEFINY_ADMIN_ACCOUNT_IDS`      | 管理者のアカウント ID (カンマ・空白区切り)。`HttpProxyService/Fetch` (CORS の仲介) を使える。未設定なら誰も管理者ではない ([rpc-authorization.md](rpc-authorization.md))                       |
-| `DEFINY_PERF_TOKEN`             | パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の Bearer トークン。未設定ならエンドポイントは無効 ([performance-observability.md](performance-observability.md)) |
-| `DEFINY_MCP_ACCOUNT_SECRET_KEY` | `/mcp` の書き込みツールが署名に使う専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe Base64)。`DEFINY_MCP_ACCOUNT_NAME` と両方無ければ書き込みは無効 ([mcp.md](mcp.md))                |
-| `DEFINY_MCP_ACCOUNT_NAME`       | `/mcp` の専用アカウントの名前 (アカウントを作るときに使う)                                                                                                                                     |
+| 環境変数                        | 用途                                                                                                                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFINY_ADMIN_ACCOUNT_IDS`      | 管理者のアカウント ID (カンマ・空白区切り)。`HttpProxyService/Fetch` (CORS の仲介) を使える。未設定なら誰も管理者ではない ([rpc-authorization.md](rpc-authorization.md))                                              |
+| `DEFINY_PERF_TOKEN`             | パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) と MCP の `definy_perf_recent_submits` の Bearer トークン。未設定なら無効 ([performance-observability.md](performance-observability.md)) |
+| `DEFINY_MCP_ACCOUNT_SECRET_KEY` | `/mcp` の書き込みツールが署名に使う専用アカウントの秘密鍵 (ブラウザのログインと同じ URL-safe Base64)。`DEFINY_MCP_ACCOUNT_NAME` と両方無ければ書き込みは無効 ([mcp.md](mcp.md))                                       |
+| `DEFINY_MCP_ACCOUNT_NAME`       | `/mcp` の専用アカウントの名前 (アカウントを作るときに使う)                                                                                                                                                            |
 
 本番では Cloudflare のダッシュボードか `wrangler secret put` で設定する。ローカルではリポジトリ直下の `.env` (gitignore 済み) に書けば Void (Vite) の dev サーバーが読み込む。
 

@@ -5,7 +5,7 @@ import {
 } from "../src/auth.ts";
 import { base64ToBytes, bytesToBase64 } from "../src/base64.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
-import { DefinyClient } from "./definy_client.ts";
+import { DefinyClient } from "./test_definy_client.ts";
 
 type Fixture = {
   readonly client: DefinyClient;
