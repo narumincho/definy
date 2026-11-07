@@ -73,17 +73,19 @@ MCP のクライアントから:
 
 ## 速さ (2026-11-07, クラウドのコンテナ, 評価器は `core.eval-value`)
 
-| ページ                                                         | 本文   | 時間    |
-| :------------------------------------------------------------- | :----- | :------ |
-| `/html/` (プロジェクト一覧. `GetProjectBranches`)              | 1.4 KB | 0.03 秒 |
-| `/html/p/sample/main` (パーツ一覧. `definy_get_project`)       | 5 KB   | 0.36 秒 |
-| `/html/p/sample/main/sample.greet` (パーツ. `definy_get_part`) | 1.7 KB | 0.05 秒 |
-| `/html/p/definy/main` (約 1000 パーツ)                         | 420 KB | 36 秒   |
+| ページ                                                         | 本文   | 最初    | 文字列の処理をコンパイル済みにした後 |
+| :------------------------------------------------------------- | :----- | :------ | :----------------------------------- |
+| `/html/` (プロジェクト一覧. `GetProjectBranches`)              | 1.5 KB | 0.03 秒 | 0.02 秒                              |
+| `/html/p/sample/main` (パーツ一覧. `definy_get_project`)       | 5 KB   | 0.36 秒 | 0.02 秒                              |
+| `/html/p/sample/main/sample.greet` (パーツ. `definy_get_part`) | 1.7 KB | 0.05 秒 | 0.02 秒                              |
+| `/html/p/definy/main` (約 1000 パーツ, 2200 行)                | 420 KB | 36 秒   | 2.7 秒                               |
 
-- `definy_get_project` 自体は 0.4 秒。遅いのは評価器で文字列を 1 バイトずつ処理するところ
-  (`definy.string-split` で行に分ける, `std.string-index-of`, HTML のエスケープを `string-split` と `string-join` で 4 回)。
-  350 KB を何回か読むので数百万歩になる
-- 速くするには, 文字列の処理 (分割, 検索, 置換) を評価器の組み込みにするか, 大きなページを分ける (モジュールごと) 必要がある
+- 最初は, 評価器が文字列を 1 バイトずつ処理していた (`definy.string-split` で行に分ける, `std.string-index-of`,
+  HTML のエスケープを `string-split` と `string-join` で 4 回)。20 KB のエスケープだけで 1.4 秒 (1 バイトあたり十数マイクロ秒)
+- `core.string-split` / `core.string-join` / `core.string-replace` / `core.string-index-of` を足し, 評価器はこれらの式を評価せず
+  service の wasm にコンパイル済みの関数をそのまま呼ぶようにした ([builtin-parts.md](builtin-parts.md) の「評価器がコンパイル済みのまま動かすパーツ」)。
+  350 KB の分割・置換・検索はどれも 0.05 秒ほど。`html-ui` はこれらを使う
+- 残りの 2.7 秒は `definy_get_project` (0.4 秒) と, 2200 行それぞれを評価器で組み立てるところ
 
 ## テスト
 

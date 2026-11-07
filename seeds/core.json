@@ -8727,40 +8727,110 @@
                     }
                   },
                   "body": {
-                    "#call": {
-                      "function": {
-                        "#part_reference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.eval-part-reference"
-                          }
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-native-part"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "id",
+                              "value": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 122
+                                    }
+                                  },
+                                  "key": "part_definition_event_hash"
+                                }
+                              }
+                            }
+                          ]
                         }
                       },
-                      "arguments": [
+                      "arms": [
                         {
-                          "name": "parts",
-                          "value": {
-                            "#variable": {
-                              "variable_id": 900
+                          "pattern": {
+                            "#variant": {
+                              "tag": "some",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 9010,
+                                  "variable_name": "native"
+                                }
+                              }
                             }
-                          }
-                        },
-                        {
-                          "name": "id",
-                          "value": {
-                            "#record_get": {
-                              "record": {
-                                "#variable": {
-                                  "variable_id": 122
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "builtin",
+                              "payload": {
+                                "#some": {
+                                  "#variable": {
+                                    "variable_id": 9010
+                                  }
                                 }
                               },
-                              "key": "part_definition_event_hash"
+                              "type_part": {
+                                "#none": null
+                              }
                             }
                           }
                         },
                         {
-                          "name": "index",
-                          "value": {
-                            "#number": 0
+                          "pattern": {
+                            "#variant": {
+                              "tag": "none",
+                              "payload": {
+                                "#any": null
+                              }
+                            }
+                          },
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.eval-part-reference"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 900
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "id",
+                                  "value": {
+                                    "#record_get": {
+                                      "record": {
+                                        "#variable": {
+                                          "variable_id": 122
+                                        }
+                                      },
+                                      "key": "part_definition_event_hash"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#number": 0
+                                  }
+                                }
+                              ]
+                            }
                           }
                         }
                       ]
@@ -18414,6 +18484,1190 @@
                 },
                 {
                   "pattern": {
+                    "#string": "native_string_index_of"
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.call-argument"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "arguments",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 9002
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "name",
+                                      "value": {
+                                        "#string": "text"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "string",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 10,
+                                  "variable_name": "text"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.call-argument"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "arguments",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 9002
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "name",
+                                              "value": {
+                                                "#string": "target"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 11,
+                                          "variable_name": "target"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.eval-value"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "expr",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.call-argument"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "arguments",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 9002
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "name",
+                                                      "value": {
+                                                        "#string": "start"
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "env",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 900
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "number",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 12,
+                                                  "variable_name": "start"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#variant": {
+                                              "tag": "number",
+                                              "payload": {
+                                                "#some": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.string-index-of"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "text",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 10
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "target",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 11
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "start",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 12
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "type_part": {
+                                                "#none": null
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#bind": {
+                                              "variable_id": 97,
+                                              "variable_name": "_"
+                                            }
+                                          },
+                                          "body": {
+                                            "#variant": {
+                                              "tag": "unit",
+                                              "payload": {
+                                                "#none": null
+                                              },
+                                              "type_part": {
+                                                "#none": null
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#bind": {
+                                      "variable_id": 98,
+                                      "variable_name": "_"
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "unit",
+                                      "payload": {
+                                        "#none": null
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#bind": {
+                              "variable_id": 99,
+                              "variable_name": "_"
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "unit",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "native_string_split"
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.call-argument"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "arguments",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 9002
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "name",
+                                      "value": {
+                                        "#string": "text"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "string",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 10,
+                                  "variable_name": "text"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.call-argument"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "arguments",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 9002
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "name",
+                                              "value": {
+                                                "#string": "separator"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 11,
+                                          "variable_name": "separator"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.eval-native-strings-to-value"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "items",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-split"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "text",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 10
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "separator",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 11
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#bind": {
+                                      "variable_id": 98,
+                                      "variable_name": "_"
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "unit",
+                                      "payload": {
+                                        "#none": null
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#bind": {
+                              "variable_id": 99,
+                              "variable_name": "_"
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "unit",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "native_string_join"
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.call-argument"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "arguments",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 9002
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "name",
+                                      "value": {
+                                        "#string": "items"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "list",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 10,
+                                  "variable_name": "items"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.call-argument"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "arguments",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 9002
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "name",
+                                              "value": {
+                                                "#string": "separator"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 11,
+                                          "variable_name": "separator"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#some": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.string-join"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "items",
+                                                "value": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.eval-native-value-to-strings"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "items",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 10
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "name": "separator",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 11
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#bind": {
+                                      "variable_id": 98,
+                                      "variable_name": "_"
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "unit",
+                                      "payload": {
+                                        "#none": null
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#bind": {
+                              "variable_id": 99,
+                              "variable_name": "_"
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "unit",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": "native_string_replace"
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.call-argument"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "arguments",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 9002
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "name",
+                                      "value": {
+                                        "#string": "text"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#variant": {
+                              "tag": "string",
+                              "payload": {
+                                "#bind": {
+                                  "variable_id": 10,
+                                  "variable_name": "text"
+                                }
+                              }
+                            }
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.call-argument"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "arguments",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 9002
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "name",
+                                              "value": {
+                                                "#string": "from"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 11,
+                                          "variable_name": "from"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.eval-value"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "expr",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.call-argument"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "arguments",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 9002
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "name",
+                                                      "value": {
+                                                        "#string": "to"
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "env",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 900
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "pattern": {
+                                            "#variant": {
+                                              "tag": "string",
+                                              "payload": {
+                                                "#bind": {
+                                                  "variable_id": 12,
+                                                  "variable_name": "to"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "body": {
+                                            "#variant": {
+                                              "tag": "string",
+                                              "payload": {
+                                                "#some": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.string-replace"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "text",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 10
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "from",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 11
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "to",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 12
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "type_part": {
+                                                "#none": null
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "pattern": {
+                                            "#bind": {
+                                              "variable_id": 97,
+                                              "variable_name": "_"
+                                            }
+                                          },
+                                          "body": {
+                                            "#variant": {
+                                              "tag": "unit",
+                                              "payload": {
+                                                "#none": null
+                                              },
+                                              "type_part": {
+                                                "#none": null
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#bind": {
+                                      "variable_id": 98,
+                                      "variable_name": "_"
+                                    }
+                                  },
+                                  "body": {
+                                    "#variant": {
+                                      "tag": "unit",
+                                      "payload": {
+                                        "#none": null
+                                      },
+                                      "type_part": {
+                                        "#none": null
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#bind": {
+                              "variable_id": 99,
+                              "variable_name": "_"
+                            }
+                          },
+                          "body": {
+                            "#variant": {
+                              "tag": "unit",
+                              "payload": {
+                                "#none": null
+                              },
+                              "type_part": {
+                                "#none": null
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
                     "#any": null
                   },
                   "body": {
@@ -18425,6 +19679,1978 @@
                       "type_part": {
                         "#none": null
                       }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-index-of",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "target",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_number": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The byte index of the first target in the text at or after start (-1 if none). core.eval-value runs it compiled (core.eval-native-part)"
+        },
+        {
+          "language": "ja",
+          "text": "text の start 以降で最初に target がある位置 (バイト. 無ければ -1)。core.eval-value はコンパイル済みのまま動かす (core.eval-native-part)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "target"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "start"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 3,
+              "variable_name": "end",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-length"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "value",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.minus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#number": 0
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 1
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-slice"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#boolean": true
+                              },
+                              "body": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#boolean": false
+                              },
+                              "body": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-index-of"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "text",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "target",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "start",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-split",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "separator",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#type_string": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Split the text by the separator (an empty separator gives [text]). core.eval-value runs it compiled"
+        },
+        {
+          "language": "ja",
+          "text": "text を separator で分ける (空の separator なら [text])。core.eval-value はコンパイル済みのまま動かす"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "separator"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#string": ""
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#boolean": true
+                  },
+                  "body": {
+                    "#list": [
+                      {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "pattern": {
+                    "#boolean": false
+                  },
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.string-split-from"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "separator",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "start",
+                          "value": {
+                            "#number": 0
+                          }
+                        },
+                        {
+                          "name": "acc",
+                          "value": {
+                            "#list": []
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-split-from",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "separator",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "acc",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#type_string": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "core.string-split from the byte index start"
+        },
+        {
+          "language": "ja",
+          "text": "core.string-split の start のバイトから先"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "separator"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "acc"
+            }
+          ],
+          "body": {
+            "#let": {
+              "variable_id": 4,
+              "variable_name": "index",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.string-index-of"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "start",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#match": {
+                  "target": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 4
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#number": 0
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "pattern": {
+                        "#boolean": true
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-append"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "list",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "name": "item",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-slice"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "value",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "start",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "end",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-length"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "pattern": {
+                        "#boolean": false
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-split-from"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "text",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "separator",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "start",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.plus"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-length"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "acc",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.list-append"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "list",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "item",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-slice"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "start",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "end",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 4
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-join",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "separator",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Join the strings with the separator (halving the range, so the copies are n log n). core.eval-value runs it compiled"
+        },
+        {
+          "language": "ja",
+          "text": "文字列を separator でつなぐ (範囲を半分に分けるのでコピーは n log n)。core.eval-value はコンパイル済みのまま動かす"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "separator"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.string-join-range"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "items",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
+                    }
+                  }
+                },
+                {
+                  "name": "separator",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "start",
+                  "value": {
+                    "#number": 0
+                  }
+                },
+                {
+                  "name": "end",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-length"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "value",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-join-range",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "separator",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "start",
+              "type": {
+                "#type_number": null
+              }
+            },
+            {
+              "name": "end",
+              "type": {
+                "#type_number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "core.string-join of items[start..end]"
+        },
+        {
+          "language": "ja",
+          "text": "items[start..end] の core.string-join"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "separator"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "start"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "end"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.minus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 2
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#boolean": true
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.less-than"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "pattern": {
+                            "#boolean": true
+                          },
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.list-get"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "list",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "some",
+                                      "payload": {
+                                        "#bind": {
+                                          "variable_id": 4,
+                                          "variable_name": "item"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "pattern": {
+                                    "#variant": {
+                                      "tag": "none",
+                                      "payload": {
+                                        "#any": null
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "#string": ""
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "pattern": {
+                            "#boolean": false
+                          },
+                          "body": {
+                            "#string": ""
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#boolean": false
+                  },
+                  "body": {
+                    "#let": {
+                      "variable_id": 5,
+                      "variable_name": "middle",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.plus"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.divide"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.minus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#number": 2
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-concat"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-join-range"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "items",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "separator",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "start",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "end",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-concat"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-join-range"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "items",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "separator",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "start",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 5
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "end",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-replace",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "from",
+              "type": {
+                "#type_string": null
+              }
+            },
+            {
+              "name": "to",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_string": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Replace every from in the text with to. core.eval-value runs it compiled"
+        },
+        {
+          "language": "ja",
+          "text": "text の中の from を全て to にする。core.eval-value はコンパイル済みのまま動かす"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "from"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "to"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.string-join"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "items",
+                  "value": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.string-split"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "separator",
+                          "value": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "separator",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eval-native-part",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "id",
+              "type": {
+                "#type_string": null
+              }
+            }
+          ],
+          "return_type": {
+            "#type_union": [
+              {
+                "tag": "none",
+                "payload_type": {
+                  "#none": null
+                }
+              },
+              {
+                "tag": "some",
+                "payload_type": {
+                  "#some": {
+                    "#type_string": null
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The name for core.eval-builtin-call if core.eval-value runs the part compiled instead of evaluating its expression (core.string-index-of and so on)"
+        },
+        {
+          "language": "ja",
+          "text": "core.eval-value がパーツの式を評価せずコンパイル済みのまま動かすなら, core.eval-builtin-call での名前 (core.string-index-of など)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "id"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "pattern": {
+                    "#string": {
+                      "$part": "core.string-index-of"
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#string": "native_string_index_of"
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": {
+                      "$part": "core.string-split"
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#string": "native_string_split"
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": {
+                      "$part": "core.string-join"
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#string": "native_string_join"
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#string": {
+                      "$part": "core.string-replace"
+                    }
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "some",
+                      "payload": {
+                        "#some": {
+                          "#string": "native_string_replace"
+                        }
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "#any": null
+                  },
+                  "body": {
+                    "#variant": {
+                      "tag": "none",
+                      "payload": {
+                        "#none": null
+                      },
+                      "type_part": {
+                        "#none": null
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eval-native-strings-to-value",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#type_string": null
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.value"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A list of strings as an evaluated value"
+        },
+        {
+          "language": "ja",
+          "text": "文字列のリストを評価した値にする"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            }
+          ],
+          "body": {
+            "#variant": {
+              "tag": "list",
+              "payload": {
+                "#some": {
+                  "#call": {
+                    "function": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.list-map"
+                        }
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "name": "T",
+                        "value": {
+                          "#type_string": null
+                        }
+                      },
+                      {
+                        "name": "U",
+                        "value": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "core.value"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "f",
+                        "value": {
+                          "#function": {
+                            "parameters": [
+                              {
+                                "parameter_id": 1,
+                                "parameter_name": "item"
+                              }
+                            ],
+                            "body": {
+                              "#variant": {
+                                "tag": "string",
+                                "payload": {
+                                  "#some": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                "type_part": {
+                                  "#some": {
+                                    "$part": "core.value"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "name": "xs",
+                        "value": {
+                          "#variable": {
+                            "variable_id": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "type_part": {
+                "#some": {
+                  "$part": "core.value"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eval-native-value-to-strings",
+      "part_type": {
+        "#type_function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "#type_list": {
+                  "item_type": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.value"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#type_list": {
+              "item_type": {
+                "#type_string": null
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The strings of evaluated values (non-strings become empty)"
+        },
+        {
+          "language": "ja",
+          "text": "評価した値のリストの文字列 (文字列でなければ空)"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            }
+          ],
+          "body": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.list-map"
+                  }
+                }
+              },
+              "arguments": [
+                {
+                  "name": "T",
+                  "value": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.value"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "U",
+                  "value": {
+                    "#type_string": null
+                  }
+                },
+                {
+                  "name": "f",
+                  "value": {
+                    "#function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 1,
+                          "parameter_name": "item"
+                        }
+                      ],
+                      "body": {
+                        "#match": {
+                          "target": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#variant": {
+                                  "tag": "string",
+                                  "payload": {
+                                    "#bind": {
+                                      "variable_id": 2,
+                                      "variable_name": "text"
+                                    }
+                                  }
+                                }
+                              },
+                              "body": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#any": null
+                              },
+                              "body": {
+                                "#string": ""
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "xs",
+                  "value": {
+                    "#variable": {
+                      "variable_id": 0
                     }
                   }
                 }
