@@ -59,6 +59,29 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
   `cli/serve.ts` が `DEFINY_RUN_EXPRESSIONS: "1"` を渡す。Worker はこれを設定しないので, 公開サーバーの `/mcp` は
   "Running expressions is disabled on this server" のエラーを返す
 
+## 公開サーバーとの同期 (`definy_pull` / `definy_push`)
+
+どちらも引数は `{"remote": "https://definy.narumincho.com"}` (省略時はこれ, 末尾の `/` は除く)。
+相手の EventService の RPC を能力 `http_fetch` で呼ぶ ([service.md](service.md))。
+
+- `definy_pull` (`definy.mcp-pull`): 相手の全てのイベント (`GetEvents` を 500 件ずつ) のうち, このサーバーに無いものを
+  古い順にこのサーバーの `SubmitEvent` に渡す。`missing_content` なら相手の `GetContent` で中身を読み,
+  このサーバーの `UploadContent` に入れてからもう一度渡す
+- `definy_push` (`definy.mcp-push`): このサーバーの MCP のアカウント (`account.json`) のイベントのうち,
+  相手に無いものを古い順に相手の `SubmitEvent` に送る。中身はこのサーバーのストアから読み, 相手の `UploadContent` に送る。
+  取り込んだ他人のイベントは送らない
+- seed バンドルのイベント (2019-01-31T04:36:01Z からの 1 秒以内. [system-account.md](system-account.md)) は
+  どちらでも同期しない (`definy.sync-is-seed-event`)。サーバーはそれぞれ自分の seed を入れるので, 版の違う seed の
+  `main` のコミットを取り込むと「親が最新のコミットでない」と断られる
+- 結果は `Pulled 7 of 8 events (https://definy.narumincho.com)` と, 失敗したイベントごとの `- <種類> <ハッシュ>: <理由>` の行。
+  1 つでも失敗すれば `isError`。失敗しても残りのイベントは続ける
+- どちらに無いかはイベントのハッシュで比べる (全てのイベントを読むので, イベントが増えたら差分の RPC が要る)
+- JSON の応答は definy の `definy.parse-json` で読む。数は整数だけ読める (`timeMs` などの RPC の応答は整数だけ)
+- `GetEvents` は `time_ms` の新しい順。同じミリ秒のイベント (アカウントの作成とその直後のコミットなど) は
+  `rowid` の新しい順にした (古い順に並べ直したとき, 先に入れたものが先になるように)
+- 2026-11-07 時点の公開サーバーには, 今の形式で読めない古い `create_account` (`K6K9xb2b…`, 2026-10-24) が 1 つあり,
+  `definy_pull` は毎回それを失敗として報告する
+
 ## 安全
 
 `127.0.0.1` だけで待ち受けても, ブラウザで開いた他のサイトのページからのリクエストは届く。`cli/local_security.ts` で次を確かめる。
@@ -79,3 +102,5 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
   関数の番号は 33 から式の中の関数, その後ろに `collectReferencedParts` が集めた順に各パーツの中の関数
   (`#function` の数) が並ぶ ([wasm-gc.md](wasm-gc.md), [self-hosting.md](self-hosting.md) の関数の番号の付け方) ので,
   パーツの関数の数を数えれば, どのパーツか求められる
+- 関数の型の変数をそのまま引数に渡す (`sync: $0`) と型検査が `function_not_called` にする ([call-syntax.md](call-syntax.md))。
+  `sync: fn(event$1, then$2) => $0(event: $1, then: $2)` のように包む

@@ -26,20 +26,22 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   `tools/call` は処理を動かし, 最後の `respond` をツールの結果にする (`definy.mcp-tool-result`):
   本文をテキストにし, ステータスが `200` でなければ `isError`。テキストを返す処理は `definy.mcp-text` / `definy.mcp-text-error` (`400`) を使う
 
-  | ツール                        | 処理                                                                                                                                                  |
-  | :---------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `definy_get_project`          | `definy.mcp-get-project`: ブランチ (省略時は `main`) の全てのパーツを「`モジュール.名前`: 型 // 説明」の行で返す                                      |
-  | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す                     |
-  | `definy_whoami`               | `definy.mcp-whoami`: 書き込みに使う専用アカウント (アカウント ID, 名前, サーバーにもうあるか)                                                         |
-  | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し |
-  | `definy_commit_parts`         | `definy.mcp-commit-parts`: 専用アカウントのブランチにパーツの変更・追加・削除をコミットする。型と式は definy のテキストで渡す                         |
-  | `definy_run_expression`       | `definy.mcp-run-expression`: definy のテキストの式を評価して値をテキストで返す。手元の definy サーバーだけ ([local-server.md](local-server.md))       |
-  | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                                                 |
-  | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                                          |
-  | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                                           |
-  | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                                         |
-  | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                                                 |
-  | `definy_perf_recent_submits`  | `definy.mcp-perf-recent-submits`: ホストが記録した直近のパフォーマンス記録 (下の「パフォーマンス記録」)                                               |
+  | ツール                        | 処理                                                                                                                                                         |
+  | :---------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `definy_get_project`          | `definy.mcp-get-project`: ブランチ (省略時は `main`) の全てのパーツを「`モジュール.名前`: 型 // 説明」の行で返す                                             |
+  | `definy_get_part`             | `definy.mcp-get-part`: パーツ 1 つの id, content hash, 公開範囲, 説明, 型, 式。`project` を省くと全プロジェクトの `main` から探す                            |
+  | `definy_whoami`               | `definy.mcp-whoami`: 書き込みに使う専用アカウント (アカウント ID, 名前, サーバーにもうあるか)                                                                |
+  | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し        |
+  | `definy_commit_parts`         | `definy.mcp-commit-parts`: 専用アカウントのブランチにパーツの変更・追加・削除をコミットする。型と式は definy のテキストで渡す                                |
+  | `definy_run_expression`       | `definy.mcp-run-expression`: definy のテキストの式を評価して値をテキストで返す。手元の definy サーバーだけ ([local-server.md](local-server.md))              |
+  | `definy_pull`                 | `definy.mcp-pull`: 別の definy サーバー (既定は公開サーバー) のイベントのうち, このサーバーに無いものを中身ごと取り込む ([local-server.md](local-server.md)) |
+  | `definy_push`                 | `definy.mcp-push`: 専用アカウントのイベントのうち, 別の definy サーバーに無いものを中身ごと送る ([local-server.md](local-server.md))                         |
+  | `definy_get_project_branches` | RPC `EventService/GetProjectBranches`                                                                                                                        |
+  | `definy_get_events`           | RPC `EventService/GetEvents`                                                                                                                                 |
+  | `definy_get_event`            | RPC `EventService/GetEvent`                                                                                                                                  |
+  | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                                                |
+  | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                                                        |
+  | `definy_perf_recent_submits`  | `definy.mcp-perf-recent-submits`: ホストが記録した直近のパフォーマンス記録 (下の「パフォーマンス記録」)                                                      |
 
   RPC のツールは `definy.mcp-rpc-tool` が `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
   テキストにして返す (エラーの本文は Connect のエラー `{code, message}`)

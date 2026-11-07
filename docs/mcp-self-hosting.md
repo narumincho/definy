@@ -57,6 +57,7 @@ TypeScript を無くしていく。
    - サーバー: `npm run serve` (`cli/`, [local-server.md](local-server.md)) — 済
    - 式の実行のツール `definy_run_expression` (core.eval-value で評価) — 済。型検査はまだ
 3. **公開サーバーとの同期**: push / pull のツールと CLI のコマンド
+   - MCP のツール `definy_pull` / `definy_push` (definy 製. [local-server.md](local-server.md)) — 済。CLI のコマンドはまだ
 4. **正本を `seeds/*.json` から definy のストアに移す**: core や definy の変更も手元のサーバーの `commit_parts` で入れ,
    公開サーバーに push する。ビルドとブートストラップはストアから読む
 5. **最小限の UI**: 手元のサーバーと公開サーバーが definy の関数で HTML を返す。React と Vite をやめる

@@ -256,7 +256,7 @@ export class WorkerStore {
           `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
          FROM events
          WHERE REPLACE(LOWER(event_type), '_', '') = ?
-         ORDER BY time_ms DESC
+         ORDER BY time_ms DESC, rowid DESC
          LIMIT ? OFFSET ?`,
         )
         .bind(normalized, limit, offset);
@@ -265,7 +265,7 @@ export class WorkerStore {
         .prepare(
           `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
          FROM events
-         ORDER BY time_ms DESC
+         ORDER BY time_ms DESC, rowid DESC
          LIMIT ? OFFSET ?`,
         )
         .bind(limit, offset);
