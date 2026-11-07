@@ -100,6 +100,7 @@ describe("definy.handle-mcp", () => {
       "definy_get_part",
       "definy_whoami",
       "definy_create_branch",
+      "definy_create_project",
       "definy_commit_parts",
       "definy_run_expression",
       "definy_pull",
