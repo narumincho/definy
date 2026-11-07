@@ -2942,6 +2942,246 @@
           ]
         }
       }
+    },
+    {
+      "name": "deploy-fetch-worker",
+      "part_type": {
+        "#part_reference": {
+          "part_definition_event_hash": {
+            "$part": "wasi.io"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Deploys a handler that fetches definy.narumincho.com/healthz and returns its text to the Cloudflare Worker definy-fetch-sample (definy.deploy-fetch-worker)"
+        },
+        {
+          "language": "ja",
+          "text": "definy.narumincho.com/healthz を fetch してその本文を返すハンドラを Cloudflare Worker definy-fetch-sample にデプロイする (definy.deploy-fetch-worker)"
+        }
+      ],
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "definy.deploy-fetch-worker"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "worker_name",
+              "value": {
+                "#string": "definy-fetch-sample"
+              }
+            },
+            {
+              "name": "api_token",
+              "value": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.cloudflare-api-token"
+                  }
+                }
+              }
+            },
+            {
+              "name": "handler",
+              "value": {
+                "#quote": {
+                  "#function": {
+                    "parameters": [
+                      {
+                        "parameter_id": 0,
+                        "parameter_name": "request"
+                      }
+                    ],
+                    "body": {
+                      "#variant": {
+                        "tag": "fetch",
+                        "payload": {
+                          "#some": {
+                            "#record": [
+                              {
+                                "key": "request",
+                                "value": {
+                                  "#record": [
+                                    {
+                                      "key": "method",
+                                      "value": {
+                                        "#string": "GET"
+                                      }
+                                    },
+                                    {
+                                      "key": "url",
+                                      "value": {
+                                        "#string": "https://definy.narumincho.com/healthz"
+                                      }
+                                    },
+                                    {
+                                      "key": "headers",
+                                      "value": {
+                                        "#list": []
+                                      }
+                                    },
+                                    {
+                                      "key": "body",
+                                      "value": {
+                                        "#string": ""
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "key": "then",
+                                "value": {
+                                  "#function": {
+                                    "parameters": [
+                                      {
+                                        "parameter_id": 1,
+                                        "parameter_name": "response"
+                                      }
+                                    ],
+                                    "body": {
+                                      "#variant": {
+                                        "tag": "respond",
+                                        "payload": {
+                                          "#some": {
+                                            "#record": [
+                                              {
+                                                "key": "status",
+                                                "value": {
+                                                  "#number": 200
+                                                }
+                                              },
+                                              {
+                                                "key": "headers",
+                                                "value": {
+                                                  "#list": [
+                                                    {
+                                                      "#record": [
+                                                        {
+                                                          "key": "name",
+                                                          "value": {
+                                                            "#string": "content-type"
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "value",
+                                                          "value": {
+                                                            "#string": "text/plain; charset=utf-8"
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "key": "body",
+                                                "value": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.string-join"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "items",
+                                                        "value": {
+                                                          "#list": [
+                                                            {
+                                                              "#string": "definy.narumincho.com/healthz ("
+                                                            },
+                                                            {
+                                                              "#call": {
+                                                                "function": {
+                                                                  "#part_reference": {
+                                                                    "part_definition_event_hash": {
+                                                                      "$part": "std.number-to-string"
+                                                                    }
+                                                                  }
+                                                                },
+                                                                "arguments": [
+                                                                  {
+                                                                    "name": "value",
+                                                                    "value": {
+                                                                      "#record_get": {
+                                                                        "record": {
+                                                                          "#variable": {
+                                                                            "variable_id": 1
+                                                                          }
+                                                                        },
+                                                                        "key": "status"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            },
+                                                            {
+                                                              "#string": "): "
+                                                            },
+                                                            {
+                                                              "#record_get": {
+                                                                "record": {
+                                                                  "#variable": {
+                                                                    "variable_id": 1
+                                                                  }
+                                                                },
+                                                                "key": "text"
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "separator",
+                                                        "value": {
+                                                          "#string": ""
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "type_part": {
+                                          "#some": {
+                                            "$part": "definy.worker-step"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "type_part": {
+                          "#some": {
+                            "$part": "definy.worker-step"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   ]
 }

@@ -34,7 +34,7 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
   - 鍵: `<data-dir>/account.json` (`accountName` と `secretKeyBase64`, パーミッション 600)。無ければ作る。
     Worker の `DEFINY_MCP_ACCOUNT_SECRET_KEY` / `DEFINY_MCP_ACCOUNT_NAME` として渡すので, 書き込みのツールは
     Worker の専用アカウントと同じ仕組みで手元の鍵の署名になる ([mcp.md](mcp.md))
-- 静的アセット (今の React の UI) は配らない。代わりに `http://127.0.0.1:<port>/html/` で, ストアの `html-ui` プロジェクトが返す HTML の UI を開ける ([html-ui.md](html-ui.md))
+- 静的アセット (今の React の UI) は配らない。HTML だけの UI は別の Worker ([html-ui.md](html-ui.md))
 
 ## 式の実行 (`definy_run_expression`)
 
