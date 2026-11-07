@@ -127,3 +127,25 @@ seed の書き換えは, 演算子のアームの本体を, 組み込みの引�
   呼び出しを別のパーツに差し替えるときは同じ名前の引数の式を引き継ぐ (`core.less-than` → `core.less-than-or-equal`).
   呼び出す関数の名前のバッジは呼び出しの一部なので, 押すと呼び出し全体を選ぶ ([call-syntax.md](call-syntax.md))
 - ツリーでは他のパーツの呼び出しと同じく `call core.plus left: … right: …` と表示する
+
+## 評価器がコンパイル済みのまま動かすパーツ (2026-11-07)
+
+`core.eval-value` (definy 製の評価器) は式を 1 歩ずつ評価するので, 長い文字列を 1 バイトずつ処理するパーツはとても遅い
+(1 バイトあたり十数マイクロ秒。HTML の UI のパーツ一覧で 36 秒. [html-ui.md](html-ui.md))。
+そこで次のパーツは, 評価器がその式を評価せず, 評価器と一緒にコンパイルされた関数をそのまま呼ぶ。
+
+| パーツ                 | 引数                      | 戻り値                                                  |
+| :--------------------- | :------------------------ | :------------------------------------------------------ |
+| `core.string-index-of` | `text`, `target`, `start` | 最初に `target` がある位置 (バイト. 無ければ -1)        |
+| `core.string-split`    | `text`, `separator`       | 分けた文字列のリスト (空の `separator` なら `[text]`)   |
+| `core.string-join`     | `items`, `separator`      | つないだ文字列 (範囲を半分に分けるのでコピーは n log n) |
+| `core.string-replace`  | `text`, `from`, `to`      | `from` を全て `to` にした文字列                         |
+
+- これらは普通の definy の関数で, コンパイラ組み込み (`#builtin`) ではない。stage1 でコンパイルすればそのまま普通の関数になり,
+  型チェッカーも普通のパーツとして検査する。コンパイラの変更もブートストラップも要らない
+- 評価器では, `core.eval-value` がパーツの参照を評価するとき `core.eval-native-part` で ID を調べ, この表にあれば
+  `#builtin("native_string_index_of")` などの値にする。呼び出しは `core.eval-builtin-call` がその名前で引数を評価し,
+  コンパイル済みの `core.string-index-of` などを呼ぶ。式を評価したときと結果は同じ (`conformance/eval_cases.json` の「call core.string-*」で
+  stage1 と `core.eval-value` の両方で確かめる)
+- `core.eval-native-part` の `match` のパターンは `{"$part": "core.string-index-of"}` (seed を作るときパーツ ID の文字列になる)
+- core は std を参照できないので core に置いた。`std.string-index-of` などは今のまま (評価器では 1 歩ずつ動く)

@@ -4990,6 +4990,250 @@
         }
       },
       "expected": 15
+    },
+    {
+      "name": "call core.string-index-of",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-index-of"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "#string": "a<b<c"
+              }
+            },
+            {
+              "name": "target",
+              "value": {
+                "#string": "<"
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "#number": 2
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "call core.string-index-of not found",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-index-of"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "#string": "abc"
+              }
+            },
+            {
+              "name": "target",
+              "value": {
+                "#string": "bcd"
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "#number": 0
+              }
+            }
+          ]
+        }
+      },
+      "expected": -1
+    },
+    {
+      "name": "call core.string-split",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-split"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "#string": "a, b,, c, "
+              }
+            },
+            {
+              "name": "separator",
+              "value": {
+                "#string": ", "
+              }
+            }
+          ]
+        }
+      },
+      "expected": [
+        "a",
+        "b,",
+        "c",
+        ""
+      ]
+    },
+    {
+      "name": "call core.string-split empty separator",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-split"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "#string": "ab"
+              }
+            },
+            {
+              "name": "separator",
+              "value": {
+                "#string": ""
+              }
+            }
+          ]
+        }
+      },
+      "expected": [
+        "ab"
+      ]
+    },
+    {
+      "name": "call core.string-join",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-join"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "items",
+              "value": {
+                "#list": [
+                  {
+                    "#string": "x"
+                  },
+                  {
+                    "#string": "y"
+                  },
+                  {
+                    "#string": "z"
+                  },
+                  {
+                    "#string": "w"
+                  },
+                  {
+                    "#string": "v"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "separator",
+              "value": {
+                "#string": "-"
+              }
+            }
+          ]
+        }
+      },
+      "expected": "x-y-z-w-v"
+    },
+    {
+      "name": "call core.string-join empty",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-join"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "items",
+              "value": {
+                "#list": []
+              }
+            },
+            {
+              "name": "separator",
+              "value": {
+                "#string": "-"
+              }
+            }
+          ]
+        }
+      },
+      "expected": ""
+    },
+    {
+      "name": "call core.string-replace",
+      "expression": {
+        "#call": {
+          "function": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-replace"
+              }
+            }
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "#string": "a<b>&<"
+              }
+            },
+            {
+              "name": "from",
+              "value": {
+                "#string": "<"
+              }
+            },
+            {
+              "name": "to",
+              "value": {
+                "#string": "&lt;"
+              }
+            }
+          ]
+        }
+      },
+      "expected": "a&lt;b>&&lt;"
     }
   ]
 }

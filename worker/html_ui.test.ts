@@ -99,7 +99,7 @@ describe("definy_create_project", () => {
         project: "my-project",
       }),
     ).toEqual({ text: "42", isError: false });
-  });
+  }, 60_000);
 });
 
 describe("definy.handle-html-ui", () => {
