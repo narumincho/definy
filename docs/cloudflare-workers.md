@@ -76,6 +76,13 @@ sample.deploy-self-hosted-definy-server =
 `app.wasm` は Wasm GC のモジュールなので, 値はエクスポートしたランタイム関数 (`value_tag`, `values_get` など) で作って読む
 ([wasm-gc.md](wasm-gc.md))。`src/wasi_io.test.ts` が, アップロードする `worker.js` を Node.js で動かしてレスポンスを確かめる。
 
+### HTTP リクエストを送る Worker (`definy.deploy-fetch-worker`)
+
+`definy.deploy-fetch-worker(worker_name, api_token, handler: Code<Fn(request: @definy.worker-request) -> @definy.worker-step>)` は,
+handler が `#respond` (レスポンス) か `#fetch` (HTTP リクエストを送って応答で続ける) を返す Worker をデプロイする。
+`worker.js` が `#fetch` の段を `fetch()` で送る。例は `sample.deploy-fetch-worker`, 使っているのは HTML の UI ([html-ui.md](html-ui.md))。
+アップロードの部分は 2 つのデプロイで共通の `definy.deploy-wasm-to-cloudflare-workers(worker_name, api_token, expression, part_ids)`。
+
 ---
 
 ## 3. 以前の仕組み (削除済み)

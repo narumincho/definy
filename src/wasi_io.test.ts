@@ -80,12 +80,16 @@ function jsonResponse(body: unknown): WasiHttpResult {
 /**
  * アップロードした worker.js (`import wasmModule from "./app.wasm"`) を, app.wasm のモジュールを渡して Node.js で動かす
  */
+let uploadedWorkerCount = 0;
+
 async function runUploadedWorker(
   workerScript: Uint8Array,
   appWasm: Uint8Array,
   request: Request,
 ): Promise<Response> {
-  const globalKey = "__definyTestAppWasm";
+  // 同じ worker.js の data: URL は import が前のモジュールを返すので, 呼ぶたびに別のグローバル変数にする
+  uploadedWorkerCount += 1;
+  const globalKey = `__definyTestAppWasm${uploadedWorkerCount}`;
   (globalThis as Record<string, unknown>)[globalKey] = new WebAssembly.Module(
     appWasm as unknown as BufferSource,
   );
@@ -205,6 +209,51 @@ describe("wasi.io", () => {
     expect(await response.text()).toBe(
       "Hello from definy! https://definy-hello.example/",
     );
+  }, 120_000);
+
+  it("definy.deploy-fetch-worker でデプロイした Worker は fetch の段で HTTP リクエストを送り, 応答で続ける", async () => {
+    const requests: WasiOutgoingRequest[] = [];
+    const message = await runWasiIo(
+      await compilePart("sample.deploy-fetch-worker"),
+      {
+        getPart: (id) => seedPartExpressions.get(id),
+        getSecret: cloudflareToken("test-token"),
+        handle: cloudflareApi(requests),
+      },
+    );
+    expect(message).toBe(
+      "デプロイしました: https://definy-fetch-sample.narumincho.workers.dev",
+    );
+    const body = requests[1]?.body ?? new Uint8Array();
+
+    const fetched: Array<{ url: string; method: string }> = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      fetched.push({ url: String(input), method: init?.method ?? "GET" });
+      return new Response('{"status":"ok"}', { status: 200 });
+    }) as typeof fetch;
+    try {
+      const response = await runUploadedWorker(
+        multipartPart(body, "worker.js"),
+        multipartPart(body, "app.wasm"),
+        new Request("https://definy-fetch-sample.example/"),
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe(
+        "text/plain; charset=utf-8",
+      );
+      expect(await response.text()).toBe(
+        'definy.narumincho.com/healthz (200): {"status":"ok"}',
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    expect(fetched).toEqual([
+      { url: "https://definy.narumincho.com/healthz", method: "GET" },
+    ]);
   }, 120_000);
 
   it("シークレットの値が無ければ HTTP リクエストを送らずに止まる", async () => {
