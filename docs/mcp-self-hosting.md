@@ -61,6 +61,10 @@ TypeScript を無くしていく。
 4. **正本を `seeds/*.json` から definy のストアに移す**: core や definy の変更も手元のサーバーの `commit_parts` で入れ,
    公開サーバーに push する。ビルドとブートストラップはストアから読む
 5. **最小限の UI**: 手元のサーバーと公開サーバーが definy の関数で HTML を返す。React と Vite をやめる
+   - 2026-11-07 方針を決め直した: React の UI は今のまま GitHub で管理して残し, HTML だけのシンプル版を並べて置く。
+     シンプル版の正本は definy のストアの `html-ui` プロジェクトで, バージョン管理も definy のブランチとコミットだけでする
+     (seeds にも GitHub にも置かない)。まずは手元のサーバーの `/html/` だけ ([html-ui.md](html-ui.md))。公開サーバーでどう動かすかは,
+     手元で速さを測ってから決める
 6. **JavaScript を固定の土台だけにする**: Worker と手元のサーバーのホストを能力を渡すだけにする。
    手元のホストは将来 wasmtime などの WASI のランタイムに置き換えられる
 
