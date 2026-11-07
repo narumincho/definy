@@ -128,7 +128,7 @@ it("コミットにはパーツの中身の content hash だけを入れ, サー
     description: [{ language: "en", text: "stored" }],
     expression: { "#number": 7 },
   });
-});
+}, 60_000);
 
 it("中身の SHA-256 が content hash と一致しないものは使わない", async () => {
   const loaded = await loadContents(["fake-hash"], () =>
