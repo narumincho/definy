@@ -135,6 +135,16 @@ describe("写しのサーバーの土台 (definy.cloudflare-service-runtime-scri
       // seed のイベントの中身は 1000 個を超えるので, 何回かに分けて入る
       expect(await runScheduled()).toBeGreaterThan(3);
       expect(await readPart()).toContain("expression:\n42");
+      // 読んだコミットは, 次の isolate でも使えるように D1 の host_cache にも置く
+      expect(
+        (
+          (
+            await env.DB.prepare(
+              "SELECT count(*) AS c FROM host_cache WHERE kind = 'commits'",
+            ).all()
+          ).results as ReadonlyArray<{ readonly c: number }>
+        )[0]!.c,
+      ).toBeGreaterThan(0);
 
       await call("definy_commit_parts", {
         project: "t-proj",

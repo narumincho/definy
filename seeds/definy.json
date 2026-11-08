@@ -47,7 +47,7 @@
         }
       ],
       "expression": {
-        "#string": "import wasmModule from \"./app.wasm\";\n\n// definy のサーバーの処理 (definy.service-io) を Cloudflare Workers で動かす土台 (docs/html-ui.md)。\n// app.wasm の evaluate() は { fetch: Fn(request: @definy.http-request) -> @definy.service-io,\n// scheduled: Fn(time_ms: Number) -> @definy.service-io } を返す。何をするかは definy が決め,\n// ここは要求 (ストアの SQL, 署名の検証, HTTP など) を行って結果を then に渡すだけ。\n// ストアは D1 の binding DB。worker/service_io.ts と同じ能力のうち, 写しのサーバーに要るものを渡す\nconst TAG_NUMBER = 0;\nconst TAG_BOOLEAN = 1;\nconst TAG_STRING = 2;\nconst TAG_LIST = 3;\nconst TAG_RECORD = 4;\nconst TAG_CLOSURE = 5;\nconst TAG_VARIANT = 6;\nconst TAG_FLOAT = 7;\nconst MAX_STEPS = 100000;\n\nconst encoder = new TextEncoder();\nconst decoder = new TextDecoder();\n\nfunction writeString(exports, value) {\n  const maxBytes = value.length * 3;\n  if (exports.memory.buffer.byteLength < maxBytes) {\n    exports.memory.grow(Math.ceil((maxBytes - exports.memory.buffer.byteLength) / 65536));\n  }\n  const { written } = encoder.encodeInto(value, new Uint8Array(exports.memory.buffer, 0, maxBytes));\n  return exports.string_from_memory(written);\n}\n\nfunction readString(exports, ref) {\n  const length = exports.string_to_memory(ref);\n  return decoder.decode(new Uint8Array(exports.memory.buffer, 0, length));\n}\n\nfunction valuesOf(exports, ref) {\n  const array = exports.values_of(ref);\n  if (array === null) return [];\n  const length = exports.values_length(array);\n  const items = [];\n  for (let i = 0; i < length; i++) items.push(exports.values_get(array, i));\n  return items;\n}\n\nfunction writeValues(exports, items) {\n  const array = exports.values_new(items.length);\n  items.forEach((item, i) => exports.values_set(array, i, item));\n  return array;\n}\n\n// 値は docs/value-encoding.md の JSON の形: タグ付きの値は { \"#tag\": payload }\nfunction readValue(exports, ref) {\n  if (ref === null) return null;\n  switch (exports.value_tag(ref)) {\n    case TAG_NUMBER:\n      return Number(exports.number_value(ref));\n    case TAG_BOOLEAN:\n      return exports.bool_value(ref) !== 0;\n    case TAG_FLOAT:\n      return exports.float_value(ref);\n    case TAG_STRING:\n      return readString(exports, ref);\n    case TAG_LIST:\n      return valuesOf(exports, ref).map((item) => readValue(exports, item));\n    case TAG_RECORD: {\n      const items = valuesOf(exports, ref);\n      const obj = {};\n      for (let i = 0; i + 1 < items.length; i += 2) {\n        obj[readString(exports, items[i])] = readValue(exports, items[i + 1]);\n      }\n      return obj;\n    }\n    case TAG_VARIANT:\n      return { [\"#\" + readString(exports, exports.variant_tag(ref))]: readValue(exports, exports.variant_payload(ref)) };\n  }\n  return null;\n}\n\nfunction writeValue(exports, value) {\n  if (typeof value === \"number\") {\n    return Number.isInteger(value) ? exports.box_number(BigInt(value)) : exports.float_new(value);\n  }\n  if (typeof value === \"boolean\") return exports.box_bool(value ? 1 : 0);\n  if (typeof value === \"string\") return writeString(exports, value);\n  if (Array.isArray(value)) {\n    return exports.list_new(writeValues(exports, value.map((item) => writeValue(exports, item))));\n  }\n  const keys = Object.keys(value);\n  if (keys.length === 1 && keys[0].startsWith(\"#\")) {\n    const payload = value[keys[0]];\n    return exports.variant_new(\n      writeString(exports, keys[0].slice(1)),\n      payload === null ? null : writeValue(exports, payload),\n    );\n  }\n  return exports.record_new(\n    writeValues(exports, keys.flatMap((key) => [writeString(exports, key), writeValue(exports, value[key])])),\n  );\n}\n\nfunction field(exports, record, key) {\n  const items = valuesOf(exports, record);\n  for (let i = 0; i + 1 < items.length; i += 2) {\n    if (readString(exports, items[i]) === key) return items[i + 1];\n  }\n  throw new Error(\"the record has no field \" + key);\n}\n\nfunction callClosure(exports, closure, args) {\n  const fn = exports.table.get(exports.closure_index(closure));\n  return fn(exports.values_of(closure), writeValues(exports, args));\n}\n\nconst bytesOf = (value) => Uint8Array.from(Array.isArray(value) ? value : []);\n\nfunction base64ToBytes(base64) {\n  const binary = atob(base64);\n  const bytes = new Uint8Array(binary.length);\n  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);\n  return bytes;\n}\n\nfunction bytesToBase64(bytes) {\n  let binary = \"\";\n  for (let i = 0; i < bytes.length; i += 0x8000) {\n    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));\n  }\n  return btoa(binary);\n}\n\nfunction sqlParam(value) {\n  if (\"#integer\" in value) return value[\"#integer\"];\n  if (\"#text\" in value) return value[\"#text\"];\n  return null;\n}\n\nfunction sqlRow(row) {\n  return Object.entries(row).map(([name, value]) => ({\n    name,\n    value:\n      value === null || value === undefined\n        ? { \"#null\": null }\n        : typeof value === \"number\" && Number.isSafeInteger(value)\n          ? { \"#integer\": value }\n          : { \"#text\": String(value) },\n  }));\n}\n\nfunction jsonToDefiny(value) {\n  if (value === null || value === undefined) return { \"#null\": null };\n  if (typeof value === \"boolean\") return { \"#boolean\": value };\n  if (typeof value === \"number\") return { \"#number\": value };\n  if (typeof value === \"string\") return { \"#string\": value };\n  if (Array.isArray(value)) return { \"#array\": value.map(jsonToDefiny) };\n  return { \"#object\": Object.entries(value).map(([key, item]) => ({ key, value: jsonToDefiny(item) })) };\n}\n\nfunction definyToJson(value) {\n  const [tag, payload] = Object.entries(value)[0];\n  switch (tag) {\n    case \"#null\":\n      return null;\n    case \"#array\":\n      return payload.map(definyToJson);\n    case \"#object\":\n      return Object.fromEntries(payload.map((item) => [item.key, definyToJson(item.value)]));\n    default:\n      return payload;\n  }\n}\n\nasync function sha256Base64Url(bytes) {\n  const digest = new Uint8Array(await crypto.subtle.digest(\"SHA-256\", bytes));\n  return bytesToBase64(digest).replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n}\n\nasync function verifyEd25519(publicKey, signature, message) {\n  try {\n    const key = await crypto.subtle.importKey(\"raw\", publicKey, { name: \"Ed25519\" }, false, [\"verify\"]);\n    return await crypto.subtle.verify({ name: \"Ed25519\" }, key, signature, message);\n  } catch {\n    return false;\n  }\n}\n\nasync function runSql(db, statements) {\n  const prepared = statements.map((statement) => db.prepare(statement.sql).bind(...statement.params.map(sqlParam)));\n  if (prepared.length === 0) return [];\n  if (prepared.length === 1) return [(await prepared[0].all()).results];\n  return (await db.batch(prepared)).map((result) => result.results);\n}\n\n// この isolate で読んだもの (commit, 定義の式, 解決した中身) を覚える\nconst caches = { commits: new Map(), definitions: new Map(), resolutions: new Map() };\nlet seeded = false;\n\nfunction readCached(cache, keys) {\n  return keys.filter((key) => cache.has(key)).map((key) => cache.get(key));\n}\n\nasync function runServiceIo(exports, start, env, request) {\n  let pointer = start;\n  let bodyText;\n  const readBody = () => (bodyText ??= request === undefined ? Promise.resolve(\"\") : request.text());\n  for (let step = 0; step < MAX_STEPS; step++) {\n    const tag = readString(exports, exports.variant_tag(pointer));\n    const payload = exports.variant_payload(pointer);\n    if (tag === \"respond\") return readValue(exports, payload);\n    if (tag === \"serve_asset\") return { status: 404, headers: [], body: { \"#text\": \"not found\" } };\n    const read = (key) => readValue(exports, field(exports, payload, key));\n    let result;\n    switch (tag) {\n      case \"sql\":\n        result = (await runSql(env.DB, read(\"statements\"))).map((rows) => rows.map(sqlRow));\n        break;\n      case \"verify_ed25519\":\n        result = await verifyEd25519(bytesOf(read(\"public_key\")), bytesOf(read(\"signature\")), bytesOf(read(\"message\")));\n        break;\n      case \"read_time\":\n        result = Date.now();\n        break;\n      case \"hash_contents\":\n        result = await Promise.all(\n          read(\"contents_bytes\").map(async (base64) => {\n            try {\n              return { \"#some\": await sha256Base64Url(base64ToBytes(base64)) };\n            } catch {\n              return { \"#none\": null };\n            }\n          }),\n        );\n        break;\n      case \"read_request_text\":\n        result = await readBody();\n        break;\n      case \"read_request_json\": {\n        const text = await readBody();\n        if (text.trim() === \"\") {\n          result = { \"#json\": jsonToDefiny({}) };\n        } else {\n          try {\n            const json = JSON.parse(text);\n            result =\n              json !== null && typeof json === \"object\" && !Array.isArray(json)\n                ? { \"#json\": jsonToDefiny(json) }\n                : { \"#invalid\": \"request body must be an object\" };\n          } catch {\n            result = { \"#invalid\": \"request body must be JSON\" };\n          }\n        }\n        break;\n      }\n      case \"read_admin_account_ids\":\n        result = \"\";\n        break;\n      case \"read_host_settings\":\n        result = { run_expressions: false };\n        break;\n      case \"read_mcp_account\":\n        result = { \"#none\": null };\n        break;\n      case \"sign_mcp_account\":\n        result = { \"#none\": null };\n        break;\n      case \"read_perf_records\":\n        result = { status: 404, body: JSON.stringify({ code: \"not_found\", message: \"the perf endpoint is not enabled\" }) };\n        break;\n      // 写しは seed バンドルを持たず, 表だけ作って (definy.ensure-seeded) イベントは全て取り込む\n      case \"read_seed_status\":\n        result = { seeded, expected_fingerprint: \"\" };\n        break;\n      case \"read_seed_bundle\":\n        result = { \"#none\": null };\n        break;\n      case \"mark_seeded\":\n        seeded = true;\n        result = true;\n        break;\n      case \"read_cached_commits\":\n        result = readCached(caches.commits, read(\"event_hashes\"));\n        break;\n      case \"write_cached_commits\":\n        for (const entry of read(\"entries\")) caches.commits.set(entry.event_hash, entry);\n        result = true;\n        break;\n      case \"read_cached_definitions\":\n        result = readCached(caches.definitions, read(\"content_hashes\"));\n        break;\n      case \"write_cached_definitions\":\n        for (const entry of read(\"entries\")) caches.definitions.set(entry.content_hash, entry);\n        result = true;\n        break;\n      case \"read_cached_resolutions\":\n        result = readCached(caches.resolutions, read(\"content_hashes\"));\n        break;\n      case \"write_cached_resolutions\":\n        for (const entry of read(\"entries\")) caches.resolutions.set(entry.content_hash, entry);\n        result = true;\n        break;\n      case \"http_fetch\": {\n        const fetchRequest = read(\"request\");\n        const body = fetchRequest.body_base64[\"#some\"];\n        try {\n          const response = await fetch(fetchRequest.url, {\n            method: fetchRequest.method,\n            headers: fetchRequest.headers.map((header) => [header.name, header.value]),\n            body: body === undefined ? undefined : base64ToBytes(body),\n            redirect: \"manual\",\n          });\n          const headers = [];\n          response.headers.forEach((value, name) => headers.push({ name, value }));\n          result = {\n            \"#response\": {\n              status: response.status,\n              headers,\n              body_base64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),\n            },\n          };\n        } catch (error) {\n          result = { \"#failed\": String(error) };\n        }\n        break;\n      }\n      default:\n        throw new Error(\"not a definy.service-io value (tag: \" + tag + \")\");\n    }\n    pointer = callClosure(exports, field(exports, payload, \"then\"), [writeValue(exports, result)]);\n  }\n  throw new Error(\"definy.service-io did not end in \" + MAX_STEPS + \" steps\");\n}\n\nlet entry;\nfunction entryPoints() {\n  if (entry === undefined) {\n    const exports = new WebAssembly.Instance(wasmModule, {}).exports;\n    const root = exports.evaluate();\n    entry = { exports, fetch: field(exports, root, \"fetch\"), scheduled: field(exports, root, \"scheduled\") };\n  }\n  return entry;\n}\n\nfunction toResponse(response) {\n  const headers = new Headers();\n  for (const header of response.headers) headers.append(header.name, header.value);\n  const [tag, payload] = Object.entries(response.body)[0];\n  const body =\n    tag === \"#text\"\n      ? payload\n      : tag === \"#json\"\n        ? JSON.stringify(definyToJson(payload))\n        : tag === \"#base64\"\n          ? base64ToBytes(payload)\n          : null;\n  return new Response(body, { status: response.status, headers });\n}\n\nexport default {\n  async fetch(request, env) {\n    try {\n      const { exports, fetch: handler } = entryPoints();\n      const url = new URL(request.url);\n      const headers = [];\n      request.headers.forEach((value, name) => headers.push({ name, value }));\n      const start = callClosure(exports, handler, [\n        writeValue(exports, {\n          method: request.method,\n          path: url.pathname,\n          query: url.search.slice(1),\n          headers,\n          storage: env.DB ? \"cloudflare-d1\" : \"none\",\n          has_assets: false,\n        }),\n      ]);\n      return toResponse(await runServiceIo(exports, start, env, request));\n    } catch (error) {\n      return new Response(JSON.stringify({ code: \"internal\", message: String(error) }), {\n        status: 500,\n        headers: { \"Content-Type\": \"application/json; charset=utf-8\" },\n      });\n    }\n  },\n  async scheduled(controller, env, ctx) {\n    const { exports, scheduled } = entryPoints();\n    const run = async () => {\n      const response = await runServiceIo(exports, callClosure(exports, scheduled, [writeValue(exports, Date.now())]), env, undefined);\n      console.log(response.status, response.body[\"#text\"] ?? \"\");\n    };\n    ctx.waitUntil(run());\n  },\n};\n"
+        "#string": "import wasmModule from \"./app.wasm\";\n\n// definy のサーバーの処理 (definy.service-io) を Cloudflare Workers で動かす土台 (docs/html-ui.md)。\n// app.wasm の evaluate() は { fetch: Fn(request: @definy.http-request) -> @definy.service-io,\n// scheduled: Fn(time_ms: Number) -> @definy.service-io } を返す。何をするかは definy が決め,\n// ここは要求 (ストアの SQL, 署名の検証, HTTP など) を行って結果を then に渡すだけ。\n// ストアは D1 の binding DB。worker/service_io.ts と同じ能力のうち, 写しのサーバーに要るものを渡す\nconst TAG_NUMBER = 0;\nconst TAG_BOOLEAN = 1;\nconst TAG_STRING = 2;\nconst TAG_LIST = 3;\nconst TAG_RECORD = 4;\nconst TAG_CLOSURE = 5;\nconst TAG_VARIANT = 6;\nconst TAG_FLOAT = 7;\nconst MAX_STEPS = 100000;\n\nconst encoder = new TextEncoder();\nconst decoder = new TextDecoder();\n\nfunction writeString(exports, value) {\n  const maxBytes = value.length * 3;\n  if (exports.memory.buffer.byteLength < maxBytes) {\n    exports.memory.grow(Math.ceil((maxBytes - exports.memory.buffer.byteLength) / 65536));\n  }\n  const { written } = encoder.encodeInto(value, new Uint8Array(exports.memory.buffer, 0, maxBytes));\n  return exports.string_from_memory(written);\n}\n\nfunction readString(exports, ref) {\n  const length = exports.string_to_memory(ref);\n  return decoder.decode(new Uint8Array(exports.memory.buffer, 0, length));\n}\n\nfunction valuesOf(exports, ref) {\n  const array = exports.values_of(ref);\n  if (array === null) return [];\n  const length = exports.values_length(array);\n  const items = [];\n  for (let i = 0; i < length; i++) items.push(exports.values_get(array, i));\n  return items;\n}\n\nfunction writeValues(exports, items) {\n  const array = exports.values_new(items.length);\n  items.forEach((item, i) => exports.values_set(array, i, item));\n  return array;\n}\n\n// 値は docs/value-encoding.md の JSON の形: タグ付きの値は { \"#tag\": payload }\nfunction readValue(exports, ref) {\n  if (ref === null) return null;\n  switch (exports.value_tag(ref)) {\n    case TAG_NUMBER:\n      return Number(exports.number_value(ref));\n    case TAG_BOOLEAN:\n      return exports.bool_value(ref) !== 0;\n    case TAG_FLOAT:\n      return exports.float_value(ref);\n    case TAG_STRING:\n      return readString(exports, ref);\n    case TAG_LIST:\n      return valuesOf(exports, ref).map((item) => readValue(exports, item));\n    case TAG_RECORD: {\n      const items = valuesOf(exports, ref);\n      const obj = {};\n      for (let i = 0; i + 1 < items.length; i += 2) {\n        obj[readString(exports, items[i])] = readValue(exports, items[i + 1]);\n      }\n      return obj;\n    }\n    case TAG_VARIANT:\n      return { [\"#\" + readString(exports, exports.variant_tag(ref))]: readValue(exports, exports.variant_payload(ref)) };\n  }\n  return null;\n}\n\nfunction writeValue(exports, value) {\n  if (typeof value === \"number\") {\n    return Number.isInteger(value) ? exports.box_number(BigInt(value)) : exports.float_new(value);\n  }\n  if (typeof value === \"boolean\") return exports.box_bool(value ? 1 : 0);\n  if (typeof value === \"string\") return writeString(exports, value);\n  if (Array.isArray(value)) {\n    return exports.list_new(writeValues(exports, value.map((item) => writeValue(exports, item))));\n  }\n  const keys = Object.keys(value);\n  if (keys.length === 1 && keys[0].startsWith(\"#\")) {\n    const payload = value[keys[0]];\n    return exports.variant_new(\n      writeString(exports, keys[0].slice(1)),\n      payload === null ? null : writeValue(exports, payload),\n    );\n  }\n  return exports.record_new(\n    writeValues(exports, keys.flatMap((key) => [writeString(exports, key), writeValue(exports, value[key])])),\n  );\n}\n\nfunction field(exports, record, key) {\n  const items = valuesOf(exports, record);\n  for (let i = 0; i + 1 < items.length; i += 2) {\n    if (readString(exports, items[i]) === key) return items[i + 1];\n  }\n  throw new Error(\"the record has no field \" + key);\n}\n\nfunction callClosure(exports, closure, args) {\n  const fn = exports.table.get(exports.closure_index(closure));\n  return fn(exports.values_of(closure), writeValues(exports, args));\n}\n\nconst bytesOf = (value) => Uint8Array.from(Array.isArray(value) ? value : []);\n\nfunction base64ToBytes(base64) {\n  const binary = atob(base64);\n  const bytes = new Uint8Array(binary.length);\n  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);\n  return bytes;\n}\n\nfunction bytesToBase64(bytes) {\n  let binary = \"\";\n  for (let i = 0; i < bytes.length; i += 0x8000) {\n    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));\n  }\n  return btoa(binary);\n}\n\nfunction sqlParam(value) {\n  if (\"#integer\" in value) return value[\"#integer\"];\n  if (\"#text\" in value) return value[\"#text\"];\n  return null;\n}\n\nfunction sqlRow(row) {\n  return Object.entries(row).map(([name, value]) => ({\n    name,\n    value:\n      value === null || value === undefined\n        ? { \"#null\": null }\n        : typeof value === \"number\" && Number.isSafeInteger(value)\n          ? { \"#integer\": value }\n          : { \"#text\": String(value) },\n  }));\n}\n\nfunction jsonToDefiny(value) {\n  if (value === null || value === undefined) return { \"#null\": null };\n  if (typeof value === \"boolean\") return { \"#boolean\": value };\n  if (typeof value === \"number\") return { \"#number\": value };\n  if (typeof value === \"string\") return { \"#string\": value };\n  if (Array.isArray(value)) return { \"#array\": value.map(jsonToDefiny) };\n  return { \"#object\": Object.entries(value).map(([key, item]) => ({ key, value: jsonToDefiny(item) })) };\n}\n\nfunction definyToJson(value) {\n  const [tag, payload] = Object.entries(value)[0];\n  switch (tag) {\n    case \"#null\":\n      return null;\n    case \"#array\":\n      return payload.map(definyToJson);\n    case \"#object\":\n      return Object.fromEntries(payload.map((item) => [item.key, definyToJson(item.value)]));\n    default:\n      return payload;\n  }\n}\n\nasync function sha256Base64Url(bytes) {\n  const digest = new Uint8Array(await crypto.subtle.digest(\"SHA-256\", bytes));\n  return bytesToBase64(digest).replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n}\n\nasync function verifyEd25519(publicKey, signature, message) {\n  try {\n    const key = await crypto.subtle.importKey(\"raw\", publicKey, { name: \"Ed25519\" }, false, [\"verify\"]);\n    return await crypto.subtle.verify({ name: \"Ed25519\" }, key, signature, message);\n  } catch {\n    return false;\n  }\n}\n\nasync function runSql(db, statements) {\n  const prepared = statements.map((statement) => db.prepare(statement.sql).bind(...statement.params.map(sqlParam)));\n  if (prepared.length === 0) return [];\n  if (prepared.length === 1) return [(await prepared[0].all()).results];\n  return (await db.batch(prepared)).map((result) => result.results);\n}\n\n// 読んだもの (commit, 定義の式, 解決した中身) を覚える. この isolate のメモリと, D1 の表 host_cache に置く.\n// ブラウザからのリクエストはたいてい新しい isolate で動くので, メモリだけでは毎回読み直すことになる (docs/html-ui.md).\n// 中身はイベントハッシュ・中身のハッシュで決まるが, 読んだ形は definy のコードで変わるので, デプロイのときに表を消す\n// (definy.deploy-service-script)\nconst caches = { commits: new Map(), definitions: new Map(), resolutions: new Map() };\nlet seeded = false;\nlet cacheTableReady = false;\n\nasync function ensureCacheTable(db) {\n  if (cacheTableReady) return;\n  await db\n    .prepare(\"CREATE TABLE IF NOT EXISTS host_cache (kind TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (kind, key))\")\n    .run();\n  cacheTableReady = true;\n}\n\nasync function readCached(db, kind, keys) {\n  const cache = caches[kind];\n  const missing = [...new Set(keys.filter((key) => !cache.has(key)))];\n  if (missing.length > 0 && db !== undefined) {\n    await ensureCacheTable(db);\n    for (let i = 0; i < missing.length; i += 90) {\n      const chunk = missing.slice(i, i + 90);\n      const { results } = await db\n        .prepare(\"SELECT key, value FROM host_cache WHERE kind = ? AND key IN (\" + chunk.map(() => \"?\").join(\", \") + \")\")\n        .bind(kind, ...chunk)\n        .all();\n      for (const row of results) cache.set(row.key, JSON.parse(row.value));\n    }\n  }\n  return keys.filter((key) => cache.has(key)).map((key) => cache.get(key));\n}\n\nasync function writeCached(db, kind, entries, keyOf) {\n  const cache = caches[kind];\n  for (const entry of entries) cache.set(keyOf(entry), entry);\n  if (entries.length === 0 || db === undefined) return;\n  await ensureCacheTable(db);\n  const statements = entries.map((entry) =>\n    db.prepare(\"INSERT OR REPLACE INTO host_cache (kind, key, value) VALUES (?, ?, ?)\").bind(kind, keyOf(entry), JSON.stringify(entry)),\n  );\n  for (let i = 0; i < statements.length; i += 50) await db.batch(statements.slice(i, i + 50));\n}\n\nasync function runServiceIo(exports, start, env, request) {\n  let pointer = start;\n  let bodyText;\n  const readBody = () => (bodyText ??= request === undefined ? Promise.resolve(\"\") : request.text());\n  for (let step = 0; step < MAX_STEPS; step++) {\n    const tag = readString(exports, exports.variant_tag(pointer));\n    const payload = exports.variant_payload(pointer);\n    if (tag === \"respond\") return readValue(exports, payload);\n    if (tag === \"serve_asset\") return { status: 404, headers: [], body: { \"#text\": \"not found\" } };\n    const read = (key) => readValue(exports, field(exports, payload, key));\n    let result;\n    switch (tag) {\n      case \"sql\":\n        result = (await runSql(env.DB, read(\"statements\"))).map((rows) => rows.map(sqlRow));\n        break;\n      case \"verify_ed25519\":\n        result = await verifyEd25519(bytesOf(read(\"public_key\")), bytesOf(read(\"signature\")), bytesOf(read(\"message\")));\n        break;\n      case \"read_time\":\n        result = Date.now();\n        break;\n      case \"hash_contents\":\n        result = await Promise.all(\n          read(\"contents_bytes\").map(async (base64) => {\n            try {\n              return { \"#some\": await sha256Base64Url(base64ToBytes(base64)) };\n            } catch {\n              return { \"#none\": null };\n            }\n          }),\n        );\n        break;\n      case \"read_request_text\":\n        result = await readBody();\n        break;\n      case \"read_request_json\": {\n        const text = await readBody();\n        if (text.trim() === \"\") {\n          result = { \"#json\": jsonToDefiny({}) };\n        } else {\n          try {\n            const json = JSON.parse(text);\n            result =\n              json !== null && typeof json === \"object\" && !Array.isArray(json)\n                ? { \"#json\": jsonToDefiny(json) }\n                : { \"#invalid\": \"request body must be an object\" };\n          } catch {\n            result = { \"#invalid\": \"request body must be JSON\" };\n          }\n        }\n        break;\n      }\n      case \"read_admin_account_ids\":\n        result = \"\";\n        break;\n      case \"read_host_settings\":\n        result = { run_expressions: false };\n        break;\n      case \"read_mcp_account\":\n        result = { \"#none\": null };\n        break;\n      case \"sign_mcp_account\":\n        result = { \"#none\": null };\n        break;\n      case \"read_perf_records\":\n        result = { status: 404, body: JSON.stringify({ code: \"not_found\", message: \"the perf endpoint is not enabled\" }) };\n        break;\n      // 写しは seed バンドルを持たず, 表だけ作って (definy.ensure-seeded) イベントは全て取り込む\n      case \"read_seed_status\":\n        result = { seeded, expected_fingerprint: \"\" };\n        break;\n      case \"read_seed_bundle\":\n        result = { \"#none\": null };\n        break;\n      case \"mark_seeded\":\n        seeded = true;\n        result = true;\n        break;\n      case \"read_cached_commits\":\n        result = await readCached(env.DB, \"commits\", read(\"event_hashes\"));\n        break;\n      case \"write_cached_commits\":\n        await writeCached(env.DB, \"commits\", read(\"entries\"), (entry) => entry.event_hash);\n        result = true;\n        break;\n      case \"read_cached_definitions\":\n        result = await readCached(env.DB, \"definitions\", read(\"content_hashes\"));\n        break;\n      case \"write_cached_definitions\":\n        await writeCached(env.DB, \"definitions\", read(\"entries\"), (entry) => entry.content_hash);\n        result = true;\n        break;\n      case \"read_cached_resolutions\":\n        result = await readCached(env.DB, \"resolutions\", read(\"content_hashes\"));\n        break;\n      case \"write_cached_resolutions\":\n        await writeCached(env.DB, \"resolutions\", read(\"entries\"), (entry) => entry.content_hash);\n        result = true;\n        break;\n      case \"http_fetch\": {\n        const fetchRequest = read(\"request\");\n        const body = fetchRequest.body_base64[\"#some\"];\n        try {\n          const response = await fetch(fetchRequest.url, {\n            method: fetchRequest.method,\n            headers: fetchRequest.headers.map((header) => [header.name, header.value]),\n            body: body === undefined ? undefined : base64ToBytes(body),\n            redirect: \"manual\",\n          });\n          const headers = [];\n          response.headers.forEach((value, name) => headers.push({ name, value }));\n          result = {\n            \"#response\": {\n              status: response.status,\n              headers,\n              body_base64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),\n            },\n          };\n        } catch (error) {\n          result = { \"#failed\": String(error) };\n        }\n        break;\n      }\n      default:\n        throw new Error(\"not a definy.service-io value (tag: \" + tag + \")\");\n    }\n    pointer = callClosure(exports, field(exports, payload, \"then\"), [writeValue(exports, result)]);\n  }\n  throw new Error(\"definy.service-io did not end in \" + MAX_STEPS + \" steps\");\n}\n\nlet entry;\nfunction entryPoints() {\n  if (entry === undefined) {\n    const exports = new WebAssembly.Instance(wasmModule, {}).exports;\n    const root = exports.evaluate();\n    entry = { exports, fetch: field(exports, root, \"fetch\"), scheduled: field(exports, root, \"scheduled\") };\n  }\n  return entry;\n}\n\nfunction toResponse(response) {\n  const headers = new Headers();\n  for (const header of response.headers) headers.append(header.name, header.value);\n  const [tag, payload] = Object.entries(response.body)[0];\n  const body =\n    tag === \"#text\"\n      ? payload\n      : tag === \"#json\"\n        ? JSON.stringify(definyToJson(payload))\n        : tag === \"#base64\"\n          ? base64ToBytes(payload)\n          : null;\n  return new Response(body, { status: response.status, headers });\n}\n\nexport default {\n  async fetch(request, env) {\n    try {\n      const { exports, fetch: handler } = entryPoints();\n      const url = new URL(request.url);\n      const headers = [];\n      request.headers.forEach((value, name) => headers.push({ name, value }));\n      const start = callClosure(exports, handler, [\n        writeValue(exports, {\n          method: request.method,\n          path: url.pathname,\n          query: url.search.slice(1),\n          headers,\n          storage: env.DB ? \"cloudflare-d1\" : \"none\",\n          has_assets: false,\n        }),\n      ]);\n      return toResponse(await runServiceIo(exports, start, env, request));\n    } catch (error) {\n      return new Response(JSON.stringify({ code: \"internal\", message: String(error) }), {\n        status: 500,\n        headers: { \"Content-Type\": \"application/json; charset=utf-8\" },\n      });\n    }\n  },\n  async scheduled(controller, env, ctx) {\n    const { exports, scheduled } = entryPoints();\n    const run = async () => {\n      const response = await runServiceIo(exports, callClosure(exports, scheduled, [writeValue(exports, Date.now())]), env, undefined);\n      console.log(response.status, response.body[\"#text\"] ?? \"\");\n    };\n    ctx.waitUntil(run());\n  },\n};\n"
       }
     },
     {
@@ -311,11 +311,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Uploads the Worker script of definy.deploy-service-worker with the D1 database database_id, sets the Cron trigger and enables workers.dev"
+          "text": "Uploads the Worker script of definy.deploy-service-worker with the D1 database database_id, clears the read cache of the runtime (the D1 table host_cache, whose entries depend on the definy code), sets the Cron trigger and enables workers.dev"
         },
         {
           "language": "ja",
-          "text": "definy.deploy-service-worker の Worker のスクリプトを D1 のデータベース database_id と一緒にアップロードし, Cron を設定して workers.dev を有効にする"
+          "text": "definy.deploy-service-worker の Worker のスクリプトを D1 のデータベース database_id と一緒にアップロードし, 土台の読み取りのキャッシュ (D1 の表 host_cache。中身は definy のコードで変わる) を消し, Cron を設定して workers.dev を有効にする"
         }
       ],
       "expression": {
@@ -646,7 +646,7 @@
                                                           {
                                                             "key": "method",
                                                             "value": {
-                                                              "#string": "PUT"
+                                                              "#string": "POST"
                                                             }
                                                           },
                                                           {
@@ -656,23 +656,96 @@
                                                                 "function": {
                                                                   "#part_reference": {
                                                                     "part_definition_event_hash": {
-                                                                      "$part": "core.string-concat"
+                                                                      "$part": "std.string-join"
                                                                     }
                                                                   }
                                                                 },
                                                                 "arguments": [
                                                                   {
-                                                                    "name": "left",
+                                                                    "name": "items",
                                                                     "value": {
-                                                                      "#variable": {
-                                                                        "variable_id": 11
-                                                                      }
+                                                                      "#list": [
+                                                                        {
+                                                                          "#call": {
+                                                                            "function": {
+                                                                              "#part_reference": {
+                                                                                "part_definition_event_hash": {
+                                                                                  "$part": "core.string-slice"
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            "arguments": [
+                                                                              {
+                                                                                "name": "value",
+                                                                                "value": {
+                                                                                  "#variable": {
+                                                                                    "variable_id": 11
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "name": "start",
+                                                                                "value": {
+                                                                                  "#number": 0
+                                                                                }
+                                                                              },
+                                                                              {
+                                                                                "name": "end",
+                                                                                "value": {
+                                                                                  "#call": {
+                                                                                    "function": {
+                                                                                      "#part_reference": {
+                                                                                        "part_definition_event_hash": {
+                                                                                          "$part": "core.string-index-of"
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    "arguments": [
+                                                                                      {
+                                                                                        "name": "text",
+                                                                                        "value": {
+                                                                                          "#variable": {
+                                                                                            "variable_id": 11
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "target",
+                                                                                        "value": {
+                                                                                          "#string": "/workers/scripts/"
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "name": "start",
+                                                                                        "value": {
+                                                                                          "#number": 0
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "#string": "/d1/database/"
+                                                                        },
+                                                                        {
+                                                                          "#variable": {
+                                                                            "variable_id": 17
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "#string": "/query"
+                                                                        }
+                                                                      ]
                                                                     }
                                                                   },
                                                                   {
-                                                                    "name": "right",
+                                                                    "name": "separator",
                                                                     "value": {
-                                                                      "#string": "/schedules"
+                                                                      "#string": ""
                                                                     }
                                                                   }
                                                                 ]
@@ -748,57 +821,7 @@
                                                                   {
                                                                     "name": "value",
                                                                     "value": {
-                                                                      "#call": {
-                                                                        "function": {
-                                                                          "#part_reference": {
-                                                                            "part_definition_event_hash": {
-                                                                              "$part": "std.string-join"
-                                                                            }
-                                                                          }
-                                                                        },
-                                                                        "arguments": [
-                                                                          {
-                                                                            "name": "items",
-                                                                            "value": {
-                                                                              "#list": [
-                                                                                {
-                                                                                  "#string": "[{\"cron\":"
-                                                                                },
-                                                                                {
-                                                                                  "#call": {
-                                                                                    "function": {
-                                                                                      "#part_reference": {
-                                                                                        "part_definition_event_hash": {
-                                                                                          "$part": "definy.json-string-literal"
-                                                                                        }
-                                                                                      }
-                                                                                    },
-                                                                                    "arguments": [
-                                                                                      {
-                                                                                        "name": "value",
-                                                                                        "value": {
-                                                                                          "#variable": {
-                                                                                            "variable_id": 2
-                                                                                          }
-                                                                                        }
-                                                                                      }
-                                                                                    ]
-                                                                                  }
-                                                                                },
-                                                                                {
-                                                                                  "#string": "}]"
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          },
-                                                                          {
-                                                                            "name": "separator",
-                                                                            "value": {
-                                                                              "#string": ""
-                                                                            }
-                                                                          }
-                                                                        ]
-                                                                      }
+                                                                      "#string": "{\"sql\":\"DROP TABLE IF EXISTS host_cache\"}"
                                                                     }
                                                                   }
                                                                 ]
@@ -814,7 +837,7 @@
                                                         "#function": {
                                                           "parameters": [
                                                             {
-                                                              "parameter_id": 21,
+                                                              "parameter_id": 25,
                                                               "parameter_name": "result"
                                                             }
                                                           ],
@@ -831,7 +854,7 @@
                                                                           {
                                                                             "key": "method",
                                                                             "value": {
-                                                                              "#string": "POST"
+                                                                              "#string": "PUT"
                                                                             }
                                                                           },
                                                                           {
@@ -857,7 +880,7 @@
                                                                                   {
                                                                                     "name": "right",
                                                                                     "value": {
-                                                                                      "#string": "/subdomain"
+                                                                                      "#string": "/schedules"
                                                                                     }
                                                                                   }
                                                                                 ]
@@ -933,7 +956,57 @@
                                                                                   {
                                                                                     "name": "value",
                                                                                     "value": {
-                                                                                      "#string": "{\"enabled\":true}"
+                                                                                      "#call": {
+                                                                                        "function": {
+                                                                                          "#part_reference": {
+                                                                                            "part_definition_event_hash": {
+                                                                                              "$part": "std.string-join"
+                                                                                            }
+                                                                                          }
+                                                                                        },
+                                                                                        "arguments": [
+                                                                                          {
+                                                                                            "name": "items",
+                                                                                            "value": {
+                                                                                              "#list": [
+                                                                                                {
+                                                                                                  "#string": "[{\"cron\":"
+                                                                                                },
+                                                                                                {
+                                                                                                  "#call": {
+                                                                                                    "function": {
+                                                                                                      "#part_reference": {
+                                                                                                        "part_definition_event_hash": {
+                                                                                                          "$part": "definy.json-string-literal"
+                                                                                                        }
+                                                                                                      }
+                                                                                                    },
+                                                                                                    "arguments": [
+                                                                                                      {
+                                                                                                        "name": "value",
+                                                                                                        "value": {
+                                                                                                          "#variable": {
+                                                                                                            "variable_id": 2
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    ]
+                                                                                                  }
+                                                                                                },
+                                                                                                {
+                                                                                                  "#string": "}]"
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "name": "separator",
+                                                                                            "value": {
+                                                                                              "#string": ""
+                                                                                            }
+                                                                                          }
+                                                                                        ]
+                                                                                      }
                                                                                     }
                                                                                   }
                                                                                 ]
@@ -949,213 +1022,508 @@
                                                                         "#function": {
                                                                           "parameters": [
                                                                             {
-                                                                              "parameter_id": 22,
+                                                                              "parameter_id": 21,
                                                                               "parameter_name": "result"
                                                                             }
                                                                           ],
                                                                           "body": {
                                                                             "#variant": {
-                                                                              "tag": "done",
+                                                                              "tag": "outgoing_request",
                                                                               "payload": {
                                                                                 "#some": {
-                                                                                  "#call": {
-                                                                                    "function": {
-                                                                                      "#part_reference": {
-                                                                                        "part_definition_event_hash": {
-                                                                                          "$part": "std.string-join"
-                                                                                        }
-                                                                                      }
-                                                                                    },
-                                                                                    "arguments": [
-                                                                                      {
-                                                                                        "name": "items",
-                                                                                        "value": {
-                                                                                          "#list": [
-                                                                                            {
-                                                                                              "#string": "デプロイしました: "
-                                                                                            },
-                                                                                            {
-                                                                                              "#variable": {
-                                                                                                "variable_id": 0
-                                                                                              }
-                                                                                            },
-                                                                                            {
-                                                                                              "#string": " (D1: "
-                                                                                            },
-                                                                                            {
-                                                                                              "#variable": {
-                                                                                                "variable_id": 1
-                                                                                              }
-                                                                                            },
-                                                                                            {
-                                                                                              "#string": ", Cron: "
-                                                                                            },
-                                                                                            {
-                                                                                              "#variable": {
-                                                                                                "variable_id": 2
-                                                                                              }
-                                                                                            },
-                                                                                            {
-                                                                                              "#match": {
-                                                                                                "target": {
-                                                                                                  "#variable": {
-                                                                                                    "variable_id": 21
+                                                                                  "#record": [
+                                                                                    {
+                                                                                      "key": "request",
+                                                                                      "value": {
+                                                                                        "#record": [
+                                                                                          {
+                                                                                            "key": "method",
+                                                                                            "value": {
+                                                                                              "#string": "POST"
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "key": "url",
+                                                                                            "value": {
+                                                                                              "#call": {
+                                                                                                "function": {
+                                                                                                  "#part_reference": {
+                                                                                                    "part_definition_event_hash": {
+                                                                                                      "$part": "core.string-concat"
+                                                                                                    }
                                                                                                   }
                                                                                                 },
-                                                                                                "arms": [
+                                                                                                "arguments": [
                                                                                                   {
-                                                                                                    "pattern": {
-                                                                                                      "#variant": {
-                                                                                                        "tag": "ok",
-                                                                                                        "payload": {
-                                                                                                          "#bind": {
-                                                                                                            "variable_id": 23,
-                                                                                                            "variable_name": "schedules"
-                                                                                                          }
+                                                                                                    "name": "left",
+                                                                                                    "value": {
+                                                                                                      "#variable": {
+                                                                                                        "variable_id": 11
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  {
+                                                                                                    "name": "right",
+                                                                                                    "value": {
+                                                                                                      "#string": "/subdomain"
+                                                                                                    }
+                                                                                                  }
+                                                                                                ]
+                                                                                              }
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "key": "headers",
+                                                                                            "value": {
+                                                                                              "#list": [
+                                                                                                {
+                                                                                                  "#record": [
+                                                                                                    {
+                                                                                                      "key": "name",
+                                                                                                      "value": {
+                                                                                                        "#string": "Content-Type"
+                                                                                                      }
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "key": "value",
+                                                                                                      "value": {
+                                                                                                        "#string": "application/json"
+                                                                                                      }
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "key": "secret_headers",
+                                                                                            "value": {
+                                                                                              "#list": [
+                                                                                                {
+                                                                                                  "#record": [
+                                                                                                    {
+                                                                                                      "key": "name",
+                                                                                                      "value": {
+                                                                                                        "#string": "Authorization"
+                                                                                                      }
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "key": "prefix",
+                                                                                                      "value": {
+                                                                                                        "#string": "Bearer "
+                                                                                                      }
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "key": "secret",
+                                                                                                      "value": {
+                                                                                                        "#variable": {
+                                                                                                          "variable_id": 3
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          },
+                                                                                          {
+                                                                                            "key": "body",
+                                                                                            "value": {
+                                                                                              "#call": {
+                                                                                                "function": {
+                                                                                                  "#part_reference": {
+                                                                                                    "part_definition_event_hash": {
+                                                                                                      "$part": "core.string-to-bytes"
+                                                                                                    }
+                                                                                                  }
+                                                                                                },
+                                                                                                "arguments": [
+                                                                                                  {
+                                                                                                    "name": "value",
+                                                                                                    "value": {
+                                                                                                      "#string": "{\"enabled\":true}"
+                                                                                                    }
+                                                                                                  }
+                                                                                                ]
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        ]
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "key": "then",
+                                                                                      "value": {
+                                                                                        "#function": {
+                                                                                          "parameters": [
+                                                                                            {
+                                                                                              "parameter_id": 22,
+                                                                                              "parameter_name": "result"
+                                                                                            }
+                                                                                          ],
+                                                                                          "body": {
+                                                                                            "#variant": {
+                                                                                              "tag": "done",
+                                                                                              "payload": {
+                                                                                                "#some": {
+                                                                                                  "#call": {
+                                                                                                    "function": {
+                                                                                                      "#part_reference": {
+                                                                                                        "part_definition_event_hash": {
+                                                                                                          "$part": "std.string-join"
                                                                                                         }
                                                                                                       }
                                                                                                     },
-                                                                                                    "body": {
-                                                                                                      "#match": {
-                                                                                                        "target": {
-                                                                                                          "#call": {
-                                                                                                            "function": {
-                                                                                                              "#part_reference": {
-                                                                                                                "part_definition_event_hash": {
-                                                                                                                  "$part": "core.less-than"
-                                                                                                                }
+                                                                                                    "arguments": [
+                                                                                                      {
+                                                                                                        "name": "items",
+                                                                                                        "value": {
+                                                                                                          "#list": [
+                                                                                                            {
+                                                                                                              "#string": "デプロイしました: "
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 0
                                                                                                               }
                                                                                                             },
-                                                                                                            "arguments": [
-                                                                                                              {
-                                                                                                                "name": "left",
-                                                                                                                "value": {
-                                                                                                                  "#record_get": {
-                                                                                                                    "record": {
-                                                                                                                      "#variable": {
-                                                                                                                        "variable_id": 23
-                                                                                                                      }
-                                                                                                                    },
-                                                                                                                    "key": "status"
-                                                                                                                  }
-                                                                                                                }
-                                                                                                              },
-                                                                                                              {
-                                                                                                                "name": "right",
-                                                                                                                "value": {
-                                                                                                                  "#number": 300
-                                                                                                                }
+                                                                                                            {
+                                                                                                              "#string": " (D1: "
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 1
                                                                                                               }
-                                                                                                            ]
-                                                                                                          }
-                                                                                                        },
-                                                                                                        "arms": [
-                                                                                                          {
-                                                                                                            "pattern": {
-                                                                                                              "#boolean": true
                                                                                                             },
-                                                                                                            "body": {
-                                                                                                              "#string": ""
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "pattern": {
-                                                                                                              "#boolean": false
+                                                                                                            {
+                                                                                                              "#string": ", Cron: "
                                                                                                             },
-                                                                                                            "body": {
-                                                                                                              "#call": {
-                                                                                                                "function": {
-                                                                                                                  "#part_reference": {
-                                                                                                                    "part_definition_event_hash": {
-                                                                                                                      "$part": "core.string-concat"
-                                                                                                                    }
+                                                                                                            {
+                                                                                                              "#variable": {
+                                                                                                                "variable_id": 2
+                                                                                                              }
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "#match": {
+                                                                                                                "target": {
+                                                                                                                  "#variable": {
+                                                                                                                    "variable_id": 21
                                                                                                                   }
                                                                                                                 },
-                                                                                                                "arguments": [
+                                                                                                                "arms": [
                                                                                                                   {
-                                                                                                                    "name": "left",
-                                                                                                                    "value": {
-                                                                                                                      "#string": ". Cron を設定できませんでした: "
+                                                                                                                    "pattern": {
+                                                                                                                      "#variant": {
+                                                                                                                        "tag": "ok",
+                                                                                                                        "payload": {
+                                                                                                                          "#bind": {
+                                                                                                                            "variable_id": 23,
+                                                                                                                            "variable_name": "schedules"
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    "body": {
+                                                                                                                      "#match": {
+                                                                                                                        "target": {
+                                                                                                                          "#call": {
+                                                                                                                            "function": {
+                                                                                                                              "#part_reference": {
+                                                                                                                                "part_definition_event_hash": {
+                                                                                                                                  "$part": "core.less-than"
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            },
+                                                                                                                            "arguments": [
+                                                                                                                              {
+                                                                                                                                "name": "left",
+                                                                                                                                "value": {
+                                                                                                                                  "#record_get": {
+                                                                                                                                    "record": {
+                                                                                                                                      "#variable": {
+                                                                                                                                        "variable_id": 23
+                                                                                                                                      }
+                                                                                                                                    },
+                                                                                                                                    "key": "status"
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                "name": "right",
+                                                                                                                                "value": {
+                                                                                                                                  "#number": 300
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            ]
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        "arms": [
+                                                                                                                          {
+                                                                                                                            "pattern": {
+                                                                                                                              "#boolean": true
+                                                                                                                            },
+                                                                                                                            "body": {
+                                                                                                                              "#string": ""
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                            "pattern": {
+                                                                                                                              "#boolean": false
+                                                                                                                            },
+                                                                                                                            "body": {
+                                                                                                                              "#call": {
+                                                                                                                                "function": {
+                                                                                                                                  "#part_reference": {
+                                                                                                                                    "part_definition_event_hash": {
+                                                                                                                                      "$part": "core.string-concat"
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                },
+                                                                                                                                "arguments": [
+                                                                                                                                  {
+                                                                                                                                    "name": "left",
+                                                                                                                                    "value": {
+                                                                                                                                      "#string": ". Cron を設定できませんでした: "
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "right",
+                                                                                                                                    "value": {
+                                                                                                                                      "#record_get": {
+                                                                                                                                        "record": {
+                                                                                                                                          "#variable": {
+                                                                                                                                            "variable_id": 23
+                                                                                                                                          }
+                                                                                                                                        },
+                                                                                                                                        "key": "text"
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                ]
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        ]
+                                                                                                                      }
                                                                                                                     }
                                                                                                                   },
                                                                                                                   {
-                                                                                                                    "name": "right",
-                                                                                                                    "value": {
-                                                                                                                      "#record_get": {
-                                                                                                                        "record": {
-                                                                                                                          "#variable": {
-                                                                                                                            "variable_id": 23
+                                                                                                                    "pattern": {
+                                                                                                                      "#variant": {
+                                                                                                                        "tag": "error",
+                                                                                                                        "payload": {
+                                                                                                                          "#bind": {
+                                                                                                                            "variable_id": 24,
+                                                                                                                            "variable_name": "message"
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    "body": {
+                                                                                                                      "#call": {
+                                                                                                                        "function": {
+                                                                                                                          "#part_reference": {
+                                                                                                                            "part_definition_event_hash": {
+                                                                                                                              "$part": "core.string-concat"
+                                                                                                                            }
                                                                                                                           }
                                                                                                                         },
-                                                                                                                        "key": "text"
+                                                                                                                        "arguments": [
+                                                                                                                          {
+                                                                                                                            "name": "left",
+                                                                                                                            "value": {
+                                                                                                                              "#string": ". Cron を設定できませんでした: "
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                            "name": "right",
+                                                                                                                            "value": {
+                                                                                                                              "#variable": {
+                                                                                                                                "variable_id": 24
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        ]
                                                                                                                       }
                                                                                                                     }
                                                                                                                   }
                                                                                                                 ]
                                                                                                               }
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "#match": {
+                                                                                                                "target": {
+                                                                                                                  "#variable": {
+                                                                                                                    "variable_id": 25
+                                                                                                                  }
+                                                                                                                },
+                                                                                                                "arms": [
+                                                                                                                  {
+                                                                                                                    "pattern": {
+                                                                                                                      "#variant": {
+                                                                                                                        "tag": "ok",
+                                                                                                                        "payload": {
+                                                                                                                          "#bind": {
+                                                                                                                            "variable_id": 26,
+                                                                                                                            "variable_name": "cleared"
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    "body": {
+                                                                                                                      "#match": {
+                                                                                                                        "target": {
+                                                                                                                          "#call": {
+                                                                                                                            "function": {
+                                                                                                                              "#part_reference": {
+                                                                                                                                "part_definition_event_hash": {
+                                                                                                                                  "$part": "core.less-than"
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            },
+                                                                                                                            "arguments": [
+                                                                                                                              {
+                                                                                                                                "name": "left",
+                                                                                                                                "value": {
+                                                                                                                                  "#record_get": {
+                                                                                                                                    "record": {
+                                                                                                                                      "#variable": {
+                                                                                                                                        "variable_id": 26
+                                                                                                                                      }
+                                                                                                                                    },
+                                                                                                                                    "key": "status"
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                "name": "right",
+                                                                                                                                "value": {
+                                                                                                                                  "#number": 300
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            ]
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        "arms": [
+                                                                                                                          {
+                                                                                                                            "pattern": {
+                                                                                                                              "#boolean": true
+                                                                                                                            },
+                                                                                                                            "body": {
+                                                                                                                              "#string": ""
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                            "pattern": {
+                                                                                                                              "#boolean": false
+                                                                                                                            },
+                                                                                                                            "body": {
+                                                                                                                              "#call": {
+                                                                                                                                "function": {
+                                                                                                                                  "#part_reference": {
+                                                                                                                                    "part_definition_event_hash": {
+                                                                                                                                      "$part": "core.string-concat"
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                },
+                                                                                                                                "arguments": [
+                                                                                                                                  {
+                                                                                                                                    "name": "left",
+                                                                                                                                    "value": {
+                                                                                                                                      "#string": ". 読み取りのキャッシュ (D1 の host_cache) を消せませんでした: "
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "right",
+                                                                                                                                    "value": {
+                                                                                                                                      "#record_get": {
+                                                                                                                                        "record": {
+                                                                                                                                          "#variable": {
+                                                                                                                                            "variable_id": 26
+                                                                                                                                          }
+                                                                                                                                        },
+                                                                                                                                        "key": "text"
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                ]
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        ]
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  {
+                                                                                                                    "pattern": {
+                                                                                                                      "#variant": {
+                                                                                                                        "tag": "error",
+                                                                                                                        "payload": {
+                                                                                                                          "#bind": {
+                                                                                                                            "variable_id": 27,
+                                                                                                                            "variable_name": "message"
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    "body": {
+                                                                                                                      "#call": {
+                                                                                                                        "function": {
+                                                                                                                          "#part_reference": {
+                                                                                                                            "part_definition_event_hash": {
+                                                                                                                              "$part": "core.string-concat"
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        },
+                                                                                                                        "arguments": [
+                                                                                                                          {
+                                                                                                                            "name": "left",
+                                                                                                                            "value": {
+                                                                                                                              "#string": ". 読み取りのキャッシュ (D1 の host_cache) を消せませんでした: "
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                            "name": "right",
+                                                                                                                            "value": {
+                                                                                                                              "#variable": {
+                                                                                                                                "variable_id": 27
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        ]
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                ]
+                                                                                                              }
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "#string": ")"
                                                                                                             }
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    }
-                                                                                                  },
-                                                                                                  {
-                                                                                                    "pattern": {
-                                                                                                      "#variant": {
-                                                                                                        "tag": "error",
-                                                                                                        "payload": {
-                                                                                                          "#bind": {
-                                                                                                            "variable_id": 24,
-                                                                                                            "variable_name": "message"
-                                                                                                          }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      },
+                                                                                                      {
+                                                                                                        "name": "separator",
+                                                                                                        "value": {
+                                                                                                          "#string": ""
                                                                                                         }
                                                                                                       }
-                                                                                                    },
-                                                                                                    "body": {
-                                                                                                      "#call": {
-                                                                                                        "function": {
-                                                                                                          "#part_reference": {
-                                                                                                            "part_definition_event_hash": {
-                                                                                                              "$part": "core.string-concat"
-                                                                                                            }
-                                                                                                          }
-                                                                                                        },
-                                                                                                        "arguments": [
-                                                                                                          {
-                                                                                                            "name": "left",
-                                                                                                            "value": {
-                                                                                                              "#string": ". Cron を設定できませんでした: "
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "name": "right",
-                                                                                                            "value": {
-                                                                                                              "#variable": {
-                                                                                                                "variable_id": 24
-                                                                                                              }
-                                                                                                            }
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    }
+                                                                                                    ]
                                                                                                   }
-                                                                                                ]
+                                                                                                }
+                                                                                              },
+                                                                                              "type_part": {
+                                                                                                "#some": {
+                                                                                                  "$part": "wasi.io"
+                                                                                                }
                                                                                               }
-                                                                                            },
-                                                                                            {
-                                                                                              "#string": ")"
                                                                                             }
-                                                                                          ]
-                                                                                        }
-                                                                                      },
-                                                                                      {
-                                                                                        "name": "separator",
-                                                                                        "value": {
-                                                                                          "#string": ""
+                                                                                          }
                                                                                         }
                                                                                       }
-                                                                                    ]
-                                                                                  }
+                                                                                    }
+                                                                                  ]
                                                                                 }
                                                                               },
                                                                               "type_part": {
