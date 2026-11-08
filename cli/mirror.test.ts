@@ -1,7 +1,7 @@
 /**
  * 写しのサーバー (definy-html. docs/html-ui.md) の土台 `definy.cloudflare-service-runtime-script` のテスト.
  * 手元の definy サーバーを公開サーバーの代わりにし, 土台を Node.js で読み込んで, D1 の代わりに SQLite を渡す.
- * Cron (scheduled) で `definy.mirror-pull` が全てのイベントを取り込み, fetch でそのストアを読めること
+ * Cron (scheduled) で `definy.mirror-pull` が少しずつ全てのイベントを取り込み, fetch でそのストアを読めること
  */
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -92,26 +92,48 @@ describe("写しのサーバーの土台 (definy.cloudflare-service-runtime-scri
       request: $0
     ),
   scheduled: fn(time_ms$1) =>
-    @definy.mirror-pull(remote: ${JSON.stringify(source.origin)})
+    @definy.mirror-pull(remote: ${JSON.stringify(source.origin)}, limit: 5, content_limit: 300)
 }`,
       });
       const worker = await loadRuntime(
         new WebAssembly.Module(Buffer.from(compiled, "base64")),
       );
       const env = { DB: createSqliteD1Database() };
+      const countEvents = async () =>
+        (
+          (await env.DB.prepare("SELECT count(*) AS c FROM events").all())
+            .results as ReadonlyArray<{ readonly c: number }>
+        )[0]!.c;
+      // 1 回の Cron では最大 5 個のイベントと 300 個の中身しか入れないので, 増えなくなるまで繰り返す
       const runScheduled = async () => {
-        const waits: Array<Promise<unknown>> = [];
-        await worker.scheduled({}, env, {
-          waitUntil: (promise) => waits.push(promise),
-        });
-        await Promise.all(waits);
+        const counts: Array<number> = [];
+        for (;;) {
+          const waits: Array<Promise<unknown>> = [];
+          await worker.scheduled({}, env, {
+            waitUntil: (promise) => waits.push(promise),
+          });
+          await Promise.all(waits);
+          const contents = (
+            (
+              await env.DB.prepare(
+                "SELECT count(*) AS c FROM cas_contents",
+              ).all()
+            ).results as ReadonlyArray<{ readonly c: number }>
+          )[0]!.c;
+          const key = (await countEvents()) * 1_000_000 + contents;
+          if (counts.at(-1) === key) {
+            return counts.length;
+          }
+          counts.push(key);
+        }
       };
       const readPart = async () =>
         await (
           await worker.fetch(new Request("https://definy-html.example/"), env)
         ).text();
 
-      await runScheduled();
+      // seed のイベントの中身は 1000 個を超えるので, 何回かに分けて入る
+      expect(await runScheduled()).toBeGreaterThan(3);
       expect(await readPart()).toContain("expression:\n42");
 
       await call("definy_commit_parts", {
