@@ -20,7 +20,13 @@ import type {
 } from "./service_io.ts";
 import { instantiateCompiledFunction } from "../src/stage1_compiler.ts";
 import type { LatestPart } from "../src/self_hosted_type_check.ts";
-import type { D1Database, Env, EventItem, GetEventsRequest } from "./types.ts";
+import type {
+  D1Database,
+  D1PreparedStatement,
+  Env,
+  EventItem,
+  GetEventsRequest,
+} from "./types.ts";
 
 /** `SubmitEvent` の検査でストアから読むもの */
 export type PartStoreReader = {
@@ -254,15 +260,25 @@ async function readPersistedEntries(
   const found: Array<{ hash: string; entry: unknown }> = [];
   try {
     await ensureCacheTables(db);
+    // バインドできる値は 1 文 100 個までなので分けるが, D1 への往復は batch の 1 回にする
+    // (公開サーバーでは往復 1 回が数十ミリ秒かかり, 1000 件の定義なら 11 往復になっていた)
+    const statements: Array<D1PreparedStatement> = [];
     for (let i = 0; i < hashes.length; i += D1_LOOKUP_CHUNK) {
       const chunk = hashes.slice(i, i + D1_LOOKUP_CHUNK);
       const placeholders = chunk.map(() => "?").join(", ");
-      const res = await db
-        .prepare(
-          `SELECT ${hashColumn} AS hash, entry_json FROM ${table} WHERE ${hashColumn} IN (${placeholders})`,
-        )
-        .bind(...chunk)
-        .all<{ hash: string; entry_json: string }>();
+      statements.push(
+        db
+          .prepare(
+            `SELECT ${hashColumn} AS hash, entry_json FROM ${table} WHERE ${hashColumn} IN (${placeholders})`,
+          )
+          .bind(...chunk),
+      );
+    }
+    const results =
+      statements.length === 1
+        ? [await statements[0]!.all<{ hash: string; entry_json: string }>()]
+        : await db.batch<{ hash: string; entry_json: string }>(statements);
+    for (const res of results) {
       for (const row of res.results) {
         try {
           found.push({
