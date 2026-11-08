@@ -61,6 +61,20 @@ definy.worker-step =
 - 消えてしまう環境 (クラウドのコンテナなど) の鍵で `html-ui` を作って push すると, その鍵が無くなったあと誰も `main` にコミットできない。
   `main` はユーザー自身の鍵で作る
 
+## 編集とコミット (2026-11-08)
+
+HTML 版でパーツの型・式を書き換えてコミットできる。署名はブラウザでする (ユーザーの決定)。鍵がサーバーに渡らないようにするため,
+署名の部分だけは小さな固定の JS (`html-ui.sign-script`. WebCrypto の Ed25519) を使う。
+
+1. `/key` で秘密鍵 (account.json の中身か `secretKeyBase64`) を入れる。鍵は definy-html のオリジンの localStorage にだけ置く
+2. `/edit/<プロジェクト>/<ブランチ>/<モジュール.パーツ>` (パーツのページの「編集する」, モジュールのページの「パーツを足す」) で型・式を書き換える
+3. JS が `POST /api/prepare` に `definy_prepare_commit_parts` の引数 (`account_id` は鍵の公開鍵) を送る。Worker はそのまま公開サーバーの MCP に渡し,
+   署名前のイベントのバイナリ (Base64) が返る ([mcp.md](mcp.md))
+4. JS が Ed25519 で署名し, `POST /api/submit` に「イベントの Base64 改行 署名の Base64」を送る。Worker (definy) が
+   `definy.signed-event-cbor` と `definy.cbor-encode` で SignedEvent にして `SubmitEvent` に出す。型の誤りやブランチの作成者でないときは, その理由を表示する
+
+Worker は POST の本文を `definy.worker-request` の `body_text` で読む。
+
 ## 速さ (2026-11-07, クラウドのコンテナの Node.js, コンパイルした Wasm)
 
 | ページ                            | CPU の時間       | 公開サーバーへの通信 |
