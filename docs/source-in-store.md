@@ -65,9 +65,9 @@ Git でいう「サブモジュールのコミットを固定する」のに近�
 
 ## 段階
 
-1. この計画 (docs) — この PR
+1. この計画 (docs) — PR #905
 2. 読み書きの道具: `seeds/store/` の形式, ストアから書き出す `npm run export:store`, そこから seed バンドルとパーツを読む
-   `src/store_seed.ts`。この段では `seeds/*.json` から作った seed とバイト単位で同じパーツになることをテストで確かめる
+   `src/store_seed.ts`。この段では `seeds/*.json` から作った seed とバイト単位で同じパーツになることをテストで確かめる — 済 (下の「書き出しと読み込み」)
 3. 移行: seeds の JSON の内容を narumincho の鍵で手元のストアにコミットし (アカウント作成 + プロジェクトごとに 1 コミット),
    `seeds/store/` に書き出す。ビルドとテストの読み込みを `seeds/store/` に切り替え, システムアカウントの seed と
    `definy.sync-is-seed-event` を消す
@@ -83,3 +83,26 @@ Git でいう「サブモジュールのコミットを固定する」のに近�
 - テスト (Vitest) が開発用の鍵でコミットを作っている所は,narumincho の鍵はリポジトリに置けないので,
   テストで作るコミットは別のテスト用のアカウントで, 別のプロジェクトにする
 - エージェントがクラウドで core を変えるには narumincho の鍵が要る (今は project files にある)
+
+## 書き出しと読み込み (2 段目)
+
+```sh
+npm run export:store http://127.0.0.1:8787                     # 手元のサーバーから seeds/store/ へ
+npm run export:store <baseUrl> -- --account=<ID> --projects=definy,sample --out=<dir>
+```
+
+- `src/store_export.ts` の `exportStoreSeed`: サーバーの `GetEvents` を全て読み (署名の正しいものだけ),
+  アカウント `--account` の `main` の最新のコミットをプロジェクトごとに選び (`heads.json`), 親と取り込んだコミットをたどる。
+  コミットの作者の `create_account` と, たどった全てのコミットのパーツの中身 (`GetContent` を 200 個ずつ) も書き出す。
+  `--account` を省くと `$DEFINY_HOME/account.json` (無ければ `~/.definy/account.json`) のアカウント。
+  ID が `-` で始まるので `--account=<ID>` と `=` でつなぐ
+- `src/store_seed.ts` の `writeStoreSeed`: ハッシュの名前のファイルにする。前からあるファイルは消さない
+  (古いコミットの中身も残るので, 祖先のコミットを他のサーバーが読める)
+- `readStoreSeed`: ファイル名のハッシュと中身が合うか, `heads.json` のコミットの署名が正しいかを確かめ,
+  seed バンドル (`SeedBundle`, イベントは新しい順) と `heads.json` のコミットのパーツの中身を返す。
+  `storeSeedPartExpressions` はパーツ ID → 式 (`loadSeedPartExpressions` と同じ形)
+- 確かめたこと (`src/store_seed.test.ts`): 今の seed で始めたサーバーからシステムアカウントで書き出して読み直すと,
+  パーツの式が `seeds/*.json` を読んだものと全て同じで, `definy.handle-request` をコンパイルした wasm も
+  `wasm/service.wasm` とバイト単位で同じ。CAS の中身を `decodePartDefinition` で読んで `partContentItem` で書き直すと
+  1071 個全て同じハッシュになる
+- 公開サーバーから html-ui (narumincho) を書き出すと 10 イベント (コミット 9 とアカウント作成) と中身 88 個で, 1 秒ほど
