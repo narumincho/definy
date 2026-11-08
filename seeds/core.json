@@ -170705,11 +170705,11 @@
       "description": [
         {
           "language": "en",
-          "text": "The rules of core.check-event given what they know (core.event-check-state, derived by core.event-check-state-of). See docs/event.md"
+          "text": "The rules of core.check-event given what they know (core.event-check-state, derived by core.event-check-state-of). See docs/event.md. Sending create_account again changes the account name (the newest one is the name)"
         },
         {
           "language": "ja",
-          "text": "core.check-event の規則を, 規則が知ること (core.event-check-state. core.event-check-state-of が求める) から決める. docs/event.md を参照"
+          "text": "core.check-event の規則を, 規則が知ること (core.event-check-state. core.event-check-state-of が求める) から決める. docs/event.md を参照. create_account を出し直すとアカウント名が変わる (一番新しいものが名前)"
         }
       ],
       "expression": {
@@ -170747,13 +170747,51 @@
                   "body": {
                     "#match": {
                       "target": {
-                        "#record_get": {
-                          "record": {
-                            "#variable": {
-                              "variable_id": 1
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.equal"
+                              }
                             }
                           },
-                          "key": "account_created"
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-length"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "value",
+                                      "value": {
+                                        "#record_get": {
+                                          "record": {
+                                            "#variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "key": "account_name"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#number": 0
+                              }
+                            }
+                          ]
                         }
                       },
                       "arms": [
@@ -170765,7 +170803,7 @@
                             "#list": [
                               {
                                 "#variant": {
-                                  "tag": "account_already_created",
+                                  "tag": "empty_account_name",
                                   "payload": {
                                     "#none": null
                                   },
@@ -170784,88 +170822,7 @@
                             "#boolean": false
                           },
                           "body": {
-                            "#match": {
-                              "target": {
-                                "#call": {
-                                  "function": {
-                                    "#part_reference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.equal"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "left",
-                                      "value": {
-                                        "#call": {
-                                          "function": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.string-length"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "value",
-                                              "value": {
-                                                "#record_get": {
-                                                  "record": {
-                                                    "#variable": {
-                                                      "variable_id": 2
-                                                    }
-                                                  },
-                                                  "key": "account_name"
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "right",
-                                      "value": {
-                                        "#number": 0
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              "arms": [
-                                {
-                                  "pattern": {
-                                    "#boolean": true
-                                  },
-                                  "body": {
-                                    "#list": [
-                                      {
-                                        "#variant": {
-                                          "tag": "empty_account_name",
-                                          "payload": {
-                                            "#none": null
-                                          },
-                                          "type_part": {
-                                            "#some": {
-                                              "$part": "core.event-rejection"
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                },
-                                {
-                                  "pattern": {
-                                    "#boolean": false
-                                  },
-                                  "body": {
-                                    "#list": []
-                                  }
-                                }
-                              ]
-                            }
+                            "#list": []
                           }
                         }
                       ]
