@@ -26,9 +26,7 @@ Cloudflare Workers は実行時に Wasm をコンパイルできない (`WebAsse
     そうでなければ `definy.handle-rpc` を同じサーバーの中でそのまま呼ぶ (`definy.service-io-then-respond` で応答を受け取る)。
     HTTP で他のサーバーを呼ばない
 - 手元の definy サーバー (`npm run serve`) は別のポート (既定 8788) で `editable: true` にして配る ([local-server.md](local-server.md))
-- 公開の definy-html は, 専用の D1 を持つ Worker にし, 公開サーバーのイベントを Cron で定期的に pull する予定 (ユーザーの決定, 2026-11-08)。
-  サーバー同士は署名したイベントだけでつながり, MCP は AI 向けの入口にとどめる。それまでの definy-html (公開サーバーの MCP を HTTP で呼ぶ版) は
-  2026-11-07 のデプロイのまま
+- 公開の definy-html は専用の D1 を持つ公開サーバーの写し (下の「definy-html (公開サーバーの写し)」)
 - パス: `/` (プロジェクト一覧), `/p/<project>/<branch>` (パーツ一覧), `/p/<project>/<branch>/<part>` (パーツ)
 
 ### `definy.worker-step` (`seeds/definy.json`)
@@ -65,6 +63,29 @@ definy.worker-step =
   文字列の検索 (`core.string-index-of`, `core.string-split`) で必要なところだけ取り出すほうが速い
 - 消えてしまう環境 (クラウドのコンテナなど) の鍵で `html-ui` を作って push すると, その鍵が無くなったあと誰も `main` にコミットできない。
   `main` はユーザー自身の鍵で作る
+
+## definy-html (公開サーバーの写し, 2026-11-08)
+
+サーバー同士で MCP を呼ぶのをやめ, definy-html は専用の D1 を持つ **公開サーバーの写し** にする (ユーザーの決定)。
+サーバー同士は署名したイベントだけでつながり, MCP は AI 向けの入口にとどめる。公開サーバーの新しいイベントは Cron で定期的に pull する (ユーザーの決定)。
+
+- `definy.deploy-service-worker(worker_name, database_name, cron, api_token, handler)` でデプロイする。
+  `handler` は `quote({fetch: fn(request) => ..., scheduled: fn(time_ms) => ...})` (どちらも `definy.service-io` を返す)。
+  D1 のデータベース `database_name` が無ければ作り (`GET/POST /accounts/<id>/d1/database`), binding `DB` を付けてアップロードし,
+  Cron (`PUT /workers/scripts/<name>/schedules`) を設定する。トークンには Workers Scripts の編集と **D1 の編集** の権限が要る
+- Worker の JS は `definy.cloudflare-service-runtime-script`。`evaluate()` が返す `{fetch, scheduled}` を, `worker/service_io.ts` と同じ
+  `definy.service-io` の要求 (D1 の SQL, WebCrypto の Ed25519 と SHA-256, fetch, isolate の中のキャッシュ) で動かす。
+  手元の鍵・管理者・式の実行は無し (`read_mcp_account` は `none`)
+- 取り込みは `definy.mirror-pull(remote)`: 表が無ければ作り (`definy.ensure-seeded`。写しは seed バンドルを持たず表だけ作る),
+  相手の全てのイベント (seed のイベントも) のうち無いものを古い順に `definy.mirror-submit` で入れる。
+  `definy.mirror-submit` は署名と中身だけ確かめ, イベントの規則と型は確かめない (相手が受け付けたときに確かめている。
+  型の検査は CPU が重く, Workers の 1 回の上限を超えうる)。中身は相手の `GetContent` から読んで `UploadContent` と同じく入れる
+- seed には署名の検証を確かめるための署名の誤ったイベントが 3 つある (`src/invalid_signature_samples.ts`)。写しには入らず,
+  `definy.mirror-pull` は毎回その 3 つを失敗として報告する
+- 最初の Cron が動くまでは表が無いので, ページは読めない
+- html-ui の入口は `quote({fetch: fn(request) => @html-ui.handle(editable: false, request: request), scheduled: fn(time_ms) => @definy.mirror-pull(remote: "https://definy.narumincho.com")})`
+- テスト: `cli/mirror.test.ts` が手元の definy サーバーを公開サーバーの代わりにし, 土台の JS を Node.js で読み込んで
+  (D1 の代わりに `worker/sqlite_d1.ts`) Cron と fetch を確かめる
 
 ## 編集とコミット (2026-11-08)
 
