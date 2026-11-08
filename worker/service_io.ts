@@ -212,6 +212,8 @@ export type HttpFetchRequest = {
 export type HttpRequestInfo = {
   readonly method: string;
   readonly path: string;
+  /** URL のクエリ文字列 (`?` を除く. 無ければ空) */
+  readonly query: string;
   readonly headers: ReadonlyArray<HttpHeader>;
   /** `cloudflare-d1` (D1 の binding が無ければ `none`. ストアを使う処理は失敗する) */
   readonly storage: string;
@@ -422,6 +424,7 @@ export async function handleRequestInDefiny(
       request: instance.writeArgument({
         method: request.method,
         path: request.path,
+        query: request.query,
         headers: request.headers,
         storage: request.storage,
         has_assets: request.hasAssets,

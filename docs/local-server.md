@@ -17,11 +17,12 @@ npm run serve         # = node cli/definy.ts serve
 claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header "Authorization: Bearer <token>"
 ```
 
-| オプション       | 既定                          | 意味                                 |
-| ---------------- | ----------------------------- | ------------------------------------ |
-| `--port`         | `8787`                        | 待ち受けるポート (0 なら空いたもの)  |
-| `--data-dir`     | `$DEFINY_HOME` か `~/.definy` | ストア・鍵・トークンを置くフォルダ   |
-| `--account-name` | `local`                       | 鍵を新しく作るときのアカウントの名前 |
+| オプション       | 既定                          | 意味                                   |
+| ---------------- | ----------------------------- | -------------------------------------- |
+| `--port`         | `8787`                        | 待ち受けるポート (0 なら空いたもの)    |
+| `--ui-port`      | `8788`                        | HTML の UI のポート (`off` で配らない) |
+| `--data-dir`     | `$DEFINY_HOME` か `~/.definy` | ストア・鍵・トークンを置くフォルダ     |
+| `--account-name` | `local`                       | 鍵を新しく作るときのアカウントの名前   |
 
 ## 中身
 
@@ -34,9 +35,9 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
   - 鍵: `<data-dir>/account.json` (`accountName` と `secretKeyBase64`, パーミッション 600)。無ければ作る。
     Worker の `DEFINY_MCP_ACCOUNT_SECRET_KEY` / `DEFINY_MCP_ACCOUNT_NAME` として渡すので, 書き込みのツールは
     Worker の専用アカウントと同じ仕組みで手元の鍵の署名になる ([mcp.md](mcp.md))
-- 静的アセット (今の React の UI) は配らない。HTML だけの UI は別の Worker ([html-ui.md](html-ui.md))
+- 静的アセット (今の React の UI) は配らない。HTML だけの UI は `--ui-port` で配る (下の「HTML の UI」)
 
-## 式の実行 (`definy_run_expression`)
+## 式の実行 (`definy_run_expression`, `definy_compile_expression`)
 
 公開サーバーでは式を実行しないので, 手元のサーバーだけのツール。
 
@@ -55,9 +56,25 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
   浮動小数は値をちょうど表す最も少ない 10 進の桁 (17 桁まで) の `float(仮数, 指数)`。
   クロージャは捕捉した変数を除いた `fn` の式。unit は `{}`
 - 型検査はまだしない。止まらない式は返らない (手元のサーバーなので, 止めるにはサーバーを止める)
-- 実行してよいかはホストの能力 `read_host_settings` の `run_expressions` で決まる。
+- `definy_compile_expression` は同じ引数で, 式を `core.compile-to-wasm` で Wasm GC のモジュールにして Base64 で返す (HTML の UI に使う)
+- 実行・コンパイルしてよいかはホストの能力 `read_host_settings` の `run_expressions` で決まる。
   `cli/serve.ts` が `DEFINY_RUN_EXPRESSIONS: "1"` を渡す。Worker はこれを設定しないので, 公開サーバーの `/mcp` は
   "Running expressions is disabled on this server" のエラーを返す
+
+## HTML の UI (`--ui-port`, `cli/html_ui.ts`)
+
+ストアの `html-ui` プロジェクト ([html-ui.md](html-ui.md)) を `http://127.0.0.1:8788` で配る。公開の definy-html と違い,
+パーツの編集とコミットができ, 署名は手元の鍵でする。
+
+- `fn(request) => @html-ui.handle(editable: true, request: request)` (`Fn(request: @definy.http-request) -> @definy.service-io`) を
+  MCP の `definy_compile_expression` (`definy.mcp-compile-expression`) で Wasm にし, `handleWorkerRequest` の `service` に渡して
+  `definy.handle-request` と同じホストの能力 (ストア, 手元の鍵での署名など) で動かす。
+  html-ui はストアを直接読み (`definy_get_project` などのツールの関数や `definy.handle-rpc` をそのまま呼ぶ), HTTP で MCP を呼ばない
+- コンパイル (約 1 秒) は 1 度だけして使い回す。リクエストごとに `GetProjectBranches` を読み, どれかのプロジェクトの `main` の
+  最新のコミットが変わっていたらコンパイルし直す (html-ui 以外のパーツは各プロジェクトの最新の main から読むため)
+- `html-ui` がまだストアに無ければ 503 で `definy_pull` するように伝える。公開サーバーから取り込めば使える
+- 検査は `/mcp` と同じ Host と Origin に加えて, GET と HEAD 以外には Origin を求める (トークンなしで書き込めるので, 他のサイトのページからの
+  フォームの送信を断る)
 
 ## 公開サーバーとの同期 (`definy_pull` / `definy_push`)
 

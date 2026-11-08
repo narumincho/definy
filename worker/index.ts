@@ -96,7 +96,9 @@ function toResponse(
  * テスト用にストアと fetch を差し替えられる. `serveAsset` は静的アセットを返す
  * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す).
  * `ctx` (ExecutionContext) はパフォーマンス記録の書き込み完了を `waitUntil` で
- * 保証するために使う (無い環境では書き込みは投げっぱなしになる)
+ * 保証するために使う (無い環境では書き込みは投げっぱなしになる).
+ * `service` は処理する definy の関数 (`Fn(request: @definy.http-request) -> @definy.service-io`) をコンパイルしたもの.
+ * 省くと `definy.handle-request`. 手元のサーバーは HTML の UI (`html-ui.handle`) を同じ能力で動かす (docs/local-server.md)
  */
 export async function handleWorkerRequest(
   request: Request,
@@ -107,6 +109,7 @@ export async function handleWorkerRequest(
     ? () => env.ASSETS!.fetch(request)
     : undefined,
   ctx?: ExecutionContext | undefined,
+  service: WebAssembly.Module = serviceModule,
 ): Promise<Response> {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -126,10 +129,11 @@ export async function handleWorkerRequest(
   const seed = store.seedHost(env, url.origin);
   try {
     result = await handleRequestInDefiny(
-      serviceModule,
+      service,
       {
         method: request.method,
         path: pathname,
+        query: url.search.slice(1),
         headers,
         storage: env.DB ? "cloudflare-d1" : "none",
         hasAssets: serveAsset !== undefined,

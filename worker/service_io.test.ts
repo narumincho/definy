@@ -42,6 +42,7 @@ async function handleRpcInDefiny(
     {
       method: "POST",
       path: `/definy.v1.${method}`,
+      query: "",
       headers,
       storage: "in-memory",
       hasAssets: false,
