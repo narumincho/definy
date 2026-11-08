@@ -113,6 +113,22 @@ definy.worker-step =
 - テスト: `cli/mirror.test.ts` が手元の definy サーバーを公開サーバーの代わりにし, 土台の JS を Node.js で読み込んで
   (D1 の代わりに `worker/sqlite_d1.ts`) Cron と fetch を確かめる
 
+### 大きなページを無料プランに収める (2026-11-08)
+
+`/p/definy/main` (約 1000 パーツ) が CPU の上限で 503 (error 1102) になったので, 次のようにした。本番 (Cloudflare) は手元の Node.js の約 3 倍遅い。
+
+- **ブラウザからのリクエストはたいてい新しい isolate で動く** ので, isolate のメモリに読んだ結果を覚えるキャッシュ
+  (`read_cached_commits` など) がほとんど効かず, 毎回イベントの CBOR を読み, パーツ ID の SHA-256 を計算し直していた。
+  土台の JS (`definy.cloudflare-service-runtime-script`) は, メモリに加えて D1 の表 `host_cache (kind, key, value)` にも
+  読んだ結果の JSON を置く (`kind` は `commits` / `definitions` / `resolutions`, `key` はイベントハッシュか中身のハッシュ)。
+  読んだ形は definy のコードで変わるので, `definy.deploy-service-script` がデプロイのたびに D1 の API で表を消す
+- html-ui は `definy_get_project` の代わりに `html-ui.project-text` を使う。モジュールの一覧は定義を読まず,
+  モジュールのページはそのモジュールのパーツを 100 個ずつ (`?start=`) だけ読む。検索 (`?q=`) だけは全てのパーツを読む
+- `html-ui.deploy` の Cron は取り込みのあとにコミットを読み (`definy.read-commits`), `host_cache` に入れておく
+- 手元で別のプロセスから同じ SQLite を読むと (D1 のキャッシュが効く), `/p/definy/main` の CPU は 0.67 → 0.1 秒,
+  `/p/definy/main/core` は 1.3 → 0.4 秒。本番ではモジュールのページが 0.5〜1.7 秒で表示できる
+- 残り: 検索 (`/p/definy/main?q=...`) は全ての定義を読むので, 上限を超えることがある
+
 ## 編集とコミット (2026-11-08)
 
 パーツの型・式を書き換えてコミットできるのは, **手元の definy サーバーが配る html-ui だけ** (ユーザーの決定)。
