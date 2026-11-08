@@ -307,4 +307,95 @@ describe("wasi.io", () => {
     );
     expect(message).toBe("アップロードできませんでした: Failed to fetch");
   }, 120_000);
+
+  it("get_parts は型パーツも渡す (型引数で参照されるので, 渡さないとコンパイルした Wasm が unreachable になる)", async () => {
+    const typePartId = await resolvePartPlaceholders({
+      $part: "definy.sql-statement",
+    });
+    const program = await resolvePartPlaceholders({
+      "#variant": {
+        tag: "get_parts",
+        payload: {
+          "#some": {
+            "#record": [
+              { key: "ids", value: { "#list": [{ "#string": typePartId }] } },
+              {
+                key: "then",
+                value: {
+                  "#function": {
+                    parameters: [{ parameter_id: 0, parameter_name: "parts" }],
+                    body: {
+                      "#variant": {
+                        tag: "done",
+                        payload: {
+                          "#some": {
+                            "#match": {
+                              target: {
+                                "#call": {
+                                  function: {
+                                    "#part_reference": {
+                                      part_definition_event_hash: {
+                                        $part: "core.list-get",
+                                      },
+                                    },
+                                  },
+                                  arguments: [
+                                    {
+                                      name: "list",
+                                      value: {
+                                        "#variable": { variable_id: 0 },
+                                      },
+                                    },
+                                    { name: "index", value: { "#number": 0 } },
+                                  ],
+                                },
+                              },
+                              arms: [
+                                {
+                                  pattern: {
+                                    "#variant": {
+                                      tag: "some",
+                                      payload: { "#any": null },
+                                    },
+                                  },
+                                  body: { "#string": "passed" },
+                                },
+                                {
+                                  pattern: {
+                                    "#variant": {
+                                      tag: "none",
+                                      payload: { "#any": null },
+                                    },
+                                  },
+                                  body: { "#string": "dropped" },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+    const { parts } = collectReferencedParts(program, (id) =>
+      seedPartExpressions.get(id),
+    );
+    const message = await runWasiIo(
+      new WebAssembly.Module(
+        compiler.compile(program, parts) as unknown as BufferSource,
+      ),
+      {
+        getPart: (id) => seedPartExpressions.get(id),
+        getSecret: () => undefined,
+        handle: cloudflareApi([]),
+      },
+    );
+    expect(message).toBe("passed");
+  }, 120_000);
 });

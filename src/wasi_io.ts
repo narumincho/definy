@@ -14,7 +14,6 @@ import { variant, variantOf } from "./definy_value.ts";
 import {
   containsHole,
   instantiateCompiledValue,
-  isTypeDeclaration,
   stage1PartsValue,
   type DefinyValue,
   type Stage1ReferencedPart,
@@ -215,9 +214,13 @@ function withSecretHeaders(
   return { request: { ...request, headers } };
 }
 
-/** stage1 でコンパイルできる式か (型パーツの宣言式・未入力のある式は渡さない) */
+/**
+ * stage1 でコンパイルできる式か (未入力のある式は渡さない).
+ * 型パーツの宣言式は渡す. 型引数 (`T: @definy.sql-statement` など) で参照されると, 渡さなければ `unreachable` になる
+ * (`collectReferencedParts` と同じ. 実行時は参照のままの値になる)
+ */
 function isCompilable(expression: unknown): boolean {
-  return !isTypeDeclaration(expression) && !containsHole(expression);
+  return !containsHole(expression);
 }
 
 /**

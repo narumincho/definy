@@ -76,17 +76,40 @@ definy.worker-step =
 - Worker の JS は `definy.cloudflare-service-runtime-script`。`evaluate()` が返す `{fetch, scheduled}` を, `worker/service_io.ts` と同じ
   `definy.service-io` の要求 (D1 の SQL, WebCrypto の Ed25519 と SHA-256, fetch, isolate の中のキャッシュ) で動かす。
   手元の鍵・管理者・式の実行は無し (`read_mcp_account` は `none`)
-- 取り込みは `definy.mirror-pull(remote)`: 表が無ければ作り (`definy.ensure-seeded`。写しは seed バンドルを持たず表だけ作る),
-  相手の全てのイベント (seed のイベントも) のうち無いものを古い順に `definy.mirror-submit` で入れる。
+- 取り込みは `definy.mirror-pull(remote, limit, content_limit)`: 表が無ければ作り (`definy.ensure-seeded`。写しは seed バンドルを持たず表だけ作る),
+  相手の全てのイベント (seed のイベントも) のうち無いものを古い順に `definy.mirror-events-loop` / `definy.mirror-sync-event` で入れる。
   `definy.mirror-submit` は署名と中身だけ確かめ, イベントの規則と型は確かめない (相手が受け付けたときに確かめている。
   型の検査は CPU が重く, Workers の 1 回の上限を超えうる)。中身は相手の `GetContent` から読んで `UploadContent` と同じく入れる
+- **1 回の Cron では少しずつ入れる**: 最大 `limit` 個のイベントを入れるか, 中身が足りないイベントがあったら止める。
+  足りない中身は 1 回に最大 `content_limit` 個だけ取ってきて入れ (`#partial`), 続きは次の回に入れる。
+  失敗したイベント (下の署名の誤ったもの) は飛ばして数えない。definy-html は `limit: 5, content_limit: 50` で 1 分ごと (`* * * * *`)
 - seed には署名の検証を確かめるための署名の誤ったイベントが 3 つある (`src/invalid_signature_samples.ts`)。写しには入らず,
-  `definy.mirror-pull` は毎回その 3 つを失敗として報告する
-- 最初の Cron が動くまでは表が無いので, ページは読めない
-- 2026-11-08 に手元 (クラウドのコンテナの Node.js) で, 土台の JS と SQLite で本物の公開サーバーから写した:
-  22 イベントのうち 18 を 21 秒で取り込み (失敗は上の 3 つと, 今の形式で読めない古い `create_account` の `K6K9xb2b…`)。
-  Wasm は 469 KB。ページは `/` 0.4 秒, `/p/html-ui/main` 0.05 秒, `/p/definy/main?q=...` 1.8 秒 (最初の定義の読み込み)
-- html-ui の入口は `quote({fetch: fn(request) => @html-ui.handle(editable: false, request: request), scheduled: fn(time_ms) => @definy.mirror-pull(remote: "https://definy.narumincho.com")})`
+  `definy.mirror-pull` は毎回その 3 つを失敗として報告する (応答の status は 400 になるが, Cron では表示するだけ)
+- 最初の Cron が動くまでは表が無いので, ページは読めない。中身の多い seed のイベント (1000 個以上) があるので,
+  空の写しが追いつくまで 20 分ほどかかる
+- html-ui の入口は `quote({fetch: fn(request) => @html-ui.handle(editable: false, request: request), scheduled: fn(time_ms) => @definy.mirror-pull(remote: "https://definy.narumincho.com", limit: 5, content_limit: 50)})`
+
+### Workers の無料プランの CPU 時間 (2026-11-08)
+
+最初のデプロイでは Cron が毎回例外で止まり, D1 は空のままだった。調べ方と分かったこと:
+
+- Cloudflare のアカウントは無料プラン (`limits.cpu_ms` を付けてアップロードすると「CPU limits are not supported for the Free plan」)。
+  公称は 1 回 10 ミリ秒だが, 実際には **約 2 秒で止められる** (fetch も Cron も `exceededCpu` / `exceededResources` は 2.02〜2.05 秒)
+- 例外の中身は Workers Logs で読める: `PATCH /workers/scripts/<name>/script-settings` に
+  `{"observability": {"enabled": true, "head_sampling_rate": 1}}` (アップロードし直すと消える) を送り,
+  `POST /accounts/<id>/workers/observability/telemetry/query` で `$metadata.service` を絞って読む。
+  回数と CPU 時間は GraphQL の `workersInvocationsAdaptive` (`status`, `max { cpuTime }`, マイクロ秒) で読める
+- **原因 1: JSON の文字列を読むのが 2 乗の時間だった**。`definy.text-string-from` が 1 バイト進むごとに
+  文字列の始まりからそこまでを `core.string-slice` で切り出していた (`let` は先に評価されるので, 使わない枝でも切り出す)。
+  数百 KB の `signedEventBytes` で CPU の 4 割を占めていた。切り出しを使う枝の中に移して, 全体の取り込みが 12 秒から 5 秒になった。
+  プロファイルは `node --cpu-prof` で取り, `wasm-function[N]` の N はランタイム関数 (`core.wasm-runtime-functions` の順に 1〜31。
+  10 が `string-slice`) かそれ以降の関数の番号 ([wasm-gc.md](wasm-gc.md))
+- 残りの 5 秒のほとんどは seed のイベント 1 つ (中身 1000 個以上の `UploadContent`) なので, 上の「少しずつ入れる」にした。
+  1 回の CPU 時間は, 手元の Node.js で中身 100 個が約 1 秒, 入れるものが無いときは約 0.2 秒
+- **原因 2: `wasi.io` の `get_parts` (`src/wasi_io.ts`) が型パーツを渡していなかった**。型引数
+  (`@std.list-range(T: @definy.sql-statement, ...)`) で型パーツを参照する式は, そのパーツが無いと `unreachable` になる
+  (`definy.ensure-seeded` の `definy.sql-run-chunks`)。`collectReferencedParts` と同じく型パーツも渡すようにした。
+  `definy_compile_expression` (MCP) でコンパイルしたものは動くのに, `definy.deploy-service-worker` でコンパイルしたものだけ落ちていた
 - テスト: `cli/mirror.test.ts` が手元の definy サーバーを公開サーバーの代わりにし, 土台の JS を Node.js で読み込んで
   (D1 の代わりに `worker/sqlite_d1.ts`) Cron と fetch を確かめる
 
@@ -113,7 +136,7 @@ definy.worker-step =
 | `/p/definy/main` (約 1000 パーツ) | 約 750 ミリ秒    | 約 0.5 秒            |
 
 評価器で動かしていた `/html/` では `/p/definy/main` が 2.7 秒 (文字列の処理をコンパイル済みにした後) だった。
-Workers の無料プランは 1 リクエストの CPU 時間が 10 ミリ秒までなので, 大きなページは有料プランが要るかもしれない。
+Workers の無料プランは 1 リクエストの CPU 時間が公称 10 ミリ秒 (実際には約 2 秒で止められる。上の「Workers の無料プランの CPU 時間」) なので, 大きなページは有料プランが要るかもしれない。
 
 ## テスト
 
