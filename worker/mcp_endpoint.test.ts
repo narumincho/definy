@@ -102,6 +102,7 @@ describe("definy.handle-mcp", () => {
       "definy_create_branch",
       "definy_create_project",
       "definy_commit_parts",
+      "definy_prepare_commit_parts",
       "definy_run_expression",
       "definy_pull",
       "definy_push",
