@@ -32,10 +32,16 @@ function reject(status: number, message: string): Response {
  * @param request 届いたリクエスト
  * @param options.port 待ち受けているポート
  * @param options.token `/mcp` の Authorization: Bearer に求めるトークン
+ * @param options.requireOriginForWrites GET と HEAD 以外に Origin を求めるか (HTML の UI のように, トークンを持たずに
+ *   書き込みを受け付けるとき. ブラウザは POST に必ず Origin を付けるので, 付いていない書き込みはブラウザの外からのもの)
  */
 export function checkLocalRequest(
   request: Request,
-  options: { readonly port: number; readonly token: string },
+  options: {
+    readonly port: number;
+    readonly token: string;
+    readonly requireOriginForWrites?: boolean;
+  },
 ): Response | undefined {
   const hosts = allowedHosts(options.port);
   const host = request.headers.get("Host") ?? "";
@@ -43,6 +49,14 @@ export function checkLocalRequest(
     return reject(403, `host ${JSON.stringify(host)} is not allowed`);
   }
   const origin = request.headers.get("Origin");
+  if (
+    origin === null &&
+    options.requireOriginForWrites === true &&
+    request.method !== "GET" &&
+    request.method !== "HEAD"
+  ) {
+    return reject(403, "the Origin header is required");
+  }
   if (origin !== null) {
     let originHost: string | undefined;
     try {

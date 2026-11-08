@@ -6,6 +6,7 @@ import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import type { Env } from "./types.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { generateAccountCredentials } from "../src/auth.ts";
+import { instantiateCompiledValue } from "../src/stage1_compiler.ts";
 
 const origin = "https://definy.workers.dev";
 
@@ -97,5 +98,33 @@ describe("definy_create_project", () => {
         project: "my-project",
       }),
     ).toEqual({ text: "42", isError: false });
+  }, 60_000);
+
+  it("definy_compile_expression は式を Wasm のモジュールにして Base64 で返す", async () => {
+    const { call } = await localServer();
+    expect(
+      (await call("definy_create_project", { project: "my-project" })).isError,
+    ).toBe(false);
+    const committed = await call("definy_commit_parts", {
+      project: "my-project",
+      branch: "main",
+      changes: [
+        {
+          part: "my-module.double",
+          type: "Fn(value: Number) -> Number",
+          expression: "fn(value$0) => @core.plus(left: $0, right: $0)",
+        },
+      ],
+    });
+    expect(committed.isError, committed.text).toBe(false);
+    const compiled = await call("definy_compile_expression", {
+      expression: "@my-module.double(value: 21)",
+      project: "my-project",
+    });
+    expect(compiled.isError, compiled.text).toBe(false);
+    const instance = instantiateCompiledValue(
+      new WebAssembly.Module(Buffer.from(compiled.text, "base64")),
+    );
+    expect(instance.read(instance.root)).toBe(42);
   }, 60_000);
 });

@@ -19,11 +19,16 @@ Cloudflare Workers は実行時に Wasm をコンパイルできない (`WebAsse
 
 ## 仕組み
 
-- `html-ui.handle(request: @definy.worker-request) -> @definy.worker-step` が入口
-- `html-ui.deploy` = `@definy.deploy-fetch-worker(worker_name: "definy-html", api_token: @definy.cloudflare-api-token, handler: quote(fn(request) => @html-ui.handle(request: request)))`。
-  React の UI のパーツのページで評価するとデプロイする ([cloudflare-workers.md](cloudflare-workers.md))
-- `html-ui.rpc(method, request, then)`: `method` が `definy_` で始まれば `https://definy.narumincho.com/mcp` に JSON-RPC の `tools/call`,
-  そうでなければ `https://definy.narumincho.com/definy.v1.<method>` に POST する `#fetch` の段を作る
+- `html-ui.handle(config: @html-ui.config, request: @definy.worker-request) -> @definy.worker-step` が入口。
+  `html-ui.config` = `Record{server: String, token: String, editable: Boolean}`
+  - `server`: データを読む definy サーバー。`token`: その `/mcp` の Bearer のトークン (空なら付けない)
+  - `editable`: 編集とコミットの画面 (`/edit/...`, `/api/commit`) を出すか
+- `html-ui.deploy` = `@definy.deploy-fetch-worker(worker_name: "definy-html", api_token: @definy.cloudflare-api-token, handler: quote(fn(request) => @html-ui.handle(config: {server: "https://definy.narumincho.com", token: "", editable: false}, request: request)))`。
+  React の UI のパーツのページで評価するとデプロイする ([cloudflare-workers.md](cloudflare-workers.md))。公開の definy-html は読むだけ
+- 手元の definy サーバー (`npm run serve`) は, 自分自身を `server` にし `editable: true` にした html-ui を別のポート (既定 8788) で配る
+  ([local-server.md](local-server.md))
+- `html-ui.rpc(config, method, request, then)`: `method` が `definy_` で始まれば `<server>/mcp` に JSON-RPC の `tools/call`,
+  そうでなければ `<server>/definy.v1.<method>` に POST する `#fetch` の段を作る
 - パス: `/` (プロジェクト一覧), `/p/<project>/<branch>` (パーツ一覧), `/p/<project>/<branch>/<part>` (パーツ)
 
 ### `definy.worker-step` (`seeds/definy.json`)
@@ -63,17 +68,18 @@ definy.worker-step =
 
 ## 編集とコミット (2026-11-08)
 
-HTML 版でパーツの型・式を書き換えてコミットできる。署名はブラウザでする (ユーザーの決定)。鍵がサーバーに渡らないようにするため,
-署名の部分だけは小さな固定の JS (`html-ui.sign-script`. WebCrypto の Ed25519) を使う。
+パーツの型・式を書き換えてコミットできるのは, **手元の definy サーバーが配る html-ui だけ** (ユーザーの決定)。
+署名はそのサーバーが手元の鍵 (`account.json`) でする。公開の definy-html は鍵を持たず, 読むだけにする。
+公開サーバーとは署名したイベントを `definy_push` / `definy_pull` で渡す。
 
-1. `/key` で秘密鍵 (account.json の中身か `secretKeyBase64`) を入れる。鍵は definy-html のオリジンの localStorage にだけ置く
-2. `/edit/<プロジェクト>/<ブランチ>/<モジュール.パーツ>` (パーツのページの「編集する」, モジュールのページの「パーツを足す」) で型・式を書き換える
-3. JS が `POST /api/prepare` に `definy_prepare_commit_parts` の引数 (`account_id` は鍵の公開鍵) を送る。Worker はそのまま公開サーバーの MCP に渡し,
-   署名前のイベントのバイナリ (Base64) が返る ([mcp.md](mcp.md))
-4. JS が Ed25519 で署名し, `POST /api/submit` に「イベントの Base64 改行 署名の Base64」を送る。Worker (definy) が
-   `definy.signed-event-cbor` と `definy.cbor-encode` で SignedEvent にして `SubmitEvent` に出す。型の誤りやブランチの作成者でないときは, その理由を表示する
+- パーツのページの「編集する」, モジュールのページの「パーツを足す」から `/edit/<プロジェクト>/<ブランチ>/<モジュール.パーツ>`
+  (または `?part=`) を開き, 型・式・英語の説明・コミットメッセージを書く
+- 小さな JS (`html-ui.commit-script`) が `POST /api/commit` に `definy_commit_parts` の引数の JSON を送る。
+  Worker (`html-ui.handle-api`) はそれを `server` の MCP に渡すだけ。型の誤りやブランチの作成者でないときは, その理由を表示する
+- Worker は POST の本文を `definy.worker-request` の `body_text` で読む
 
-Worker は POST の本文を `definy.worker-request` の `body_text` で読む。
+最初はブラウザで署名する形 (鍵を localStorage に置き, 公開サーバーが作った署名前のイベントに署名する) を作ったが,
+署名するバイト列をサーバーが決めるので, サーバーが偽れば別の中身に署名させられる。手元のサーバーだけで署名する形にした。
 
 ## 速さ (2026-11-07, クラウドのコンテナの Node.js, コンパイルした Wasm)
 
@@ -89,4 +95,5 @@ Workers の無料プランは 1 リクエストの CPU 時間が 10 ミリ秒ま
 ## テスト
 
 `src/wasi_io.test.ts`: `sample.deploy-fetch-worker` をデプロイし, アップロードした `worker.js` が `fetch` の段で
-HTTP リクエストを送って応答で続けること。`worker/mcp_create_project.test.ts`: `definy_create_project`。
+HTTP リクエストを送って応答で続けること。`cli/html_ui.test.ts`: 手元のサーバーが小さな `html-ui.handle` をコンパイルして配り,
+main が進んだらコンパイルし直すこと, 他のオリジンからの POST を断ること。`worker/mcp_create_project.test.ts`: `definy_create_project`。

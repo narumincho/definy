@@ -19,6 +19,7 @@ import { bytesToBase64 } from "../src/base64.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/sqlite_d1.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
+import { createHtmlUiHandler } from "./html_ui.ts";
 import { checkLocalRequest } from "./local_security.ts";
 
 /** データを置くフォルダ. `DEFINY_HOME` が無ければ `~/.definy` */
@@ -143,10 +144,52 @@ async function writeResponse(
   outgoing.end(Buffer.from(await response.arrayBuffer()));
 }
 
+/** Node.js の HTTP サーバーで handler を動かす. 返すのは待ち受けたポートと止める関数 */
+async function listen(
+  port: number,
+  handler: (request: Request, port: number) => Promise<Response>,
+): Promise<{ readonly port: number; readonly close: () => Promise<void> }> {
+  let listening = port;
+  const server = createServer((incoming, outgoing) => {
+    void (async () => {
+      try {
+        const request = await toRequest(incoming, `127.0.0.1:${listening}`);
+        await writeResponse(await handler(request, listening), outgoing);
+      } catch (error) {
+        outgoing.writeHead(500, {
+          "Content-Type": "text/plain; charset=utf-8",
+        });
+        outgoing.end(error instanceof Error ? error.message : String(error));
+      }
+    })();
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => {
+      server.off("error", reject);
+      resolve();
+    });
+  });
+  const address = server.address();
+  if (address !== null && typeof address === "object") {
+    listening = address.port;
+  }
+  return {
+    port: listening,
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.closeAllConnections();
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  };
+}
+
 export type LocalServer = {
   /** `http://127.0.0.1:port` */
   readonly origin: string;
   readonly port: number;
+  /** HTML の UI の `http://127.0.0.1:port`. `uiPort` を渡さなければ undefined */
+  readonly uiOrigin: string | undefined;
   /** `/mcp` の Authorization: Bearer のトークン */
   readonly token: string;
   readonly account: AccountCredentials;
@@ -157,12 +200,14 @@ export type LocalServer = {
  * 手元の definy サーバーを起動する
  * @param options.dataDir ストア (`store.sqlite`), 鍵 (`account.json`), トークン (`mcp-token`) を置くフォルダ
  * @param options.port 待ち受けるポート (0 なら空いているもの)
+ * @param options.uiPort HTML の UI (ストアの html-ui プロジェクト) を配るポート (0 なら空いているもの, 省けば配らない)
  * @param options.accountName 鍵を新しく作るときのアカウントの名前
  * @param options.fetchFn 外への HTTP (MCP の fetch ツールなど) に使う fetch
  */
 export async function startLocalServer(options: {
   readonly dataDir: string;
   readonly port: number;
+  readonly uiPort?: number;
   readonly accountName?: string;
   readonly fetchFn?: typeof fetch;
 }): Promise<LocalServer> {
@@ -183,51 +228,80 @@ export async function startLocalServer(options: {
   };
   const fetchFn = options.fetchFn ?? fetch;
 
-  let port = options.port;
-  const server = createServer((incoming, outgoing) => {
-    void (async () => {
-      try {
-        const request = await toRequest(incoming, `127.0.0.1:${port}`);
-        const rejected = checkLocalRequest(request, { port, token });
-        await writeResponse(
-          rejected ??
-            (await handleWorkerRequest(
-              request,
-              env,
-              store,
-              fetchFn,
-              undefined,
-            )),
-          outgoing,
-        );
-      } catch (error) {
-        outgoing.writeHead(500, {
-          "Content-Type": "text/plain; charset=utf-8",
-        });
-        outgoing.end(error instanceof Error ? error.message : String(error));
-      }
-    })();
-  });
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(options.port, "127.0.0.1", () => {
-      server.off("error", reject);
-      resolve();
+  const api = await listen(options.port, (request, port) =>
+    Promise.resolve(
+      checkLocalRequest(request, { port, token }) ??
+        handleWorkerRequest(request, env, store, fetchFn, undefined),
+    ),
+  );
+  const origin = `http://127.0.0.1:${api.port}`;
+
+  /** 検査を通さずにこのサーバーに POST する (HTML の UI のコンパイル) */
+  const post = async (path: string, body: unknown): Promise<string> =>
+    await (
+      await handleWorkerRequest(
+        new Request(origin + path, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+          },
+          body: JSON.stringify(body),
+        }),
+        env,
+        store,
+        fetchFn,
+        undefined,
+      )
+    ).text();
+
+  let ui: Awaited<ReturnType<typeof listen>> | undefined;
+  if (options.uiPort !== undefined) {
+    const handleUi = createHtmlUiHandler({
+      server: origin,
+      token,
+      callTool: async (name, args) => {
+        const json = JSON.parse(
+          await post("/mcp", {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name, arguments: args },
+          }),
+        ) as {
+          readonly result: {
+            readonly content: ReadonlyArray<{ readonly text: string }>;
+            readonly isError: boolean;
+          };
+        };
+        return {
+          text: json.result.content[0]?.text ?? "",
+          isError: json.result.isError,
+        };
+      },
+      readBranches: () =>
+        post("/definy.v1.EventService/GetProjectBranches", {}),
     });
-  });
-  const address = server.address();
-  if (address !== null && typeof address === "object") {
-    port = address.port;
+    ui = await listen(
+      options.uiPort,
+      async (request, port) =>
+        checkLocalRequest(request, {
+          port,
+          token,
+          requireOriginForWrites: true,
+        }) ?? (await handleUi(request)),
+    );
   }
+
   return {
-    origin: `http://127.0.0.1:${port}`,
-    port,
+    origin,
+    port: api.port,
+    uiOrigin: ui === undefined ? undefined : `http://127.0.0.1:${ui.port}`,
     token,
     account,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.closeAllConnections();
-        server.close((error) => (error ? reject(error) : resolve()));
-      }),
+    close: async () => {
+      await ui?.close();
+      await api.close();
+    },
   };
 }
