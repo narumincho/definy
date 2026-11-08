@@ -83,6 +83,9 @@ definy.worker-step =
 - seed には署名の検証を確かめるための署名の誤ったイベントが 3 つある (`src/invalid_signature_samples.ts`)。写しには入らず,
   `definy.mirror-pull` は毎回その 3 つを失敗として報告する
 - 最初の Cron が動くまでは表が無いので, ページは読めない
+- 2026-11-08 に手元 (クラウドのコンテナの Node.js) で, 土台の JS と SQLite で本物の公開サーバーから写した:
+  22 イベントのうち 18 を 21 秒で取り込み (失敗は上の 3 つと, 今の形式で読めない古い `create_account` の `K6K9xb2b…`)。
+  Wasm は 469 KB。ページは `/` 0.4 秒, `/p/html-ui/main` 0.05 秒, `/p/definy/main?q=...` 1.8 秒 (最初の定義の読み込み)
 - html-ui の入口は `quote({fetch: fn(request) => @html-ui.handle(editable: false, request: request), scheduled: fn(time_ms) => @definy.mirror-pull(remote: "https://definy.narumincho.com")})`
 - テスト: `cli/mirror.test.ts` が手元の definy サーバーを公開サーバーの代わりにし, 土台の JS を Node.js で読み込んで
   (D1 の代わりに `worker/sqlite_d1.ts`) Cron と fetch を確かめる
