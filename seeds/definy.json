@@ -127632,8 +127632,32 @@
                                                         {
                                                           "name": "then",
                                                           "value": {
-                                                            "#variable": {
-                                                              "variable_id": 7
+                                                            "#function": {
+                                                              "parameters": [
+                                                                {
+                                                                  "parameter_id": 13,
+                                                                  "parameter_name": "summary"
+                                                                }
+                                                              ],
+                                                              "body": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "summary",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 13
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
                                                             }
                                                           }
                                                         }
@@ -127901,8 +127925,32 @@
                                                         {
                                                           "name": "then",
                                                           "value": {
-                                                            "#variable": {
-                                                              "variable_id": 7
+                                                            "#function": {
+                                                              "parameters": [
+                                                                {
+                                                                  "parameter_id": 14,
+                                                                  "parameter_name": "summary"
+                                                                }
+                                                              ],
+                                                              "body": {
+                                                                "#call": {
+                                                                  "function": {
+                                                                    "#variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "summary",
+                                                                      "value": {
+                                                                        "#variable": {
+                                                                          "variable_id": 14
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
                                                             }
                                                           }
                                                         }
