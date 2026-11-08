@@ -66,15 +66,15 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
 ストアの `html-ui` プロジェクト ([html-ui.md](html-ui.md)) を `http://127.0.0.1:8788` で配る。公開の definy-html と違い,
 パーツの編集とコミットができ, 署名は手元の鍵でする。
 
-- `fn(request) => @html-ui.handle(config: {server: "http://127.0.0.1:<port>", token: "<mcp-token>", editable: true}, request: request)` を
-  MCP の `definy_compile_expression` (`definy.mcp-compile-expression`) で Wasm にし, 公開の Worker と同じランタイム
-  (`definy.cloudflare-workers-runtime-script`) を Node.js で読み込んで動かす (`./app.wasm` の import をそのモジュールに置き換えた data: URL)。
-  html-ui は `<port>/mcp` をトークン付きで呼ぶ
+- `fn(request) => @html-ui.handle(editable: true, request: request)` (`Fn(request: @definy.http-request) -> @definy.service-io`) を
+  MCP の `definy_compile_expression` (`definy.mcp-compile-expression`) で Wasm にし, `handleWorkerRequest` の `service` に渡して
+  `definy.handle-request` と同じホストの能力 (ストア, 手元の鍵での署名など) で動かす。
+  html-ui はストアを直接読み (`definy_get_project` などのツールの関数や `definy.handle-rpc` をそのまま呼ぶ), HTTP で MCP を呼ばない
 - コンパイル (約 1 秒) は 1 度だけして使い回す。リクエストごとに `GetProjectBranches` を読み, どれかのプロジェクトの `main` の
   最新のコミットが変わっていたらコンパイルし直す (html-ui 以外のパーツは各プロジェクトの最新の main から読むため)
 - `html-ui` がまだストアに無ければ 503 で `definy_pull` するように伝える。公開サーバーから取り込めば使える
 - 検査は `/mcp` と同じ Host と Origin に加えて, GET と HEAD 以外には Origin を求める (トークンなしで書き込めるので, 他のサイトのページからの
-  フォームの送信を断る)。ランタイムが付ける `Access-Control-Allow-Origin: *` は外す
+  フォームの送信を断る)
 
 ## 公開サーバーとの同期 (`definy_pull` / `definy_push`)
 

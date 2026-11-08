@@ -236,7 +236,7 @@ export async function startLocalServer(options: {
   );
   const origin = `http://127.0.0.1:${api.port}`;
 
-  /** 検査を通さずにこのサーバーに POST する (HTML の UI のコンパイル) */
+  /** 検査を通さずにこのサーバーの処理を呼ぶ (HTML の UI のコンパイル. 同じプロセスの中で, HTTP は通らない) */
   const post = async (path: string, body: unknown): Promise<string> =>
     await (
       await handleWorkerRequest(
@@ -258,8 +258,6 @@ export async function startLocalServer(options: {
   let ui: Awaited<ReturnType<typeof listen>> | undefined;
   if (options.uiPort !== undefined) {
     const handleUi = createHtmlUiHandler({
-      server: origin,
-      token,
       callTool: async (name, args) => {
         const json = JSON.parse(
           await post("/mcp", {
@@ -281,6 +279,16 @@ export async function startLocalServer(options: {
       },
       readBranches: () =>
         post("/definy.v1.EventService/GetProjectBranches", {}),
+      run: (request, service) =>
+        handleWorkerRequest(
+          request,
+          env,
+          store,
+          fetchFn,
+          undefined,
+          undefined,
+          service,
+        ),
     });
     ui = await listen(
       options.uiPort,

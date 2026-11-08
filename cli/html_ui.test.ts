@@ -12,21 +12,26 @@ const dataDir = await mkdtemp(join(tmpdir(), "definy-html-ui-test-"));
 afterAll(() => rm(dataDir, { recursive: true, force: true }));
 
 const handleType =
-  "Fn(config: Record{server: String, token: String, editable: Boolean}, request: @definy.worker-request) -> @definy.worker-step";
+  "Fn(editable: Boolean, request: @definy.http-request) -> @definy.service-io";
 
-/** 版の文字列, 設定の server と editable, リクエストのメソッドと本文を返す html-ui.handle */
-const handleExpression = (version: string) => `fn(config$0, request$1) =>
-  #respond<@definy.worker-step>({
-    status: 200,
-    headers: [{name: "content-type", value: "text/plain; charset=utf-8"}],
-    body: @core.string-join(
-      items: [${JSON.stringify(version)}, $0.server, match $0.editable { true => "editable", false => "read-only" }, $1.method, $1.body_text],
-      separator: " "
-    )
+/** 版の文字列, editable, リクエストのメソッド・パス・クエリ・本文を返す html-ui.handle */
+const handleExpression = (version: string) => `fn(editable$0, request$1) =>
+  #read_request_text<@definy.service-io>({
+    then: fn(body$2) =>
+      #respond<@definy.service-io>({
+        status: 200,
+        headers: [{name: "content-type", value: "text/plain; charset=utf-8"}],
+        body: #text<@definy.http-body>(
+          @core.string-join(
+            items: [${JSON.stringify(version)}, match $0 { true => "editable", false => "read-only" }, $1.method, $1.path, $1.query, $2],
+            separator: " "
+          )
+        )
+      })
   })`;
 
 describe("definy serve の HTML の UI", () => {
-  it("ストアの html-ui.handle をコンパイルして配り, main が進んだらコンパイルし直す", async () => {
+  it("ストアの html-ui.handle をコンパイルしてサーバーと同じ能力で動かし, main が進んだらコンパイルし直す", async () => {
     const server = await startLocalServer({ dataDir, port: 0, uiPort: 0 });
     const ui = server.uiOrigin!;
     try {
@@ -72,16 +77,14 @@ describe("definy serve の HTML の UI", () => {
       await call("definy_create_project", { project: "html-ui" });
       await commit("v1");
 
-      const first = await fetch(ui + "/");
+      const first = await fetch(ui + "/p/x?q=a");
       expect(first.status).toBe(200);
-      expect(await first.text()).toBe(`v1 ${server.origin} editable GET `);
-      // 公開の Worker 向けのヘッダーは外す
+      expect(await first.text()).toBe("v1 editable GET /p/x q=a ");
+      // 他のオリジンに読ませるヘッダーは付けない
       expect(first.headers.get("access-control-allow-origin")).toBeNull();
 
       await commit("v2");
-      expect(await (await fetch(ui + "/")).text()).toBe(
-        `v2 ${server.origin} editable GET `,
-      );
+      expect(await (await fetch(ui + "/")).text()).toBe("v2 editable GET /  ");
 
       // 書き込みは同じオリジンのページからだけ受け付ける
       expect(
@@ -101,9 +104,7 @@ describe("definy serve の HTML の UI", () => {
         headers: { Origin: ui },
         body: "hello",
       });
-      expect(await posted.text()).toBe(
-        `v2 ${server.origin} editable POST hello`,
-      );
+      expect(await posted.text()).toBe("v2 editable POST /api/commit  hello");
     } finally {
       await server.close();
     }

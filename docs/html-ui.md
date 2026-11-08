@@ -19,16 +19,16 @@ Cloudflare Workers は実行時に Wasm をコンパイルできない (`WebAsse
 
 ## 仕組み
 
-- `html-ui.handle(config: @html-ui.config, request: @definy.worker-request) -> @definy.worker-step` が入口。
-  `html-ui.config` = `Record{server: String, token: String, editable: Boolean}`
-  - `server`: データを読む definy サーバー。`token`: その `/mcp` の Bearer のトークン (空なら付けない)
-  - `editable`: 編集とコミットの画面 (`/edit/...`, `/api/commit`) を出すか
-- `html-ui.deploy` = `@definy.deploy-fetch-worker(worker_name: "definy-html", api_token: @definy.cloudflare-api-token, handler: quote(fn(request) => @html-ui.handle(config: {server: "https://definy.narumincho.com", token: "", editable: false}, request: request)))`。
-  React の UI のパーツのページで評価するとデプロイする ([cloudflare-workers.md](cloudflare-workers.md))。公開の definy-html は読むだけ
-- 手元の definy サーバー (`npm run serve`) は, 自分自身を `server` にし `editable: true` にした html-ui を別のポート (既定 8788) で配る
-  ([local-server.md](local-server.md))
-- `html-ui.rpc(config, method, request, then)`: `method` が `definy_` で始まれば `<server>/mcp` に JSON-RPC の `tools/call`,
-  そうでなければ `<server>/definy.v1.<method>` に POST する `#fetch` の段を作る
+- `html-ui.handle(editable: Boolean, request: @definy.http-request) -> @definy.service-io` が入口 (2026-11-08 から)。
+  definy サーバーの処理 (`definy.handle-request`) と同じ形で, ストアはホストの能力 (`sql` など) で直接読む
+  - `editable`: 編集とコミットの画面 (`/edit/...`, `/api/commit`) を出すか。手元の definy サーバーが配るときだけ true
+  - `html-ui.rpc(config, method, request, then)`: `method` が `definy_` で始まれば `definy.mcp-tools` のツールの関数を,
+    そうでなければ `definy.handle-rpc` を同じサーバーの中でそのまま呼ぶ (`definy.service-io-then-respond` で応答を受け取る)。
+    HTTP で他のサーバーを呼ばない
+- 手元の definy サーバー (`npm run serve`) は別のポート (既定 8788) で `editable: true` にして配る ([local-server.md](local-server.md))
+- 公開の definy-html は, 専用の D1 を持つ Worker にし, 公開サーバーのイベントを Cron で定期的に pull する予定 (ユーザーの決定, 2026-11-08)。
+  サーバー同士は署名したイベントだけでつながり, MCP は AI 向けの入口にとどめる。それまでの definy-html (公開サーバーの MCP を HTTP で呼ぶ版) は
+  2026-11-07 のデプロイのまま
 - パス: `/` (プロジェクト一覧), `/p/<project>/<branch>` (パーツ一覧), `/p/<project>/<branch>/<part>` (パーツ)
 
 ### `definy.worker-step` (`seeds/definy.json`)
@@ -75,8 +75,7 @@ definy.worker-step =
 - パーツのページの「編集する」, モジュールのページの「パーツを足す」から `/edit/<プロジェクト>/<ブランチ>/<モジュール.パーツ>`
   (または `?part=`) を開き, 型・式・英語の説明・コミットメッセージを書く
 - 小さな JS (`html-ui.commit-script`) が `POST /api/commit` に `definy_commit_parts` の引数の JSON を送る。
-  Worker (`html-ui.handle-api`) はそれを `server` の MCP に渡すだけ。型の誤りやブランチの作成者でないときは, その理由を表示する
-- Worker は POST の本文を `definy.worker-request` の `body_text` で読む
+  `html-ui.handle-api` は本文を `read_request_text` で読み, `definy_commit_parts` のツールの関数に渡す。型の誤りやブランチの作成者でないときは, その理由を表示する
 
 最初はブラウザで署名する形 (鍵を localStorage に置き, 公開サーバーが作った署名前のイベントに署名する) を作ったが,
 署名するバイト列をサーバーが決めるので, サーバーが偽れば別の中身に署名させられる。手元のサーバーだけで署名する形にした。
@@ -95,5 +94,5 @@ Workers の無料プランは 1 リクエストの CPU 時間が 10 ミリ秒ま
 ## テスト
 
 `src/wasi_io.test.ts`: `sample.deploy-fetch-worker` をデプロイし, アップロードした `worker.js` が `fetch` の段で
-HTTP リクエストを送って応答で続けること。`cli/html_ui.test.ts`: 手元のサーバーが小さな `html-ui.handle` をコンパイルして配り,
+HTTP リクエストを送って応答で続けること。`cli/html_ui.test.ts`: 手元のサーバーが小さな `html-ui.handle` をコンパイルしてサーバーと同じ能力で動かし,
 main が進んだらコンパイルし直すこと, 他のオリジンからの POST を断ること。`worker/mcp_create_project.test.ts`: `definy_create_project`。
