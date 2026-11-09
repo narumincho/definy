@@ -36148,11 +36148,11 @@
       "description": [
         {
           "language": "en",
-          "text": "The SQL that replaces the seed in the store: delete the events of the seed accounts not in the bundle, insert the events and contents, and record the fingerprint last"
+          "text": "The SQL that replaces the seed in the store: delete the events in the time range of the old seed (the first second of 2019-01-31T04:36:01Z) not in the bundle, insert the events and contents, and record the fingerprint last. Other events (also those of accounts in the bundle) are kept (docs/source-in-store.md)"
         },
         {
           "language": "ja",
-          "text": "ストアの seed を入れ替える SQL: seed のアカウントのイベントのうちバンドルに無いものを消し, イベントと中身を入れ, 最後に指紋を記録する"
+          "text": "ストアの seed を入れ替える SQL: 古い seed の時刻 (2019-01-31T04:36:01Z からの 1 秒) のイベントのうちバンドルに無いものを消し, イベントと中身を入れ, 最後に指紋を記録する。他のイベントは (バンドルにあるアカウントのものも) 残す (docs/source-in-store.md)"
         }
       ],
       "expression": {
@@ -36234,20 +36234,245 @@
               },
               "body": {
                 "#let": {
-                  "variable_id": 3,
-                  "variable_name": "accounts",
+                  "variable_id": 5,
+                  "variable_name": "not_in",
                   "value": {
                     "#call": {
                       "function": {
                         "#part_reference": {
                           "part_definition_event_hash": {
-                            "$part": "definy.strings-unique"
+                            "$part": "core.string-concat"
                           }
                         }
                       },
                       "arguments": [
                         {
-                          "name": "items",
+                          "name": "left",
+                          "value": {
+                            "#string": "DELETE FROM events WHERE time_ms < 1548909362000 AND event_hash NOT IN ("
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "definy.sql-placeholders"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "count",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.list-length"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#string": ")"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "body": {
+                    "#let": {
+                      "variable_id": 6,
+                      "variable_name": "deletes",
+                      "value": {
+                        "#match": {
+                          "target": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-length"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "#variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#number": 0
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "pattern": {
+                                "#boolean": true
+                              },
+                              "body": {
+                                "#list": []
+                              }
+                            },
+                            {
+                              "pattern": {
+                                "#boolean": false
+                              },
+                              "body": {
+                                "#list": [
+                                  {
+                                    "#record": [
+                                      {
+                                        "key": "sql",
+                                        "value": {
+                                          "#variable": {
+                                            "variable_id": 5
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": "params",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.list-map"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "T",
+                                                "value": {
+                                                  "#type_string": null
+                                                }
+                                              },
+                                              {
+                                                "name": "U",
+                                                "value": {
+                                                  "#part_reference": {
+                                                    "part_definition_event_hash": {
+                                                      "$part": "definy.sql-value"
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "name": "f",
+                                                "value": {
+                                                  "#function": {
+                                                    "parameters": [
+                                                      {
+                                                        "parameter_id": 8,
+                                                        "parameter_name": "item"
+                                                      }
+                                                    ],
+                                                    "body": {
+                                                      "#variant": {
+                                                        "tag": "text",
+                                                        "payload": {
+                                                          "#some": {
+                                                            "#variable": {
+                                                              "variable_id": 8
+                                                            }
+                                                          }
+                                                        },
+                                                        "type_part": {
+                                                          "#some": {
+                                                            "$part": "definy.sql-value"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "name": "xs",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 9,
+                          "variable_name": "events",
                           "value": {
                             "#call": {
                               "function": {
@@ -36271,7 +36496,11 @@
                                 {
                                   "name": "U",
                                   "value": {
-                                    "#type_string": null
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "definy.sql-statement"
+                                      }
+                                    }
                                   }
                                 },
                                 {
@@ -36280,19 +36509,158 @@
                                     "#function": {
                                       "parameters": [
                                         {
-                                          "parameter_id": 4,
+                                          "parameter_id": 10,
                                           "parameter_name": "item"
                                         }
                                       ],
                                       "body": {
-                                        "#record_get": {
-                                          "record": {
-                                            "#variable": {
-                                              "variable_id": 4
+                                        "#record": [
+                                          {
+                                            "key": "sql",
+                                            "value": {
+                                              "#string": "INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms) VALUES (?, ?, ?, ?, ?, ?)"
                                             }
                                           },
-                                          "key": "account_id"
-                                        }
+                                          {
+                                            "key": "params",
+                                            "value": {
+                                              "#list": [
+                                                {
+                                                  "#variant": {
+                                                    "tag": "text",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "event_hash"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "#variant": {
+                                                    "tag": "text",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "signed_event_bytes"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "#variant": {
+                                                    "tag": "text",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "account_id"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "#variant": {
+                                                    "tag": "text",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "event_type"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "#variant": {
+                                                    "tag": "text",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "created_at_rfc3339"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "#variant": {
+                                                    "tag": "integer",
+                                                    "payload": {
+                                                      "#some": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 10
+                                                            }
+                                                          },
+                                                          "key": "time_ms"
+                                                        }
+                                                      }
+                                                    },
+                                                    "type_part": {
+                                                      "#some": {
+                                                        "$part": "definy.sql-value"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
                                       }
                                     }
                                   }
@@ -36312,350 +36680,11 @@
                                 }
                               ]
                             }
-                          }
-                        },
-                        {
-                          "name": "index",
-                          "value": {
-                            "#number": 0
-                          }
-                        },
-                        {
-                          "name": "result",
-                          "value": {
-                            "#list": []
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "body": {
-                    "#let": {
-                      "variable_id": 5,
-                      "variable_name": "not_in",
-                      "value": {
-                        "#call": {
-                          "function": {
-                            "#part_reference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.string-concat"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "left",
-                              "value": {
-                                "#string": "DELETE FROM events WHERE account_id = ? AND event_hash NOT IN ("
-                              }
-                            },
-                            {
-                              "name": "right",
-                              "value": {
-                                "#call": {
-                                  "function": {
-                                    "#part_reference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.string-concat"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "left",
-                                      "value": {
-                                        "#call": {
-                                          "function": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "definy.sql-placeholders"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "count",
-                                              "value": {
-                                                "#call": {
-                                                  "function": {
-                                                    "#part_reference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.list-length"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "value",
-                                                      "value": {
-                                                        "#variable": {
-                                                          "variable_id": 1
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "right",
-                                      "value": {
-                                        "#string": ")"
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "body": {
-                        "#let": {
-                          "variable_id": 6,
-                          "variable_name": "deletes",
-                          "value": {
-                            "#match": {
-                              "target": {
-                                "#call": {
-                                  "function": {
-                                    "#part_reference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.equal"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "left",
-                                      "value": {
-                                        "#call": {
-                                          "function": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.list-length"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "value",
-                                              "value": {
-                                                "#variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "right",
-                                      "value": {
-                                        "#number": 0
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              "arms": [
-                                {
-                                  "pattern": {
-                                    "#boolean": true
-                                  },
-                                  "body": {
-                                    "#list": []
-                                  }
-                                },
-                                {
-                                  "pattern": {
-                                    "#boolean": false
-                                  },
-                                  "body": {
-                                    "#call": {
-                                      "function": {
-                                        "#part_reference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.list-map"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "T",
-                                          "value": {
-                                            "#type_string": null
-                                          }
-                                        },
-                                        {
-                                          "name": "U",
-                                          "value": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "definy.sql-statement"
-                                              }
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "f",
-                                          "value": {
-                                            "#function": {
-                                              "parameters": [
-                                                {
-                                                  "parameter_id": 7,
-                                                  "parameter_name": "item"
-                                                }
-                                              ],
-                                              "body": {
-                                                "#record": [
-                                                  {
-                                                    "key": "sql",
-                                                    "value": {
-                                                      "#variable": {
-                                                        "variable_id": 5
-                                                      }
-                                                    }
-                                                  },
-                                                  {
-                                                    "key": "params",
-                                                    "value": {
-                                                      "#call": {
-                                                        "function": {
-                                                          "#part_reference": {
-                                                            "part_definition_event_hash": {
-                                                              "$part": "core.list-concat"
-                                                            }
-                                                          }
-                                                        },
-                                                        "arguments": [
-                                                          {
-                                                            "name": "left",
-                                                            "value": {
-                                                              "#list": [
-                                                                {
-                                                                  "#variant": {
-                                                                    "tag": "text",
-                                                                    "payload": {
-                                                                      "#some": {
-                                                                        "#variable": {
-                                                                          "variable_id": 7
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    "type_part": {
-                                                                      "#some": {
-                                                                        "$part": "definy.sql-value"
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          {
-                                                            "name": "right",
-                                                            "value": {
-                                                              "#call": {
-                                                                "function": {
-                                                                  "#part_reference": {
-                                                                    "part_definition_event_hash": {
-                                                                      "$part": "core.list-map"
-                                                                    }
-                                                                  }
-                                                                },
-                                                                "arguments": [
-                                                                  {
-                                                                    "name": "T",
-                                                                    "value": {
-                                                                      "#type_string": null
-                                                                    }
-                                                                  },
-                                                                  {
-                                                                    "name": "U",
-                                                                    "value": {
-                                                                      "#part_reference": {
-                                                                        "part_definition_event_hash": {
-                                                                          "$part": "definy.sql-value"
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  {
-                                                                    "name": "f",
-                                                                    "value": {
-                                                                      "#function": {
-                                                                        "parameters": [
-                                                                          {
-                                                                            "parameter_id": 8,
-                                                                            "parameter_name": "item"
-                                                                          }
-                                                                        ],
-                                                                        "body": {
-                                                                          "#variant": {
-                                                                            "tag": "text",
-                                                                            "payload": {
-                                                                              "#some": {
-                                                                                "#variable": {
-                                                                                  "variable_id": 8
-                                                                                }
-                                                                              }
-                                                                            },
-                                                                            "type_part": {
-                                                                              "#some": {
-                                                                                "$part": "definy.sql-value"
-                                                                              }
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  {
-                                                                    "name": "xs",
-                                                                    "value": {
-                                                                      "#variable": {
-                                                                        "variable_id": 1
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                ]
-                                                              }
-                                                            }
-                                                          }
-                                                        ]
-                                                      }
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "xs",
-                                          "value": {
-                                            "#variable": {
-                                              "variable_id": 3
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ]
-                            }
                           },
                           "body": {
                             "#let": {
-                              "variable_id": 9,
-                              "variable_name": "events",
+                              "variable_id": 11,
+                              "variable_name": "contents",
                               "value": {
                                 "#call": {
                                   "function": {
@@ -36671,7 +36700,7 @@
                                       "value": {
                                         "#part_reference": {
                                           "part_definition_event_hash": {
-                                            "$part": "definy.seed-event"
+                                            "$part": "definy.content-item"
                                           }
                                         }
                                       }
@@ -36692,7 +36721,7 @@
                                         "#function": {
                                           "parameters": [
                                             {
-                                              "parameter_id": 10,
+                                              "parameter_id": 12,
                                               "parameter_name": "item"
                                             }
                                           ],
@@ -36701,7 +36730,7 @@
                                               {
                                                 "key": "sql",
                                                 "value": {
-                                                  "#string": "INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms) VALUES (?, ?, ?, ?, ?, ?)"
+                                                  "#string": "INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes) VALUES (?, ?)"
                                                 }
                                               },
                                               {
@@ -36716,10 +36745,10 @@
                                                             "#record_get": {
                                                               "record": {
                                                                 "#variable": {
-                                                                  "variable_id": 10
+                                                                  "variable_id": 12
                                                                 }
                                                               },
-                                                              "key": "event_hash"
+                                                              "key": "content_hash"
                                                             }
                                                           }
                                                         },
@@ -36738,98 +36767,10 @@
                                                             "#record_get": {
                                                               "record": {
                                                                 "#variable": {
-                                                                  "variable_id": 10
+                                                                  "variable_id": 12
                                                                 }
                                                               },
-                                                              "key": "signed_event_bytes"
-                                                            }
-                                                          }
-                                                        },
-                                                        "type_part": {
-                                                          "#some": {
-                                                            "$part": "definy.sql-value"
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "#variant": {
-                                                        "tag": "text",
-                                                        "payload": {
-                                                          "#some": {
-                                                            "#record_get": {
-                                                              "record": {
-                                                                "#variable": {
-                                                                  "variable_id": 10
-                                                                }
-                                                              },
-                                                              "key": "account_id"
-                                                            }
-                                                          }
-                                                        },
-                                                        "type_part": {
-                                                          "#some": {
-                                                            "$part": "definy.sql-value"
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "#variant": {
-                                                        "tag": "text",
-                                                        "payload": {
-                                                          "#some": {
-                                                            "#record_get": {
-                                                              "record": {
-                                                                "#variable": {
-                                                                  "variable_id": 10
-                                                                }
-                                                              },
-                                                              "key": "event_type"
-                                                            }
-                                                          }
-                                                        },
-                                                        "type_part": {
-                                                          "#some": {
-                                                            "$part": "definy.sql-value"
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "#variant": {
-                                                        "tag": "text",
-                                                        "payload": {
-                                                          "#some": {
-                                                            "#record_get": {
-                                                              "record": {
-                                                                "#variable": {
-                                                                  "variable_id": 10
-                                                                }
-                                                              },
-                                                              "key": "created_at_rfc3339"
-                                                            }
-                                                          }
-                                                        },
-                                                        "type_part": {
-                                                          "#some": {
-                                                            "$part": "definy.sql-value"
-                                                          }
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "#variant": {
-                                                        "tag": "integer",
-                                                        "payload": {
-                                                          "#some": {
-                                                            "#record_get": {
-                                                              "record": {
-                                                                "#variable": {
-                                                                  "variable_id": 10
-                                                                }
-                                                              },
-                                                              "key": "time_ms"
+                                                              "key": "content_bytes"
                                                             }
                                                           }
                                                         },
@@ -36857,7 +36798,7 @@
                                               "variable_id": 0
                                             }
                                           },
-                                          "key": "events"
+                                          "key": "contents"
                                         }
                                       }
                                     }
@@ -36865,259 +36806,133 @@
                                 }
                               },
                               "body": {
-                                "#let": {
-                                  "variable_id": 11,
-                                  "variable_name": "contents",
-                                  "value": {
-                                    "#call": {
-                                      "function": {
-                                        "#part_reference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.list-map"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "T",
-                                          "value": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "definy.content-item"
-                                              }
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "U",
-                                          "value": {
-                                            "#part_reference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "definy.sql-statement"
-                                              }
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "f",
-                                          "value": {
-                                            "#function": {
-                                              "parameters": [
-                                                {
-                                                  "parameter_id": 12,
-                                                  "parameter_name": "item"
-                                                }
-                                              ],
-                                              "body": {
-                                                "#record": [
-                                                  {
-                                                    "key": "sql",
-                                                    "value": {
-                                                      "#string": "INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes) VALUES (?, ?)"
-                                                    }
-                                                  },
-                                                  {
-                                                    "key": "params",
-                                                    "value": {
-                                                      "#list": [
-                                                        {
-                                                          "#variant": {
-                                                            "tag": "text",
-                                                            "payload": {
-                                                              "#some": {
-                                                                "#record_get": {
-                                                                  "record": {
-                                                                    "#variable": {
-                                                                      "variable_id": 12
-                                                                    }
-                                                                  },
-                                                                  "key": "content_hash"
-                                                                }
-                                                              }
-                                                            },
-                                                            "type_part": {
-                                                              "#some": {
-                                                                "$part": "definy.sql-value"
-                                                              }
-                                                            }
-                                                          }
-                                                        },
-                                                        {
-                                                          "#variant": {
-                                                            "tag": "text",
-                                                            "payload": {
-                                                              "#some": {
-                                                                "#record_get": {
-                                                                  "record": {
-                                                                    "#variable": {
-                                                                      "variable_id": 12
-                                                                    }
-                                                                  },
-                                                                  "key": "content_bytes"
-                                                                }
-                                                              }
-                                                            },
-                                                            "type_part": {
-                                                              "#some": {
-                                                                "$part": "definy.sql-value"
-                                                              }
-                                                            }
-                                                          }
-                                                        }
-                                                      ]
-                                                    }
-                                                  }
-                                                ]
-                                              }
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "xs",
-                                          "value": {
-                                            "#record_get": {
-                                              "record": {
-                                                "#variable": {
-                                                  "variable_id": 0
-                                                }
-                                              },
-                                              "key": "contents"
-                                            }
-                                          }
-                                        }
-                                      ]
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.list-concat"
+                                      }
                                     }
                                   },
-                                  "body": {
-                                    "#call": {
-                                      "function": {
-                                        "#part_reference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.list-concat"
-                                          }
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 6
                                         }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "#variable": {
-                                              "variable_id": 6
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-concat"
+                                              }
                                             }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "#call": {
-                                              "function": {
-                                                "#part_reference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.list-concat"
-                                                  }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 9
                                                 }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "left",
-                                                  "value": {
-                                                    "#variable": {
-                                                      "variable_id": 9
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.list-append"
+                                                      }
                                                     }
-                                                  }
-                                                },
-                                                {
-                                                  "name": "right",
-                                                  "value": {
-                                                    "#call": {
-                                                      "function": {
-                                                        "#part_reference": {
-                                                          "part_definition_event_hash": {
-                                                            "$part": "core.list-append"
-                                                          }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "list",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 11
                                                         }
-                                                      },
-                                                      "arguments": [
-                                                        {
-                                                          "name": "list",
-                                                          "value": {
-                                                            "#variable": {
-                                                              "variable_id": 11
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "item",
+                                                      "value": {
+                                                        "#record": [
+                                                          {
+                                                            "key": "sql",
+                                                            "value": {
+                                                              "#string": "INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes) VALUES (?, ?)"
                                                             }
-                                                          }
-                                                        },
-                                                        {
-                                                          "name": "item",
-                                                          "value": {
-                                                            "#record": [
-                                                              {
-                                                                "key": "sql",
-                                                                "value": {
-                                                                  "#string": "INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes) VALUES (?, ?)"
-                                                                }
-                                                              },
-                                                              {
-                                                                "key": "params",
-                                                                "value": {
-                                                                  "#list": [
-                                                                    {
-                                                                      "#variant": {
-                                                                        "tag": "text",
-                                                                        "payload": {
-                                                                          "#some": {
-                                                                            "#part_reference": {
-                                                                              "part_definition_event_hash": {
-                                                                                "$part": "definy.seed-fingerprint-key"
-                                                                              }
-                                                                            }
-                                                                          }
-                                                                        },
-                                                                        "type_part": {
-                                                                          "#some": {
-                                                                            "$part": "definy.sql-value"
+                                                          },
+                                                          {
+                                                            "key": "params",
+                                                            "value": {
+                                                              "#list": [
+                                                                {
+                                                                  "#variant": {
+                                                                    "tag": "text",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#part_reference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "definy.seed-fingerprint-key"
                                                                           }
                                                                         }
                                                                       }
                                                                     },
-                                                                    {
-                                                                      "#variant": {
-                                                                        "tag": "text",
-                                                                        "payload": {
-                                                                          "#some": {
-                                                                            "#record_get": {
-                                                                              "record": {
-                                                                                "#variable": {
-                                                                                  "variable_id": 0
-                                                                                }
-                                                                              },
-                                                                              "key": "fingerprint"
-                                                                            }
-                                                                          }
-                                                                        },
-                                                                        "type_part": {
-                                                                          "#some": {
-                                                                            "$part": "definy.sql-value"
-                                                                          }
-                                                                        }
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.sql-value"
                                                                       }
                                                                     }
-                                                                  ]
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "#variant": {
+                                                                    "tag": "text",
+                                                                    "payload": {
+                                                                      "#some": {
+                                                                        "#record_get": {
+                                                                          "record": {
+                                                                            "#variable": {
+                                                                              "variable_id": 0
+                                                                            }
+                                                                          },
+                                                                          "key": "fingerprint"
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    "type_part": {
+                                                                      "#some": {
+                                                                        "$part": "definy.sql-value"
+                                                                      }
+                                                                    }
+                                                                  }
                                                                 }
-                                                              }
-                                                            ]
+                                                              ]
+                                                            }
                                                           }
-                                                        }
-                                                      ]
+                                                        ]
+                                                      }
                                                     }
-                                                  }
+                                                  ]
                                                 }
-                                              ]
+                                              }
                                             }
-                                          }
+                                          ]
                                         }
-                                      ]
+                                      }
                                     }
-                                  }
+                                  ]
                                 }
                               }
                             }

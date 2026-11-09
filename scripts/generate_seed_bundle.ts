@@ -1,25 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import {
-  importAccountCredentials,
-  type AccountCredentials,
-  importPrivateKeyFromSecretKey,
-} from "../src/auth.ts";
-import {
-  base64ToBytes,
-  bytesToBase64,
-  bytesToUrlSafeBase64NoPad,
-} from "../src/base64.ts";
-import { encodeCborItem } from "../src/cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
-import {
-  type LocalizedText,
-  DEFAULT_VISIBILITY,
-  encodeEventContent,
-  MAIN_BRANCH,
-  type Visibility,
-} from "../src/event_content.ts";
-import { partContentItem } from "../src/content_store.ts";
 import {
   createSeedInvalidSignatureSamples,
   invalidSignatureSampleContents,
@@ -29,318 +11,46 @@ import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { compileSeedFunction } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import { createStage1Compiler } from "../src/stage1_compiler.ts";
-import {
-  resolvePartPlaceholders,
-  resolveSeedPartType,
-} from "../src/seed_parts.ts";
-import {
-  loadProjectSeeds,
-  type ProjectSeedData,
-} from "../src/seed_projects.ts";
+import { devSystemAccountBytes } from "../src/seed_parts.ts";
+import { readStoreSeed, storeSeedPartExpressions } from "../src/store_seed.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
-import type {
-  SeedBundle,
-  SeedContentEntry,
-  SeedEventEntry,
-} from "../worker/types.ts";
+import type { SeedBundle, SeedEventEntry } from "../worker/types.ts";
 
 /** seed バンドルの指紋を書くファイル */
 export const SEED_FINGERPRINT_PATH = "seeds/seed_bundle_fingerprint.json";
 
-/** 開発用システムアカウント鍵のシード (`src/system_account.ts` の `DEV_SYSTEM_KEY_SEED` と同じ値) */
-const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
-  "definy-compiler-system-key-2026\0",
-);
-
+/** 古い seed の時刻 (2019-01-31T04:36:01Z. 署名が不正なサンプルはここから 1 秒以内に置く) */
 const BASE_EPOCH_SECONDS = 1548909361;
 
-/** 署名が不正なサンプルの時刻 (seed のイベントは BASE_EPOCH_SECONDS から 1 秒以内に置く) */
+/** 署名が不正なサンプルの時刻 */
 const INVALID_SIGNATURE_SAMPLE_TIME_OFFSET = 0.5;
 
-function toBufferSource(bytes: Uint8Array): BufferSource {
-  return bytes as unknown as BufferSource;
+/** `seeds/store/` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
+async function seedPartExpressions(): Promise<ReadonlyMap<string, unknown>> {
+  return storeSeedPartExpressions(await readStoreSeed());
 }
 
-type ModuleSeedData = {
-  readonly module_name: string;
-  readonly module_description: LocalizedText;
-  readonly module_visibility?: Visibility;
-  readonly parts: ReadonlyArray<Record<string, unknown>>;
-};
-
-/** seed のイベントの時刻 (BASE_EPOCH_SECONDS からのずれ) と RFC 3339 の表記. プロジェクト名ごと */
-const PROJECT_TIMES: ReadonlyMap<
-  string,
-  { readonly timeOffset: number; readonly createdAtRfc3339: string }
-> = new Map([
-  [
-    "sample",
-    {
-      timeOffset: 0.03,
-      createdAtRfc3339: "2019-01-31T04:36:01.029999971+00:00",
-    },
-  ],
-  [
-    "definy",
-    {
-      timeOffset: 0.005,
-      createdAtRfc3339: "2019-01-31T04:36:01.005000114+00:00",
-    },
-  ],
-]);
-
-/** プロジェクトの seed のイベントの時刻. 表に無いプロジェクトは sample の後に 0.001 秒ずつ置く */
-function projectTime(project: ProjectSeedData): {
-  readonly timeOffset: number;
-  readonly createdAtRfc3339: string;
-} {
-  const known = PROJECT_TIMES.get(project.project_name);
-  if (known !== undefined) {
-    return known;
-  }
-  const index = loadProjectSeeds().findIndex(
-    (p) => p.project_name === project.project_name,
-  );
-  const timeOffset = 0.04 + index * 0.001;
-  return {
-    timeOffset,
-    createdAtRfc3339: new Date(
-      (BASE_EPOCH_SECONDS + timeOffset) * 1000,
-    ).toISOString(),
-  };
-}
-
-/** seed に署名するシステムアカウント. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` が無ければ開発用の鍵 */
-async function seedAccountCredentials(): Promise<AccountCredentials> {
-  const secretKeyEnv = process.env.DEFINY_SYSTEM_ACCOUNT_SECRET_KEY;
-  const secretKeyBase64 =
-    secretKeyEnv && secretKeyEnv.trim().length > 0
-      ? secretKeyEnv.trim()
-      : bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED);
-  return await importAccountCredentials(secretKeyBase64, "definy");
-}
-
-/** 各プロジェクトのモジュールの seed ファイルを読み込み, パーツ ID のプレースホルダーを解決する */
-async function loadSeedModules(): Promise<ReadonlyMap<string, ModuleSeedData>> {
-  // 1. 各モジュールシードファイルを読み込み、プレースホルダーを解決
-  const loadedModulesMap = new Map<string, ModuleSeedData>();
-  for (const name of loadProjectSeeds().flatMap((project) => project.modules)) {
-    const path = resolve(`seeds/${name}.json`);
-    const raw = await readFile(path, "utf-8");
-    const parsed = JSON.parse(raw) as ModuleSeedData;
-    const resolvedParts = await Promise.all(
-      parsed.parts.map(async (p) => {
-        const partCopy = { ...p };
-        delete partCopy.$schema;
-        // パーツの型は seed では型の式. 読み込んだあとは型チェッカーの形 (`core.type-ast`) にする
-        if (partCopy.part_type != null) {
-          partCopy.part_type = await resolveSeedPartType(partCopy.part_type);
-        }
-        if (partCopy.expression != null) {
-          partCopy.expression = await resolvePartPlaceholders(
-            partCopy.expression,
-          );
-        }
-        return partCopy;
-      }),
-    );
-    loadedModulesMap.set(name, {
-      module_name: parsed.module_name,
-      module_description: parsed.module_description,
-      ...(parsed.module_visibility === "private"
-        ? { module_visibility: "private" as const }
-        : {}),
-      parts: resolvedParts,
-    });
-  }
-  return loadedModulesMap;
-}
-
-/** seed の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
-async function seedPartExpressions(
-  modules: ReadonlyMap<string, ModuleSeedData>,
-): Promise<ReadonlyMap<string, unknown>> {
-  const partExpressions = new Map<string, unknown>();
-  for (const mod of modules.values()) {
-    const moduleId = deriveModuleIdBytes(mod.module_name);
-    for (const part of mod.parts) {
-      partExpressions.set(
-        deriveModulePartId(moduleId, String(part.name)),
-        part.expression ?? undefined,
-      );
-    }
-  }
-  return partExpressions;
-}
-
+/**
+ * seed バンドル: `seeds/store/` (ストアから書き出した署名済みのイベントとパーツの中身. docs/source-in-store.md) を
+ * そのまま入れ, 署名が不正なイベントのサンプルを足したもの
+ */
 export async function generateSeedBundle(): Promise<SeedBundle> {
-  const creds = await seedAccountCredentials();
-  const accountBytes = base64ToBytes(creds.accountId);
-  const privateKey = await importPrivateKeyFromSecretKey(creds.secretKeyBase64);
-  const loadedModules = await loadSeedModules();
-
-  // 2. CAS コンテンツ一覧の構築 (definy, core, std, sample, wasi, wasm, story の順に走査し重複排除)
-  const contentOrder: ReadonlyArray<string> = [
-    "definy",
-    "core",
-    "std",
-    "sample",
-    "wasi",
-    "wasm",
-    "story",
-  ];
-  const seenHashesSet = new Set<string>();
-  const contentsList: Array<SeedContentEntry> = [];
-  /** パーツの中身 (`core.part-content`) の content hash (キーはモジュール名, 値はパーツの順) */
-  const partContentHashes = new Map<string, ReadonlyArray<string>>();
-
-  for (const modName of contentOrder) {
-    const mod = loadedModules.get(modName);
-    if (!mod) continue;
-    partContentHashes.set(
-      modName,
-      mod.parts.map((part) => {
-        const item = partContentItem({
-          description: part.description as LocalizedText,
-          visibility:
-            part.visibility === "private" ? "private" : DEFAULT_VISIBILITY,
-          partType: part.part_type ?? null,
-          expression: part.expression ?? null,
-        });
-        if (!seenHashesSet.has(item.contentHash)) {
-          seenHashesSet.add(item.contentHash);
-          contentsList.push(item);
-        }
-        return item.contentHash;
-      }),
-    );
-  }
-
-  for (const item of invalidSignatureSampleContents()) {
-    if (!seenHashesSet.has(item.contentHash)) {
-      seenHashesSet.add(item.contentHash);
-      contentsList.push(item);
-    }
-  }
-
-  const contents: ReadonlyArray<SeedContentEntry> = contentsList;
-
-  // 3. イベント一覧の構築 (プロジェクトの新しい順, create_account, 署名が不正なサンプルの順)
-  const eventsList: Array<SeedEventEntry> = [];
-
-  const projects = [...loadProjectSeeds()].sort(
-    (a, b) => projectTime(b).timeOffset - projectTime(a).timeOffset,
-  );
-  for (const project of projects) {
-    const { timeOffset, createdAtRfc3339 } = projectTime(project);
-    const timeVal = BASE_EPOCH_SECONDS + timeOffset;
-    const modules = [];
-    for (const name of project.modules) {
-      const mod = loadedModules.get(name);
-      if (!mod) continue;
-      modules.push({
-        name: mod.module_name,
-        description: mod.module_description,
-        visibility: mod.module_visibility ?? DEFAULT_VISIBILITY,
-        // パーツの中身は CAS (contents) に入れ, コミットには名前と content hash だけを入れる
-        parts: mod.parts.map((part, index) => {
-          const contentHash = partContentHashes.get(name)?.[index];
-          if (contentHash === undefined) {
-            throw new Error(`no content hash for ${name}.${String(part.name)}`);
-          }
-          return {
-            name: String(part.name),
-            description: [],
-            partType: null,
-            expression: null,
-            contentHash,
-          };
-        }),
-      });
-    }
-    const inner = {
-      account_id: accountBytes,
-      time: { __tag: 1, value: timeVal },
-      content: encodeEventContent({
-        type: "project_commit",
-        commit: {
-          projectName: project.project_name,
-          branch: MAIN_BRANCH,
-          projectDescription: project.project_description,
-          parentCommitHash: null,
-          mergedCommitHash: null,
-          message: project.message,
-          modules,
-        },
-      }),
-    };
-    const innerBytes = encodeCborItem(inner);
-    const signature = new Uint8Array(
-      await crypto.subtle.sign(
-        { name: "Ed25519" },
-        privateKey,
-        toBufferSource(innerBytes),
-      ),
-    );
-    const signedBytes = encodeCborItem({
-      signature: Array.from(signature),
-      event_binary: { __tag: 24, value: Array.from(innerBytes) },
-    });
-    const eventHash = await sha256EventHashId(signedBytes);
-    eventsList.push({
-      eventHash,
-      signedEventBytes: bytesToBase64(signedBytes),
-      accountId: creds.accountId,
-      eventType: "project_commit",
-      createdAtRfc3339,
-      timeMs: Math.round(timeVal * 1000),
-    });
-  }
-
-  // create_account イベント (最後に追加)
-  const createAccountInner = {
-    account_id: accountBytes,
-    time: { __tag: 1, value: { __float64: BASE_EPOCH_SECONDS } },
-    content: encodeEventContent({
-      type: "create_account",
-      accountName: "definy",
-    }),
-  };
-  const createAccountInnerBytes = encodeCborItem(createAccountInner);
-  const createAccountSignature = new Uint8Array(
-    await crypto.subtle.sign(
-      { name: "Ed25519" },
-      privateKey,
-      toBufferSource(createAccountInnerBytes),
-    ),
-  );
-  const createAccountSignedBytes = encodeCborItem({
-    signature: Array.from(createAccountSignature),
-    event_binary: { __tag: 24, value: Array.from(createAccountInnerBytes) },
-  });
-  const createAccountEventHash = await sha256EventHashId(
-    createAccountSignedBytes,
-  );
-  eventsList.push({
-    eventHash: createAccountEventHash,
-    signedEventBytes: bytesToBase64(createAccountSignedBytes),
-    accountId: creds.accountId,
-    eventType: "create_account",
-    createdAtRfc3339: "2019-01-31T04:36:01+00:00",
-    timeMs: BASE_EPOCH_SECONDS * 1000,
-  });
+  const store = await readStoreSeed();
+  const events: Array<SeedEventEntry> = [...store.bundle.events];
+  const contents = [...store.bundle.contents];
+  const seen = new Set(contents.map((c) => c.contentHash));
 
   // 署名が不正なイベントのサンプル. ブラウザの署名チェックをどの環境でも確かめられるように入れる
   // (docs/invalid-signature-debug.md). ブラウザはこれらを一覧で「署名が不正」と表示し, モジュール・パーツ・
   // アカウント名の導出から外す. サーバーも署名を検証してからパーツを読む (worker/part_compiler.ts)
   const invalidSamples = await createSeedInvalidSignatureSamples({
-    systemAccountId: creds.accountId,
+    systemAccountId: bytesToUrlSafeBase64NoPad(await devSystemAccountBytes()),
     timeSeconds: BASE_EPOCH_SECONDS + INVALID_SIGNATURE_SAMPLE_TIME_OFFSET,
   });
   for (const sample of invalidSamples) {
     const bytes = base64ToBytes(sample.signedEventBytes);
     const meta = parseSignedEventMetadata(bytes);
-    eventsList.push({
+    events.push({
       eventHash: await sha256EventHashId(bytes),
       signedEventBytes: sample.signedEventBytes,
       accountId: meta.accountId,
@@ -349,8 +59,12 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
       timeMs: meta.timeMs,
     });
   }
-
-  const events: ReadonlyArray<SeedEventEntry> = eventsList;
+  for (const item of invalidSignatureSampleContents()) {
+    if (!seen.has(item.contentHash)) {
+      seen.add(item.contentHash);
+      contents.push(item);
+    }
+  }
 
   return {
     fingerprint: await seedBundleFingerprint({ events, contents }),
@@ -385,7 +99,7 @@ export const TYPE_CHECKER_WASM_PATH = "wasm/type_checker.wasm";
 
 /** seed の型チェッカーを stage1 でコンパイルする */
 export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
-  const partExpressions = await seedPartExpressions(await loadSeedModules());
+  const partExpressions = await seedPartExpressions();
   return compileTypeChecker({
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
@@ -464,7 +178,7 @@ async function compileSeedPart(
   moduleName: string,
   partName: string,
 ): Promise<Uint8Array> {
-  const partExpressions = await seedPartExpressions(await loadSeedModules());
+  const partExpressions = await seedPartExpressions();
   return compileSeedFunction({
     compiler: createStage1Compiler(
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),

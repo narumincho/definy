@@ -232,7 +232,7 @@ graph TD
 - パーツ間の参照は `{"$part": "core.expression"}` のように名前で書き, 読み込むときにシステムアカウントの
   モジュール ID からパーツ ID に置き換えます (`src/seed_parts.ts` の `resolvePartPlaceholders`)
 - `npm run build:seeds` が `public/__definy_seed_bundle.json` と指紋を作ります ([build-artifacts.md](build-artifacts.md))。
-  本番の内容を seed に書き戻すのは `npm run export:seeds` ([seed-export.md](seed-export.md))
+  seed の中身は `seeds/store/` (署名済みのイベント. [source-in-store.md](source-in-store.md))
 
 ## definy 製コンパイラのブートストラップ
 

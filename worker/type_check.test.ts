@@ -23,7 +23,7 @@ import { latestCommitHashOf } from "./commit_store.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
-import type { Visibility } from "../src/event_content.ts";
+import { MAIN_BRANCH, type Visibility } from "../src/event_content.ts";
 
 async function createSeededStore(): Promise<{
   readonly store: WorkerStore;
@@ -67,6 +67,7 @@ async function submitCommit(
   projectName: string = moduleName,
   moduleVisibility: Visibility = "public",
   otherModules: ReadonlyArray<CommitModuleParams> = [],
+  branch: string = MAIN_BRANCH,
 ): Promise<{ readonly status: number; readonly message: string }> {
   const accounts = await store.getEvents(
     { eventType: "create_account", limit: 500 },
@@ -88,9 +89,13 @@ async function submitCommit(
     moduleDescription: [],
     moduleVisibility,
     message: "test",
-    parentCommitHash: await latestCommitHashOf(projectName, store, env),
+    // 新しいブランチの最初のコミットは main の最新のコミットを親にする (docs/branch.md)
+    parentCommitHash:
+      (await latestCommitHashOf(projectName, store, env, branch)) ??
+      (await latestCommitHashOf(projectName, store, env)),
     parts,
     otherModules,
+    branch,
   });
   await store.uploadContent([...commit.contents.values()], env);
   return submitEvent(store, env, commit.signedEventBytes);
@@ -548,10 +553,8 @@ describe("SubmitEvent の型検査", () => {
 
   it("コンパイラ組み込みのパーツは定義の式で決まり, 名前やアカウントによらず受け付ける", async () => {
     const { store, env } = await createSeededStore();
-    const system = await importAccountCredentials(
-      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
-      "definy",
-    );
+    // definy プロジェクトの main の作成者ではないので, 新しいブランチにコミットする
+    const editor = await generateAccountCredentials("editor");
     const seedParts = async (moduleName: string) => {
       const seed = JSON.parse(
         await readFile(`seeds/${moduleName}.json`, "utf8"),
@@ -587,12 +590,13 @@ describe("SubmitEvent の型検査", () => {
       await submitCommit(
         store,
         env,
-        system,
+        editor,
         "core",
         parts,
         "definy",
         "public",
         [{ name: "wasm", description: [], parts: await seedParts("wasm") }],
+        "builtin-test",
       ),
     ).toEqual({
       status: 200,

@@ -86,7 +86,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 - 型: `story.slide` (`id`, `title: story.text`, `duration`, `steps`, `transition: story.transition`, `narration: list(option(story.narration-line))`), `story.narration-line` (`speech`, `subtitle: option(string)`, `face: story.face`, `en`, `eo`, `eo_speech: option(list(string))`), `story.text` (`ja` / `en` / `eo`)。definy のタグは `_` で書き (`wipe_right`), TypeScript では `-` にする
 - 読み方: [src/story/story_value.ts](../src/story/story_value.ts) が seed の式 (リテラルだけ) を `evaluateLiteral` (src/part_definition.ts) でその場で評価し, 形を確かめて TypeScript の値にする。評価器も Wasm も使わないので, ビルドにも Node のスクリプト (音声の生成) にもそのまま読める
 - 型の検査: 値が `story.slide` の型に合うことは definy の型チェッカーが seed の全パーツと一緒に確かめる (src/self_hosted_type_check.test.ts の「accepts every seed part」。タグを書き間違えるとここで落ちる)
-- 直し方: seeds/story.json を直接直すか, definy のエディタでプロジェクト `story` を直して `npm run export:seeds` で書き戻す ([seed-export.md](seed-export.md))。直したら `npm run build:seeds` で指紋を更新し, 台詞を変えたら音声を作り直す
+- 直し方: seeds/story.json を直して `npm run commit:seeds` でコミットにする ([system-account.md](system-account.md))。直したら `npm run build:seeds` で指紋を更新し, 台詞を変えたら音声を作り直す
 - セルフホストのスライド (「definy で definy を表現する」) は, 最後のステップで「このスライドも definy の値 story.slides」と出し, `story.slides` の中のこのスライドの式 (`id` と `transition` だけ) をエディタと同じ木の描画 (`ScaledExpressionTree`) で見せる。台詞でも「並びや台詞は definy の値で書いてある」と言う
   - 見出しの右の低い場所に入れるので, 木は広い幅 (`maxWidth: 1200`) で組んで項目を 1 行に並べ, 描いた木の実際の幅に合わせて縮める (`widthPx` を省く)。組んだときの幅の見積もりは実際より広い。大きさは transform の影響を受けない `offsetWidth` / `offsetHeight` で測る (このスライドは回転しながら現れるので, 外接する矩形で測ると大きすぎる)
   - ラベルが 2 行になると見出しの行が高くなり, 下の本文が吹き出しに潜る。1 行 (`white-space: nowrap`) に収まる文にする

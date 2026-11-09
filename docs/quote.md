@@ -44,7 +44,7 @@ ID だけにしてからは 552KB の Wasm を 1.6 秒でコンパイルでき, 
 
 式は `{"#quote": 中の式}` で, TypeScript 側は何も変換しない ([value-encoding.md](value-encoding.md))。
 seeds で `core.code` などのパーツ ID が要るときは, ほかのパーツ ID と同じく `{"$part": "core.code"}` と書く
-(`src/seed_parts.ts` が ID の文字列にし, `src/seed_export.ts` が戻す。以前の `$partId` は `$part` にまとめた)。
+(`src/seed_parts.ts` が ID の文字列にする。以前の `$partId` は `$part` にまとめた)。
 
 ## テスト
 

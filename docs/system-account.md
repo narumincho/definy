@@ -1,48 +1,52 @@
-# システムアカウントと seed の編集フロー
+# seed のアカウントと編集の流れ
 
-ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `wasm`, `sample`）は **システムアカウント** が所有します。
-`src/auth.ts` / `worker/store.ts` / `src/seed_parts.ts` にてシステムアカウント鍵シードを扱います。
+2026-11-09 から, ビルトインのプロジェクト (`definy`: `definy`, `core`, `std`, `wasi`, `wasm` / `sample` / `story`) の
+`main` の作成者はアカウント **opus5.5** (`-mTiIcLsq3lHIa0dsT8Z_mo47RLkGLPjRHTbFDotcJ8`. 元の名前は narumincho) です。
+seed はこのアカウントが署名したイベントそのもので, `seeds/store/` に置きます ([source-in-store.md](source-in-store.md))。
 
-## 鍵の設定
+以前は開発用の **システムアカウント** (`DEV_SYSTEM_KEY_SEED`. 秘密鍵がリポジトリにあり誰でも署名できる) で
+`npm run build:seeds` のたびに `seeds/*.json` から署名し直していました。今その鍵が使われるのは, 署名が不正なイベントの
+サンプル ([invalid-signature-debug.md](invalid-signature-debug.md)) のなりすまし先のアカウント ID だけです。
+環境変数 `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` と `npm run export:seeds` は無くしました。
 
-鍵はいずれも UI の秘密鍵・公開鍵と同じ形式（32 バイトの URL-safe base64、パディングなし）です。
-
-| 環境変数                           | 用途                                                                 | 必要な場所                                                   |
-| ---------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` | seed のイベントに署名する。`export:seeds` はここから公開鍵を導出する | シードバンドル生成時 (`npm run build:seeds`)・`export:seeds` |
-
-- 未設定の場合は、リポジトリに埋め込まれた **開発用の鍵**（`DEV_SYSTEM_KEY_SEED`、秘密鍵が公開されている）を使います。テストや CI（PR）はこの鍵で動きます。
-- サーバー (Worker) はシステムアカウントの鍵を知りません。コンパイラ組み込みのパーツかどうかはモジュールやアカウントではなく
-  パーツの定義 (式が `{"#builtin": ...}` か, 式の無い型パーツか. `isCompilerBuiltinPart`) で決まるので, 型検査に鍵は要りません
-  (以前は `DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY` でシステムアカウントのコミットだけに組み込みを許していた. 2026-10-29 に廃止)。
-
-鍵は UI の「アカウント作成」または `src/auth.ts` の `generateAccountCredentials` で作れる。秘密鍵は UI の「秘密鍵でログイン」に貼り付ければ、ブラウザからシステムアカウントとして操作できる。
+- サーバー (Worker) は seed のアカウントの鍵を知りません。コンパイラ組み込みのパーツかどうかはモジュールやアカウントではなく
+  パーツの定義 (式が `{"#builtin": ...}` か, 式の無い型パーツか. `isCompilerBuiltinPart`) で決まるので, 型検査に鍵は要りません。
+- 鍵は UI の「アカウント作成」または `src/auth.ts` の `generateAccountCredentials` で作れる。
 
 ## seed のパーツ参照は名前で書く
 
-seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列ではなく `{"$part": "core.expression"}`（`モジュール名.パーツ名`）で書きます。読み込み時に `derive_module_part_id(derive_module_id(module), part)` で ID を導出します。パーツ ID はモジュール名とパーツ名だけで決まるので、**seed はシステムアカウントの鍵に依存しません**。鍵を変えても seed を書き換える必要はありません。
+`seeds/*.json` の中のパーツ ID は, 32 バイトの配列ではなく `{"$part": "core.expression"}` (`モジュール名.パーツ名`) で書きます。
+読み込み時に `derive_module_part_id(derive_module_id(module), part)` で ID を導出します。パーツ ID はモジュール名とパーツ名だけで決まり,
+アカウントによりません。
 
-## 編集フロー
+## 編集の流れ (移行の途中)
 
-1. システムアカウントの秘密鍵で UI にログインし、ビルトインモジュールのパーツを編集してコミットする。
-2. 編集したサーバーから seed に書き戻す機能は `npm run export:seeds <baseUrl>` で実行可能です。詳細は [seed の書き戻し (`export:seeds`)](./seed-export.md) を参照してください。
-3. `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で指紋 `seeds/seed_bundle_fingerprint.json` を更新してコミットします。シードバンドル本体 (`public/__definy_seed_bundle.json`) はコミットせず、dev / build / test のたびに作ります ([build-artifacts.md](build-artifacts.md))。
+`seeds/*.json` を消すまでの間 ([source-in-store.md](source-in-store.md) の 4 段目) は, 今までどおり JSON を直してから
+コミットにします。
 
-## ブートストラップイベントと編集イベントの区別
+1. `seeds/*.json` を直す
+2. `npm run commit:seeds` (`scripts/commit_seeds.ts`): JSON と `seeds/store/heads.json` のコミットが違うプロジェクトを,
+   そのコミットを親にした新しいコミットにして署名し, `seeds/store/` に書く。鍵は `$DEFINY_HOME/account.json`
+   (無ければ `~/.definy/account.json`) で, main の作成者 (opus5.5) の鍵でないと断る。`--message` でコミットのメッセージ
+3. `npm run build:seeds` で指紋 `seeds/seed_bundle_fingerprint.json` を更新してコミットする
 
-seed から作るイベントは時刻 `2019-01-31T04:36:01Z`（リポジトリの最初のコミット）から 1 秒以内に置きます。
+JSON だけ直して 2 を忘れると `src/store_seed.test.ts` が落ちる。
 
-## D1 の seed の入れ替え（古い seed は残さない）
+## 古い seed の時刻
 
-`npm run build:seeds` は seed バンドルの指紋（全イベントのハッシュと全 CAS の内容の SHA-256, `src/seed_fingerprint.ts`）を
-`public/__definy_seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き、Worker はビルド時に後者を取り込みます。
-Worker は isolate ごとに 1 回、D1 に記録した指紋（`cas_contents` のキー `seed-bundle-fingerprint`）と比べ、
-違えば seed バンドルを読んで D1 を入れ替えます（definy の `definy.ensure-seeded`。[database.md](database.md)）。
+以前の seed のイベントは時刻 `2019-01-31T04:36:01Z` (リポジトリの最初のコミット) から 1 秒以内に置いていました。
+今もその範囲にあるのは署名が不正なサンプルだけで, 同期 (`definy.sync-is-seed-event`) はこの範囲のイベントを送らない。
+
+## D1 の seed の入れ替え
+
+`npm run build:seeds` は seed バンドルの指紋 (全イベントのハッシュと全 CAS の内容の SHA-256, `src/seed_fingerprint.ts`) を
+`public/__definy_seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き, Worker はビルド時に後者を取り込みます。
+Worker は isolate ごとに 1 回, D1 に記録した指紋 (`cas_contents` のキー `seed-bundle-fingerprint`) と比べ,
+違えば seed バンドルを読んで D1 を入れ替えます (definy の `definy.ensure-seeded`。[database.md](database.md))。
 一致していればコールドスタートでも seed バンドルは読みません。
 
-入れ替えでは、**システムアカウントのイベントのうち新しい seed に無いものをすべて削除します**。古い seed の上で
-システムアカウントとして行った UI の編集も消えます（時刻が新しい編集を残すと新しい seed のパーツを上書きしてしまい、
-古い seed との互換性を保つのが大変なため）。残したい編集は、seed を変える前に `npm run export:seeds` で
-`seeds/*.json` に書き戻してください。seed が変わらない間は、システムアカウントの編集も残ります。
-他のアカウントのイベントは削除しません。CAS は上書きするので、ハッシュでないキー（`stage1` や
-事前コンパイルの `stage1-output:*`）も新しい seed の内容になります。
+入れ替え (`definy.store-seed-statements`) では, **古い seed の時刻 (上) のイベントのうち新しい seed に無いものを削除** し,
+seed のイベントを `INSERT OR IGNORE` で入れます。それ以外のイベントは, seed のアカウントのものも残します
+(seed は本物のイベントなので, 公開サーバーに push したコミットや html-ui のコミットを消さないため)。
+2026-11-09 より前は「seed のアカウントのイベントのうち新しい seed に無いもの」を全て消していた。
+CAS は上書きするので, ハッシュでないキー (`stage1` や事前コンパイルの `stage1-output:*`) も新しい seed の内容になります。

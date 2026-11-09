@@ -7,14 +7,13 @@ import {
 } from "@playwright/test";
 import {
   createSignedAccountEvent,
+  createSignedProjectCommitEvent,
   generateAccountCredentials,
-  importAccountCredentials,
   type AccountCredentials,
   type SignedEventResult,
   type SignedProjectCommitResult,
 } from "../src/auth.ts";
-import { bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
-import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
+import { readStoreSeed } from "../src/store_seed.ts";
 import { serializeDrafts } from "../src/draft_commit_storage.ts";
 import type { Page } from "@playwright/test";
 import { createSignedSingleModuleCommitEvent } from "../src/test_commit.ts";
@@ -37,19 +36,72 @@ async function submitEvent(
   });
 }
 
+/** seed のプロジェクトのパーツを編集するアカウントと, その自分のブランチ */
+type Editor = {
+  readonly credentials: AccountCredentials;
+  readonly branch: string;
+};
+
+const editors = new WeakMap<Page, Editor>();
+
+/**
+ * seed のプロジェクト (definy, sample) を自分のブランチで編集できるアカウントを作る.
+ * main の作成者 (opus5.5) の鍵はリポジトリに無いので, 新しいアカウントで main と同じ中身の新しいブランチを作る
+ * (docs/branch.md. 新しいブランチの最初のコミットは main の最新のコミットを親にする)
+ */
+async function createEditor(request: APIRequestContext): Promise<Editor> {
+  const credentials = await generateAccountCredentials("e2e-editor");
+  const branch = `e2e-${credentials.accountId.slice(0, 8)}`;
+  const account = await submitEvent(
+    request,
+    await createSignedAccountEvent(credentials),
+  );
+  expect(account.ok(), await account.text()).toBe(true);
+  const seed = await readStoreSeed();
+  for (const project of seed.projects) {
+    if (!["definy", "sample"].includes(project.commit.projectName)) {
+      continue;
+    }
+    const commit = await createSignedProjectCommitEvent({
+      credentials,
+      projectName: project.commit.projectName,
+      branch,
+      projectDescription: project.commit.projectDescription,
+      message: "e2e",
+      parentCommitHash: project.commitHash,
+      modules: project.commit.modules,
+    });
+    // パーツの中身は seed でサーバーにあるので送らない
+    const response = await submitEvent(request, {
+      signedEventBytes: commit.signedEventBytes,
+      eventHash: commit.eventHash,
+    });
+    expect(response.ok(), await response.text()).toBe(true);
+  }
+  return { credentials, branch };
+}
+
 /**
  * seed のプロジェクトのパーツを編集するテスト用. 編集は自分のブランチに属する
- * ドラフトとして持つので (docs/branch.md「ドラフトコミット」), seed のブランチ (main) の
- * 作成者である開発用システムアカウントでログインした状態にする
+ * ドラフトとして持つので (docs/branch.md「ドラフトコミット」), {@link createEditor} のアカウントで
+ * ログインし, そのブランチを表示する. `sameAs` を渡すとそのページと同じアカウントにする
  */
-async function loginAsSystemAccount(page: Page): Promise<void> {
-  const credentials = await importAccountCredentials(
-    bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
-    "definy",
+async function loginAsEditor(page: Page, sameAs?: Page): Promise<Editor> {
+  const editor =
+    (sameAs === undefined ? undefined : editors.get(sameAs)) ??
+    (await createEditor(page.request));
+  editors.set(page, editor);
+  await page.addInitScript(
+    ([account, branch]) => {
+      localStorage.setItem("definy.account.v1", account!);
+      localStorage.setItem(
+        "definy.selected_branches.v2",
+        JSON.stringify({ definy: branch, sample: branch }),
+      );
+    },
+    [JSON.stringify(editor.credentials), editor.branch] as const,
   );
-  await page.addInitScript((account) => {
-    localStorage.setItem("definy.account.v1", JSON.stringify(account));
-  }, credentials);
+  return editor;
 }
 
 /**
@@ -1108,11 +1160,8 @@ test.describe("definy UI E2E", () => {
     page,
   }) => {
     // 変更は表示しているブランチのドラフトとして持つ (docs/branch.md「ドラフトコミット」).
-    // sample の main の作成者 (開発用システムアカウント) でログインし, そのドラフトを入れる
-    const credentials = await importAccountCredentials(
-      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
-      "definy",
-    );
+    // 自分のブランチを作ったアカウントでログインし, そのドラフトを入れる
+    const { credentials, branch } = await loginAsEditor(page);
     const part = {
       moduleDefinitionEventHash: "sample",
       description: [] as ReadonlyArray<never>,
@@ -1123,7 +1172,7 @@ test.describe("definy UI E2E", () => {
       {
         accountId: credentials.accountId,
         projectName: "sample",
-        branch: "main",
+        branch,
         baseCommitHash: "e2e-base",
         message: "",
         updatedAtMs: 1,
@@ -1330,7 +1379,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor asks the definy type checker for the expected type and renames function parameters", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/std.abs");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1373,7 +1422,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a function-typed parameter makes a call with all its argument names", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/core.list-map");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1399,7 +1448,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor shows the inferred type argument in an empty slot and fixes it with Enter", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/core.list-map");
     const valueTree = page.locator("#part-def-value-tree");
     await expect(valueTree).toBeVisible({ timeout: 15000 });
@@ -1433,7 +1482,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a part at a function-typed argument wraps it in a lambda", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/core.list-map");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1459,7 +1508,7 @@ test.describe("definy UI E2E", () => {
   test("selecting a part with a function-typed parameter fills it with a lambda", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/std.abs");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1509,7 +1558,7 @@ test.describe("definy UI E2E", () => {
   test("renaming a function parameter renames the arguments of the callers in other parts", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/std.url-path");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1549,7 +1598,7 @@ test.describe("definy UI E2E", () => {
   test("adds and deletes function parameters, keeping the part type and the callers in sync", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     const option = (name: string) =>
       page
         .locator(".dropdown-option", {
@@ -1616,7 +1665,7 @@ test.describe("definy UI E2E", () => {
   test("hovering an expression shows its type and the documentation of the part", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/std.abs?lang=ja");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1674,7 +1723,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor edits match patterns with the tags of the target type", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.is-even-sample");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1732,7 +1781,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor renames let variables and goes to the definition of a variable", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.triangle-area");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1780,7 +1829,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor shows and edits line breaks in text literals (#800)", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.greet");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1830,7 +1879,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor adds, moves, and deletes list items", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.prime-numbers");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1870,7 +1919,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor creates variants of type parts", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.match-option-sample");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1905,7 +1954,7 @@ test.describe("definy UI E2E", () => {
   test("expression tree editor adds, moves, and deletes let bindings", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.triangle-area");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")
@@ -1948,7 +1997,7 @@ test.describe("definy UI E2E", () => {
     page,
     browser,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page
       .context()
       .grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -2006,7 +2055,7 @@ test.describe("definy UI E2E", () => {
     });
     try {
       const other = await otherContext.newPage();
-      await loginAsSystemAccount(other);
+      await loginAsEditor(other, page);
       await other.goto(page.url());
       const otherTree = other
         .locator("#part-definition-value-tree, .part-definition-tree")
@@ -2034,7 +2083,7 @@ test.describe("definy UI E2E", () => {
   test("part detail undoes and redoes edits with buttons and shortcuts", async ({
     page,
   }) => {
-    await loginAsSystemAccount(page);
+    await loginAsEditor(page);
     await page.goto("/part/sample.prime-numbers");
     const valueTree = page
       .locator("#part-definition-value-tree, .part-definition-tree")

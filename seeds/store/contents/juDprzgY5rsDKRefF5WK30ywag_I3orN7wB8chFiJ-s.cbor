@@ -1,0 +1,426 @@
+�e#call�hfunction�o#part_reference�xpart_definition_event_hashx+EfSI42pS9I-j565952QsV2vAH3nxB4Yttfbd0eA0fFwiarguments��dnamekdescriptionevalue�e#list��g#record��ckeyhlanguageevalue�g#stringben�ckeydtextevalue�g#stringyZThe ES module (worker.js) of a Cloudflare Worker that runs a definy server (definy.service-io) from app.wasm: evaluate() returns {fetch, scheduled}, and it does what the steps ask with the D1 binding DB, WebCrypto and fetch. A mirror has no seed bundle; definy.ensure-seeded only creates the tables (definy.deploy-service-worker, docs/html-ui.md)�g#record��ckeyhlanguageevalue�g#stringbja�ckeydtextevalue�g#stringy]app.wasm の definy のサーバー (definy.service-io) を動かす Cloudflare Worker の ES Module (worker.js)。evaluate() は {fetch, scheduled} を返し, 要求を D1 の binding DB, WebCrypto, fetch で行う。写しは seed バンドルを持たず, definy.ensure-seeded は表を作るだけ (definy.deploy-service-worker, docs/html-ui.md)�dnamejvisibilityevalue�h#variant�ctagfpublicgpayload�e#none�itype_part�e#none��dnameipart_typeevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�l#type_string�ckeyjexpressionitype_part�e#none��dnamejexpressionevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�g#stringy>import wasmModule from "./app.wasm";
+
+// definy のサーバーの処理 (definy.service-io) を Cloudflare Workers で動かす土台 (docs/html-ui.md)。
+// app.wasm の evaluate() は { fetch: Fn(request: @definy.http-request) -> @definy.service-io,
+// scheduled: Fn(time_ms: Number) -> @definy.service-io } を返す。何をするかは definy が決め,
+// ここは要求 (ストアの SQL, 署名の検証, HTTP など) を行って結果を then に渡すだけ。
+// ストアは D1 の binding DB。worker/service_io.ts と同じ能力のうち, 写しのサーバーに要るものを渡す
+const TAG_NUMBER = 0;
+const TAG_BOOLEAN = 1;
+const TAG_STRING = 2;
+const TAG_LIST = 3;
+const TAG_RECORD = 4;
+const TAG_CLOSURE = 5;
+const TAG_VARIANT = 6;
+const TAG_FLOAT = 7;
+const MAX_STEPS = 100000;
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+function writeString(exports, value) {
+  const maxBytes = value.length * 3;
+  if (exports.memory.buffer.byteLength < maxBytes) {
+    exports.memory.grow(Math.ceil((maxBytes - exports.memory.buffer.byteLength) / 65536));
+  }
+  const { written } = encoder.encodeInto(value, new Uint8Array(exports.memory.buffer, 0, maxBytes));
+  return exports.string_from_memory(written);
+}
+
+function readString(exports, ref) {
+  const length = exports.string_to_memory(ref);
+  return decoder.decode(new Uint8Array(exports.memory.buffer, 0, length));
+}
+
+function valuesOf(exports, ref) {
+  const array = exports.values_of(ref);
+  if (array === null) return [];
+  const length = exports.values_length(array);
+  const items = [];
+  for (let i = 0; i < length; i++) items.push(exports.values_get(array, i));
+  return items;
+}
+
+function writeValues(exports, items) {
+  const array = exports.values_new(items.length);
+  items.forEach((item, i) => exports.values_set(array, i, item));
+  return array;
+}
+
+// 値は docs/value-encoding.md の JSON の形: タグ付きの値は { "#tag": payload }
+function readValue(exports, ref) {
+  if (ref === null) return null;
+  switch (exports.value_tag(ref)) {
+    case TAG_NUMBER:
+      return Number(exports.number_value(ref));
+    case TAG_BOOLEAN:
+      return exports.bool_value(ref) !== 0;
+    case TAG_FLOAT:
+      return exports.float_value(ref);
+    case TAG_STRING:
+      return readString(exports, ref);
+    case TAG_LIST:
+      return valuesOf(exports, ref).map((item) => readValue(exports, item));
+    case TAG_RECORD: {
+      const items = valuesOf(exports, ref);
+      const obj = {};
+      for (let i = 0; i + 1 < items.length; i += 2) {
+        obj[readString(exports, items[i])] = readValue(exports, items[i + 1]);
+      }
+      return obj;
+    }
+    case TAG_VARIANT:
+      return { ["#" + readString(exports, exports.variant_tag(ref))]: readValue(exports, exports.variant_payload(ref)) };
+  }
+  return null;
+}
+
+function writeValue(exports, value) {
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? exports.box_number(BigInt(value)) : exports.float_new(value);
+  }
+  if (typeof value === "boolean") return exports.box_bool(value ? 1 : 0);
+  if (typeof value === "string") return writeString(exports, value);
+  if (Array.isArray(value)) {
+    return exports.list_new(writeValues(exports, value.map((item) => writeValue(exports, item))));
+  }
+  const keys = Object.keys(value);
+  if (keys.length === 1 && keys[0].startsWith("#")) {
+    const payload = value[keys[0]];
+    return exports.variant_new(
+      writeString(exports, keys[0].slice(1)),
+      payload === null ? null : writeValue(exports, payload),
+    );
+  }
+  return exports.record_new(
+    writeValues(exports, keys.flatMap((key) => [writeString(exports, key), writeValue(exports, value[key])])),
+  );
+}
+
+function field(exports, record, key) {
+  const items = valuesOf(exports, record);
+  for (let i = 0; i + 1 < items.length; i += 2) {
+    if (readString(exports, items[i]) === key) return items[i + 1];
+  }
+  throw new Error("the record has no field " + key);
+}
+
+function callClosure(exports, closure, args) {
+  const fn = exports.table.get(exports.closure_index(closure));
+  return fn(exports.values_of(closure), writeValues(exports, args));
+}
+
+const bytesOf = (value) => Uint8Array.from(Array.isArray(value) ? value : []);
+
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function sqlParam(value) {
+  if ("#integer" in value) return value["#integer"];
+  if ("#text" in value) return value["#text"];
+  return null;
+}
+
+function sqlRow(row) {
+  return Object.entries(row).map(([name, value]) => ({
+    name,
+    value:
+      value === null || value === undefined
+        ? { "#null": null }
+        : typeof value === "number" && Number.isSafeInteger(value)
+          ? { "#integer": value }
+          : { "#text": String(value) },
+  }));
+}
+
+function jsonToDefiny(value) {
+  if (value === null || value === undefined) return { "#null": null };
+  if (typeof value === "boolean") return { "#boolean": value };
+  if (typeof value === "number") return { "#number": value };
+  if (typeof value === "string") return { "#string": value };
+  if (Array.isArray(value)) return { "#array": value.map(jsonToDefiny) };
+  return { "#object": Object.entries(value).map(([key, item]) => ({ key, value: jsonToDefiny(item) })) };
+}
+
+function definyToJson(value) {
+  const [tag, payload] = Object.entries(value)[0];
+  switch (tag) {
+    case "#null":
+      return null;
+    case "#array":
+      return payload.map(definyToJson);
+    case "#object":
+      return Object.fromEntries(payload.map((item) => [item.key, definyToJson(item.value)]));
+    default:
+      return payload;
+  }
+}
+
+async function sha256Base64Url(bytes) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return bytesToBase64(digest).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function verifyEd25519(publicKey, signature, message) {
+  try {
+    const key = await crypto.subtle.importKey("raw", publicKey, { name: "Ed25519" }, false, ["verify"]);
+    return await crypto.subtle.verify({ name: "Ed25519" }, key, signature, message);
+  } catch {
+    return false;
+  }
+}
+
+async function runSql(db, statements) {
+  const prepared = statements.map((statement) => db.prepare(statement.sql).bind(...statement.params.map(sqlParam)));
+  if (prepared.length === 0) return [];
+  if (prepared.length === 1) return [(await prepared[0].all()).results];
+  return (await db.batch(prepared)).map((result) => result.results);
+}
+
+// 読んだもの (commit, 定義の式, 解決した中身) を覚える. この isolate のメモリと, D1 の表 host_cache に置く.
+// ブラウザからのリクエストはたいてい新しい isolate で動くので, メモリだけでは毎回読み直すことになる (docs/html-ui.md).
+// 中身はイベントハッシュ・中身のハッシュで決まるが, 読んだ形は definy のコードで変わるので, デプロイのときに表を消す
+// (definy.deploy-service-script)
+const caches = { commits: new Map(), definitions: new Map(), resolutions: new Map() };
+let seeded = false;
+let cacheTableReady = false;
+
+async function ensureCacheTable(db) {
+  if (cacheTableReady) return;
+  await db
+    .prepare("CREATE TABLE IF NOT EXISTS host_cache (kind TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (kind, key))")
+    .run();
+  cacheTableReady = true;
+}
+
+async function readCached(db, kind, keys) {
+  const cache = caches[kind];
+  const missing = [...new Set(keys.filter((key) => !cache.has(key)))];
+  if (missing.length > 0 && db !== undefined) {
+    await ensureCacheTable(db);
+    for (let i = 0; i < missing.length; i += 90) {
+      const chunk = missing.slice(i, i + 90);
+      const { results } = await db
+        .prepare("SELECT key, value FROM host_cache WHERE kind = ? AND key IN (" + chunk.map(() => "?").join(", ") + ")")
+        .bind(kind, ...chunk)
+        .all();
+      for (const row of results) cache.set(row.key, JSON.parse(row.value));
+    }
+  }
+  return keys.filter((key) => cache.has(key)).map((key) => cache.get(key));
+}
+
+async function writeCached(db, kind, entries, keyOf) {
+  const cache = caches[kind];
+  for (const entry of entries) cache.set(keyOf(entry), entry);
+  if (entries.length === 0 || db === undefined) return;
+  await ensureCacheTable(db);
+  const statements = entries.map((entry) =>
+    db.prepare("INSERT OR REPLACE INTO host_cache (kind, key, value) VALUES (?, ?, ?)").bind(kind, keyOf(entry), JSON.stringify(entry)),
+  );
+  for (let i = 0; i < statements.length; i += 50) await db.batch(statements.slice(i, i + 50));
+}
+
+async function runServiceIo(exports, start, env, request) {
+  let pointer = start;
+  let bodyText;
+  const readBody = () => (bodyText ??= request === undefined ? Promise.resolve("") : request.text());
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const tag = readString(exports, exports.variant_tag(pointer));
+    const payload = exports.variant_payload(pointer);
+    if (tag === "respond") return readValue(exports, payload);
+    if (tag === "serve_asset") return { status: 404, headers: [], body: { "#text": "not found" } };
+    const read = (key) => readValue(exports, field(exports, payload, key));
+    let result;
+    switch (tag) {
+      case "sql":
+        result = (await runSql(env.DB, read("statements"))).map((rows) => rows.map(sqlRow));
+        break;
+      case "verify_ed25519":
+        result = await verifyEd25519(bytesOf(read("public_key")), bytesOf(read("signature")), bytesOf(read("message")));
+        break;
+      case "read_time":
+        result = Date.now();
+        break;
+      case "hash_contents":
+        result = await Promise.all(
+          read("contents_bytes").map(async (base64) => {
+            try {
+              return { "#some": await sha256Base64Url(base64ToBytes(base64)) };
+            } catch {
+              return { "#none": null };
+            }
+          }),
+        );
+        break;
+      case "read_request_text":
+        result = await readBody();
+        break;
+      case "read_request_json": {
+        const text = await readBody();
+        if (text.trim() === "") {
+          result = { "#json": jsonToDefiny({}) };
+        } else {
+          try {
+            const json = JSON.parse(text);
+            result =
+              json !== null && typeof json === "object" && !Array.isArray(json)
+                ? { "#json": jsonToDefiny(json) }
+                : { "#invalid": "request body must be an object" };
+          } catch {
+            result = { "#invalid": "request body must be JSON" };
+          }
+        }
+        break;
+      }
+      case "read_admin_account_ids":
+        result = "";
+        break;
+      case "read_host_settings":
+        result = { run_expressions: false };
+        break;
+      case "read_mcp_account":
+        result = { "#none": null };
+        break;
+      case "sign_mcp_account":
+        result = { "#none": null };
+        break;
+      case "read_perf_records":
+        result = { status: 404, body: JSON.stringify({ code: "not_found", message: "the perf endpoint is not enabled" }) };
+        break;
+      // 写しは seed バンドルを持たず, 表だけ作って (definy.ensure-seeded) イベントは全て取り込む
+      case "read_seed_status":
+        result = { seeded, expected_fingerprint: "" };
+        break;
+      case "read_seed_bundle":
+        result = { "#none": null };
+        break;
+      case "mark_seeded":
+        seeded = true;
+        result = true;
+        break;
+      case "read_cached_commits":
+        result = await readCached(env.DB, "commits", read("event_hashes"));
+        break;
+      case "write_cached_commits":
+        await writeCached(env.DB, "commits", read("entries"), (entry) => entry.event_hash);
+        result = true;
+        break;
+      case "read_cached_definitions":
+        result = await readCached(env.DB, "definitions", read("content_hashes"));
+        break;
+      case "write_cached_definitions":
+        await writeCached(env.DB, "definitions", read("entries"), (entry) => entry.content_hash);
+        result = true;
+        break;
+      case "read_cached_resolutions":
+        result = await readCached(env.DB, "resolutions", read("content_hashes"));
+        break;
+      case "write_cached_resolutions":
+        await writeCached(env.DB, "resolutions", read("entries"), (entry) => entry.content_hash);
+        result = true;
+        break;
+      case "http_fetch": {
+        const fetchRequest = read("request");
+        const body = fetchRequest.body_base64["#some"];
+        try {
+          const response = await fetch(fetchRequest.url, {
+            method: fetchRequest.method,
+            headers: fetchRequest.headers.map((header) => [header.name, header.value]),
+            body: body === undefined ? undefined : base64ToBytes(body),
+            redirect: "manual",
+          });
+          const headers = [];
+          response.headers.forEach((value, name) => headers.push({ name, value }));
+          result = {
+            "#response": {
+              status: response.status,
+              headers,
+              body_base64: bytesToBase64(new Uint8Array(await response.arrayBuffer())),
+            },
+          };
+        } catch (error) {
+          result = { "#failed": String(error) };
+        }
+        break;
+      }
+      default:
+        throw new Error("not a definy.service-io value (tag: " + tag + ")");
+    }
+    pointer = callClosure(exports, field(exports, payload, "then"), [writeValue(exports, result)]);
+  }
+  throw new Error("definy.service-io did not end in " + MAX_STEPS + " steps");
+}
+
+let entry;
+function entryPoints() {
+  if (entry === undefined) {
+    const exports = new WebAssembly.Instance(wasmModule, {}).exports;
+    const root = exports.evaluate();
+    entry = { exports, fetch: field(exports, root, "fetch"), scheduled: field(exports, root, "scheduled") };
+  }
+  return entry;
+}
+
+function toResponse(response) {
+  const headers = new Headers();
+  for (const header of response.headers) headers.append(header.name, header.value);
+  const [tag, payload] = Object.entries(response.body)[0];
+  const body =
+    tag === "#text"
+      ? payload
+      : tag === "#json"
+        ? JSON.stringify(definyToJson(payload))
+        : tag === "#base64"
+          ? base64ToBytes(payload)
+          : null;
+  return new Response(body, { status: response.status, headers });
+}
+
+export default {
+  async fetch(request, env) {
+    try {
+      const { exports, fetch: handler } = entryPoints();
+      const url = new URL(request.url);
+      const headers = [];
+      request.headers.forEach((value, name) => headers.push({ name, value }));
+      const start = callClosure(exports, handler, [
+        writeValue(exports, {
+          method: request.method,
+          path: url.pathname,
+          query: url.search.slice(1),
+          headers,
+          storage: env.DB ? "cloudflare-d1" : "none",
+          has_assets: false,
+        }),
+      ]);
+      return toResponse(await runServiceIo(exports, start, env, request));
+    } catch (error) {
+      return new Response(JSON.stringify({ code: "internal", message: String(error) }), {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
+  },
+  async scheduled(controller, env, ctx) {
+    const { exports, scheduled } = entryPoints();
+    const run = async () => {
+      const response = await runServiceIo(exports, callClosure(exports, scheduled, [writeValue(exports, Date.now())]), env, undefined);
+      console.log(response.status, response.body["#text"] ?? "");
+    };
+    ctx.waitUntil(run());
+  },
+};
+ckeyjexpressionitype_part�e#none�

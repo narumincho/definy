@@ -104,7 +104,7 @@ definy には GitHub のフォークは無く, ブランチだけで編集を分
 
 ## seed の書き戻し
 
-`export:seeds` はシステムアカウントの `main` のコミットだけを書き出す (`src/seed_export.ts`)。
+`npm run export:store` は指定したアカウントの `main` のコミット (と祖先) だけを書き出す (`src/store_export.ts`)。
 他のアカウントのブランチは seed に入らない。
 
 ## 今後
