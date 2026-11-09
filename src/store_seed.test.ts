@@ -3,15 +3,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
-import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./base64.ts";
+import { base64ToBytes } from "./base64.ts";
 import { decodeVerifiedSignedEvent } from "./signed_event.ts";
 import { compileSeedFunction } from "./event_check.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
-import {
-  devSystemAccountBytes,
-  loadSeedPartExpressions,
-} from "./seed_parts.ts";
-import { loadProjectSeeds } from "./seed_projects.ts";
+import { loadSeedPartExpressions } from "./seed_parts.ts";
 import { createStage1Compiler } from "./stage1_compiler.ts";
 import { exportStoreSeed } from "./store_export.ts";
 import {
@@ -25,7 +21,7 @@ import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 import type { Env } from "../worker/types.ts";
 
 describe("seeds/store", () => {
-  it("seed で初期化したサーバーから書き出して読み直すと, seeds/*.json と同じパーツと同じイベントになり, 同じ service の wasm ができる", async () => {
+  it("seeds/store の seed で始めたサーバーから書き出すと同じ heads とイベントになり, パーツは seeds/*.json と同じで, 同じ service の wasm ができる", async () => {
     const seedBundle = await loadTestSeedBundle();
     const store = new WorkerStore();
     const env: Env = {
@@ -47,8 +43,14 @@ describe("seeds/store", () => {
         env,
         store,
       );
-    const accountId = bytesToUrlSafeBase64NoPad(await devSystemAccountBytes());
-    const projects = loadProjectSeeds().map((p) => p.project_name);
+    const repoSeed = await readStoreSeed();
+    const projects = Object.keys(repoSeed.heads.projects);
+    const accountId = repoSeed.bundle.events.find(
+      (e) => e.eventHash === repoSeed.heads.projects[projects[0] ?? ""],
+    )?.accountId;
+    if (accountId === undefined) {
+      throw new Error("no head commit");
+    }
     const dir = await mkdtemp(join(tmpdir(), "definy-store-seed-"));
     try {
       await writeStoreSeed(
@@ -61,7 +63,7 @@ describe("seeds/store", () => {
         }),
       );
       const seed = await readStoreSeed(dir);
-      expect(Object.keys(seed.heads.projects)).toEqual(projects);
+      expect(seed.heads).toEqual(repoSeed.heads);
 
       // イベントは seed のうち署名の正しいもの (プロジェクトのコミットとアカウントの作成)
       const expectedEvents: Array<string> = [];
@@ -88,7 +90,11 @@ describe("seeds/store", () => {
         ([id, expression]) =>
           !isDeepStrictEqual(actual.get(id), expression ?? undefined),
       );
-      expect(different.map(([id]) => id)).toEqual([]);
+      // 違うときは seeds/*.json を直したあと `npm run commit:seeds` をしていない (docs/source-in-store.md)
+      expect(
+        different.map(([id]) => id),
+        "seeds/*.json と seeds/store が違う. npm run commit:seeds を実行する",
+      ).toEqual([]);
 
       const compile = async (parts: ReadonlyMap<string, unknown>) =>
         compileSeedFunction({

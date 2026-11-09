@@ -25,8 +25,7 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 - option は `{"#none": null}` / `{"#some": x}`。
 - パーツ ID は URL-safe Base64 (パディング無し) の文字列。バイト列 (`Uint8Array`) は値の中に出てこない。
 - seeds の JSON だけは、パーツ ID の文字列の代わりに `{"$part": "module.part-name"}` と書ける。
-  読み込みのとき `src/seed_parts.ts` がシステムアカウントから ID の文字列を導出して置き換え、
-  書き出し (`npm run export:seeds`) のとき `src/seed_export.ts` が ID の文字列を `{"$part": ...}` に戻す。
+  読み込みのとき `src/seed_parts.ts` がモジュール名とパーツ名から ID の文字列を導出して置き換える。
 
 ## 式 (`core.expression`)
 

@@ -296,7 +296,7 @@ it("D1 seeding does not re-run when env.DB is a new wrapper per request or on st
   expect(seedBundleFetchCount).toBe(0);
 });
 
-it("D1 replaces the old seed when the seed bundle changes, keeping other accounts' events", async () => {
+it("D1 replaces the old seed when the seed bundle changes, keeping the events after the old seed's time", async () => {
   const d1 = createSqliteD1Database();
   const seedEvent = (eventHash: string, timeMs: number) => ({
     eventHash,
@@ -339,15 +339,16 @@ it("D1 replaces the old seed when the seed bundle changes, keeping other account
         accountId,
         "module_commit",
         "2026-10-21T00:00:00Z",
-        2000,
+        1_761_004_800_000,
       );
   await d1.batch([
     insertEvent("system_edit_on_old_seed", "acc_system"),
     insertEvent("other_account_edit", "acc_other"),
   ]);
 
-  // 新しい seed でビルドした isolate が起動すると, 古い seed とその上のシステムアカウントの編集は消え,
-  // 新しい seed が入る. 他のアカウントのイベントは残る
+  // 新しい seed でビルドした isolate が起動すると, 古い seed の時刻 (2019-01-31T04:36:01Z からの 1 秒) の
+  // イベントのうち新しい seed に無いものは消え, 新しい seed が入る. それ以外のイベントは, seed のアカウントのものも残る
+  // (docs/source-in-store.md)
   const env: Env = {
     DB: d1,
     ASSETS: {
@@ -373,7 +374,11 @@ it("D1 replaces the old seed when the seed bundle changes, keeping other account
     readonly events: ReadonlyArray<{ readonly eventHash: string }>;
   };
   expect(JSON.stringify(eventsJson.events.map((e) => e.eventHash).sort())).toBe(
-    JSON.stringify(["new_seed_core", "other_account_edit"]),
+    JSON.stringify([
+      "new_seed_core",
+      "other_account_edit",
+      "system_edit_on_old_seed",
+    ]),
   );
 
   // ハッシュでないキー (stage1) の内容も新しい seed のものになる

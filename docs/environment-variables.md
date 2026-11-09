@@ -16,11 +16,10 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 
 ## Node スクリプト (`process.env`)
 
-| 環境変数                           | 用途                                                                                                                                                 |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` | `npm run build:seeds` が seed に署名する鍵。`export:seeds` はここから公開鍵を導出する。未設定なら開発用の鍵 ([system-account.md](system-account.md)) |
-| `PLAYWRIGHT_BASE_URL`              | E2E テストの接続先。未設定なら dev サーバーを立てて `http://localhost:5173` に繋ぐ                                                                   |
-| `CI`                               | Playwright の CI 向けの設定に切り替える                                                                                                              |
+| 環境変数              | 用途                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `PLAYWRIGHT_BASE_URL` | E2E テストの接続先。未設定なら dev サーバーを立てて `http://localhost:5173` に繋ぐ |
+| `CI`                  | Playwright の CI 向けの設定に切り替える                                            |
 
 ## GitHub Actions
 

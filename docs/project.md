@@ -44,13 +44,13 @@
 ## seed
 
 - ビルトインのプロジェクトは `seeds/projects/*.json` (`project_name`, `project_description`, `message`, `modules`)。
-  各モジュールの正本は今までどおり `seeds/<モジュール名>.json` (コミットのメッセージはプロジェクトのほうに移した)。
+  モジュールは `seeds/<モジュール名>.json` (移行の途中. 正本は `seeds/store/` のコミット)。
 - 今のビルトインのプロジェクト:
   - `definy`: `definy`, `core`, `std`, `wasi`, `wasm`
   - `sample`: `sample`
-- `npm run build:seeds` はプロジェクトごとに 1 つのコミット (システムアカウントの `main`) を作る (`scripts/generate_seed_bundle.ts`, `src/seed_projects.ts`)。
-- `npm run export:seeds` はビルトインのプロジェクトのシステムアカウントの `main` の最新のコミットを, プロジェクトの seed と
-  各モジュールの seed に書き戻す ([seed-export.md](seed-export.md))。
+  - `story`: `story`
+- `npm run build:seeds` は `seeds/store/` (opus5.5 が署名した `main` のコミット) をそのまま seed にする。
+  `seeds/*.json` を直したら `npm run commit:seeds` でコミットにする ([system-account.md](system-account.md), [source-in-store.md](source-in-store.md))。
 
 ## UI
 

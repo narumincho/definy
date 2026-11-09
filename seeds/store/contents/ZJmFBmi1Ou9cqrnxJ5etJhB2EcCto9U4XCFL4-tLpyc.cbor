@@ -1,0 +1,273 @@
+�e#call�hfunction�o#part_reference�xpart_definition_event_hashx+EfSI42pS9I-j565952QsV2vAH3nxB4Yttfbd0eA0fFwiarguments��dnamekdescriptionevalue�e#list��g#record��ckeyhlanguageevalue�g#stringben�ckeydtextevalue�g#stringx�The ES module (worker.js) uploaded with app.wasm. It runs the Wasm GC module with V8 through its exported runtime functions: when evaluate() returns a function, it passes the HTTP request and turns the returned { status, headers, body } into the response�g#record��ckeyhlanguageevalue�g#stringbja�ckeydtextevalue�g#stringyAapp.wasm と一緒にアップロードする ES Module (worker.js). Wasm GC のモジュールを V8 で動かし, エクスポートしたランタイム関数で値を作って読む。evaluate() が関数を返したら HTTP リクエストを渡して, 返った { status, headers, body } をレスポンスにする�dnamejvisibilityevalue�h#variant�ctagfpublicgpayload�e#none�itype_part�e#none��dnameipart_typeevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�l#type_string�ckeyjexpressionitype_part�e#none��dnamejexpressionevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�g#stringy${import wasmModule from "./app.wasm";
+
+// app.wasm は definy のコンパイラ (core.compile-to-wasm) が出す Wasm GC のモジュール。
+// 値は GC のヒープにあるので, エクスポートしたランタイム関数で作って読む
+const TAG_NUMBER = 0;
+const TAG_BOOLEAN = 1;
+const TAG_STRING = 2;
+const TAG_LIST = 3;
+const TAG_RECORD = 4;
+const TAG_CLOSURE = 5;
+const TAG_VARIANT = 6;
+const TAG_FLOAT = 7;
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+function writeString(exports, value) {
+  const maxBytes = value.length * 3;
+  if (exports.memory.buffer.byteLength < maxBytes) {
+    exports.memory.grow(Math.ceil((maxBytes - exports.memory.buffer.byteLength) / 65536));
+  }
+  const { written } = encoder.encodeInto(value, new Uint8Array(exports.memory.buffer, 0, maxBytes));
+  return exports.string_from_memory(written);
+}
+
+function readString(exports, ref) {
+  const length = exports.string_to_memory(ref);
+  return decoder.decode(new Uint8Array(exports.memory.buffer, 0, length));
+}
+
+function valuesOf(exports, ref) {
+  const array = exports.values_of(ref);
+  if (array === null) return [];
+  const length = exports.values_length(array);
+  const items = [];
+  for (let i = 0; i < length; i++) items.push(exports.values_get(array, i));
+  return items;
+}
+
+function writeValues(exports, items) {
+  const array = exports.values_new(items.length);
+  items.forEach((item, i) => exports.values_set(array, i, item));
+  return array;
+}
+
+function writeRecord(exports, entries) {
+  return exports.record_new(
+    writeValues(exports, entries.flatMap(([key, value]) => [writeString(exports, key), value]))
+  );
+}
+
+function recordField(exports, ref, key) {
+  if (ref === null || exports.value_tag(ref) !== TAG_RECORD) return null;
+  const items = valuesOf(exports, ref);
+  for (let i = 0; i + 1 < items.length; i += 2) {
+    if (readString(exports, items[i]) === key) return items[i + 1];
+  }
+  return null;
+}
+
+function readDefinyValue(exports, ref) {
+  if (ref === null) return null;
+  switch (exports.value_tag(ref)) {
+    case TAG_NUMBER:
+      return Number(exports.number_value(ref));
+    case TAG_BOOLEAN:
+      return exports.bool_value(ref) !== 0;
+    case TAG_FLOAT:
+      return exports.float_value(ref);
+    case TAG_STRING:
+      return readString(exports, ref);
+    case TAG_LIST:
+      return valuesOf(exports, ref).map((item) => readDefinyValue(exports, item));
+    case TAG_RECORD: {
+      const items = valuesOf(exports, ref);
+      const obj = {};
+      for (let i = 0; i + 1 < items.length; i += 2) {
+        obj[readString(exports, items[i])] = readDefinyValue(exports, items[i + 1]);
+      }
+      return obj;
+    }
+    case TAG_CLOSURE:
+      return { __closure: true };
+    case TAG_VARIANT: {
+      const payload = exports.variant_payload(ref);
+      return {
+        tag: readString(exports, exports.variant_tag(ref)),
+        payload: payload === null ? null : readDefinyValue(exports, payload),
+      };
+    }
+  }
+  return null;
+}
+
+function callClosure(exports, closure, args) {
+  const fn = exports.table.get(exports.closure_index(closure));
+  return fn(exports.values_of(closure), writeValues(exports, args));
+}
+
+function writeHttpRequest(exports, request, bodyBytes) {
+  const headers = [];
+  request.headers.forEach((value, name) => {
+    headers.push(
+      writeRecord(exports, [
+        ["name", writeString(exports, name)],
+        ["value", writeString(exports, value)],
+      ])
+    );
+  });
+  const bytes = writeValues(
+    exports,
+    Array.from(bodyBytes, (byte) => exports.box_number(BigInt(byte)))
+  );
+  return writeRecord(exports, [
+    ["method", writeString(exports, request.method)],
+    ["url", writeString(exports, request.url)],
+    ["headers", exports.list_new(writeValues(exports, headers))],
+    [
+      "body",
+      writeRecord(exports, [
+        ["initialState", exports.box_number(0n)],
+        ["bytes", exports.list_new(bytes)],
+        ["text", writeString(exports, decoder.decode(bodyBytes))],
+      ]),
+    ],
+  ]);
+}
+
+function createPullByteReadableStream(exports, body) {
+  const next = recordField(exports, body, "next");
+  let state = recordField(exports, body, "initialState");
+  let steps = 0;
+  return new ReadableStream({
+    pull(controller) {
+      while (state !== null && steps < 10000) {
+        steps++;
+        const step = callClosure(exports, next, [state]);
+        if (step === null || exports.value_tag(step) !== TAG_VARIANT) break;
+        const payload = exports.variant_payload(step);
+        if (readString(exports, exports.variant_tag(step)) !== "yield" || payload === null) break;
+        state = recordField(exports, payload, "nextState");
+        const chunk = readDefinyValue(exports, recordField(exports, payload, "chunk"));
+        if (Array.isArray(chunk) && chunk.length > 0) {
+          controller.enqueue(new Uint8Array(chunk.map((n) => Number(n) & 0xff)));
+          return;
+        }
+      }
+      state = null;
+      controller.close();
+    },
+  });
+}
+
+// definy.worker-step: #respond(レスポンス) か #fetch({request, then}). fetch なら HTTP リクエストを送り,
+// 応答 { status, text } で then を呼んで続ける (definy.deploy-fetch-worker)。100 回で打ち切る
+async function runWorkerSteps(exports, result) {
+  for (let i = 0; i < 100; i++) {
+    if (result === null || exports.value_tag(result) !== TAG_VARIANT) return result;
+    const tag = readString(exports, exports.variant_tag(result));
+    const payload = exports.variant_payload(result);
+    if (tag === "respond") return payload;
+    if (tag !== "fetch" || payload === null) return result;
+    const request = readDefinyValue(exports, recordField(exports, payload, "request")) ?? {};
+    const method = typeof request.method === "string" ? request.method : "GET";
+    let status = 0;
+    let text = "";
+    try {
+      const response = await fetch(request.url, {
+        method,
+        headers: Array.isArray(request.headers) ? request.headers.map((h) => [h.name, h.value]) : [],
+        body: method === "GET" || method === "HEAD" ? undefined : request.body,
+      });
+      status = response.status;
+      text = await response.text();
+    } catch (e) {
+      text = String(e);
+    }
+    result = callClosure(exports, recordField(exports, payload, "then"), [
+      writeRecord(exports, [
+        ["status", exports.box_number(BigInt(status))],
+        ["text", writeString(exports, text)],
+      ]),
+    ]);
+  }
+  return null;
+}
+
+async function evaluateWasmRequest(request) {
+  const instance = await WebAssembly.instantiate(wasmModule, {});
+  const exports = instance.exports;
+  let result = exports.evaluate();
+  if (result !== null && exports.value_tag(result) === TAG_CLOSURE) {
+    const bodyBytes =
+      request.body && request.method !== "GET" && request.method !== "HEAD"
+        ? new Uint8Array(await request.clone().arrayBuffer())
+        : new Uint8Array(0);
+    result = callClosure(exports, result, [writeHttpRequest(exports, request, bodyBytes)]);
+    result = await runWorkerSteps(exports, result);
+  }
+
+  const status = recordField(exports, result, "status");
+  const body = recordField(exports, result, "body");
+  if (status !== null && exports.value_tag(status) === TAG_NUMBER && body !== null) {
+    const headers = new Headers({ "access-control-allow-origin": "*" });
+    const headerList = readDefinyValue(exports, recordField(exports, result, "headers"));
+    if (Array.isArray(headerList)) {
+      for (const h of headerList) {
+        if (h && typeof h.name === "string" && typeof h.value === "string") {
+          headers.set(h.name, h.value);
+        }
+      }
+    }
+    const bodyPayload =
+      exports.value_tag(body) === TAG_STRING
+        ? readString(exports, body)
+        : recordField(exports, body, "next") !== null
+        ? createPullByteReadableStream(exports, body)
+        : "";
+    return {
+      evalResult: null,
+      httpResponse: new Response(bodyPayload, {
+        status: Number(exports.number_value(status)),
+        headers,
+      }),
+    };
+  }
+
+  return { evalResult: readDefinyValue(exports, result), httpResponse: null };
+}
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    try {
+      const { evalResult, httpResponse } = await evaluateWasmRequest(request);
+      if (httpResponse) {
+        return httpResponse;
+      }
+      if (url.pathname === "/healthz") {
+        return new Response(JSON.stringify({ status: "ok", runtime: "cloudflare-workers", has_wasm: true }), {
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          service: "definy-cloudflare-workers",
+          message: "Hello from Definy on Cloudflare Workers!",
+          evaluatedResult: evalResult,
+          pathname: url.pathname,
+          has_wasm: true,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: String(e) }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
+  },
+};
+ckeyjexpressionitype_part�e#none�

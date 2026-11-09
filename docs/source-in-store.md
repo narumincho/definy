@@ -68,10 +68,10 @@ Git でいう「サブモジュールのコミットを固定する」のに近�
 1. この計画 (docs) — PR #905
 2. 読み書きの道具: `seeds/store/` の形式, ストアから書き出す `npm run export:store`, そこから seed バンドルとパーツを読む
    `src/store_seed.ts`。この段では `seeds/*.json` から作った seed とバイト単位で同じパーツになることをテストで確かめる — 済 (下の「書き出しと読み込み」)
-3. 移行: seeds の JSON の内容を narumincho の鍵で手元のストアにコミットし (アカウント作成 + プロジェクトごとに 1 コミット),
-   `seeds/store/` に書き出す。ビルドとテストの読み込みを `seeds/store/` に切り替え, システムアカウントの seed と
-   `definy.sync-is-seed-event` を消す
-4. 片付け: `seeds/*.json`, `seeds/schemas/`, `export:seeds`, `generate_seed_schema.ts`, 開発用のシステムアカウントの鍵を消す。
+3. 移行 — 済 (下の「移行 (3 段目)」): seeds の JSON の内容をアカウント opus5.5 (元 narumincho) の鍵でコミットして `seeds/store/` に置き,
+   ビルド (`npm run build:seeds`) を `seeds/store/` から読むように切り替えた。seed の入れ替えの削除の規則を直し, `export:seeds` を消した。
+   移行の途中の編集は `seeds/*.json` を直して `npm run commit:seeds`
+4. 片付け: `seeds/*.json`, `seeds/schemas/`, `commit:seeds`, `generate_seed_schema.ts`, 開発用のシステムアカウントの鍵を消す。
    `generate_value_decoders.ts` と `regenerate_stage1.ts` はストアのパーツを読み, 生成したパーツを手元のサーバーにコミットする形にする。
    CLAUDE.md の「正本は seeds/\*.json」を書き換える
 5. 公開サーバーへの反映: デプロイで seed の入れ替えが起き, システムアカウントの古いイベントが消えて narumincho のコミットが入る
@@ -106,3 +106,25 @@ npm run export:store <baseUrl> -- --account=<ID> --projects=definy,sample --out=
   `wasm/service.wasm` とバイト単位で同じ。CAS の中身を `decodePartDefinition` で読んで `partContentItem` で書き直すと
   1071 個全て同じハッシュになる
 - 公開サーバーから html-ui (narumincho) を書き出すと 10 イベント (コミット 9 とアカウント作成) と中身 88 個で, 1 秒ほど
+
+## 移行 (3 段目, 2026-11-09)
+
+- 持ち主: アカウント `-mTiIcLsq3lHIa0dsT8Z_mo47RLkGLPjRHTbFDotcJ8`。2026-11-07 に narumincho の名前で公開サーバーに作り (html-ui の作者),
+  2026-11-08 にユーザーの指示で opus5.5 に名前を変えた (`create_account` の出し直し. [event.md](event.md))。
+  `seeds/store/` には, 公開サーバーにある元の `create_account` と, 名前を変える `create_account` と, プロジェクト
+  `definy` / `sample` / `story` の最初のコミット (親なし, `seeds/*.json` の中身) が入っている
+- ビルド: `scripts/generate_seed_bundle.ts` は `readStoreSeed` のイベントと中身に, 署名が不正なサンプル
+  ([invalid-signature-debug.md](invalid-signature-debug.md)) を足したものを seed バンドルにする。サーバーの wasm は
+  `heads.json` のコミットのパーツ (`storeSeedPartExpressions`) からコンパイルする
+- seed の入れ替え (`definy.store-seed-statements`): 消すのは古い seed の時刻 (2019-01-31T04:36:01Z からの 1 秒) の
+  イベントのうちバンドルに無いものだけにした。以前の「seed のアカウントのイベントのうちバンドルに無いもの」のままだと,
+  公開サーバーの opus5.5 の html-ui のコミットがデプロイで消える ([system-account.md](system-account.md))
+- 同期: seed のイベントは今の時刻の本物のイベントなので, `definy_pull` / `definy_push` でもそのまま送れる。
+  `definy.sync-is-seed-event` (古い seed の時刻のイベントを送らない) は署名が不正なサンプルのために残した
+- `src/store_seed.test.ts`: `seeds/store/` の seed で始めたサーバーから `export:store` すると同じ `heads.json` とイベントになり,
+  パーツの式が `seeds/*.json` と全て同じ (違えば `npm run commit:seeds` を忘れている) で, service の wasm が同じになる
+- テストで seed のプロジェクトを編集するもの: 開発用のシステムアカウントは main の作成者でなくなったので,
+  新しいアカウントで新しいブランチを作って編集する (worker/type_check.test.ts の組み込みのパーツのテスト,
+  e2e/ui.test.ts の `createEditor` / `loginAsEditor`。main と同じ中身のコミットを `branch` を変えて出す。中身はサーバーにあるので送らない)
+- 鍵: `/mnt/project-files/html-ui/account-narumincho.json` (Claude のプロジェクトのファイル)。`npm run commit:seeds` は
+  `$DEFINY_HOME/account.json` を読むので, その `accountName` を opus5.5 にしたコピーを置く
