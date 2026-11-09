@@ -60,6 +60,7 @@ TypeScript を無くしていく。
    - MCP のツール `definy_pull` / `definy_push` (definy 製. [local-server.md](local-server.md)) — 済。CLI のコマンドはまだ
 4. **正本を `seeds/*.json` から definy のストアに移す**: core や definy の変更も手元のサーバーの `commit_parts` で入れ,
    公開サーバーに push する。ビルドとブートストラップはストアから読む
+   - 計画は [source-in-store.md](source-in-store.md) (2026-11-08)
 5. **最小限の UI**: 手元のサーバーと公開サーバーが definy の関数で HTML を返す。React と Vite をやめる
    - 2026-11-07 方針を決め直した: React の UI は今のまま GitHub で管理して残し, HTML だけのシンプル版を並べて置く。
      シンプル版の正本は definy のストアの `html-ui` プロジェクトで, バージョン管理も definy のブランチとコミットだけでする
