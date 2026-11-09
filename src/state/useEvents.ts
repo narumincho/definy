@@ -481,13 +481,14 @@ export function useEvents(): EventsState {
     [events],
   );
 
-  // Derive account names from CreateAccount events
+  // アカウント名は create_account から. 出し直すと名前が変わるので, 一番新しいものを使う
+  // (validEvents は新しい順. docs/event.md)
   const accountNames = useMemo<ReadonlyMap<string, string>>(() => {
     const map = new Map<string, string>();
     for (const ev of validEvents) {
       if (ev.eventType === "create_account") {
         const decoded = extractCreateAccount(ev.signedEventBytes);
-        if (decoded) {
+        if (decoded && !map.has(decoded.accountId)) {
           map.set(decoded.accountId, decoded.accountName);
         }
       }

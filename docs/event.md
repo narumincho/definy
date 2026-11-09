@@ -13,6 +13,8 @@ SignedEvent = { signature: bytes(64), event_binary: tag24(内側のイベント�
 
 - 封筒は CBOR のまま。署名・公開鍵のバイト列と時刻のタグは definy の値 ([value-encoding.md](value-encoding.md)) に無いため。
 - イベントハッシュは `SignedEvent` の CBOR の SHA-256 (URL-safe Base64)。
+- アカウント名を変えるには, 同じアカウントで `create_account` をもう一度出す。名前は一番新しい `create_account` のもの
+  (2026-11-08 から。以前は 2 回目を `account_already_created` で断っていた。`core.event-rejection` のこのタグは今は使わない)
 
 ## 中身 (`core.event-content`)
 
@@ -136,7 +138,6 @@ core.event-check-state = {
 
 | イベント         | 規則                                                                                                     | 理由 (`core.event-rejection`)                                                       |
 | :--------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| `create_account` | 同じアカウントで 2 回作れない                                                                            | `account_already_created`                                                           |
 | `create_account` | 名前は空にできない                                                                                       | `empty_account_name`                                                                |
 | `project_commit` | 先にアカウントを作る                                                                                     | `account_not_created`                                                               |
 | `project_commit` | プロジェクト名は空にできない                                                                             | `empty_project_name`                                                                |

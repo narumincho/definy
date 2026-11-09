@@ -586,11 +586,9 @@ describe("handleRpcInDefiny", () => {
         submitHost({}, createdAccounts([alice])),
       ),
     ).toEqual({
-      status: 400,
-      body: {
-        code: "invalid_argument",
-        message: "the account has already been created",
-      },
+      // create_account を出し直すとアカウント名が変わる (docs/event.md)
+      status: 200,
+      body: { eventHash: "e1", status: "accepted", missingContentHashes: [] },
     });
     const rejected = (message: string) => ({
       status: 400,
@@ -969,7 +967,7 @@ describe("handleRpcInDefiny", () => {
     });
   });
 
-  it("SubmitEvent はアカウントを作ったかを create_account のイベントを 500 件ずつ読んで求める", async () => {
+  it("SubmitEvent はアカウントを作ったかを create_account のイベントを 500 件ずつ読んで求める (出し直しは名前の変更)", async () => {
     const reads: Array<string> = [];
     const submitCreateAccount = async (accountIds: ReadonlyArray<string>) =>
       handleRpcInDefiny(
@@ -989,17 +987,14 @@ describe("handleRpcInDefiny", () => {
       );
     const others = Array.from({ length: 500 }, (_, i) => `bob-${i}`);
     expect(await submitCreateAccount([...others, alice])).toEqual({
-      status: 400,
-      body: {
-        code: "invalid_argument",
-        message: "the account has already been created",
-      },
+      status: 200,
+      body: { eventHash: "e5", status: "accepted", missingContentHashes: [] },
     });
     const pages = [
       "sql SELECT events create_account,500,0",
       "sql SELECT events create_account,500,500",
     ];
-    expect(reads).toEqual(pages);
+    expect(reads.slice(0, 2)).toEqual(pages);
 
     reads.length = 0;
     expect(await submitCreateAccount(others)).toEqual({

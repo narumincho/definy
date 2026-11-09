@@ -87,13 +87,13 @@ const tags = (
   );
 
 describe("core.check-event", () => {
-  it("アカウントは 1 度だけ, 空でない名前で作れる", () => {
+  it("アカウントは空でない名前で作れ, 出し直すと名前が変わる", () => {
     const create: EventContent = {
       type: "create_account",
       accountName: "alice",
     };
     expect(tags(create, { ...fresh, accountCreated: false })).toEqual([]);
-    expect(tags(create, fresh)).toEqual(["account_already_created"]);
+    expect(tags(create, fresh)).toEqual([]);
     expect(
       tags(
         { type: "create_account", accountName: "" },
