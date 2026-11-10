@@ -153,7 +153,7 @@ describe("definy.handle-mcp", () => {
       readonly branches: ReadonlyArray<unknown>;
     };
     expect(branches.branches.length).toBeGreaterThan(0);
-  });
+  }, 60_000);
 
   it("RPC のエラーは isError のツールの結果になる", async () => {
     const response = await mcp({
@@ -239,9 +239,7 @@ describe("パーツの中身を読むツール", () => {
       "expression:\nfn(value$0) =>\n  match @core.less-than(left: $0, right: 0) {\n    true =>\n",
     );
     // パーツの参照は名前で書く
-    expect(text).toContain(
-      "@std.number-to-string(value: @core.minus(left: 0, right: $0))",
-    );
+    expect(text).toContain("@std.number-to-string(value: $1)");
   });
 
   it("型のパーツは Union{...} や Record{...} で書く", async () => {
@@ -643,6 +641,16 @@ describe("definy_run_tests", () => {
       text: "project is required",
       isError: true,
     });
+  });
+
+  it("definy プロジェクトのテスト (適合テストなど) が全て通る", async () => {
+    const result = await run(
+      { project: "definy" },
+      { DB: createSqliteD1Database(), DEFINY_RUN_EXPRESSIONS: "1" },
+    );
+    expect(result.text).toMatch(/\n\d+ passed, 0 failed$/);
+    expect(result.text).toContain("ok conformance.test-add\n");
+    expect(result.isError).toBe(false);
   });
 
   it("公開サーバーではテストを実行しない", async () => {

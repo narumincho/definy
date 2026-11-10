@@ -39,7 +39,8 @@ Elm と同じく実行時エラーは無い方針。2026-10-28 に確かめた�
 
 エラーではないが結果が間違っているもの:
 
-- 2^53 を超える整数は, 値を JSON / CBOR から TypeScript の `number` で読むので変わる ([src/definy_value.ts](../src/definy_value.ts))
+- 2^53 を超える整数は, 値を JSON / CBOR から TypeScript の `number` で読むので変わる ([src/definy_value.ts](../src/definy_value.ts))。
+  2026-11-10: パーツの式に `9223372036854775807` と書いてコミットすると, 読み直した式では値が変わる (`definy_run_expression` で直接書けば正しい)
 - 文字列を UTF-8 の文字の途中で切った結果は未定義 ([eval-conformance.md](eval-conformance.md))
 
 直し方の案:
