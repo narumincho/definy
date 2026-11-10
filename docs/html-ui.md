@@ -143,6 +143,50 @@ definy.worker-step =
 最初はブラウザで署名する形 (鍵を localStorage に置き, 公開サーバーが作った署名前のイベントに署名する) を作ったが,
 署名するバイト列をサーバーが決めるので, サーバーが偽れば別の中身に署名させられる。手元のサーバーだけで署名する形にした。
 
+### 編集の操作を足した (2026-11-10)
+
+React の UI を消せるように, 手元のサーバーの html-ui (`editable: true`) に次の操作を足した。どれも MCP のツールを呼ぶだけ。
+
+| 画面                           | 操作                                                                           | ツール                                                              |
+| :----------------------------- | :----------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| `/` (プロジェクト一覧)         | プロジェクトを作る, 公開サーバーから取り込む (pull) / 送る (push)              | `definy_create_project`, `definy_pull`, `definy_push`               |
+| `/p/<プロジェクト>/<ブランチ>` | このブランチからブランチを作る, 式を実行, テストを実行 (`prefix` で絞る)       | `definy_create_branch`, `definy_run_expression`, `definy_run_tests` |
+| パーツのページ                 | パーツを消す (確かめてから)                                                    | `definy_commit_parts` (`delete: true`)                              |
+| `/edit/...`                    | 名前の欄を変えると名前の変更 (新しい名前で足し, 古い名前を消す 1 つのコミット) | `definy_commit_parts`                                               |
+
+- `POST /api/<ツール名>` (`html-ui.handle-api`) は `html-ui.api-tool` が許すツールだけを, 本文の JSON を引数にして呼ぶ。`/api/commit` は `definy_commit_parts`
+- フォームは `html-ui.tool-form(tool, then, confirm, fields, button)` で作る。小さな JS (`html-ui.tool-script`) が名前の付いた入力を引数にして送り,
+  成功したら `then` のページ (`{名前}` を引数の値に置き換える) を開くか, 結果を表示する。`data-json` の付いた入力は JSON として読む
+- 名前を変えても, 古い名前を参照する他のパーツは書き換えない (型検査の誤りとして表示される)。説明も引き継がないので書き直す
+- 残り: ブランチを main に取り込む (MCP のツールがまだ無い), コミットの履歴と差分
+
+### 新しいストアに html-ui を pull できない (2026-11-10)
+
+公開サーバーの html-ui の `main` の古いコミットは, 今の seed の型検査を通らない (`definy.handle-request` などの型が変わった)。
+`definy_pull` はイベントを古い順に型検査して入れるので, 最初のコミットで落ち, その後のコミットも「親が最新でない」で全て断られる。
+クラウドのコンテナでは, 公開サーバーの `GetEvents` / `GetContent` で読んだ html-ui のイベントと中身を手元の SQLite (`store.sqlite` の
+`events` と `cas_contents`) に直接入れて使った (definy-html の写しと同じく, 相手が受け付けたものを信じる)。
+手元のサーバーの `definy_pull` も写しと同じく署名と中身だけ確かめる形にするのが筋だが, まだしていない。
+
+### 公開サーバーへの push が 1102 になった (2026-11-10)
+
+#913 (適合テストのパーツ 130 個) のあと, 公開サーバーへの `SubmitEvent` が CPU の上限 (約 2 秒) を超えて 1102 になった。
+手元の Node.js で同じ提出を測ると約 0.72 秒 (本番は約 3 倍遅い)。内訳はホストの `writeLiteral` (`src/stage1_compiler.ts`,
+JavaScript の値を Wasm GC の値にする) が, 全ての main のパーツの解決結果 (1261 個, JSON で 5.5MB) で 258 ミリ秒, コミット 27 個で 68 ミリ秒だった。
+
+- 全ての節点を `writtenCache` (WeakMap) に入れていたのをやめ, 根から深さ 2 まで (型の宣言の一覧やキャッシュのエントリなど, 同じオブジェクトを何度も渡すもの) にした
+- レコードのキーとバリアントのタグの文字列は種類が限られるので, 全ての書き込みで使い回す (`nameStrings`)
+- `Object.entries(...).flatMap` と `variantOf` をやめ, `Object.keys` と添字のループで書く
+
+上限を超える要求が続くと, その後しばらくは軽いページ (静的なアセットを返すだけ) も CPU 10 ミリ秒で止められて 1102 になる
+(GraphQL の `workersInvocationsAdaptive` で `exceededResources` の `cpuTime` が 10 ミリ秒)。
+
+これで解決結果は 85 ミリ秒, コミットは 25 ミリ秒, 提出全体は 0.55 秒になった。残りは解決結果の JSON の読み込み (約 50 ミリ秒) と
+definy の型検査 (約 260 ミリ秒)。パーツが増えればまた上限に近づくので, 型環境をコミットが参照するパーツの閉包だけにするのが次の手。
+
+測り方: `worker/service_io.ts` の `runServiceIoLoop` の要求ごとに `performance.now()` と `process.memoryUsage()` を出し,
+手元のストアの写しに同じ署名済みイベントを `SubmitEvent` で送る (D1 のキャッシュが温かい状態)。`node --cpu-prof` の自己時間でも確かめた。
+
 ## 速さ (2026-11-07, クラウドのコンテナの Node.js, コンパイルした Wasm)
 
 | ページ                            | CPU の時間       | 公開サーバーへの通信 |
