@@ -115,8 +115,21 @@ function readString(exports: WasmExports, value: ValueRef): string {
 }
 
 /**
+ * レコードのキーとバリアントのタグ (`#` を除く) の文字列の値. 種類が限られるので, 全ての書き込みで使い回す
+ * (タグは `#` 付きのキーで引く)
+ */
+const nameStrings = new Map<string, ValueRef>();
+
+/**
+ * `writtenCache` に覚えるオブジェクトの深さ (根を 0 とする). 同じオブジェクトを何度も渡すのは
+ * 根 (型の宣言の一覧など) やその要素 (ホストのキャッシュのエントリなど) なので, 深いところは覚えない.
+ * 全ての節点を WeakMap に入れると, 大きな値 (パーツ 1000 個以上の解決結果など) の書き込みが遅くなる
+ */
+const CACHE_DEPTH = 2;
+
+/**
  * definy の値 (docs/value-encoding.md の JSON の形) を Wasm の値にする.
- * 同じ文字列は 1 つの値を共有し, オブジェクトの値は作った参照を覚えておく (値は書き換えられない)
+ * 同じ文字列は 1 つの値を共有し, 浅いところのオブジェクトの値は作った参照を覚えておく (値は書き換えられない)
  */
 function writeLiteral(exports: WasmExports, node: unknown): ValueRef {
   const strings = new Map<string, ValueRef>();
@@ -129,14 +142,16 @@ function writeLiteral(exports: WasmExports, node: unknown): ValueRef {
     strings.set(value, ref);
     return ref;
   };
-  const values = (items: ReadonlyArray<ValueRef | null>): ValuesRef => {
-    const array = exports.values_new(items.length);
-    items.forEach((item, i) => {
-      exports.values_set(array, i, item);
-    });
-    return array;
+  const name = (key: string, value: string): ValueRef => {
+    const written = nameStrings.get(key);
+    if (written !== undefined) {
+      return written;
+    }
+    const ref = writeString(exports, value);
+    nameStrings.set(key, ref);
+    return ref;
   };
-  const write = (n: unknown): ValueRef => {
+  const write = (n: unknown, depth: number): ValueRef => {
     if (typeof n === "number") {
       // 整数でない数 (NaN と ±Infinity を含む) は浮動小数 (タグ 7) にする
       return Number.isInteger(n)
@@ -152,34 +167,54 @@ function writeLiteral(exports: WasmExports, node: unknown): ValueRef {
     if (!n || typeof n !== "object") {
       throw new Error(`Invalid definy value for layout: ${JSON.stringify(n)}`);
     }
-    const cached = writtenCache.get(n);
-    if (cached !== undefined) {
-      return cached;
+    const cache = depth <= CACHE_DEPTH;
+    if (cache) {
+      const cached = writtenCache.get(n);
+      if (cached !== undefined) {
+        return cached;
+      }
     }
     let ref: ValueRef;
     if (Array.isArray(n)) {
-      ref = exports.list_new(values(n.map(write)));
+      const array = exports.values_new(n.length);
+      for (let i = 0; i < n.length; i++) {
+        exports.values_set(array, i, write(n[i], depth + 1));
+      }
+      ref = exports.list_new(array);
     } else {
-      const tagged = variantOf(n);
-      if (tagged !== undefined) {
+      const keys = Object.keys(n);
+      const first = keys[0];
+      if (
+        keys.length === 1 &&
+        first !== undefined &&
+        first.startsWith("#") &&
+        !(n instanceof Uint8Array)
+      ) {
+        const payload = (n as Record<string, unknown>)[first];
         ref = exports.variant_new(
-          string(tagged.tag),
-          tagged.payload === null ? null : write(tagged.payload),
+          name(first, first.slice(1)),
+          payload === null ? null : write(payload, depth + 1),
         );
       } else {
-        ref = exports.record_new(
-          values(
-            Object.entries(n as Record<string, unknown>).flatMap(
-              ([key, value]) => [string(key), write(value)],
-            ),
-          ),
-        );
+        const array = exports.values_new(keys.length * 2);
+        for (let i = 0; i < keys.length; i++) {
+          const key = keys[i]!;
+          exports.values_set(array, i * 2, name(key, key));
+          exports.values_set(
+            array,
+            i * 2 + 1,
+            write((n as Record<string, unknown>)[key], depth + 1),
+          );
+        }
+        ref = exports.record_new(array);
       }
     }
-    writtenCache.set(n, ref);
+    if (cache) {
+      writtenCache.set(n, ref);
+    }
     return ref;
   };
-  return write(node);
+  return write(node, 0);
 }
 
 function valuesOf(exports: WasmExports, value: ValueRef): Array<ValueRef> {
