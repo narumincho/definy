@@ -16,8 +16,9 @@ definy の式評価について, 実装間の適合性をテストで確かめ�
   `worker/mcp_endpoint.test.ts` の「definy プロジェクトのテスト」が CI でも動かし, 1 つでも落ちれば失敗します
 - stage1 では `src/stage1_conformance.test.ts` が各パーツをコンパイルして実行し, `true` になるかを確かめます
 - 足すときは手元のサーバーの `definy_commit_parts` で `conformance.test-...` を足します (型検査を通るものだけ置ける)
-- 2^53 を超える整数のリテラルは, 今はコミットして読み直すと値が変わります ([language-open-questions.md](language-open-questions.md))。
-  `int64` の最小値は `@core.shift-left(left: 1, right: 63)`, 最大値は `@core.minus(left: @core.shift-left(left: 1, right: 63), right: 1)` のように計算で作ります。
+- 2^53 を超える整数のリテラル (浮動小数の仮数も) は, 今はコミットして読み直すと値が変わり, TypeScript で読んで書き直したコミット (E2E の `createEditor`) の中身のハッシュもずれます (`missing_content` になる)。
+  仮数は 2^53 以下にし (`float-square-root` の期待値は `float-divide(6369051672525773, 2^52)`), それを超える整数は計算で作ります ([language-open-questions.md](language-open-questions.md))。
+  `int64` の最小値は `@core.shift-left(left: 1, right: 63)`, 最大値は `@core.minus(left: @core.shift-left(left: 1, right: 63), right: 1)`
   移すときに見つけた `std.number-to-string` の最小値での無限再帰 (符号を反転しても負のまま) は直した (`std.test-number-to-string`)
 
 2026-11-10 に `conformance/eval_cases.json` (142 件) の式を作業用のスクリプトでテキストにして入れた。
