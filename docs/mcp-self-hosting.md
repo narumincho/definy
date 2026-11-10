@@ -72,15 +72,20 @@ TypeScript を無くしていく。
 ## 2026-11-10 時点の残りと順番
 
 1〜4 段目は済み, 5 段目 (HTML の UI) は途中で React の UI と並存, 6 段目は手つかず。
-方向性の質問をユーザーに出していて (回答待ち), 答えが来るまでは Claude のおすすめを仮に採って進める。仮に採ったもの:
+2026-11-10 にユーザーが方向性の質問に答えた (Claude はこれに沿って, 迷うものだけ聞いて進める):
 
-- 次の重点は **検証を definy で書けるようにする** (TypeScript を消した後の確かめ方を先に作る)。
-  `definy_run_expression` の型検査と `definy_run_tests` を足した ([local-server.md](local-server.md))。
-  次は適合テスト (`conformance/eval_cases.json` など) をテストのパーツに移し, CI から `definy_run_tests` を動かす
+- 次の重点は **検証を definy で書けるようにする**。最終的には HTML の UI, JS の土台, 言語も全部やる。
+  `definy_run_expression` の型検査, `definy_run_tests`, 適合テストのテストのパーツ化 ([eval-conformance.md](eval-conformance.md)) は済
 - React の UI は新しい機能を入れず (壊れた所は直す), HTML の UI で要ることができたら消す
+- 紹介スライド (`src/story`) は切り出して definy.narumincho.com に残す
 - TypeScript のテストは, TypeScript を消す所のものは一緒に消してよい。E2E と適合テストだけは definy に移す
 - 「TypeScript なし」はビルド (`build:seeds`, stage1 の再生成) も含める。能力を渡す JS は残ってよい
-- 手元のサーバーは当面 Node.js のまま, React を消した後に WASI のランタイムを考える
+- 手元のサーバーは Node.js のまま (サーバーで動的に Wasm を実行したくなりそうなので)
+- PR は小さく分けなくてよい (100 ファイルくらいの変更でよい)。docs や小さな修正は Claude がマージしてよく,
+  方針や言語仕様が変わるものはユーザーがマージする
+- opus5.5 の鍵で署名して公開サーバーに出す操作は Claude がしてよい
+- 言語仕様の未決の点は, Elm に倣う・実行時エラーを無くす原則に沿うものは Claude が決めて docs に理由を書く (あとで見直す)
+- 計画の外のもの (issue #666, 翻訳 #618 #619, 他の人への公開) は, 完全セルフホストまで手を付けない
 
 順番: 検証を definy で → HTML の UI で編集 → React と Vite を消す → JS を土台だけに → ビルドを definy に。
 
