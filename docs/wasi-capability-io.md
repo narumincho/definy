@@ -47,7 +47,7 @@ main env = (env.wall_clock.now) ()
 
 ## 2. システム標準 `wasi` モジュールの型とインターフェース
 
-システム標準モジュール `wasi` (`seeds/wasi.json`) が提供されています。
+システム標準モジュール `wasi` (モジュール `wasi`) が提供されています。
 
 ### ① 日時データ型: `wasi.datetime` (`type_wasi_datetime`)
 

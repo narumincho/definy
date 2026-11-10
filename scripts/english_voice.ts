@@ -1,5 +1,5 @@
 /**
- * 英語の字幕 (seeds/story.json の `story.slides` の台詞の `en`) を VOICEVOX (日本語の音声合成) にそのまま読ませるための下ごしらえ.
+ * 英語の字幕 (definy の値 `story.slides` の台詞の `en`) を VOICEVOX (日本語の音声合成) にそのまま読ませるための下ごしらえ.
  *
  * VOICEVOX ENGINE (0.26 で確認) は英単語をカタカナ読みにして読むので, 英文はほぼそのまま渡せる. ただし
  * - 数字は日本語で読む (2019 → ニセンジュウキュウ) → 英語の言葉に直す (twenty nineteen)

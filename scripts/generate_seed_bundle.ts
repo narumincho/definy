@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
+import { base64ToBytes } from "../src/base64.ts";
 import { sha256EventHashId } from "../src/sha256.ts";
 import {
   createSeedInvalidSignatureSamples,
@@ -11,13 +11,35 @@ import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { compileSeedFunction } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import { createStage1Compiler } from "../src/stage1_compiler.ts";
-import { devSystemAccountBytes } from "../src/seed_parts.ts";
-import { readStoreSeed, storeSeedPartExpressions } from "../src/store_seed.ts";
+import {
+  readStoreSeed,
+  type StoreSeed,
+  storeSeedPartExpressions,
+} from "../src/store_seed.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import type { SeedBundle, SeedEventEntry } from "../worker/types.ts";
 
 /** seed バンドルの指紋を書くファイル */
 export const SEED_FINGERPRINT_PATH = "seeds/seed_bundle_fingerprint.json";
+
+/**
+ * 紹介スライドの値 `story.slides` の式を書くファイル. ブラウザと音声の生成 (scripts/generate_story_voice.ts) が
+ * src/story/story_value.ts で読む。`npm run check` が `npm run build:seeds` より前に動くのでコミットする
+ */
+export const STORY_SLIDES_PATH = "src/story/story_slides.generated.json";
+
+/** {@link STORY_SLIDES_PATH} の中身 */
+export async function generateStorySlides(): Promise<string> {
+  const store = await readStoreSeed();
+  const slides = store.projects
+    .flatMap((project) => project.commit.modules)
+    .find((module) => module.name === "story")
+    ?.parts.find((part) => part.name === "slides");
+  if (slides === undefined) {
+    throw new Error("story.slides is not in seeds/store");
+  }
+  return `${JSON.stringify({ expression: slides.expression }, null, 2)}\n`;
+}
 
 /** 古い seed の時刻 (2019-01-31T04:36:01Z. 署名が不正なサンプルはここから 1 秒以内に置く) */
 const BASE_EPOCH_SECONDS = 1548909361;
@@ -28,6 +50,18 @@ const INVALID_SIGNATURE_SAMPLE_TIME_OFFSET = 0.5;
 /** `seeds/store/` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
 async function seedPartExpressions(): Promise<ReadonlyMap<string, unknown>> {
   return storeSeedPartExpressions(await readStoreSeed());
+}
+
+/** definy プロジェクトの `main` の最新のコミットの作者 (opus5.5) */
+function definyMainAuthor(store: StoreSeed): string {
+  const head = store.heads.projects["definy"];
+  const author = store.bundle.events.find(
+    (event) => event.eventHash === head,
+  )?.accountId;
+  if (author === undefined) {
+    throw new Error("seeds/store/heads.json has no definy project");
+  }
+  return author;
 }
 
 /**
@@ -44,7 +78,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   // (docs/invalid-signature-debug.md). ブラウザはこれらを一覧で「署名が不正」と表示し, モジュール・パーツ・
   // アカウント名の導出から外す. サーバーも署名を検証してからパーツを読む (worker/part_compiler.ts)
   const invalidSamples = await createSeedInvalidSignatureSamples({
-    systemAccountId: bytesToUrlSafeBase64NoPad(await devSystemAccountBytes()),
+    impersonatedAccountId: definyMainAuthor(store),
     timeSeconds: BASE_EPOCH_SECONDS + INVALID_SIGNATURE_SAMPLE_TIME_OFFSET,
   });
   for (const sample of invalidSamples) {
@@ -255,6 +289,11 @@ if (
   const bundle = await writeSeedBundle();
   await writeTypeCheckerWasm();
   await writeEventCheckerWasm();
+  await writeFile(
+    resolve(STORY_SLIDES_PATH),
+    await generateStorySlides(),
+    "utf-8",
+  );
   // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts).
   // 型検査で必要なのでこちらはコミットする
   await writeFile(
@@ -263,6 +302,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}, seeder -> ${SEEDER_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}, seeder -> ${SEEDER_WASM_PATH}, story.slides -> ${STORY_SLIDES_PATH}`,
   );
 }

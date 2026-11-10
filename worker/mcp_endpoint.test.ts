@@ -7,6 +7,7 @@ import type { Env } from "./types.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
 import { generateAccountCredentials } from "../src/auth.ts";
 import { recordPerfRecord } from "./perf_store.ts";
+import { loadSeedModule } from "../src/seed_parts.ts";
 
 const origin = "https://definy.workers.dev";
 
@@ -676,16 +677,7 @@ describe("definy.json-to-string", () => {
 
 describe("definy.service-io-then-respond", () => {
   it("definy.service-io の全てのタグを扱う", async () => {
-    const { default: seed } = (await import("../seeds/definy.json", {
-      with: { type: "json" },
-    })) as {
-      readonly default: {
-        readonly parts: ReadonlyArray<{
-          readonly name: string;
-          readonly expression?: unknown;
-        }>;
-      };
-    };
+    const seed = await loadSeedModule("definy");
     const expressionOf = (name: string) =>
       seed.parts.find((p) => p.name === name)!.expression as Record<
         string,

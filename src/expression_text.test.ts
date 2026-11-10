@@ -2,14 +2,11 @@
  * 式の definy のテキスト (docs/expression-text.md) を書く `definy.expression-text` と
  * 読む `definy.parse-expression-text` のテスト
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { compileSeedFunction } from "./event_check.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
-import {
-  loadSeedPartExpressions,
-  resolvePartPlaceholders,
-} from "./seed_parts.ts";
+import { loadSeedModules, loadSeedPartExpressions } from "./seed_parts.ts";
 import {
   createStage1Compiler,
   instantiateCompiledFunction,
@@ -48,30 +45,14 @@ function definyFunction(
     );
 }
 
-type SeedPart = {
-  readonly name: string;
-  readonly part_type?: unknown;
-  readonly expression?: unknown;
-};
-
-const seedParts: ReadonlyArray<{
-  readonly name: string;
-  readonly id: string;
-  readonly part: SeedPart;
-}> = readdirSync("seeds")
-  .filter((file) => file.endsWith(".json") && !file.startsWith("seed_bundle"))
-  .flatMap((file) => {
-    const seed = JSON.parse(readFileSync(`seeds/${file}`, "utf8")) as {
-      readonly module_name: string;
-      readonly parts: ReadonlyArray<SeedPart>;
-    };
-    const moduleId = deriveModuleIdBytes(seed.module_name);
-    return seed.parts.map((part) => ({
-      name: `${seed.module_name}.${part.name}`,
-      id: deriveModulePartId(moduleId, part.name),
-      part,
-    }));
-  });
+const seedParts = (await loadSeedModules()).flatMap((module) => {
+  const moduleId = deriveModuleIdBytes(module.name);
+  return module.parts.map((part) => ({
+    name: `${module.name}.${part.name}`,
+    id: deriveModulePartId(moduleId, part.name),
+    part,
+  }));
+});
 const names = seedParts.map(({ id, name }) => ({ id, name }));
 
 const expressionText = definyFunction("expression-text");
@@ -82,9 +63,8 @@ const toText = (expression: unknown) =>
 describe("definy.parse-expression-text", () => {
   it("seed の全パーツの型と式は, テキストにして読むと元に戻る", async () => {
     for (const { name, part } of seedParts) {
-      for (const expression of [part.part_type, part.expression]) {
-        if (expression == null) continue;
-        const resolved = await resolvePartPlaceholders(expression);
+      for (const resolved of [part.partType, part.expression]) {
+        if (resolved == null) continue;
         const text = toText(resolved);
         expect(parseExpressionText({ text }), `${name}\n${text}`).toEqual({
           "#ok": resolved,

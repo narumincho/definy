@@ -8,11 +8,7 @@ import {
   literalExpression,
   partDefinitionExpression,
 } from "./part_definition.ts";
-import {
-  loadSeedPartExpressions,
-  resolvePartPlaceholders,
-  resolveSeedPartType,
-} from "./seed_parts.ts";
+import { loadSeedModule, loadSeedPartExpressions } from "./seed_parts.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
@@ -24,23 +20,22 @@ const compiler = createStage1Compiler(
 );
 const seedPartExpressions = await loadSeedPartExpressions();
 
-/** seed のパーツの中身 (`{"$part": ...}` はパーツ ID にする) */
+/** ビルトインのパーツの中身 */
 async function seedPartContent(
   moduleName: string,
   partName: string,
 ): Promise<PartContent> {
-  const seed = JSON.parse(readFileSync(`seeds/${moduleName}.json`, "utf8")) as {
-    readonly parts: ReadonlyArray<Readonly<Record<string, unknown>>>;
-  };
-  const part = seed.parts.find((p) => p.name === partName);
+  const part = (await loadSeedModule(moduleName)).parts.find(
+    (p) => p.name === partName,
+  );
   if (part === undefined) {
     throw new Error(`no part ${moduleName}.${partName}`);
   }
   return {
-    description: part.description as PartContent["description"],
-    visibility: part.visibility === "private" ? "private" : "public",
-    partType: await resolveSeedPartType(part.part_type),
-    expression: await resolvePartPlaceholders(part.expression ?? null),
+    description: part.description,
+    visibility: part.visibility ?? "public",
+    partType: part.partType,
+    expression: part.expression,
   };
 }
 

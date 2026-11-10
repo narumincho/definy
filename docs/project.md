@@ -43,14 +43,13 @@
 
 ## seed
 
-- ビルトインのプロジェクトは `seeds/projects/*.json` (`project_name`, `project_description`, `message`, `modules`)。
-  モジュールは `seeds/<モジュール名>.json` (移行の途中. 正本は `seeds/store/` のコミット)。
+- ビルトインのプロジェクトの正本は `seeds/store/` (opus5.5 が署名した `main` のコミット. [source-in-store.md](source-in-store.md))。
 - 今のビルトインのプロジェクト:
   - `definy`: `definy`, `core`, `std`, `wasi`, `wasm`
   - `sample`: `sample`
   - `story`: `story`
 - `npm run build:seeds` は `seeds/store/` (opus5.5 が署名した `main` のコミット) をそのまま seed にする。
-  `seeds/*.json` を直したら `npm run commit:seeds` でコミットにする ([system-account.md](system-account.md), [source-in-store.md](source-in-store.md))。
+  変えるときは手元のサーバーでコミットして `npm run export:store` で書き出す ([source-in-store.md](source-in-store.md) の「編集の流れ」)。
 
 ## UI
 

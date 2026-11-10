@@ -7,7 +7,7 @@ definy の式は純粋なので, HTTP リクエストのような I/O は「次�
 能力 (Capability) をレコードで渡す設計 ([wasi-capability-io.md](wasi-capability-io.md)) とは別に, まずは
 継続 (`then`) を持つ値として実装している。
 
-## 型 (`seeds/wasi.json`)
+## 型 (モジュール `wasi`)
 
 ```text
 wasi.io =

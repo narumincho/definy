@@ -18,7 +18,7 @@ import {
   type WasiSecretValue,
 } from "./wasi_io.ts";
 
-/** seeds/definy.json の definy.cloudflare-api-token の ID */
+/** definy.cloudflare-api-token の ID */
 const CLOUDFLARE_API_TOKEN_ID = "cloudflare-api-token-6c1f0e3a9b2d4c58";
 
 const cloudflareToken = (

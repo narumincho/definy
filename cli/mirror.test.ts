@@ -3,10 +3,11 @@
  * 手元の definy サーバーを公開サーバーの代わりにし, 土台を Node.js で読み込んで, D1 の代わりに SQLite を渡す.
  * Cron (scheduled) で `definy.mirror-pull` が少しずつ全てのイベントを取り込み, fetch でそのストアを読めること
  */
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { loadSeedModule } from "../src/seed_parts.ts";
 import { createSqliteD1Database } from "../worker/sqlite_d1.ts";
 import { startLocalServer } from "./serve.ts";
 
@@ -24,17 +25,11 @@ type RuntimeWorker = {
 
 /** seed の土台の JS を, `./app.wasm` の代わりに module を使うようにして読み込む */
 async function loadRuntime(module: WebAssembly.Module): Promise<RuntimeWorker> {
-  const seed = JSON.parse(
-    await readFile(new URL("../seeds/definy.json", import.meta.url), "utf8"),
-  ) as {
-    readonly parts: ReadonlyArray<{
-      readonly name: string;
-      readonly expression: { readonly "#string": string };
-    }>;
-  };
-  const script = seed.parts.find(
-    (part) => part.name === "cloudflare-service-runtime-script",
-  )!.expression["#string"];
+  const script = (
+    (await loadSeedModule("definy")).parts.find(
+      (part) => part.name === "cloudflare-service-runtime-script",
+    )!.expression as { readonly "#string": string }
+  )["#string"];
   (globalThis as Record<string, unknown>)["__definyMirrorTestModule"] = module;
   const source = script.replace(
     'import wasmModule from "./app.wasm";',

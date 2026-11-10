@@ -1,11 +1,12 @@
 /**
- * 紹介スライドの並び・題・ずんだもんの台詞は definy の値 `story.slides` (seeds/story.json) で書く.
- * ここでは seed のパーツの式 (リテラル) をその場で評価し, TypeScript の値に読み替える.
+ * 紹介スライドの並び・題・ずんだもんの台詞は definy の値 `story.slides` (seeds/store の story モジュール) で書く.
+ * ここではそのパーツの式 (リテラル. `npm run build:seeds` が src/story/story_slides.generated.json に書き出す) を
+ * その場で評価し, TypeScript の値に読み替える.
  * 値が `story.slide` の型に合うことは definy の型チェッカーが確かめている
  * (src/self_hosted_type_check.test.ts の「accepts every seed part」). ここでの読み替えは形が違えば例外にする.
  * スライドの絵は id ごとの React のコンポーネント (src/story/slides.tsx) が描く
  */
-import storySeed from "../../seeds/story.json" with { type: "json" };
+import storySlides from "./story_slides.generated.json" with { type: "json" };
 import { variantOf } from "../definy_value.ts";
 import { evaluateLiteral } from "../part_definition.ts";
 
@@ -186,18 +187,14 @@ function slideOf(value: unknown, path: string): SlideValue {
   };
 }
 
-/** seed のモジュール `story` のパーツの式 */
-export function storyPartExpression(name: string): unknown {
-  const part = storySeed.parts.find((p) => p.name === name);
-  if (part === undefined) {
-    throw new Error(`seeds/story.json にパーツ ${name} がありません`);
-  }
-  return part.expression;
+/** `story.slides` の式 */
+function slidesExpression(): unknown {
+  return storySlides.expression;
 }
 
 /** definy の値 `story.slides` */
 export const STORY_SLIDES: readonly SlideValue[] = listOf(
-  evaluateLiteral(storyPartExpression("slides")),
+  evaluateLiteral(slidesExpression()),
   "",
   slideOf,
 );
@@ -207,9 +204,7 @@ export const STORY_SLIDES: readonly SlideValue[] = listOf(
  * スライドの中で自分自身の値を見せるのに使う
  */
 export function slideExpression(id: string, keys: readonly string[]): unknown {
-  const items = (storyPartExpression("slides") as { "#list": unknown[] })[
-    "#list"
-  ];
+  const items = (slidesExpression() as { "#list": unknown[] })["#list"];
   for (const item of items) {
     const fields = (
       item as {

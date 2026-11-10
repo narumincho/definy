@@ -7,7 +7,6 @@
     "build": "npm run build:seeds && vite build",
     "build:seeds": "node scripts/generate_seed_bundle.ts",
     "export:store": "node scripts/export_store.ts",
-    "commit:seeds": "node scripts/commit_seeds.ts",
     "build:schema": "node scripts/generate_seed_schema.ts",
     "build:stage1": "node scripts/regenerate_stage1.ts",
     "check:stage1": "node scripts/regenerate_stage1.ts --check",

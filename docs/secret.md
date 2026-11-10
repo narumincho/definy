@@ -47,7 +47,7 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
 
 ## 実装
 
-- `seeds/core.json`: `core.expression` の `secret({ id, label, allowed_url_prefixes })` と `type_secret`, `core.type-ast` の `secret`。
+- モジュール `core`: `core.expression` の `secret({ id, label, allowed_url_prefixes })` と `type_secret`, `core.type-ast` の `secret`。
   型チェック (`type-check-unlocated` は `Secret` を返す), コンパイル・評価 (`{ id, label }` のレコードにする), quote
 - 式は保存した `core.expression` の値をそのまま stage1・型チェッカーに渡す ([value-encoding.md](value-encoding.md)).
   以前は TypeScript の変換が `allowed_url_prefixes` を捨てていたが, 今は `core.expression` の `secret` が持つ (definy 側は読まない)

@@ -38,7 +38,7 @@ I/O の設計は [wasi-io.md](wasi-io.md) と [wasi-capability-io.md](wasi-capab
 
 ## definy で書いた definy サーバー (`sample.self-hosted-definy-server`)
 
-`seeds/sample.json` の `sample.self-hosted-definy-server` は HTTP リクエストを受け取ってレスポンスを返す純粋な関数パーツで,
+モジュール `sample` の `sample.self-hosted-definy-server` は HTTP リクエストを受け取ってレスポンスを返す純粋な関数パーツで,
 中で `core.expression-to-source` (整形)・`core.optimize-expression` (定数畳み込み)・`core.type-check`・
 `core.eval-ast`・`core.compile-to-wasm` を実際に呼び, その結果を HTML (`GET /`) と JSON (`GET /api/self-host`, `GET /healthz`) で返す。
 `sample.deploy-self-hosted-definy-server` を評価すると Cloudflare Worker `self-definy` にデプロイされる。

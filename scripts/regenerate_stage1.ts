@@ -1,5 +1,5 @@
 /**
- * `seeds/*.json` の definy 製コンパイラ (`core.compile-to-wasm`) を今の `wasm/stage1.wasm` でコンパイルし直し (stage2),
+ * `seeds/store/` の definy 製コンパイラ (`core.compile-to-wasm`) を今の `wasm/stage1.wasm` でコンパイルし直し (stage2),
  * stage2 で同じ入力をコンパイルした stage3 と一致する (不動点) ことを確かめる (src/compiler_rebuild.ts).
  * `--check` のときは stage2 が今の `wasm/stage1.wasm` と一致するかを確かめ, 引数なしのときは書き出す.
  * `--bootstrap` のときは, コンパイラの出力を変えたとき (古い stage1 で作った stage2 は古い出力をする) のために,

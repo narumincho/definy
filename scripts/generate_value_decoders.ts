@@ -1,12 +1,19 @@
 /**
  * 評価器の値 (`core.value`) を型の付いた値にする definy のパーツ (`core.value-to-*`) を, 型パーツの宣言から作って
- * `seeds/core.json` に書く (docs/value-decoder.md).
+ * `seeds/store/` の definy プロジェクトの core にコミットする (docs/value-decoder.md).
  *
- * `node scripts/generate_value_decoders.ts` で書き換え, `--check` で seeds と同じか確かめる (違えば終了コード 1).
- * 型パーツ (`core.expression` など) の形を変えたら実行する. `src/value_decoders.test.ts` も seeds と比べる
+ * `node scripts/generate_value_decoders.ts` でコミットし (鍵は `$DEFINY_HOME/account.json`. src/store_commit.ts),
+ * `--check` で seeds/store と同じか確かめる (違えば終了コード 1).
+ * 型パーツ (`core.expression` など) の形を変えたら実行する. `src/value_decoders.test.ts` も seeds/store と比べる
  */
-import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import type { DecodedPart } from "../src/decoded_event.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
+import {
+  commitStoreSeedProject,
+  type StoreCommitModule,
+} from "../src/store_commit.ts";
+import { loadSeedModule, resolvePartPlaceholders } from "../src/seed_parts.ts";
 
 type Json = unknown;
 
@@ -20,11 +27,10 @@ type SeedPart = {
   readonly expression?: Json;
 };
 
-type SeedModule = {
-  readonly $schema?: string;
-  readonly module_name: string;
-  readonly module_description?: Json;
-  readonly parts: ReadonlyArray<SeedPart>;
+/** 型パーツの宣言を読むモジュール (`core`) のパーツ. 式のパーツの参照は `{"$part": ...}` かパーツ ID の文字列 */
+type DeclarationPart = {
+  readonly name: string;
+  readonly expression?: Json;
 };
 
 /** 中身を `core.value` から読む型パーツ. `core.part-content` と `core.event-content` から参照をたどったもの */
@@ -128,11 +134,22 @@ function only(value: Json): readonly [string, Json] {
   return [entries[0]![0].slice(1), entries[0]![1]];
 }
 
+/** {@link VALUE_DECODER_TYPES} のパーツ ID → `core.<名前>` */
+const typePartNames: ReadonlyMap<string, string> = new Map(
+  VALUE_DECODER_TYPES.map((name) => [
+    deriveModulePartId(deriveModuleIdBytes("core"), name),
+    `core.${name}`,
+  ]),
+);
+
 /** 型パーツの参照の名前 (`core.x` の `x`) */
 function referencedTypeName(payload: Json): string {
   const hash = (payload as { readonly part_definition_event_hash?: Json })
-    .part_definition_event_hash as { readonly $part?: unknown } | undefined;
-  const name = hash?.$part;
+    .part_definition_event_hash;
+  const name =
+    typeof hash === "string"
+      ? typePartNames.get(hash)
+      : (hash as { readonly $part?: unknown } | undefined)?.$part;
   if (typeof name !== "string" || !name.startsWith("core.")) {
     throw new Error(`not a core part reference: ${JSON.stringify(payload)}`);
   }
@@ -470,7 +487,7 @@ function decoderPart(typeName: string, declaration: Json): SeedPart {
 
 /** `core` の seed に入れる `core.value-to-*` のパーツ */
 export function valueDecoderParts(
-  core: ReadonlyArray<SeedPart>,
+  core: ReadonlyArray<DeclarationPart>,
 ): ReadonlyArray<SeedPart> {
   return [
     typedHelperPart(),
@@ -625,41 +642,77 @@ function encoderPart(typeName: string, declaration: Json): SeedPart {
   };
 }
 
-/** `core` の seed の `core.value-to-*` を作り直したもの (無ければ末尾に足す) */
-export function withValueDecoders(module: SeedModule): SeedModule {
-  const generated = valueDecoderParts(module.parts);
-  const names = new Set(generated.map((seedPart) => seedPart.name));
-  const replaced = module.parts.map(
-    (seedPart) => generated.find((g) => g.name === seedPart.name) ?? seedPart,
+/** 作ったパーツの `{"$part": ...}` をパーツ ID にして, コミットのパーツにする */
+async function toDecodedPart(seedPart: SeedPart): Promise<DecodedPart> {
+  return {
+    name: seedPart.name,
+    description: seedPart.description,
+    visibility: "public",
+    partType: await resolvePartPlaceholders(seedPart.part_type),
+    expression: await resolvePartPlaceholders(seedPart.expression ?? null),
+  };
+}
+
+/** モジュール `core` の `core.value-to-*` などを作り直したもの (無ければ末尾に足す) */
+export async function withValueDecoders(
+  module: StoreCommitModule,
+): Promise<StoreCommitModule> {
+  const generated = await Promise.all(
+    valueDecoderParts(module.parts).map(toDecodedPart),
   );
-  const existing = new Set(module.parts.map((seedPart) => seedPart.name));
+  const existing = new Set(module.parts.map((p) => p.name));
   return {
     ...module,
     parts: [
-      ...replaced,
-      ...generated.filter((g) => names.has(g.name) && !existing.has(g.name)),
+      ...module.parts.map((p) => generated.find((g) => g.name === p.name) ?? p),
+      ...generated.filter((g) => !existing.has(g.name)),
     ],
   };
 }
 
-const CORE_SEED_PATH = "seeds/core.json";
-
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const text = readFileSync(CORE_SEED_PATH, "utf8");
-  const updated = JSON.stringify(
-    withValueDecoders(JSON.parse(text) as SeedModule),
-    null,
-    2,
-  );
   if (process.argv.includes("--check")) {
-    if (updated !== text) {
+    const core = await loadSeedModule("core");
+    const updated = await withValueDecoders(core);
+    const same =
+      JSON.stringify(
+        updated.parts.map((p) => [
+          p.name,
+          p.partType,
+          p.expression,
+          p.description,
+        ]),
+      ) ===
+      JSON.stringify(
+        core.parts.map((p) => [
+          p.name,
+          p.partType,
+          p.expression,
+          p.description,
+        ]),
+      );
+    if (!same) {
       console.error(
-        `${CORE_SEED_PATH} の core.value-to-* が古いです. node scripts/generate_value_decoders.ts を実行してください`,
+        "seeds/store の core.value-to-* が古いです. node scripts/generate_value_decoders.ts を実行してください",
       );
       process.exit(1);
     }
-  } else if (updated !== text) {
-    writeFileSync(CORE_SEED_PATH, updated);
-    console.log(`${CORE_SEED_PATH} の core.value-to-* を書き換えました`);
+  } else {
+    const hash = await commitStoreSeedProject({
+      projectName: "definy",
+      message:
+        "core.value-to-* を型パーツの宣言から作り直す (scripts/generate_value_decoders.ts)",
+      update: (modules) =>
+        Promise.all(
+          modules.map((module) =>
+            module.name === "core" ? withValueDecoders(module) : module,
+          ),
+        ),
+    });
+    console.log(
+      hash === undefined
+        ? "seeds/store の core.value-to-* は最新です"
+        : `core.value-to-* を書き換えてコミットしました: ${hash}`,
+    );
   }
 }

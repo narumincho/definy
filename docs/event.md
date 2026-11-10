@@ -2,7 +2,7 @@
 
 definy のデータはすべて署名済みイベントの列で、イベントの中身 (アカウントが何をしたか) は definy の型パーツ
 `core.event-content` の値として書く。TypeScript の側にはイベントの形を決める型定義を置かず,
-seeds/core.json の宣言が正本になる (definy が definy 自身のデータを表す一歩)。
+core の宣言 (`seeds/store/`) が正本になる (definy が definy 自身のデータを表す一歩)。
 
 ## 外側 (署名の封筒)
 
@@ -82,9 +82,9 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 - 作る・読むのは [src/event_content.ts](../src/event_content.ts) (`encodeEventContent` / `decodeEventContent`)。
   署名は `src/auth.ts`, seed のイベントは `scripts/generate_seed_bundle.ts` がこれで中身を作る。
 - 読むときは必ず `core.event-content` の形かを `conformsToTypeDeclaration` (seed の検査と同じ関数, `src/seed_schema.ts`) で確かめる。
-  宣言は `npm run build:schema` が seeds/core.json から `core.event-content` とそこから参照をたどれる型パーツ
+  宣言は `npm run build:schema` が `seeds/store/` の core から `core.event-content` とそこから参照をたどれる型パーツ
   (`core.expression`, `core.type-ast` など) だけを seeds/schemas/event-types.json に書き出したもの
-  (seeds/core.json は数 MB あるのでブラウザ・Worker に丸ごと載せない)。`src/seed_schema.test.ts` が作り直したものと同じかを確かめる。
+  (core は数 MB あるのでブラウザ・Worker に丸ごと載せない)。`src/seed_schema.test.ts` が作り直したものと同じかを確かめる。
 - 形が違うイベントは署名が正しくても `InvalidSignedEventError` になる (`src/signed_event.ts`)。
   サーバーの `SubmitEvent` は 400 で拒否し, ブラウザは受け取ったイベントを「不正」として表示から外す。
   CAS に預けたパーツの中身 (定義の式) はイベントの形の検査を通らないので, サーバーは型を検査する前に

@@ -12,7 +12,7 @@
 
 - **ビルドが速い**: Vite 8 (Rolldown + Oxc) と Void でフルスタックのプロダクションビルドが約 1.8 秒, 開発時は HMR で即時反映
 - **言語の意味は definy だけが持つ**: 型検査 `core.type-check`・評価器 `core.eval-value`・Wasm コンパイラ `core.compile-to-wasm` は
-  [seeds/core.json](../seeds/core.json) に書かれ, 自己コンパイルの不動点に達している。TypeScript はそれを動かすだけ
+  core モジュール (`seeds/store/`) に書かれ, 自己コンパイルの不動点に達している。TypeScript はそれを動かすだけ
   - **ブラウザ側**: `stage1.wasm` をブラウザ内で直接実行し, 編集した式をその場で Wasm にコンパイルして V8 で実行できる
   - **サーバー側 (Cloudflare Workers)**: 実行時に Wasm をコンパイルできないので, 必要な Wasm (型チェッカー) はビルド時に作ってバンドルする
 

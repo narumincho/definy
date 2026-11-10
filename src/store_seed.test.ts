@@ -21,7 +21,7 @@ import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 import type { Env } from "../worker/types.ts";
 
 describe("seeds/store", () => {
-  it("seeds/store の seed で始めたサーバーから書き出すと同じ heads とイベントになり, パーツは seeds/*.json と同じで, 同じ service の wasm ができる", async () => {
+  it("seeds/store の seed で始めたサーバーから書き出すと同じ heads とイベントになり, パーツも同じで, 同じ service の wasm ができる", async () => {
     const seedBundle = await loadTestSeedBundle();
     const store = new WorkerStore();
     const env: Env = {
@@ -90,10 +90,9 @@ describe("seeds/store", () => {
         ([id, expression]) =>
           !isDeepStrictEqual(actual.get(id), expression ?? undefined),
       );
-      // 違うときは seeds/*.json を直したあと `npm run commit:seeds` をしていない (docs/source-in-store.md)
       expect(
         different.map(([id]) => id),
-        "seeds/*.json と seeds/store が違う. npm run commit:seeds を実行する",
+        "書き出したパーツが seeds/store と違う",
       ).toEqual([]);
 
       const compile = async (parts: ReadonlyMap<string, unknown>) =>

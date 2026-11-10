@@ -1,10 +1,21 @@
-import { readdirSync, readFileSync } from "node:fs";
+/**
+ * ビルトインのパーツ (`seeds/store/` の `heads.json` のコミット. docs/source-in-store.md) をテストやスクリプトから読む
+ */
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
+import {
+  readStoreSeed,
+  storeSeedPartExpressions,
+  type StoreSeed,
+  type StoreSeedModule,
+} from "./store_seed.ts";
 
-export {
-  DEV_SYSTEM_KEY_SEED,
-  devSystemAccountBytes,
-} from "./system_account.ts";
+let cachedStoreSeed: Promise<StoreSeed> | undefined;
+
+/** `seeds/store/` を読む (同じプロセスでは 1 回だけ読む) */
+export function loadStoreSeed(): Promise<StoreSeed> {
+  cachedStoreSeed ??= readStoreSeed();
+  return cachedStoreSeed;
+}
 
 async function seedPartId(name: string): Promise<string> {
   const dot = name.indexOf(".");
@@ -13,7 +24,7 @@ async function seedPartId(name: string): Promise<string> {
 }
 
 /**
- * `{"$part": "module.name"}` をパーツ ID の文字列 (URL-safe Base64) に置き換える.
+ * `{"$part": "module.name"}` をパーツ ID の文字列 (URL-safe Base64) に置き換える (テストで式を手で書くとき用).
  * 式の `part_reference` も `core.type-ast` の `reference` もパーツ ID を文字列で持つ (docs/value-encoding.md)
  */
 export async function resolvePartPlaceholders(expr: unknown): Promise<unknown> {
@@ -36,38 +47,86 @@ export async function resolvePartPlaceholders(expr: unknown): Promise<unknown> {
   return expr;
 }
 
-/**
- * seed のパーツの型 (`part_type`. 型の式) のプレースホルダーを解決する.
- * 型の無いパーツなら `null`
- */
-export async function resolveSeedPartType(partType: unknown): Promise<unknown> {
-  return partType == null ? null : await resolvePartPlaceholders(partType);
-}
-
-/** `seeds/*.json` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
+/** ビルトインの全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
 export async function loadSeedPartExpressions(): Promise<
   ReadonlyMap<string, unknown>
 > {
-  const map = new Map<string, unknown>();
-  for (const file of readdirSync("seeds")) {
-    // seed_bundle_fingerprint.json はモジュールの seed ではない
-    if (!file.endsWith(".json") || file.startsWith("seed_bundle")) {
-      continue;
-    }
-    const seed = JSON.parse(readFileSync(`seeds/${file}`, "utf8")) as {
-      readonly module_name: string;
-      readonly parts: ReadonlyArray<{
-        readonly name: string;
-        readonly expression?: unknown;
-      }>;
-    };
-    const moduleId = deriveModuleIdBytes(seed.module_name);
-    for (const part of seed.parts) {
-      map.set(
-        deriveModulePartId(moduleId, part.name),
-        await resolvePartPlaceholders(part.expression ?? null),
-      );
-    }
+  return storeSeedPartExpressions(await loadStoreSeed());
+}
+
+/** ビルトインの全モジュール (`heads.json` の順のプロジェクトの, コミットの順のモジュール) */
+export async function loadSeedModules(): Promise<
+  ReadonlyArray<StoreSeedModule>
+> {
+  return (await loadStoreSeed()).projects.flatMap(
+    (project) => project.commit.modules,
+  );
+}
+
+/** ビルトインのモジュール `name` (無ければ例外) */
+export async function loadSeedModule(name: string): Promise<StoreSeedModule> {
+  const found = (await loadSeedModules()).find(
+    (module) => module.name === name,
+  );
+  if (found === undefined) {
+    throw new Error(`the module ${name} is not in seeds/store`);
   }
-  return map;
+  return found;
+}
+
+/** ビルトインの全パーツの ID (URL-safe Base64) → `module.name` */
+export async function loadSeedPartNames(): Promise<
+  ReadonlyMap<string, string>
+> {
+  return new Map(
+    (await loadSeedModules()).flatMap((module) => {
+      const moduleId = deriveModuleIdBytes(module.name);
+      return module.parts.map(
+        (part) =>
+          [
+            deriveModulePartId(moduleId, part.name),
+            `${module.name}.${part.name}`,
+          ] as const,
+      );
+    }),
+  );
+}
+
+/** {@link resolvePartPlaceholders} の逆. ビルトインのパーツ ID の文字列を `{"$part": "module.name"}` にする */
+export function toPartPlaceholders(
+  expr: unknown,
+  names: ReadonlyMap<string, string>,
+): unknown {
+  if (typeof expr === "string") {
+    const name = names.get(expr);
+    return name === undefined ? expr : { $part: name };
+  }
+  if (Array.isArray(expr)) {
+    return expr.map((item) => toPartPlaceholders(item, names));
+  }
+  if (expr && typeof expr === "object") {
+    return Object.fromEntries(
+      Object.entries(expr).map(([key, value]) => [
+        key,
+        toPartPlaceholders(value, names),
+      ]),
+    );
+  }
+  return expr;
+}
+
+/** モジュール `name` のパーツを, パーツの参照を `{"$part": ...}` にして返す (型パーツの宣言を名前で読むとき用) */
+export async function loadSeedModuleWithPlaceholders(name: string): Promise<
+  ReadonlyArray<{
+    readonly name: string;
+    readonly part_type: unknown;
+    readonly expression: unknown;
+  }>
+> {
+  const names = await loadSeedPartNames();
+  return (await loadSeedModule(name)).parts.map((part) => ({
+    name: part.name,
+    part_type: toPartPlaceholders(part.partType, names),
+    expression: toPartPlaceholders(part.expression, names),
+  }));
 }

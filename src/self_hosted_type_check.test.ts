@@ -1,7 +1,7 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
-import { resolvePartPlaceholders, resolveSeedPartType } from "./seed_parts.ts";
+import { loadSeedModules } from "./seed_parts.ts";
 import {
   checkParts,
   compileTypeChecker,
@@ -39,27 +39,15 @@ type SeedPart = {
 };
 
 async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
-  const parts: SeedPart[] = [];
-  for (const file of readdirSync("seeds")) {
-    if (!file.endsWith(".json") || file.startsWith("seed_bundle")) {
-      continue;
-    }
-    const seed = JSON.parse(readFileSync(`seeds/${file}`, "utf8")) as {
-      readonly module_name: string;
-      readonly parts: ReadonlyArray<Readonly<Record<string, unknown>>>;
-    };
-    const moduleId = deriveModuleIdBytes(seed.module_name);
-    for (const part of seed.parts) {
-      const name = String(part.name);
-      parts.push({
-        id: deriveModulePartId(moduleId, name),
-        name: `${seed.module_name}.${name}`,
-        partType: await resolveSeedPartType(part.part_type),
-        expression: await resolvePartPlaceholders(part.expression ?? null),
-      });
-    }
-  }
-  return parts;
+  return (await loadSeedModules()).flatMap((module) => {
+    const moduleId = deriveModuleIdBytes(module.name);
+    return module.parts.map((part) => ({
+      id: deriveModulePartId(moduleId, part.name),
+      name: `${module.name}.${part.name}`,
+      partType: part.partType,
+      expression: part.expression,
+    }));
+  });
 }
 
 const coreModuleId = deriveModuleIdBytes("core");

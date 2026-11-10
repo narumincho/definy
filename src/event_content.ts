@@ -1,7 +1,7 @@
 /**
  * 署名済みイベントの中身 (`content`) を definy の値として作る・読む (docs/event.md).
  *
- * 中身の形は seeds/core.json の型パーツ `core.event-content` が決める. TypeScript の側は形を手で検査せず,
+ * 中身の形は core の型パーツ `core.event-content` が決める. TypeScript の側は形を手で検査せず,
  * `npm run build:schema` が core の宣言から書き出す seeds/schemas/event-types.json と `conformsToTypeDeclaration`
  * (seed の検査と同じ関数) で確かめてから読む.
  */
