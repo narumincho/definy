@@ -163,6 +163,10 @@ async function listen(
       }
     })();
   });
+  // Node.js の既定 (5 秒) だと, wasm の処理でイベントループが止まっている間に, クライアント (fetch) が
+  // 使い回そうとした keep-alive の接続をサーバーが閉じて ECONNRESET になることがある。
+  // fetch (undici) は 4 秒で自分から閉じるので, サーバー側は長くしておく
+  server.keepAliveTimeout = 60_000;
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, "127.0.0.1", () => {

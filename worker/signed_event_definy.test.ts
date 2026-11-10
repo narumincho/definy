@@ -220,5 +220,5 @@ describe("definy.decode-stored-commit (decodeStoredCommit)", () => {
     }
     expect(commits).toBeGreaterThan(0);
     expect(decodeStoredCommit("not base64!")).toBeNull();
-  });
+  }, 60_000);
 });

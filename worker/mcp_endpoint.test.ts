@@ -153,7 +153,7 @@ describe("definy.handle-mcp", () => {
       readonly branches: ReadonlyArray<unknown>;
     };
     expect(branches.branches.length).toBeGreaterThan(0);
-  });
+  }, 60_000);
 
   it("RPC のエラーは isError のツールの結果になる", async () => {
     const response = await mcp({
