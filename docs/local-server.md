@@ -55,11 +55,34 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
 - 値は `definy.value-literal` でリテラルの式にしてから `definy.expression-text` で書く。
   浮動小数は値をちょうど表す最も少ない 10 進の桁 (17 桁まで) の `float(仮数, 指数)`。
   クロージャは捕捉した変数を除いた `fn` の式。unit は `{}`
-- 型検査はまだしない。止まらない式は返らない (手元のサーバーなので, 止めるにはサーバーを止める)
+- 実行の前に型検査をする (2026-11-10, `definy.run-expression-type-check`)。型環境はコミットの型検査 (`definy.check-commit`) と同じで,
+  全プロジェクトの main の最新のパーツに `project` / `branch` のコミットのパーツを重ねたもの。式は期待する型なしで
+  `core.type-check` で検査するので, 期待する型の無い位置に書けないもの (ラムダだけ, 型のパーツの無い `#some(...)` など) は
+  型エラーになる。型エラーなら `The expression has a type error: type_mismatch (...)` を返して実行しない。
+  definy のパーツ約 1000 の型環境を作っても, 解決のキャッシュが効くので 0.2〜0.6 秒ほど
+- 止まらない式は返らない (手元のサーバーなので, 止めるにはサーバーを止める)
 - `definy_compile_expression` は同じ引数で, 式を `core.compile-to-wasm` で Wasm GC のモジュールにして Base64 で返す (HTML の UI に使う)
 - 実行・コンパイルしてよいかはホストの能力 `read_host_settings` の `run_expressions` で決まる。
   `cli/serve.ts` が `DEFINY_RUN_EXPRESSIONS: "1"` を渡す。Worker はこれを設定しないので, 公開サーバーの `/mcp` は
   "Running expressions is disabled on this server" のエラーを返す
+
+## テスト (`definy_run_tests`)
+
+TypeScript の Vitest を使わずに definy のパーツを確かめるための手元のサーバーだけのツール (2026-11-10。
+[mcp-self-hosting.md](mcp-self-hosting.md) の「検証を definy で」)。
+
+```json
+{ "project": "definy", "branch": "main", "prefix": "std." }
+```
+
+- テストは **名前が `test-` で始まり型が `Boolean` のパーツ** (`std.test-string-join` など)。値が `true` なら通る
+- `project` の `branch` (既定は `main`) のコミットのテストを全て `core.eval-value` で評価する。`prefix` を渡すと
+  `モジュール.名前` がそれで始まるものだけ
+- 結果はテストごとの `ok std.test-string-join` か `FAILED std.test-wrong (the value is false, not true)` の行と,
+  最後の `2 passed, 1 failed`。1 つでも落ちれば `isError`
+- テストもコミットの型検査を通るので, 書いて試すときは自分のブランチ (`definy_create_branch`) にコミットしてから動かす
+- 中身は `definy.mcp-run-tests` (コミットとパーツの読み方は `definy_run_expression` と同じ), `definy.collect-test-parts`, `definy.report-tests`。
+  ヘルパーのパーツに `test-` で始まる名前を付けるとテストと見なされるので付けない (型が Boolean でなければ選ばれない)
 
 ## HTML の UI (`--ui-port`, `cli/html_ui.ts`)
 

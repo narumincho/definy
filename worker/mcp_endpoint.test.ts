@@ -104,6 +104,7 @@ describe("definy.handle-mcp", () => {
       "definy_create_project",
       "definy_commit_parts",
       "definy_run_expression",
+      "definy_run_tests",
       "definy_compile_expression",
       "definy_pull",
       "definy_push",
@@ -568,13 +569,26 @@ describe("definy_run_expression", () => {
       await run(
         {
           expression:
-            '[float(15, -1), {x: true}, #some("s"), #none, fn(x$0) => $0]',
+            '{a: float(15, -1), b: {x: true}, c: @core.list-get(list: ["s"], index: 0), d: @core.list-get(list: ["s"], index: 1)}',
         },
         env,
       ),
     ).toEqual({
-      text: '[\n  float(15, -1),\n  {x: true},\n  #some("s"),\n  #none,\n  fn(x$0) =>\n    $0\n]',
+      text: '{a: float(15, -1), b: {x: true}, c: #some("s"), d: #none}',
       isError: false,
+    });
+  });
+
+  it("型の合わない式は実行せずに型エラーを返す", async () => {
+    const env = local();
+    expect(
+      await run({ expression: '@core.plus(left: 1, right: "a")' }, env),
+    ).toEqual({
+      text: "The expression has a type error: type_mismatch (expected: number, actual: string)",
+      isError: true,
+    });
+    expect(await run({ expression: "@sample.nope" }, env)).toMatchObject({
+      isError: true,
     });
   });
 
@@ -590,6 +604,54 @@ describe("definy_run_expression", () => {
       text: "Branch nope of project sample was not found",
       isError: true,
     });
+  });
+});
+
+describe("definy_run_tests", () => {
+  const run = async (args: unknown, env: Env) => {
+    const json = (await (
+      await mcp(
+        {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: { name: "definy_run_tests", arguments: args },
+        },
+        {},
+        env,
+      )
+    ).json()) as ToolCallResult;
+    return { text: json.result.content[0]!.text, isError: json.result.isError };
+  };
+
+  it("ブランチの test- で始まる真偽値のパーツを評価して結果を返す", async () => {
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_RUN_EXPRESSIONS: "1",
+    };
+    const result = await run({ project: "definy" }, env);
+    expect(result.isError).toBe(false);
+    expect(result.text).toContain("ok std.test-string-join\n");
+    expect(result.text).toMatch(/\d+ passed, 0 failed$/);
+    expect(
+      await run({ project: "definy", prefix: "std.test-string-join" }, env),
+    ).toEqual({
+      text: "ok std.test-string-join\n1 passed, 0 failed",
+      isError: false,
+    });
+    expect(await run({}, env)).toEqual({
+      text: "project is required",
+      isError: true,
+    });
+  });
+
+  it("公開サーバーではテストを実行しない", async () => {
+    const result = await run(
+      { project: "definy" },
+      { DB: createSqliteD1Database() },
+    );
+    expect(result.isError).toBe(true);
+    expect(result.text).toContain("Running tests is disabled");
   });
 });
 
