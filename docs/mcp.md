@@ -34,6 +34,7 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   | `definy_create_branch`        | `definy.mcp-create-branch`: 既存のプロジェクトに専用アカウントのブランチを作る。最初のコミットは元のブランチ (省略時は `main`) の最新のコミットの写し                                                                     |
   | `definy_create_project`       | `definy.mcp-create-project`: 新しいプロジェクトを作る。`main` の作成者は専用アカウントで, 最初のコミットはモジュールが無い。モジュールとパーツは `definy_commit_parts` (`branch: main`) で足す ([html-ui.md](html-ui.md)) |
   | `definy_commit_parts`         | `definy.mcp-commit-parts`: 専用アカウントのブランチにパーツの変更・追加・削除をコミットする。型と式は definy のテキストで渡す                                                                                             |
+  | `definy_merge_branch`         | `definy.mcp-merge-branch`: 同じプロジェクトのブランチを別のブランチ (既定 `main`) にパーツごとの 3 方向マージで取り込んでコミットする ([branch.md](branch.md)「取り込み」)                                                |
   | `definy_run_expression`       | `definy.mcp-run-expression`: definy のテキストの式を評価して値をテキストで返す。手元の definy サーバーだけ ([local-server.md](local-server.md))                                                                           |
   | `definy_compile_expression`   | `definy.mcp-compile-expression`: 式を `core.compile-to-wasm` で Wasm のモジュールにして Base64 で返す。手元の definy サーバーだけ (HTML の UI を配るのに使う。[local-server.md](local-server.md))                         |
   | `definy_pull`                 | `definy.mcp-pull`: 別の definy サーバー (既定は公開サーバー) のイベントのうち, このサーバーに無いものを中身ごと取り込む ([local-server.md](local-server.md))                                                              |
