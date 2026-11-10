@@ -4,7 +4,7 @@
  *   node scripts/generate_story_voice.ts
  *
  * - VOICEVOX を起動しておく (ENGINE が http://127.0.0.1:50021 で待ち受ける. VOICEVOX_URL で変えられる)
- * - 台詞は definy の値 `story.slides` (seeds/story.json. src/story/narration.ts が読む). 文・話者・話速が同じ音声は作り直さない.
+ * - 台詞は definy の値 `story.slides` (seeds/store の story モジュール. src/story/narration.ts が読む). 文・話者・話速が同じ音声は作り直さない.
  *   `{デファイ'ニイワ}` のように {} で囲んだところは, アクセント付きのかなとして読ませる
  * - 英語の音声は英語の字幕 (`en`) をそのまま読ませる (数字と読み違える語だけ直す. scripts/english_voice.ts).
  *   エスペラントの音声は `eoSpeech` (scripts/esperanto_voice.ts)

@@ -34,10 +34,10 @@ definy 製の評価器 `core.eval-value` が返すのは, 型の無い値の表�
 ## 型の宣言から生成する
 
 `core.value-to-*` は手で書かず, 型パーツの宣言 (`core.expression` など) から `scripts/generate_value_decoders.ts` が作って
-`seeds/core.json` に書きます。型パーツの形を変えたら次を実行してください。
+`seeds/store/` の core にコミットします (鍵は `$DEFINY_HOME/account.json`. [source-in-store.md](source-in-store.md))。型パーツの形を変えたら次を実行してください。
 
 ```sh
-node scripts/generate_value_decoders.ts          # seeds/core.json を書き換える
+node scripts/generate_value_decoders.ts          # seeds/store/ にコミットする
 node scripts/generate_value_decoders.ts --check  # 古ければ終了コード 1
 ```
 

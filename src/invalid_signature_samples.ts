@@ -204,11 +204,11 @@ export async function createInvalidSignatureSamples(
 
 /**
  * seed バンドルに入れるサンプルを作る。鍵と時刻を固定するので毎回同じバイト列になる。
- * `impersonated_account` はシステムアカウントになりすます
+ * `impersonated_account` はビルトインのプロジェクトの `main` の作成者 (opus5.5) になりすます
  * (ブラウザが `definy` のモジュールとして扱わないことを確かめる)。
  */
 export async function createSeedInvalidSignatureSamples(options: {
-  readonly systemAccountId: string;
+  readonly impersonatedAccountId: string;
   readonly timeSeconds: number;
 }): Promise<ReadonlyArray<InvalidSignatureSample>> {
   const signer = await importAccountCredentials(
@@ -217,7 +217,7 @@ export async function createSeedInvalidSignatureSamples(options: {
   );
   return createInvalidSignatureSamples({
     signer,
-    impersonatedAccountId: options.systemAccountId,
+    impersonatedAccountId: options.impersonatedAccountId,
     timeSeconds: options.timeSeconds,
   });
 }

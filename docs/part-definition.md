@@ -52,7 +52,7 @@ core.define-type(
 
 - 数値・文字列・真偽値・リスト・レコード・Variant のリテラル
 - `quote(e).expression` (`e` そのもの. `core.code` の `part_ids` は求めない)
-- `core.define-part` / `core.define-type` の呼び出し (seeds/core.json の 2 つの式と同じことをする)
+- `core.define-part` / `core.define-type` の呼び出し (core の 2 つのパーツの式と同じことをする)
 
 これ以外の式 (変数・他のパーツの呼び出しなど) は読まない (`undefined`)。結果は `core.part-content` の形かを確かめてから使う
 (ブラウザは `isPartContent`, サーバーは受け付けていない中身を definy 製の `core.value-conforms` で確かめる. [event.md](event.md))。
@@ -61,7 +61,7 @@ core.define-type(
 使うところ: `partContentItem` / `loadContents` ([src/content_store.ts](../src/content_store.ts)),
 サーバーの `SubmitEvent` の検査と型環境 (`definy.read-commit-check-input`. [service.md](service.md)「型検査」), `seeds/store/` の読み込み
 (`src/store_seed.ts`)。seeds/\*.json はこれまでどおり `description` / `part_type` / `expression` を並べて書き,
-`npm run commit:seeds` が定義の式にして `seeds/store/` に入れる ([source-in-store.md](source-in-store.md))。
+手元のサーバーの `definy_commit_parts` (と `export:store`) が定義の式にして `seeds/store/` に入れる ([source-in-store.md](source-in-store.md))。
 
 ## 大きさ
 

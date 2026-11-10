@@ -236,7 +236,7 @@ function evaluate(expression: unknown): unknown {
   return UNSUPPORTED;
 }
 
-/** `core.define-part` / `core.define-type` の呼び出しを評価する (seeds/core.json の 2 つの式と同じ) */
+/** `core.define-part` / `core.define-type` の呼び出しを評価する (core の 2 つのパーツの式と同じ) */
 function evaluateDefinitionCall(call: unknown): unknown {
   const callee = variantOf(field(call, "function"));
   const id =

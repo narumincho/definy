@@ -1,21 +1,15 @@
-import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   createSignedAccountEvent,
   generateAccountCredentials,
-  importAccountCredentials,
   type CommitModuleParams,
   type AccountCredentials,
 } from "../src/auth.ts";
-import { bytesToBase64, bytesToUrlSafeBase64NoPad } from "../src/base64.ts";
+import { bytesToBase64 } from "../src/base64.ts";
 import { encodeCborItem } from "../src/cbor.ts";
 import { sha256EventHashIdSync } from "../src/sha256.ts";
 import type { DecodedPart } from "../src/decoded_event.ts";
-import {
-  resolvePartPlaceholders,
-  resolveSeedPartType,
-} from "../src/seed_parts.ts";
-import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
+import { loadSeedModule, resolvePartPlaceholders } from "../src/seed_parts.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../src/part_ids.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
@@ -340,10 +334,6 @@ describe("SubmitEvent の型検査", () => {
   it("型の合うコミットは受け付ける (他のモジュールのパーツの呼び出しも引数の型まで検査する)", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
-    const system = await importAccountCredentials(
-      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
-      "definy",
-    );
     const result = await submitCommit(store, env, user, "app", [
       part("answer", { "#type_number": null }, { "#number": 42 }),
       part(
@@ -351,11 +341,7 @@ describe("SubmitEvent の型検査", () => {
         { "#type_boolean": null },
         {
           "#call": {
-            function: await partReference(
-              system.accountId,
-              "core",
-              "list-contains-string",
-            ),
+            function: await partReference("", "core", "list-contains-string"),
             arguments: [
               {
                 name: "list",
@@ -374,10 +360,6 @@ describe("SubmitEvent の型検査", () => {
   it("未入力は全て推論できる型引数 (未確定の型引数) のときだけ受け付ける (docs/type-arguments.md)", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
-    const system = await importAccountCredentials(
-      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
-      "definy",
-    );
     const hole = { "#hole": { probe: false } };
     const listOf = (itemType: unknown) => ({
       "#type_list": { item_type: itemType },
@@ -385,7 +367,7 @@ describe("SubmitEvent の型検査", () => {
     // core.list-map(T: □, U: □, f: (item) => item, xs: [1, 2])
     const mapIdentity = async (f: unknown) => ({
       "#call": {
-        function: await partReference(system.accountId, "core", "list-map"),
+        function: await partReference("", "core", "list-map"),
         arguments: [
           { name: "T", value: hole },
           { name: "U", value: hole },
@@ -555,29 +537,17 @@ describe("SubmitEvent の型検査", () => {
     const { store, env } = await createSeededStore();
     // definy プロジェクトの main の作成者ではないので, 新しいブランチにコミットする
     const editor = await generateAccountCredentials("editor");
-    const seedParts = async (moduleName: string) => {
-      const seed = JSON.parse(
-        await readFile(`seeds/${moduleName}.json`, "utf8"),
-      ) as {
-        readonly parts: ReadonlyArray<{
-          readonly name: string;
-          readonly part_type?: unknown;
-          readonly expression?: unknown;
-        }>;
-      };
-      return await Promise.all(
-        seed.parts.map(async (seedPart) =>
-          part(
-            // 組み込みかどうかは式 ({"#builtin": "not_equal"}) で決まり, 名前によらない.
-            // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
-            // (core.not-equal は seed のどのパーツも呼んでいない)
-            seedPart.name === "not-equal" ? "not-equal-renamed" : seedPart.name,
-            await resolveSeedPartType(seedPart.part_type),
-            await resolvePartPlaceholders(seedPart.expression ?? null),
-          ),
+    const seedParts = async (moduleName: string) =>
+      (await loadSeedModule(moduleName)).parts.map((seedPart) =>
+        part(
+          // 組み込みかどうかは式 ({"#builtin": "not_equal"}) で決まり, 名前によらない.
+          // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
+          // (core.not-equal は seed のどのパーツも呼んでいない)
+          seedPart.name === "not-equal" ? "not-equal-renamed" : seedPart.name,
+          seedPart.partType,
+          seedPart.expression,
         ),
       );
-    };
     const parts = await seedParts("core");
     expect(
       parts.find((p) => p.name === "not-equal-renamed")?.expression,

@@ -55,7 +55,7 @@ definy.deploy-to-cloudflare-workers(
 - Cloudflare の API はブラウザからの CORS を許可していないので, 実際にブラウザから送るには設定画面で
   「CORS エラーのときサーバーで仲介する」を有効にする (許可されたアカウントのみ。[wasi-io.md](wasi-io.md) の「CORS の仲介」)
 
-### 例 (`seeds/sample.json`)
+### 例 (モジュール `sample`)
 
 ```text
 sample.deploy-hello-worker =

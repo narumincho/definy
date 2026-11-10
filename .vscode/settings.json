@@ -13,11 +13,5 @@
   },
   "[css]": {
     "editor.defaultFormatter": "vscode.css-language-features"
-  },
-  "json.schemas": [
-    {
-      "fileMatch": ["/seeds/*.json"],
-      "url": "./seeds/schemas/module-seed.schema.json"
-    }
-  ]
+  }
 }

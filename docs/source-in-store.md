@@ -71,10 +71,10 @@ Git でいう「サブモジュールのコミットを固定する」のに近�
 3. 移行 — 済 (下の「移行 (3 段目)」): seeds の JSON の内容をアカウント opus5.5 (元 narumincho) の鍵でコミットして `seeds/store/` に置き,
    ビルド (`npm run build:seeds`) を `seeds/store/` から読むように切り替えた。seed の入れ替えの削除の規則を直し, `export:seeds` を消した。
    移行の途中の編集は `seeds/*.json` を直して `npm run commit:seeds`
-4. 片付け: `seeds/*.json`, `seeds/schemas/`, `commit:seeds`, `generate_seed_schema.ts`, 開発用のシステムアカウントの鍵を消す。
-   `generate_value_decoders.ts` と `regenerate_stage1.ts` はストアのパーツを読み, 生成したパーツを手元のサーバーにコミットする形にする。
-   CLAUDE.md の「正本は seeds/\*.json」を書き換える
-5. 公開サーバーへの反映: デプロイで seed の入れ替えが起き, システムアカウントの古いイベントが消えて narumincho のコミットが入る
+4. 片付け — 済 (下の「片付け (4 段目)」と「編集の流れ」): `seeds/*.json`, `seeds/projects/`, JSON Schema (`module-seed.schema.json`),
+   `commit:seeds`, 開発用のシステムアカウントの鍵を消した。テストとスクリプトは `seeds/store/` を読む。
+   `generate_value_decoders.ts` は生成したパーツを `seeds/store/` にコミットする
+5. 公開サーバーへの反映 — 済 (#910 のデプロイ, 2026-11-09): seed の入れ替えでシステムアカウントの古いイベントが消え, opus5.5 のコミットが入った
 
 ## 気をつけること
 
@@ -128,3 +128,45 @@ npm run export:store <baseUrl> -- --account=<ID> --projects=definy,sample --out=
   e2e/ui.test.ts の `createEditor` / `loginAsEditor`。main と同じ中身のコミットを `branch` を変えて出す。中身はサーバーにあるので送らない)
 - 鍵: `/mnt/project-files/html-ui/account-narumincho.json` (Claude のプロジェクトのファイル)。`npm run commit:seeds` は
   `$DEFINY_HOME/account.json` を読むので, その `accountName` を opus5.5 にしたコピーを置く
+
+## 片付け (4 段目, 2026-11-10)
+
+- ビルトインのパーツを読むのは `src/seed_parts.ts`: `loadSeedModule(name)` / `loadSeedModules()` (`heads.json` のコミットのモジュール.
+  パーツの参照はパーツ ID の文字列), `loadSeedPartExpressions()` (パーツ ID → 式), `loadSeedPartNames()` (パーツ ID → `module.name`),
+  `toPartPlaceholders` (パーツ ID を `{"$part": ...}` に戻す)。`readStoreSeed` は 1 プロセスで 1 回だけ (`loadStoreSeed`)
+- `seeds/schemas/event-types.json` (ブラウザと Worker がイベントの形の検査に使う) は残した。`npm run build:schema` が
+  `seeds/store/` の core の型パーツから, 参照を `{"$part": ...}` に戻して書く。`module-seed.schema.json` (JSON を手で書くための
+  JSON Schema) は消した
+- 紹介スライドの値 `story.slides` はブラウザで読むので, `npm run build:seeds` が `src/story/story_slides.generated.json` に書き出す。
+  `npm run check` (tsc) が `build:seeds` より前に動くので指紋と同じくコミットする。`src/seed_bundle.test.ts` が `seeds/store/` と同じかを確かめる
+- `scripts/generate_value_decoders.ts`: core の型パーツの宣言 (パーツ ID の参照) から `core.value-to-*` / `core.*-to-value` を作り,
+  違えば `src/store_commit.ts` の `commitStoreSeedProject` で definy プロジェクトの次のコミットにして `seeds/store/` に書く
+  (`--check` は比べるだけ)。`src/value_decoders.test.ts` も比べる
+- `scripts/regenerate_stage1.ts` は `seeds/store/` のパーツを読む (コミットはしない)
+- 署名が不正なイベントのサンプルのなりすまし先は, 開発用のシステムアカウントから definy の `main` の作者 (opus5.5) に変えた
+  (seed バンドルの指紋が変わるので, 次のデプロイで seed の入れ替えが 1 回起きる)
+
+## 編集の流れ
+
+正本は `seeds/store/` (opus5.5 の署名) なので, 変えるには opus5.5 の鍵が要る (Claude はプロジェクトのファイル
+`/mnt/project-files/html-ui/account-narumincho.json` の `accountName` を opus5.5 にしたコピーを `$DEFINY_HOME/account.json` に置く)。
+
+ふつうの変更 (型検査を通るもの) は手元のサーバーの MCP でする:
+
+```sh
+npm run build:seeds                     # seed バンドルと wasm を seeds/store から作る
+DEFINY_HOME=<鍵を置いたフォルダ> npm run serve -- --port 8787 --ui-port off
+# MCP の definy_commit_parts で project: "definy" / "sample" / "story", branch: "main" にコミットする
+DEFINY_HOME=<同じフォルダ> npm run export:store http://127.0.0.1:8787   # seeds/store/ に書き出す
+npm run build:seeds                     # 指紋と story_slides.generated.json を更新
+```
+
+- 新しい `DEFINY_HOME` で始めると, 起動時に `seeds/store/` の seed が入るので `main` の最新は `heads.json` のコミットになる。
+  前の作業のストアが残っていると, そのコミットの上に積まれる (書き出すと `heads.json` もそれになる)
+- `definy_commit_parts` は公開サーバーと同じ型検査を通す。2026-11-10 に sample に 1 パーツ足して 4 秒ほど,
+  書き出しで増えるのは新しいコミットのイベント 1 つと中身 1 つ (変わらないパーツは同じファイルのまま)
+- `export:store` はアカウントの `main` の最新のコミットを選ぶので, ブランチで作業したら `main` に取り込んでから書き出す
+
+今のサーバーの型チェッカーでは通らない変更 (言語の変更, 型パーツから機械的に作るパーツ) は, サーバーを通さずに
+`src/store_commit.ts` の `commitStoreSeedProject({ projectName, message, update })` で `seeds/store/` に直接コミットする
+(`update` は今のモジュールを受け取って新しいモジュールを返す。同じ鍵が要る)。例は `scripts/generate_value_decoders.ts`。

@@ -5,7 +5,7 @@ HTML を返すだけの UI。React の UI (`pages/`, `src/`) とは別に並べ�
 
 - React の UI は今のまま GitHub でバージョン管理する
 - シンプル版の正本は definy のストアの **`html-ui` プロジェクト** で, バージョン管理も definy のブランチとコミットだけでする。
-  `seeds/*.json` にも GitHub にも置かない。MCP のツール (`definy_create_project`, `definy_commit_parts`) で書いてコミットし,
+  `seeds/store/` にも GitHub にも置かない。MCP のツール (`definy_create_project`, `definy_commit_parts`) で書いてコミットし,
   `definy_push` で公開サーバーに送る
 - GitHub で管理するのは, どの Worker でも使う土台 (`definy.deploy-fetch-worker`, `definy.worker-step` など) だけ
 
@@ -29,7 +29,7 @@ Cloudflare Workers は実行時に Wasm をコンパイルできない (`WebAsse
 - 公開の definy-html は専用の D1 を持つ公開サーバーの写し (下の「definy-html (公開サーバーの写し)」)
 - パス: `/` (プロジェクト一覧), `/p/<project>/<branch>` (パーツ一覧), `/p/<project>/<branch>/<part>` (パーツ)
 
-### `definy.worker-step` (`seeds/definy.json`)
+### `definy.worker-step` (モジュール `definy`)
 
 ```text
 definy.worker-request        = { method: String, url: String, headers: List<{ name, value }> }

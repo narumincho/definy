@@ -4,14 +4,12 @@
  *   node scripts/export_store.ts <baseUrl> [--account <アカウント ID>] [--projects definy,sample] [--out seeds/store]
  *
  * `--account` を省くと手元のサーバーの鍵 (`$DEFINY_HOME/account.json`, 無ければ `~/.definy/account.json`) のアカウント。
- * `--projects` を省くと, 今の `heads.json` のプロジェクト (無ければ `seeds/projects/*.json` のもの)
+ * `--projects` を省くと, 今の `heads.json` のプロジェクト
  */
 import { readFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { importAccountCredentials } from "../src/auth.ts";
-import { loadProjectSeeds } from "../src/seed_projects.ts";
+import { readLocalAccountCredentials } from "../src/store_commit.ts";
 import { exportStoreSeed } from "../src/store_export.ts";
 import {
   STORE_SEED_DIR,
@@ -37,24 +35,14 @@ if (baseUrl === undefined) {
 const outDir = values.out ?? STORE_SEED_DIR;
 
 async function defaultAccountId(): Promise<string> {
-  const dataDir = process.env["DEFINY_HOME"] ?? join(homedir(), ".definy");
-  const saved = JSON.parse(
-    await readFile(join(dataDir, "account.json"), "utf-8"),
-  ) as { readonly accountName: string; readonly secretKeyBase64: string };
-  return (
-    await importAccountCredentials(saved.secretKeyBase64, saved.accountName)
-  ).accountId;
+  return (await readLocalAccountCredentials()).credentials.accountId;
 }
 
 async function defaultProjects(): Promise<ReadonlyArray<string>> {
-  try {
-    const heads = JSON.parse(
-      await readFile(resolve(outDir, "heads.json"), "utf-8"),
-    ) as StoreSeedHeads;
-    return Object.keys(heads.projects);
-  } catch {
-    return loadProjectSeeds().map((project) => project.project_name);
-  }
+  const heads = JSON.parse(
+    await readFile(resolve(outDir, "heads.json"), "utf-8"),
+  ) as StoreSeedHeads;
+  return Object.keys(heads.projects);
 }
 
 const data = await exportStoreSeed({

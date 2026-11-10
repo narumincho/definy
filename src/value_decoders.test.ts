@@ -4,18 +4,16 @@ import {
   valueDecoderParts,
   withValueDecoders,
 } from "../scripts/generate_value_decoders.ts";
+import type { DecodedPart } from "./decoded_event.ts";
 import { compileSeedFunction } from "./event_check.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./part_ids.ts";
-import { loadSeedPartExpressions } from "./seed_parts.ts";
+import { loadSeedModule, loadSeedPartExpressions } from "./seed_parts.ts";
 import {
   createStage1Compiler,
   instantiateCompiledFunction,
 } from "./stage1_compiler.ts";
 
-const coreSeedText = readFileSync("seeds/core.json", "utf8");
-const coreSeed = JSON.parse(coreSeedText) as Parameters<
-  typeof withValueDecoders
->[0];
+const coreSeed = await loadSeedModule("core");
 
 const seedExpressions = await loadSeedPartExpressions();
 const compiler = createStage1Compiler(
@@ -66,9 +64,16 @@ function toCoreValue(value: unknown): unknown {
 }
 
 describe("core.value-to-*", () => {
-  it("seeds/core.json は scripts/generate_value_decoders.ts の出力と同じ", () => {
-    expect(JSON.stringify(withValueDecoders(coreSeed), null, 2)).toBe(
-      coreSeedText,
+  it("seeds/store の core は scripts/generate_value_decoders.ts の出力と同じ", async () => {
+    const shape = (parts: ReadonlyArray<DecodedPart>) =>
+      parts.map((part) => ({
+        name: part.name,
+        description: part.description,
+        partType: part.partType,
+        expression: part.expression,
+      }));
+    expect(shape((await withValueDecoders(coreSeed)).parts)).toEqual(
+      shape(coreSeed.parts),
     );
     expect(valueDecoderParts(coreSeed.parts).map((part) => part.name)).toEqual([
       "value-decoded",
@@ -124,14 +129,8 @@ describe("core.value-to-*", () => {
     );
   });
 
-  it("core.value-to-expression は seed の definy の全パーツの式を読める", () => {
-    const definy = JSON.parse(readFileSync("seeds/definy.json", "utf8")) as {
-      readonly parts: ReadonlyArray<{
-        readonly name: string;
-        readonly expression?: unknown;
-      }>;
-    };
-    // seed の `{"$part": ...}` はパーツ ID の文字列にする
+  it("core.value-to-expression は seed の definy の全パーツの式を読める", async () => {
+    const definy = await loadSeedModule("definy");
     for (const part of definy.parts) {
       const expression = seedExpressions.get(
         deriveModulePartId(deriveModuleIdBytes("definy"), part.name),

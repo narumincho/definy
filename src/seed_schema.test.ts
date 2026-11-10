@@ -1,20 +1,20 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  loadSeedModules,
+  loadSeedModuleWithPlaceholders,
+} from "./seed_parts.ts";
+import {
   buildEventTypeDeclarations,
-  buildModuleSeedSchema,
   conformsToTypeDeclaration,
-  type SeedSchemaPart,
 } from "./seed_schema.ts";
 
-type Seed = {
-  readonly module_name: string;
-  readonly parts: ReadonlyArray<SeedSchemaPart>;
-};
-
-const seeds: ReadonlyArray<Seed> = readdirSync("seeds")
-  .filter((file) => file.endsWith(".json") && !file.startsWith("seed_bundle"))
-  .map((file) => JSON.parse(readFileSync(`seeds/${file}`, "utf8")) as Seed);
+const seeds = await Promise.all(
+  (await loadSeedModules()).map(async (module) => ({
+    module_name: module.name,
+    parts: await loadSeedModuleWithPlaceholders(module.name),
+  })),
+);
 
 const typeDeclarations = new Map<string, unknown>(
   seeds.flatMap((seed) =>
@@ -25,14 +25,7 @@ const typeDeclarations = new Map<string, unknown>(
 );
 const resolveTypePart = (name: string): unknown => typeDeclarations.get(name);
 
-describe("seeds の JSON Schema", () => {
-  it("seeds/schemas/module-seed.schema.json は core の型パーツの宣言から作ったものと同じ", () => {
-    const core = seeds.find((seed) => seed.module_name === "core");
-    expect(
-      JSON.parse(readFileSync("seeds/schemas/module-seed.schema.json", "utf8")),
-    ).toEqual(buildModuleSeedSchema(core?.parts ?? []));
-  });
-
+describe("core の型パーツの宣言", () => {
   it("seeds/schemas/event-types.json は core の型パーツの宣言から作ったものと同じ", () => {
     const core = seeds.find((seed) => seed.module_name === "core");
     expect(

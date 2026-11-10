@@ -41,7 +41,7 @@ Worker 自身が処理するリクエスト (RPC と `/virtual/wasm/`) の前に
 
 ## RPC のストアの SQL は definy が書く (2026-11-01)
 
-RPC が読み書きする SQL は definy の `definy.store-*` (`seeds/definy.json`) が作り, `definy.service-io` の `sql`
+RPC が読み書きする SQL は definy の `definy.store-*` (モジュール `definy`) が作り, `definy.service-io` の `sql`
 (`statements: list<definy.sql-statement>`) でホストに渡す。ホスト (`runD1Statements` in `worker/store.ts`) は文を
 `prepare(sql).bind(...params)` して実行するだけ (2 つ以上なら `batch` で 1 つのトランザクション) で, 結果の行を
 `definy.sql-row` (SELECT の順の `{name, value}`. 値は `definy.sql-value` = `null` / `integer` / `text`) にして返す。

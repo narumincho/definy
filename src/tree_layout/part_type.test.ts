@@ -1,33 +1,17 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   expressionToTypeAst,
   typeAstToExpression,
   syncPartTypeParameterNames,
 } from "./part_type.ts";
-
-const SEED_MODULES = [
-  "core",
-  "std",
-  "sample",
-  "definy",
-  "wasi",
-  "wasm",
-  "story",
-];
+import { loadSeedModules } from "../seed_parts.ts";
 
 describe("partType と型の式の相互変換", () => {
-  it("seed の全パーツの型が往復で変わらない", () => {
-    for (const module of SEED_MODULES) {
-      const seed = JSON.parse(
-        readFileSync(
-          new URL(`../../seeds/${module}.json`, import.meta.url),
-          "utf8",
-        ),
-      ) as { parts: ReadonlyArray<{ part_type?: unknown }> };
-      for (const part of seed.parts) {
+  it("seed の全パーツの型が往復で変わらない", async () => {
+    for (const module of await loadSeedModules()) {
+      for (const part of module.parts) {
         // seed のパーツの型は型の式
-        const expression = part.part_type ?? null;
+        const expression = part.partType ?? null;
         expect(typeAstToExpression(expressionToTypeAst(expression))).toEqual(
           expression,
         );

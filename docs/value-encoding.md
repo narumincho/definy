@@ -6,7 +6,7 @@ localStorage の作業中の変更、クリップボードのどれでも同じ�
 パーツの式とパーツの型はどちらも `core.expression` の値 (型は型の式. [type-expression.md](type-expression.md)) で保存する。
 式は stage1 や型チェッカーにそのまま渡し, 型は型チェッカーの形 (`core.type-ast`) にしてから渡す。
 TypeScript の側には式の構造を別の形に変える層 (以前の `toSelfHostedAst` / `partTypeToSelfHostedAst` など) は無い。
-式の形を決めるのは seeds/core.json の型パーツ `core.expression` と `core.type-ast` の宣言だけ。
+式の形を決めるのは core の型パーツ `core.expression` と `core.type-ast` の宣言だけ。
 
 実装は [src/definy_value.ts](../src/definy_value.ts)。
 
@@ -45,7 +45,7 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 }
 ```
 
-形の要点 (正確な形は seeds/core.json の `core.expression` の宣言):
+形の要点 (正確な形は core の `core.expression` の宣言):
 
 - `let` は束縛 1 つずつの入れ子: `{"#let": {variable_id, variable_name, value, body}}`。
   式のツリーエディタは、続けて書いた let を 1 つのブロック (束縛の並びと本体) として見せる
@@ -75,7 +75,7 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 
 ## 形の検査
 
-- seeds/schemas/module-seed.schema.json は core の型パーツの宣言から `npm run build:schema` で作る
+- seeds/schemas/event-types.json (イベントの形の検査に使う宣言) は core の型パーツの宣言から `npm run build:schema` で作る
   (`src/seed_schema.ts`)。`core.expression` などの宣言を変えたら作り直す。
   `src/seed_schema.test.ts` が、スキーマが宣言と合っていることと、seed の全パーツの式と型が宣言の形であることを確かめる。
 - イベントの中身は `core.event-content` の値で, 署名の検証のときに同じ `conformsToTypeDeclaration` で形を確かめる

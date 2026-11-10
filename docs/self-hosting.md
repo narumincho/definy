@@ -224,13 +224,13 @@ graph TD
 
 ---
 
-## seed JSON が正本
+## seed の正本
 
 ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `wasm`, `sample`）のパーツ定義の正本は
-`seeds/*.json` です (以前は Rust のコードで AST を手組みして JSON を生成していた)。
+`seeds/store/` のコミットです (2026-11-09 まで `seeds/*.json`。以前は Rust のコードで AST を手組みして JSON を生成していた)。
 
-- パーツ間の参照は `{"$part": "core.expression"}` のように名前で書き, 読み込むときにシステムアカウントの
-  モジュール ID からパーツ ID に置き換えます (`src/seed_parts.ts` の `resolvePartPlaceholders`)
+- パーツ間の参照はパーツ ID (モジュール名とパーツ名から導出)。テストで式を手で書くときは `{"$part": "core.expression"}` と書いて
+  `src/seed_parts.ts` の `resolvePartPlaceholders` で ID にします
 - `npm run build:seeds` が `public/__definy_seed_bundle.json` と指紋を作ります ([build-artifacts.md](build-artifacts.md))。
   seed の中身は `seeds/store/` (署名済みのイベント. [source-in-store.md](source-in-store.md))
 
@@ -256,7 +256,7 @@ npm run build:stage1
 
 #### 再生成の手順と検証フロー
 
-1. `seeds/*.json` のパーツ定義を読み込み、開発用システムアカウント鍵から導出した公開鍵を用いてパーツ ID のプレースホルダ (`{"$part": "core.compile-to-wasm"}`) を解決する。
+1. `seeds/store/` の `heads.json` のコミットのパーツ定義を読み込む (パーツの参照はパーツ ID)。
 2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全パーツ (2026-10-21 時点で 63 個) を収集する。
 3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (2026-10-21 時点で 85,610 バイト)。
 4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
@@ -286,7 +286,7 @@ stage3 と一致しない。`npm run build:stage1 -- --bootstrap` は不動点�
    (`list_concat` は新しいリストにコピーする)。時間の 82% がランタイム関数 `list_concat` だった
 3. **大きなフレーム**: 生成する関数がすべて i32 のローカル変数を 512 個固定で宣言していた (1 フレーム 2KB 以上)
 
-対策 (seeds/core.json):
+対策 (モジュール core):
 
 1. 2 の対策も兼ねて, 補助関数 `H(items, index, ...)` を, 範囲 `[lo, hi)` を半分に割って `H-range(lo, mid) +++ H-range(mid, hi)`
    とする `H-range` に任せる (分割統治)。深さは O(log n), 連結のコピー量は O(n log n) になる。右半分に渡す `fn_base`
@@ -572,7 +572,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パ�
       網羅性検証 (Self-Hosted Union Variants & Pattern Match Type Checking)**
   - 型エラー型 `core.type-error` に `not_a_union`, `variant_not_found`,
     `non_exhaustive_match` を追加
-  - 直和型探索・検証パーツ群（`seeds/core.json`）を新設
+  - 直和型探索・検証パーツ群（モジュール `core`）を新設
     - `core.union-variant-type-lookup`:
       直和型から指定タグのペイロード型を線形探索（引数なし variant は `{}`
       レコード型として統一）
@@ -583,7 +583,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パ�
       `non_exhaustive_match` を返却
     - `core.type-assignable-union-variants`:
       直和型の双対的幅サブタイピング（$Actual \subseteq Expected$）を再帰検証
-  - パターンマッチ型検査パーツ群（`seeds/core.json`）を新設
+  - パターンマッチ型検査パーツ群（モジュール `core`）を新設
     - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` /
       `core.type-check-match-arms-skipped` の 2 段階に置き換え。Phase 2 の 6 を参照）:
       各アームの環境拡張、本体型検査、戻り値型一致検証（初出アーム型との
@@ -598,7 +598,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パ�
       共変サブタイピング (Self-Hosted List Type Checking & Covariant
       Subtyping)**
   - 型エラー型 `core.type-error` に `cannot_infer_empty_list` を追加
-  - リスト型検査パーツ群（`seeds/core.json`）を新設
+  - リスト型検査パーツ群（モジュール `core`）を新設
     - `core.type-check-list-items`:
       リストリテラルの各要素を期待される要素型に対して再帰検査し、全要素適合時に
       `ok(list({ item_type }))` を返却
@@ -768,7 +768,7 @@ compile-expr-instructions: expression -> list<number>
 式 AST を WebAssembly
 のバイトコード命令列（`list<number>`）へ再帰的に変換します。
 
-definy のコンパイラに依らない Wasm のバイナリの書き方は `wasm` モジュール (`seeds/wasm.json`) にまとめています。
+definy のコンパイラに依らない Wasm のバイナリの書き方は `wasm` モジュール (モジュール `wasm`) にまとめています。
 
 - 命令のオペコード: `wasm.call` (`0x10`), `wasm.local-get` (`0x20`) など (型は `number`)。命令列のリテラルは
   `[16, 1]` ではなく `[wasm.call, 1]` と書きます (#762)
@@ -927,7 +927,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 8: レコード構築・フィールドアクセスと動的等価判定
 
-#### 1. レコード型検査パーツ群 (`seeds/core.json`)
+#### 1. レコード型検査パーツ群 (モジュール `core`)
 
 - `core.record-field-type-lookup`:
   `list<{ key: string, value: type-ast }> -> string -> number -> optional<type-ast>`
@@ -937,7 +937,7 @@ validate-module: module-definition -> list<entry> -> boolean
   レコードリテラルを走査し、各フィールド式を `core.type-check`
   で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
 
-#### 2. レコード動的評価パーツ群 (`seeds/core.json`)
+#### 2. レコード動的評価パーツ群 (モジュール `core`)
 
 - `core.record-field-lookup`:
   `list<{ key: string, value: value }> -> string -> number -> value`
@@ -947,7 +947,7 @@ validate-module: module-definition -> list<entry> -> boolean
   レコードリテラルの全フィールド式を `core.eval-value`
   で動的評価して動的レコード `core.value::record` を構築。
 
-#### 3. レコード動的等価判定パーツ (`seeds/core.json`)
+#### 3. レコード動的等価判定パーツ (モジュール `core`)
 
 - `core.value-equals-record-fields`:
   `list<{ key: string, value: value }> -> list<{ key: string, value: value }> -> number -> boolean`
@@ -958,7 +958,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 9: 直和型（Union）・パターンマッチ（Match）の自己ホスト型検査 & 網羅性検証
 
-#### 1. 直和型探索・検証パーツ群 (`seeds/core.json`)
+#### 1. 直和型探索・検証パーツ群 (モジュール `core`)
 
 - `core.union-variant-type-lookup`:
   `list<{ tag: string, payload: optional<type-ast> }> -> string -> number -> result<type-ast, type-error>`
@@ -975,7 +975,7 @@ validate-module: module-definition -> list<entry> -> boolean
   実際の直和型の全バリアントが期待される直和型に含まれ、ペイロード型が代入適合しているか（直和型の双対的幅サブタイピング:
   $Actual \subseteq Expected$）を再帰検証。
 
-#### 2. パターンマッチ型検査パーツ群 (`seeds/core.json`)
+#### 2. パターンマッチ型検査パーツ群 (モジュール `core`)
 
 - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` と
   `core.type-check-match-arms-skipped` の 2 段階に置き換え）:
@@ -991,7 +991,7 @@ validate-module: module-definition -> list<entry> -> boolean
 
 ### Phase 10: リスト式（List Literal）の自己ホスト型検査 & 共変サブタイピング
 
-#### 1. リスト型検査パーツ群 (`seeds/core.json`)
+#### 1. リスト型検査パーツ群 (モジュール `core`)
 
 - `core.type-check-list-items`:
   `list<expression> -> type-env -> number -> type-ast -> type-result`
@@ -1003,13 +1003,13 @@ validate-module: module-definition -> list<entry> -> boolean
   を返却し、1個以上の場合は先頭要素から型を推論して残りの要素を
   `core.type-check-list-items` で検証。
 
-#### 2. リスト型の共変サブタイピング (`seeds/core.json`)
+#### 2. リスト型の共変サブタイピング (モジュール `core`)
 
 - リスト型は要素型に関して共変（Covariant）です：
   $ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$
   要素型がレコードの幅サブタイピング（$Expected \subseteq Actual$）を満たす場合、リスト全体も自動的に代入適合となります。
 
-#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`seeds/core.json`)
+#### 3. リスト式の自己ホスト動的評価 & 等価比較 (モジュール `core`)
 
 - `core.eval-list-items`:
   `list<expression> -> env -> number -> list<value> -> list<value>`

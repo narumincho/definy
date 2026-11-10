@@ -20,7 +20,7 @@ import {
 
 /**
  * 紹介スライド (/about の上) の絵.
- * スライドの並び・題・秒数・ステップの数・切り替え・台詞は definy の値 `story.slides` (seeds/story.json. src/story/story_value.ts).
+ * スライドの並び・題・秒数・ステップの数・切り替え・台詞は definy の値 `story.slides` (seeds/store の story モジュール. src/story/story_value.ts).
  * 1 枚のスライドは `steps` 回の「次へ」で要素が順に現れる (`<Reveal at={n}>`).
  * 再生すると `duration` 秒をステップの数 + 1 で等分した間隔で進む (src/story/timeline.ts).
  * 大きさは全て em で書き, 1em はスライドの幅の 1/80 (src/story/story.css の .story-slide)
@@ -2390,7 +2390,7 @@ function ClosingSlide({ step, lang }: SlideProps): JSX.Element {
   );
 }
 
-/** スライドの id ごとの絵. 並びや題などは definy の値 `story.slides` (seeds/story.json) で決める */
+/** スライドの id ごとの絵. 並びや題などは definy の値 `story.slides` (seeds/store の story モジュール) で決める */
 const RENDERERS: Readonly<Record<string, (props: SlideProps) => JSX.Element>> =
   {
     title: TitleSlide,

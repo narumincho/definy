@@ -7,7 +7,7 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 
 | ファイル                                                              | 役割                                                                                                                                                                                         |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [seeds/story.json](../seeds/story.json)                               | definy のモジュール `story`. スライドの並び・題・秒数・ステップの数・切り替え・ずんだもんの台詞を definy の値 `story.slides` で書く (下の「スライドは definy の値」)                         |
+| `seeds/store/` の story モジュール                                    | definy のモジュール `story`. スライドの並び・題・秒数・ステップの数・切り替え・ずんだもんの台詞を definy の値 `story.slides` で書く (下の「スライドは definy の値」)                         |
 | [src/story/story_value.ts](../src/story/story_value.ts)               | `story.slides` の式をその場で評価して TypeScript の値にする                                                                                                                                  |
 | [src/story/slides.tsx](../src/story/slides.tsx)                       | スライドの絵 (id ごとの React のコンポーネント) と関連プロジェクトのリンク (`PROJECTS`)                                                                                                      |
 | [src/story/timeline.ts](../src/story/timeline.ts)                     | 再生位置 (秒) とスライド・ステップの対応                                                                                                                                                     |
@@ -80,13 +80,13 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 
 ## スライドは definy の値
 
-スライドの並び・題・秒数・ステップの数・切り替えのアニメーション・ずんだもんの台詞は, definy のモジュール `story` (プロジェクト `story`. seeds/story.json が正本) の値 `story.slides : list(story.slide)` で書く (2026-11-06 から)。
+スライドの並び・題・秒数・ステップの数・切り替えのアニメーション・ずんだもんの台詞は, definy のモジュール `story` (プロジェクト `story`. `seeds/store/` が正本. ブラウザは `src/story/story_slides.generated.json` を読む) の値 `story.slides : list(story.slide)` で書く (2026-11-06 から)。
 サイトはこの値を描くだけで, スライドの絵 (図や表) は id ごとの React のコンポーネント (`RENDERERS`) に残す。
 
 - 型: `story.slide` (`id`, `title: story.text`, `duration`, `steps`, `transition: story.transition`, `narration: list(option(story.narration-line))`), `story.narration-line` (`speech`, `subtitle: option(string)`, `face: story.face`, `en`, `eo`, `eo_speech: option(list(string))`), `story.text` (`ja` / `en` / `eo`)。definy のタグは `_` で書き (`wipe_right`), TypeScript では `-` にする
 - 読み方: [src/story/story_value.ts](../src/story/story_value.ts) が seed の式 (リテラルだけ) を `evaluateLiteral` (src/part_definition.ts) でその場で評価し, 形を確かめて TypeScript の値にする。評価器も Wasm も使わないので, ビルドにも Node のスクリプト (音声の生成) にもそのまま読める
 - 型の検査: 値が `story.slide` の型に合うことは definy の型チェッカーが seed の全パーツと一緒に確かめる (src/self_hosted_type_check.test.ts の「accepts every seed part」。タグを書き間違えるとここで落ちる)
-- 直し方: seeds/story.json を直して `npm run commit:seeds` でコミットにする ([system-account.md](system-account.md))。直したら `npm run build:seeds` で指紋を更新し, 台詞を変えたら音声を作り直す
+- 直し方: 手元のサーバーの `definy_commit_parts` で `story.slides` を直し `npm run export:store` する ([source-in-store.md](source-in-store.md) の「編集の流れ」)。直したら `npm run build:seeds` で指紋と `src/story/story_slides.generated.json` を更新し, 台詞を変えたら音声を作り直す
 - セルフホストのスライド (「definy で definy を表現する」) は, 最後のステップで「このスライドも definy の値 story.slides」と出し, `story.slides` の中のこのスライドの式 (`id` と `transition` だけ) をエディタと同じ木の描画 (`ScaledExpressionTree`) で見せる。台詞でも「並びや台詞は definy の値で書いてある」と言う
   - 見出しの右の低い場所に入れるので, 木は広い幅 (`maxWidth: 1200`) で組んで項目を 1 行に並べ, 描いた木の実際の幅に合わせて縮める (`widthPx` を省く)。組んだときの幅の見積もりは実際より広い。大きさは transform の影響を受けない `offsetWidth` / `offsetHeight` で測る (このスライドは回転しながら現れるので, 外接する矩形で測ると大きすぎる)
   - ラベルが 2 行になると見出しの行が高くなり, 下の本文が吹き出しに潜る。1 行 (`white-space: nowrap`) に収まる文にする
@@ -97,7 +97,7 @@ YouTube のように再生位置 (`3:21 / 5:05`) を持つ。既定は止まっ�
 
 VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, 配信する (ブラウザから VOICEVOX は呼ばない)。
 
-1. 台本は definy の値 `story.slides` (seeds/story.json) の各スライドの `narration` に, ステップの順に書く (台詞の無いステップは `none`)。語尾は「〜なのだ」。
+1. 台本は definy の値 `story.slides` の各スライドの `narration` に, ステップの順に書く (台詞の無いステップは `none`)。語尾は「〜なのだ」。
    全てのスライドにある。要素を先に全部出してから話せるよう, 台詞は基本的にスライドの最後のステップに置く (署名付きイベントのスライドだけはステップごと)。
    `speech` は読ませる文 (definy は「デファイニー」のようにかなで書く), `subtitle` は字幕 (`none` なら `speech`), `face` は表情。
    `en` / `eo` は英語・エスペラントの字幕で, 日本語の字幕と同じ数の文の配列で書く (同じ時刻で 1 文ずつ切り替える。英語は略語の . で文を分けられないので配列にした)。数が違うと生成スクリプトがエラーにする。

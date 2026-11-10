@@ -1,6 +1,6 @@
 /**
  * 紹介スライドのずんだもんの解説.
- * 台詞は definy の値 `story.slides` (seeds/story.json) の各スライドの `narration` に, ステップの順に 1 つずつ書く
+ * 台詞は definy の値 `story.slides` (seeds/store の story モジュール) の各スライドの `narration` に, ステップの順に 1 つずつ書く
  * (無いステップは none). 要素が現れていくステップは短く (REVEAL_SECONDS) 済ませ, 全て表示したステップで話す.
  * `speech` は VOICEVOX に読ませる文 (英単語などはかなにする. 区切って読まれてしまう名前は
  * `{デファイ'ニイワ}` のように {} の中にアクセント付きのかなで書く. scripts/generate_story_voice.ts),
