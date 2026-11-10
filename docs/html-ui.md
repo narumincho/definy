@@ -160,13 +160,12 @@ React の UI を消せるように, 手元のサーバーの html-ui (`editable:
 - 名前を変えても, 古い名前を参照する他のパーツは書き換えない (型検査の誤りとして表示される)。説明も引き継がないので書き直す
 - 残り: ブランチを main に取り込む (MCP のツールがまだ無い), コミットの履歴と差分
 
-### 新しいストアに html-ui を pull できない (2026-11-10)
+### 新しいストアに html-ui を pull できなかった (2026-11-10)
 
 公開サーバーの html-ui の `main` の古いコミットは, 今の seed の型検査を通らない (`definy.handle-request` などの型が変わった)。
-`definy_pull` はイベントを古い順に型検査して入れるので, 最初のコミットで落ち, その後のコミットも「親が最新でない」で全て断られる。
-クラウドのコンテナでは, 公開サーバーの `GetEvents` / `GetContent` で読んだ html-ui のイベントと中身を手元の SQLite (`store.sqlite` の
-`events` と `cas_contents`) に直接入れて使った (definy-html の写しと同じく, 相手が受け付けたものを信じる)。
-手元のサーバーの `definy_pull` も写しと同じく署名と中身だけ確かめる形にするのが筋だが, まだしていない。
+`definy_pull` はイベントを古い順に `SubmitEvent` と同じ検査で入れていたので, 最初のコミットで落ち, その後のコミットも「親が最新でない」で全て断られた。
+`definy_pull` (`definy.mcp-pull`) を写しと同じ `definy.mirror-submit` (署名と中身だけ確かめる) で入れる形にした
+([local-server.md](local-server.md)「公開サーバーとの同期」)。新しいストアから pull して `/p/html-ui/main` が開けることを確かめた。
 
 ### 公開サーバーへの push が 1102 になった (2026-11-10)
 
