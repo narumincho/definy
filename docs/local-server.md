@@ -105,8 +105,11 @@ TypeScript の Vitest を使わずに definy のパーツを確かめるため�
 相手の EventService の RPC を能力 `http_fetch` で呼ぶ ([service.md](service.md))。
 
 - `definy_pull` (`definy.mcp-pull`): 相手の全てのイベント (`GetEvents` を 500 件ずつ) のうち, このサーバーに無いものを
-  古い順にこのサーバーの `SubmitEvent` に渡す。`missing_content` なら相手の `GetContent` で中身を読み,
+  古い順に `definy.mirror-submit` で入れる。`missing_content` なら相手の `GetContent` で中身を読み,
   このサーバーの `UploadContent` に入れてからもう一度渡す
+  - 2026-11-10 から, definy-html の写しと同じく署名と中身だけ確かめ, イベントの規則と型は確かめない (相手が受け付けたときに確かめている)。
+    `SubmitEvent` と同じ検査だと, 今の seed の型検査を通らない古いコミット (html-ui の初めの方など) で落ち,
+    そのブランチの後のコミットも「親が最新でない」で全て断られて, 新しいストアに取り込めなかった
 - `definy_push` (`definy.mcp-push`): このサーバーの MCP のアカウント (`account.json`) のイベントのうち,
   相手に無いものを古い順に相手の `SubmitEvent` に送る。中身はこのサーバーのストアから読み, 相手の `UploadContent` に送る。
   取り込んだ他人のイベントは送らない
