@@ -98,6 +98,11 @@ definy には GitHub のフォークは無く, ブランチだけで編集を分
      取り込むブランチにだけあるモジュールはこのプロジェクトの新しいモジュールになる
   3. main のパーツとの差を main のドラフトにし (`mergeToWorkingChanges`. 無くなったパーツは `deleted`), 取り込むコミットを
      ドラフトの `merges` に入れ, main を表示する。変更のページで確かめ (型検査も), コミットすると `merged_commit_hash` が入る
+- MCP のツール `definy_merge_branch` (`definy.mcp-merge-branch`, 2026-11-10): `{project, branch, into?, message?}` で, `branch` の最新のコミットを
+  `into` (既定 `main`) に同じ 3 方向マージで取り込み, `merged_commit_hash` 付きのコミットとしてすぐ提出する (型検査を通らなければ誤り)。
+  共通の祖先は `definy.merge-ancestors` (親と取り込んだコミットを幅優先でたどる) と `definy.merge-first-common`,
+  パーツのマージは `definy.merge-parts` (内容は content hash で比べる), モジュールの説明と公開範囲も同じ規則で `definy.merge-modules` が決める。
+  衝突したパーツは結果のテキストに並べる。手元のサーバーの HTML の画面は, main 以外のブランチのページに「main に取り込む」を出す ([html-ui.md](html-ui.md))
 - 取り込む前にそのプロジェクトの作業中の変更 (main のドラフトを含む) があれば取り込まない (先にコミットか破棄)。取り込みをやめると main のドラフトを捨てる
 - 取り込むものが無ければ (main にもう入っている) 何もしない
 - プロジェクトのページのコミット履歴は, 取り込みのコミットに取り込んだコミットへのリンクを出す (履歴は親だけをたどる)
