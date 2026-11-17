@@ -158,7 +158,15 @@ React の UI を消せるように, 手元のサーバーの html-ui (`editable:
 - フォームは `html-ui.tool-form(tool, then, confirm, fields, button)` で作る。小さな JS (`html-ui.tool-script`) が名前の付いた入力を引数にして送り,
   成功したら `then` のページ (`{名前}` を引数の値に置き換える) を開くか, 結果を表示する。`data-json` の付いた入力は JSON として読む
 - 名前を変えても, 古い名前を参照する他のパーツは書き換えない (型検査の誤りとして表示される)。説明も引き継がないので書き直す
-- 残り: コミットの履歴と差分
+
+### コミットの履歴 (2026-11-17)
+
+- `/h/<プロジェクト>/<ブランチ>?limit=N` (`html-ui.history-page`) は `definy_get_history` の結果を HTML にする (1 行ずつ `html-ui.history-line`)。
+  プロジェクトのページ (`html-ui.history-link`) からリンクする。「もっと見る」は `limit` を 20 増やす。時刻は小さな JS でブラウザの地域の書き方にする
+- `definy_get_history` は最初, 各コミットのイベントを definy で読み直していて, definy プロジェクトで 42 秒かかった (パーツ ID を definy の sha256 で求めるのが重い)。
+  そこでコミットキャッシュの `definy.stored-commit` にメッセージ・親のコミット・取り込んだコミットを足し, キャッシュだけで求めるようにした (手元で 0.2〜0.7 秒)。
+  古い形 (`message` が無い) のキャッシュはホスト (`isCurrentCommitEntry`) が無いものとして読み直す
+- 差分はパーツの名前 (`モジュール.名前`) と content hash の比較だけ。式の中の差分は見せない (古いコミットのパーツの表示とあわせて残り)
 
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 

@@ -104,6 +104,7 @@ describe("definy.handle-mcp", () => {
       "definy_create_project",
       "definy_commit_parts",
       "definy_merge_branch",
+      "definy_get_history",
       "definy_run_expression",
       "definy_run_tests",
       "definy_compile_expression",
@@ -486,6 +487,26 @@ describe("書き込みのツール (専用アカウント)", () => {
         })
       ).text,
     ).toContain("expression:\n42");
+
+    // 履歴は新しい順にコミットとパーツの追加・変更・削除を返す
+    const history = await call("definy_get_history", {
+      project: "sample",
+      branch: "mcp-work",
+      limit: 2,
+    });
+    expect(history.isError, history.text).toBe(false);
+    const lines = history.text.split("\n");
+    expect(lines[0]).toBe(
+      "History of branch mcp-work of project sample (newest first)",
+    );
+    expect(lines[1]).toMatch(
+      new RegExp(`^Commit \\S+ by ${credentials.accountId} at \\d+$`),
+    );
+    expect(history.text).toContain("\n  ~ extra.answer\n");
+    expect(history.text).toContain(
+      "\n  Change parts from MCP\n  ~ sample.prime-numbers\n  + sample.add-one\n  + extra.answer\n  - sample.greet",
+    );
+    expect(lines.at(-1)).toMatch(/^Older commits from \S+$/);
 
     // 型が合わないコミットはサーバーが受け付けない
     const wrong = await call("definy_commit_parts", {
