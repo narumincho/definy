@@ -474,6 +474,46 @@ describe("SubmitEvent の型検査", () => {
     expect(privateModule.message).toContain("of a private module");
   }, 60_000);
 
+  it("型環境は参照するパーツと, その型が参照する型パーツをたどって作る (definy.latest-closure)", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    const typeType = { "#type_type": null };
+    // lib.get の型 lib.u は lib.t の別名で, lib.t は number
+    expect(
+      await submitCommit(store, env, user, "lib", [
+        part("t", typeType, { "#type_number": null }),
+        part("u", typeType, await partReference("", "lib", "t")),
+        part("get", await partReference("", "lib", "u"), { "#number": 5 }),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    const get = await partReference("", "lib", "get");
+    expect(
+      await submitCommit(store, env, user, "app", [
+        part("ok", { "#type_number": null }, get),
+      ]),
+    ).toEqual({ status: 200, message: "" });
+    const result = await submitCommit(store, env, user, "app", [
+      part("ok", { "#type_number": null }, get),
+      part("bad", { "#type_string": null }, get),
+    ]);
+    expect(result.status).toBe(400);
+    expect(result.message).toContain("part 'app.bad': type error");
+    expect(result.message).not.toContain("part 'app.ok'");
+  }, 60_000);
+
+  it("式で参照していないが型チェッカーが使うパーツ (Code<T> の core.code) も型環境に入れる (definy.closure-implicit-roots)", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    const result = await submitCommit(store, env, user, "app", [
+      part(
+        "quoted",
+        await partReference("", "core", "expression"),
+        quoted({ "#number": 1 }),
+      ),
+    ]);
+    expect(result).toEqual({ status: 200, message: "" });
+  }, 60_000);
+
   it("型エラーのあるコミットは 400 で拒否し, パーツ名と理由を返す", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");
