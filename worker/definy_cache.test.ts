@@ -106,6 +106,26 @@ describe("永続キャッシュ (D1 に保存するホストのキャッシュ)"
     expect(read).toEqual([commitEntry("ev-1"), noneEntry]);
   });
 
+  it("キャッシュに無い seed のコミットは build:seeds が読んだ結果を使い, D1 にも保存する", async () => {
+    const db = createSqliteD1Database();
+    let loads = 0;
+    const seed = async () => {
+      loads += 1;
+      return [commitEntry("ev-seed"), commitEntry("ev-other-seed")];
+    };
+    const host = createCommitCacheHost(db, new Map(), seed);
+    expect(await host.readCachedCommits(["ev-seed", "ev-x"])).toEqual([
+      commitEntry("ev-seed"),
+    ]);
+    // 全部キャッシュにあれば seed は読まない
+    await host.readCachedCommits(["ev-seed"]);
+    expect(loads).toBe(1);
+    const reader = createCommitCacheHost(db, new Map());
+    expect(await reader.readCachedCommits(["ev-seed"])).toEqual([
+      commitEntry("ev-seed"),
+    ]);
+  });
+
   it("D1 が無ければメモリだけ (別のメモリからは読めない)", async () => {
     const writer = createDefinitionCacheHost(undefined, new Map());
     await writer.writeCachedDefinitions([definitionEntry("hash-a")]);

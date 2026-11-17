@@ -10,7 +10,10 @@ import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { compileSeedFunction } from "../src/event_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
-import { createStage1Compiler } from "../src/stage1_compiler.ts";
+import {
+  createStage1Compiler,
+  instantiateCompiledFunction,
+} from "../src/stage1_compiler.ts";
 import {
   readStoreSeed,
   type StoreSeed,
@@ -280,6 +283,39 @@ export async function writeTypeCheckerWasm(): Promise<void> {
   );
 }
 
+/**
+ * seed のプロジェクトのコミットを {@link COMMIT_DECODER_WASM_PATH} (`definy.decode-stored-commit`) で読んだ結果
+ * (`definy.commit-cache-entry`) を書き出すファイル (コミットしない. 静的アセット `/__definy_seed_commit_cache.json`).
+ * definy のモジュール全体のような大きなコミットは, パーツ ID を definy の sha256 で求めるのが重く
+ * Workers の CPU の上限 (無料プランで約 2 秒) の中で読み終えられないので, サーバーはコミットキャッシュに無い seed のコミットに
+ * これを使う (worker/commit_store.ts の `createCommitCacheHost`, docs/database.md)
+ */
+export const SEED_COMMIT_CACHE_PATH = "public/__definy_seed_commit_cache.json";
+
+/** {@link SEED_COMMIT_CACHE_PATH} を書き出す ({@link writeEventCheckerWasm} の後に呼ぶ) */
+export async function writeSeedCommitCache(bundle: SeedBundle): Promise<void> {
+  const decoder = new WebAssembly.Module(
+    await readFile(resolve(COMMIT_DECODER_WASM_PATH)),
+  );
+  const entries = bundle.events.flatMap((event) => {
+    if (event.eventType !== "project_commit") {
+      return [];
+    }
+    const instance = instantiateCompiledFunction(decoder);
+    const commit = instance.read(
+      instance.call({
+        signed_event_bytes: instance.writeArgument(event.signedEventBytes),
+      }),
+    );
+    return [{ event_hash: event.eventHash, commit }];
+  });
+  await writeFile(
+    resolve(SEED_COMMIT_CACHE_PATH),
+    `${JSON.stringify(entries)}\n`,
+    "utf-8",
+  );
+}
+
 // 直接実行時の処理 (`npm run build:seeds`. `npm run dev` / `npm run build` の前にも実行する)
 if (
   process.argv[1] &&
@@ -289,6 +325,7 @@ if (
   const bundle = await writeSeedBundle();
   await writeTypeCheckerWasm();
   await writeEventCheckerWasm();
+  await writeSeedCommitCache(bundle);
   await writeFile(
     resolve(STORY_SLIDES_PATH),
     await generateStorySlides(),

@@ -140,7 +140,10 @@ export async function handleWorkerRequest(
       },
       {
         // 読んだコミットと定義の式のキャッシュは D1 にも保存して isolate をまたいで使い回す
-        ...createCommitCacheHost(env.DB),
+        // seed のコミットは build:seeds が読んだ結果も使う (definy で読むと CPU の上限を超える大きなコミットがある)
+        ...createCommitCacheHost(env.DB, undefined, () =>
+          store.seedCommitCache(env, url.origin),
+        ),
         ...createDefinitionCacheHost(env.DB),
         ...createResolutionCacheHost(env.DB),
         runSql: (statements) => runD1Statements(requireDb(env), statements),

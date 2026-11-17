@@ -23,3 +23,4 @@ playwright-report/
 *.psd
 .void-wrangler.jsonc
 .cloudflare
+/public/__definy_seed_commit_cache.json

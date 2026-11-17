@@ -329,57 +329,83 @@ async function persistEntries(
 export function createCommitCacheHost(
   db?: D1Database,
   memory: Map<string, CommitCacheEntry> = definyCommitCache,
+  seedEntries?: () => Promise<ReadonlyArray<CommitCacheEntry>>,
 ): Pick<ServiceIoHost, "readCachedCommits" | "writeCachedCommits"> {
-  return {
-    readCachedCommits: async (eventHashes) => {
-      const missing: Array<string> = [];
-      const result: Array<CommitCacheEntry> = [];
-      for (const eventHash of eventHashes) {
-        const entry = memory.get(eventHash);
-        if (entry === undefined) missing.push(eventHash);
-        else result.push(entry);
-      }
-      if (db !== undefined && missing.length > 0) {
-        const persisted = await readPersistedEntries(
-          db,
-          "host_commit_cache",
-          "event_hash",
-          missing,
+  const host: Pick<ServiceIoHost, "readCachedCommits" | "writeCachedCommits"> =
+    {
+      readCachedCommits: async (eventHashes) => {
+        const result = await readCached(eventHashes);
+        if (seedEntries === undefined || result.length === eventHashes.length) {
+          return result;
+        }
+        // seed のコミットは build:seeds が読んだ結果を使う (大きなコミットを読むのは CPU の上限を超えるため)
+        const found = new Set(result.map((entry) => entry.event_hash));
+        const wanted = new Set(eventHashes.filter((hash) => !found.has(hash)));
+        const fromSeed = (await seedEntries()).filter((entry) =>
+          wanted.has(entry.event_hash),
         );
-        for (const { hash, entry } of persisted) {
-          const cacheEntry = entry as CommitCacheEntry;
-          if (cacheEntry.event_hash === hash) {
-            memory.set(hash, cacheEntry);
-            persistedCommitHashes.add(hash);
-            result.push(cacheEntry);
-          }
+        if (fromSeed.length > 0) {
+          await host.writeCachedCommits(fromSeed);
+        }
+        return [...result, ...fromSeed];
+      },
+      writeCachedCommits: (entries) => writeCached(entries),
+    };
+  return host;
+
+  async function readCached(
+    eventHashes: ReadonlyArray<string>,
+  ): Promise<Array<CommitCacheEntry>> {
+    const missing: Array<string> = [];
+    const result: Array<CommitCacheEntry> = [];
+    for (const eventHash of eventHashes) {
+      const entry = memory.get(eventHash);
+      if (entry === undefined) missing.push(eventHash);
+      else result.push(entry);
+    }
+    if (db !== undefined && missing.length > 0) {
+      const persisted = await readPersistedEntries(
+        db,
+        "host_commit_cache",
+        "event_hash",
+        missing,
+      );
+      for (const { hash, entry } of persisted) {
+        const cacheEntry = entry as CommitCacheEntry;
+        if (cacheEntry.event_hash === hash) {
+          memory.set(hash, cacheEntry);
+          persistedCommitHashes.add(hash);
+          result.push(cacheEntry);
         }
       }
-      return result;
-    },
-    writeCachedCommits: async (entries) => {
-      for (const entry of entries) {
-        memory.set(entry.event_hash, entry);
+    }
+    return result;
+  }
+
+  async function writeCached(
+    entries: ReadonlyArray<CommitCacheEntry>,
+  ): Promise<void> {
+    for (const entry of entries) {
+      memory.set(entry.event_hash, entry);
+    }
+    if (db === undefined) return;
+    const fresh: Array<{ hash: string; json: string }> = [];
+    for (const entry of entries) {
+      if (persistedCommitHashes.has(entry.event_hash)) continue;
+      try {
+        fresh.push({
+          hash: entry.event_hash,
+          json: JSON.stringify(entry),
+        });
+        persistedCommitHashes.add(entry.event_hash);
+      } catch {
+        // JSON にできない値はメモリだけに残す
       }
-      if (db === undefined) return;
-      const fresh: Array<{ hash: string; json: string }> = [];
-      for (const entry of entries) {
-        if (persistedCommitHashes.has(entry.event_hash)) continue;
-        try {
-          fresh.push({
-            hash: entry.event_hash,
-            json: JSON.stringify(entry),
-          });
-          persistedCommitHashes.add(entry.event_hash);
-        } catch {
-          // JSON にできない値はメモリだけに残す
-        }
-      }
-      if (fresh.length > 0) {
-        await persistEntries(db, "host_commit_cache", "event_hash", fresh);
-      }
-    },
-  };
+    }
+    if (fresh.length > 0) {
+      await persistEntries(db, "host_commit_cache", "event_hash", fresh);
+    }
+  }
 }
 
 /**
