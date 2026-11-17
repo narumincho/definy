@@ -501,6 +501,19 @@ describe("SubmitEvent の型検査", () => {
     expect(result.message).not.toContain("part 'app.ok'");
   }, 60_000);
 
+  it("式で参照していないが型チェッカーが使うパーツ (Code<T> の core.code) も型環境に入れる (definy.closure-implicit-roots)", async () => {
+    const { store, env } = await createSeededStore();
+    const user = await generateAccountCredentials("user");
+    const result = await submitCommit(store, env, user, "app", [
+      part(
+        "quoted",
+        await partReference("", "core", "expression"),
+        quoted({ "#number": 1 }),
+      ),
+    ]);
+    expect(result).toEqual({ status: 200, message: "" });
+  }, 60_000);
+
   it("型エラーのあるコミットは 400 で拒否し, パーツ名と理由を返す", async () => {
     const { store, env } = await createSeededStore();
     const user = await generateAccountCredentials("user");

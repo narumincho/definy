@@ -145,6 +145,9 @@ CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は
         型チェッカーは検査しないパーツについては型しか見ないので, 式の中の参照はたどらない。段ごとにホストへ 1 回ずつ読みに行く
      3. 解決結果が無く, 定義の式を評価器で評価しないと中身が分からないパーツ (`definy.immediate-part-content` が `none`) が
         コミットか閉包にあれば, 参照が分からないので以前と同じく全パーツを使う (`definy.read-commit-check-input-full`)
+     - 型チェッカーが式の参照ではなく ID の文字列で使うパーツ (`Code<T>` の宣言を読む `core.type-resolve` の `core.code`,
+       定義の式の期待する型 `core.part-content`) も始点に入れる (`definy.closure-implicit-roots`)。
+       最初はこれが無く, E2E の定義のパーツ (`quote` の `.expression`) が `not_a_record (actual: Code<type>)` で拒否された
      - 閉包のパーツは 1 パーツずつの `definy.latest-commit-source` にする (プロジェクト名は参照できるかの検査に使う)
      - 手元で html-ui のコミット (13 パーツ) の提出は 0.8 秒 → 0.23 秒になった
 2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
