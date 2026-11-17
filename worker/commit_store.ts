@@ -325,6 +325,7 @@ async function persistEntries(
 /**
  * 今の `definy.stored-commit` の形で覚えたものか. 2026-11-17 に `message`, `parent_commit_hash`, `merged_commit_hash` を足したので,
  * それより前に D1 に保存したもの (`message` が無い) は覚えていないものとして読み直させる (definy が形の違う値を読まないように)
+ * 同じくモジュールに `description`, `visibility` を足した (2026-11-17, モジュールの設定の表示のため)
  */
 function isCurrentCommitEntry(entry: CommitCacheEntry): boolean {
   const commit = entry.commit;
@@ -332,10 +333,24 @@ function isCurrentCommitEntry(entry: CommitCacheEntry): boolean {
     return true;
   }
   const some = (commit as { readonly "#some": unknown })["#some"];
+  if (
+    typeof some !== "object" ||
+    some === null ||
+    typeof (some as { readonly message?: unknown }).message !== "string"
+  ) {
+    return false;
+  }
+  // モジュールの説明と公開範囲 (2026-11-17) が無い古い形
+  const modules = (some as { readonly modules?: unknown }).modules;
   return (
-    typeof some === "object" &&
-    some !== null &&
-    typeof (some as { readonly message?: unknown }).message === "string"
+    Array.isArray(modules) &&
+    modules.every(
+      (module: unknown) =>
+        typeof module === "object" &&
+        module !== null &&
+        "visibility" in module &&
+        "description" in module,
+    )
   );
 }
 

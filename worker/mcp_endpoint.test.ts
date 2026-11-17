@@ -508,6 +508,64 @@ describe("書き込みのツール (専用アカウント)", () => {
     );
     expect(lines.at(-1)).toMatch(/^Older commits from \S+$/);
 
+    // モジュールの説明・公開範囲・名前を変え, 消す
+    const moduleChanged = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "mcp-work",
+      modules: [
+        {
+          module: "extra",
+          description: "Extra parts",
+          visibility: "private",
+          rename: "extra2",
+        },
+      ],
+      project_description: "Sample project",
+    });
+    expect(moduleChanged.isError, moduleChanged.text).toBe(false);
+    expect(moduleChanged.text).toContain(
+      "Committed 0 part changes and 1 module changes to branch mcp-work of project sample",
+    );
+    expect(
+      (
+        await call("definy_get_project", {
+          project: "sample",
+          branch: "mcp-work",
+        })
+      ).text,
+    ).toContain("modules: sample, extra2\n");
+    expect(
+      await call("definy_commit_parts", {
+        project: "sample",
+        branch: "mcp-work",
+        modules: [{ module: "extra", visibility: "secret" }],
+      }),
+    ).toEqual({
+      text: "visibility must be 'public' or 'private': secret",
+      isError: true,
+    });
+    expect(
+      await call("definy_commit_parts", {
+        project: "sample",
+        branch: "mcp-work",
+        modules: [{ module: "extra" }],
+      }),
+    ).toEqual({ text: "Module extra was not found", isError: true });
+    const moduleDeleted = await call("definy_commit_parts", {
+      project: "sample",
+      branch: "mcp-work",
+      modules: [{ module: "extra2", delete: true }],
+    });
+    expect(moduleDeleted.isError, moduleDeleted.text).toBe(false);
+    expect(
+      (
+        await call("definy_get_project", {
+          project: "sample",
+          branch: "mcp-work",
+        })
+      ).text,
+    ).toContain("modules: sample\n");
+
     // 型が合わないコミットはサーバーが受け付けない
     const wrong = await call("definy_commit_parts", {
       project: "sample",
