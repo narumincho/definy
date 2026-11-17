@@ -14,6 +14,7 @@ import {
   type SqlRow,
   type SqlStatement,
 } from "./service_io.ts";
+import type { CommitCacheEntry } from "./service_io.ts";
 import seederModule from "../wasm/seeder.wasm?module";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import seedFingerprintFile from "../seeds/seed_bundle_fingerprint.json" with { type: "json" };
@@ -42,18 +43,23 @@ type D1ContentRow = {
   readonly content_bytes: string;
 };
 
-async function fetchSeedBundle(
+/**
+ * ビルドで作った静的アセット `/<name>` (`public/<name>`) の JSON を読む. 読めなければ `null`.
+ * Workers は Static Assets の binding, 開発サーバーは fetch, Node.js (手元のサーバー・テスト) はファイルから読む
+ */
+async function fetchStaticJson(
+  name: string,
   env: Env,
   requestOrigin?: string,
-): Promise<SeedBundle | null> {
+): Promise<unknown> {
   // 1. Cloudflare Workers (Static Assets binding)
   if (env.ASSETS) {
     try {
       const origin = requestOrigin || "https://definy.narumincho.workers.dev";
-      const assetUrl = new URL("/__definy_seed_bundle.json", origin).toString();
+      const assetUrl = new URL(`/${name}`, origin).toString();
       const res = await env.ASSETS.fetch(new Request(assetUrl));
       if (res.ok) {
-        return (await res.json()) as SeedBundle;
+        return await res.json();
       }
     } catch {
       // Fall through
@@ -63,11 +69,9 @@ async function fetchSeedBundle(
   // 2. Local dev server / Void HTTP fetch
   if (requestOrigin && typeof fetch !== "undefined") {
     try {
-      const res = await fetch(
-        new URL("/__definy_seed_bundle.json", requestOrigin).toString(),
-      );
+      const res = await fetch(new URL(`/${name}`, requestOrigin).toString());
       if (res.ok) {
-        return (await res.json()) as SeedBundle;
+        return await res.json();
       }
     } catch {
       // Fall through
@@ -78,17 +82,28 @@ async function fetchSeedBundle(
   try {
     const { readFile } = await import("node:fs/promises");
     const { fileURLToPath } = await import("node:url");
-    const path = fileURLToPath(
-      new URL("../public/__definy_seed_bundle.json", import.meta.url),
-    );
-    const content = await readFile(path, "utf-8");
-    return JSON.parse(content) as SeedBundle;
+    const path = fileURLToPath(new URL(`../public/${name}`, import.meta.url));
+    return JSON.parse(await readFile(path, "utf-8"));
   } catch {
     // Filesystem not available
   }
 
   return null;
 }
+
+async function fetchSeedBundle(
+  env: Env,
+  requestOrigin?: string,
+): Promise<SeedBundle | null> {
+  return (await fetchStaticJson(
+    "__definy_seed_bundle.json",
+    env,
+    requestOrigin,
+  )) as SeedBundle | null;
+}
+
+/** seed のコミットキャッシュの静的アセットの名前 ({@link WorkerStore.seedCommitCache}) */
+export const SEED_COMMIT_CACHE_ASSET = "__definy_seed_commit_cache.json";
 
 /**
  * Cloudflare Worker 内でイベント・CAS コンテンツを管理するストア。
@@ -112,6 +127,8 @@ export class WorkerStore {
   private d1Seeded = false;
   /** seed を入れているリクエストが終わるまで, 他のリクエストが待つもの */
   private seeding: Promise<void> | null = null;
+  private seedCommitCacheLoading:
+    Promise<ReadonlyArray<CommitCacheEntry>> | undefined;
   private seedEvents: ReadonlyArray<SeedEventEntry> = [];
   private seedContents: ReadonlyMap<string, string> = new Map<string, string>();
 
@@ -211,6 +228,26 @@ export class WorkerStore {
       ),
     });
     return this.seedFingerprint;
+  }
+
+  /**
+   * seed のプロジェクトのコミットを definy で読んだ結果 (`npm run build:seeds` が作る
+   * `/__definy_seed_commit_cache.json`). コミットキャッシュに無いときに使う (worker/commit_store.ts).
+   * 大きなコミット (definy のモジュール全体) は definy の sha256 でパーツ ID を求めるのが重く,
+   * Workers の CPU の上限で読み終えられないため (docs/database.md)。isolate ごとに 1 度だけ読む
+   */
+  seedCommitCache(
+    env: Env,
+    requestOrigin?: string,
+  ): Promise<ReadonlyArray<CommitCacheEntry>> {
+    this.seedCommitCacheLoading ??= fetchStaticJson(
+      SEED_COMMIT_CACHE_ASSET,
+      env,
+      requestOrigin,
+    ).then((value) =>
+      Array.isArray(value) ? (value as ReadonlyArray<CommitCacheEntry>) : [],
+    );
+    return this.seedCommitCacheLoading;
   }
 
   /**

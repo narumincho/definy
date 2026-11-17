@@ -60,6 +60,12 @@ RPC が読み書きする SQL は definy の `definy.store-*` (モジュール `
 - 受け付けたコミットの一覧は definy (`definy.read-commits`) が `project_commit` のイベントを 500 件ずつ読み, `definy.decode-stored-commit` で読む。読んだものはホストが isolate ごとにイベントハッシュで覚える (`read_cached_commits` / `write_cached_commits`. 2026-11-01 ユーザーの決定)
 - 型チェッカーの入力も definy (`definy.read-commit-check-input`) が読む。CAS の中身を定義の式として読んだものはホストが isolate ごとに content hash で覚える (`read_cached_definitions` / `write_cached_definitions`)
 - 上の 2 つのキャッシュは中身が不変なので、ホストが D1 の `host_commit_cache` / `host_definition_cache` にも保存し、isolate をまたいで使い回す (2026-11-03)。冷たい isolate でもコミットのデコードと定義の CBOR 読み直しを省ける。D1 が無い・失敗したときはメモリだけで動く
+- seed のプロジェクトのコミットは `npm run build:seeds` が `definy.decode-stored-commit` で読んだ結果を静的アセット
+  `/__definy_seed_commit_cache.json` に書き出し, ホストはコミットキャッシュ (メモリと D1) に無いときにそれを使う (2026-11-17)。
+  definy のモジュール全体のコミット (約 1300 パーツ) は, パーツ ID を definy の sha256 で求めるのが重く (手元の Node.js で 1 つ約 0.5 秒),
+  2026-11-10 以降デプロイした seed のコミット 13 個がキャッシュに入らないまま, 提出のたびに全部読み直して Workers の CPU の上限で
+  1102 になっていた (本番の D1 を `export` した写しを手元のサーバーで動かして 6.7 秒 → 0.48 秒)。
+  キャッシュに入らなかった理由: 書き込むのはコミットを読み終えたリクエストだけで, 上限で止められると何も残らない
 - D1 のキャッシュを読むときは 100 件ずつの SELECT (バインドできる値の上限) を `batch` で 1 回の往復にまとめる (2026-11-08)。公開サーバーでは往復 1 回が数十ミリ秒かかり, definy プロジェクト (約 1000 件) の `definy_get_project` は冷たい isolate で 27 往復, 温かい isolate でも 14 往復していた。手元で往復に 80 ミリ秒の遅れを入れて測ると, 冷たい isolate で 2.9 → 1.3 秒 (27 → 7 往復), 温かい isolate で 1.5 → 0.75 秒 (14 → 4 往復)
 - 中身を解決した結果 (解決済みの中身と型検査エントリ) も同じ理由で使い回せるので、`host_resolution_cache` に保存する (2026-11-04)。保存されるのは即時解決できたパーツだけ。設計は [resolution-cache.md](resolution-cache.md)
 - 以前の TypeScript は保存のときに Base64 を標準の形にそろえていたが, 今は definy が受け取った文字列をそのまま保存する
