@@ -323,6 +323,23 @@ async function persistEntries(
 }
 
 /**
+ * 今の `definy.stored-commit` の形で覚えたものか. 2026-11-17 に `message`, `parent_commit_hash`, `merged_commit_hash` を足したので,
+ * それより前に D1 に保存したもの (`message` が無い) は覚えていないものとして読み直させる (definy が形の違う値を読まないように)
+ */
+function isCurrentCommitEntry(entry: CommitCacheEntry): boolean {
+  const commit = entry.commit;
+  if (commit === null || typeof commit !== "object" || !("#some" in commit)) {
+    return true;
+  }
+  const some = (commit as { readonly "#some": unknown })["#some"];
+  return (
+    typeof some === "object" &&
+    some !== null &&
+    typeof (some as { readonly message?: unknown }).message === "string"
+  );
+}
+
+/**
  * {@link definyCommitCache} を読み書きする能力。`db` を渡すと D1 にも保存し、
  * メモリに無いものは D1 から読む。`memory` はテスト用 (isolate を模す)
  */
@@ -360,7 +377,8 @@ export function createCommitCacheHost(
     const result: Array<CommitCacheEntry> = [];
     for (const eventHash of eventHashes) {
       const entry = memory.get(eventHash);
-      if (entry === undefined) missing.push(eventHash);
+      if (entry === undefined || !isCurrentCommitEntry(entry))
+        missing.push(eventHash);
       else result.push(entry);
     }
     if (db !== undefined && missing.length > 0) {
@@ -372,7 +390,10 @@ export function createCommitCacheHost(
       );
       for (const { hash, entry } of persisted) {
         const cacheEntry = entry as CommitCacheEntry;
-        if (cacheEntry.event_hash === hash) {
+        if (
+          cacheEntry.event_hash === hash &&
+          isCurrentCommitEntry(cacheEntry)
+        ) {
           memory.set(hash, cacheEntry);
           persistedCommitHashes.add(hash);
           result.push(cacheEntry);
