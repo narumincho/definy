@@ -135,6 +135,18 @@ CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は
      参照できるパーツ (`definy.latest-visibility-target`. 中身が無ければ `public`) にする。以前はホストが TypeScript (`commitContents`,
      `wasm/definition_evaluator.wasm`) で求め, 中身を content hash ごと・コミットごとにキャッシュしていた。今は SubmitEvent のたびに
      型環境の全パーツの定義の式を service.wasm に渡して読む (core 全体のコミットの組み込みのテストで 2.2 秒 → 2.4 秒)
+   - 型環境にする main の最新のパーツは, コミットが参照するものの閉包だけにする (`definy.latest-closure`, 2026-11-17)。
+     以前は全プロジェクトの main の全パーツ (約 1300) の解決結果を読み, `definy.resolution-for` などの線形探索が 2 乗で効いて,
+     公開サーバー (Workers の無料プランの CPU 上限 約 2 秒) への html-ui の提出が 1102 になっていた。
+     1. コミットのパーツの参照 (`definy.closure-references` で `types_only: false`。式と型の両方) と,
+        置き換えるモジュール (コミットのモジュールと今の main のこのプロジェクトのモジュール) の main のパーツから始める。
+        後者は `core.type-checker` が宣言型の変更と削除を見つけるのに使う
+     2. 見つけた main のパーツの解決結果と定義の式を読み, その型と型の宣言が参照するパーツ (`types_only: true`) をたどる。
+        型チェッカーは検査しないパーツについては型しか見ないので, 式の中の参照はたどらない。段ごとにホストへ 1 回ずつ読みに行く
+     3. 解決結果が無く, 定義の式を評価器で評価しないと中身が分からないパーツ (`definy.immediate-part-content` が `none`) が
+        コミットか閉包にあれば, 参照が分からないので以前と同じく全パーツを使う (`definy.read-commit-check-input-full`)
+     - 閉包のパーツは 1 パーツずつの `definy.latest-commit-source` にする (プロジェクト名は参照できるかの検査に使う)
+     - 手元で html-ui のコミット (13 パーツ) の提出は 0.8 秒 → 0.23 秒になった
 2. `definy.check-commit-input` が順に確かめ, 最初に見つかった種類の理由だけを返す
    - 中身が `core.part-content` にならないパーツ (`definy.commit-check-malformed`)
    - 参照できないパーツへの参照 (`core.check-reference-visibility`, メッセージは `definy.visibility-violation-message`)

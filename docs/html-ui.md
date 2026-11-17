@@ -182,6 +182,7 @@ JavaScript の値を Wasm GC の値にする) が, 全ての main のパーツ�
 
 これで解決結果は 85 ミリ秒, コミットは 25 ミリ秒, 提出全体は 0.55 秒になった。残りは解決結果の JSON の読み込み (約 50 ミリ秒) と
 definy の型検査 (約 260 ミリ秒)。パーツが増えればまた上限に近づくので, 型環境をコミットが参照するパーツの閉包だけにするのが次の手。
+2026-11-17 に閉包だけにした ([service.md](service.md)「型検査」の `definy.latest-closure`)。手元で 0.8 秒 → 0.23 秒。
 
 測り方: `worker/service_io.ts` の `runServiceIoLoop` の要求ごとに `performance.now()` と `process.memoryUsage()` を出し,
 手元のストアの写しに同じ署名済みイベントを `SubmitEvent` で送る (D1 のキャッシュが温かい状態)。`node --cpu-prof` の自己時間でも確かめた。
