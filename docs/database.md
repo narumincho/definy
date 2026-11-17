@@ -59,7 +59,7 @@ RPC が読み書きする SQL は definy の `definy.store-*` (モジュール `
 - D1 は 1 つの文のパラメーターの数に上限があるので, `IN` は `definy.sql-in-statements` で 50 個ずつの文に分ける
 - 受け付けたコミットの一覧は definy (`definy.read-commits`) が `project_commit` のイベントを 500 件ずつ読み, `definy.decode-stored-commit` で読む。読んだものはホストが isolate ごとにイベントハッシュで覚える (`read_cached_commits` / `write_cached_commits`. 2026-11-01 ユーザーの決定)
 - 型チェッカーの入力も definy (`definy.read-commit-check-input`) が読む。CAS の中身を定義の式として読んだものはホストが isolate ごとに content hash で覚える (`read_cached_definitions` / `write_cached_definitions`)
-- `definy.stored-commit` はコミットのメッセージ・親のコミット・取り込んだコミットも持つ (2026-11-17, `definy_get_history` のため)。これらが無い古い形のキャッシュは, ホストが読み出すときに無いものとして扱い, 読み直して上書きする
+- `definy.stored-commit` はコミットのメッセージ・親のコミット・取り込んだコミットも, `definy.stored-commit-module` はモジュールの説明と公開範囲も持つ (2026-11-17, `definy_get_history` と html-ui のモジュールの設定のため)。これらが無い古い形のキャッシュは, ホストが読み出すときに無いものとして扱い, 読み直して上書きする
 - 上の 2 つのキャッシュは中身が不変なので、ホストが D1 の `host_commit_cache` / `host_definition_cache` にも保存し、isolate をまたいで使い回す (2026-11-03)。冷たい isolate でもコミットのデコードと定義の CBOR 読み直しを省ける。D1 が無い・失敗したときはメモリだけで動く
 - seed のプロジェクトのコミットは `npm run build:seeds` が `definy.decode-stored-commit` で読んだ結果を静的アセット
   `/__definy_seed_commit_cache.json` に書き出し, ホストはコミットキャッシュ (メモリと D1) に無いときにそれを使う (2026-11-17)。

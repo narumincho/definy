@@ -95,6 +95,11 @@ npx wrangler secret put DEFINY_MCP_ACCOUNT_NAME         # アカウントの名�
     `definy.parse-expression-text` で読む。読めなければコミットする前に理由とバイトの位置を返す
   - 省いた項目は今のまま。空の文字列は型や式を無くす。`description` は英語の説明 1 つに置き換える。
     新しいパーツは公開, 新しいモジュールは説明なしの公開で足す。パーツは今の位置のまま置き換え, 新しいパーツはモジュールの最後に足す
+  - `modules` (2026-11-17) の各項目 `{module, description?, visibility?, rename?, delete?}` はパーツの変更の後に順に重ねる (`definy.apply-module-changes`)。
+    `description` は英語の説明 1 つに置き換え (`""` で無くす), `visibility` は `"public"` か `"private"`, `rename` は新しい名前, `delete: true` はモジュールを全てのパーツごと消す。
+    無いモジュール・既にある名前への変更は誤り。`project_description` はプロジェクトの英語の説明を置き換える。`changes` は省ける
+  - モジュールの名前を変えるとパーツ ID が変わる (`core.module-part-ids` はモジュールの名前から求める)。他のパーツからの参照は書き換えないので,
+    参照されているモジュールの名前を変えたコミットは型検査で `part_not_found` になって受け付けられない
   - 新しい中身は定義の式 (`definy.part-definition-expression`。`src/part_definition.ts` の `partDefinitionExpression` と同じ
     `core.define-part(...)` / `core.define-type(...)`。[part-definition.md](part-definition.md)) にし,
     `core.expression-to-value` → `definy.value-to-cbor` → `definy.cbor-encode` の CBOR の SHA-256 (`core.sha256`) を content hash にして

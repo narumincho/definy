@@ -168,6 +168,14 @@ React の UI を消せるように, 手元のサーバーの html-ui (`editable:
   古い形 (`message` が無い) のキャッシュはホスト (`isCurrentCommitEntry`) が無いものとして読み直す
 - 差分はパーツの名前 (`モジュール.名前`) と content hash の比較だけ。式の中の差分は見せない (古いコミットのパーツの表示とあわせて残り)
 
+### モジュールの設定 (2026-11-17)
+
+- モジュールのページ (`/p/<プロジェクト>/<ブランチ>/<モジュール>`) は説明と公開範囲を見出しの下に出す (`html-ui.module-summary`)。
+  `html-ui.project-text` は応答の `json` を `{count, description, visibility}` (`html-ui.module-info`) にした。読むのは `definy.stored-commit-module` の `description` と `visibility`
+- 編集できるとき (`editable`) は `html-ui.module-tools` で名前・説明・公開範囲を変えるフォームと, モジュールを消すフォームを出す (`definy_commit_parts` の `modules`)
+- `html-ui.tool-script` は入力の名前の `.` を入れ子として読む (`modules.0.description` → `{modules: [{description}]}`)。
+  `data-keep-empty` の付いた入力は空でも送る (説明を消すため)。`then` の `{modules.0.rename}` も同じように読む
+
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 
 公開サーバーの html-ui の `main` の古いコミットは, 今の seed の型検査を通らない (`definy.handle-request` などの型が変わった)。
