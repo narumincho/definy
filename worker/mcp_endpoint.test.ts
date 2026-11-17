@@ -508,6 +508,17 @@ describe("書き込みのツール (専用アカウント)", () => {
     );
     expect(lines.at(-1)).toMatch(/^Older commits from \S+$/);
 
+    // コミットを指定すると, その時点のパーツを読む
+    const olderCommit = lines
+      .filter((line) => line.startsWith("Commit "))[1]!
+      .split(" ")[1]!;
+    const older = await call("definy_get_part", {
+      part: "extra.answer",
+      commit: olderCommit,
+    });
+    expect(older.text).toContain(`commit ${olderCommit})`);
+    expect(older.text).toContain("expression:\n@sample.add-one(value: 41)");
+
     // モジュールの説明・公開範囲・名前を変え, 消す
     const moduleChanged = await call("definy_commit_parts", {
       project: "sample",
