@@ -9,6 +9,7 @@ import {
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { AccountsIcon } from "../icons.tsx";
+import { useIsAdministrator } from "../state/useIsAdministrator.ts";
 
 type AccountModalProps = {
   readonly open: boolean;
@@ -27,6 +28,7 @@ export function AccountModal({
     logout,
   } = useDefiny();
 
+  const isAdministrator = useIsAdministrator(currentAccount);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<"create" | "login">("create");
@@ -243,6 +245,24 @@ export function AccountModal({
               <div className="account-info-block">
                 <h3 className="account-display-name">
                   {currentAccount.accountName}
+                  {isAdministrator && (
+                    <span
+                      className="badge badge-administrator"
+                      title={label(
+                        language,
+                        "This server lists this account in DEFINY_ADMIN_ACCOUNT_IDS",
+                        "このサーバーの DEFINY_ADMIN_ACCOUNT_IDS にあるアカウント",
+                        "Ĉi tiu servilo listigas ĉi tiun konton en DEFINY_ADMIN_ACCOUNT_IDS",
+                      )}
+                    >
+                      {label(
+                        language,
+                        "Administrator",
+                        "管理者",
+                        "Administranto",
+                      )}
+                    </span>
+                  )}
                 </h3>
                 <div className="account-id-row">
                   <span className="text-muted" style={{ fontSize: "0.82rem" }}>

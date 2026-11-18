@@ -62,6 +62,9 @@ Cloudflare の API などはブラウザからの CORS を許可していない�
   管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) だけが使える (他は 403, 署名無しは 401)
 - 送り先は http / https だけ。`host` / `content-length` / `connection` / `transfer-encoding` は付け直さない。リダイレクトは追わない
 - 本文は JSON の中で標準 Base64 (`bodyBase64`)
+- 管理者かどうかを尋ねる専用の RPC は無い。React の UI (`checkIsAdministrator`, `src/state/useIsAdministrator.ts`) は
+  空の URL を署名付きで送り, 400 (URL の誤り. 署名と管理者の確認を通った) なら管理者, 403 なら管理者でないとみなす。外には何も送らない (2026-11-18)。
+  管理者なら実行パネルに「CORS エラーのときサーバーで仲介する」のチェック (設定画面と同じ値) を出し, アカウントのダイアログに「管理者」のバッジを出す
 - 仲介するリクエストの `Authorization` (Cloudflare の API トークンなど) はそのまま送り先に送る。サーバーは保存もログもしない
 
 ## テスト

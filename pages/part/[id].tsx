@@ -705,7 +705,7 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
         </div>
       )}
 
-      {secret !== null && canEdit && (
+      {secret !== null && (
         <SecretPanel
           key={secret.id}
           language={language}
@@ -715,9 +715,13 @@ function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
             { partId: part.partId, partIdHash },
             secret.id,
           )}
-          onChange={(next) => {
-            editPart({ expression: { "#secret": next } }, "secret");
-          }}
+          onChange={
+            canEdit
+              ? (next) => {
+                  editPart({ expression: { "#secret": next } }, "secret");
+                }
+              : undefined
+          }
         />
       )}
 

@@ -235,3 +235,30 @@ export function browserWasiIoHandler(
     return relay(request);
   };
 }
+
+/**
+ * サーバーがこのアカウントを管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) として扱うか.
+ * 専用の RPC は無いので, `HttpProxyService/Fetch` に空の URL を署名付きで送って確かめる.
+ * サーバー (`definy.http-proxy-fetch`) は署名 (401) → 管理者 (403) → URL (400) の順に確かめるので,
+ * 管理者なら URL の誤りの 400 になり, 外には何も送らない
+ */
+export async function checkIsAdministrator(
+  credentials: AccountCredentials,
+  fetchFn: typeof fetch = fetch,
+): Promise<boolean> {
+  const body = JSON.stringify({ method: "GET", url: "", headers: [] });
+  const response = await fetchFn(HTTP_PROXY_PATH, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: await createRpcAuthorization(
+        credentials,
+        "POST",
+        HTTP_PROXY_PATH,
+        body,
+      ),
+    },
+    body,
+  });
+  return response.status === 400;
+}
