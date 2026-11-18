@@ -24,3 +24,6 @@ playwright-report/
 .void-wrangler.jsonc
 .cloudflare
 /public/__definy_seed_commit_cache.json
+
+# 手元のサーバーの鍵とストア (DEFINY_HOME. docs/source-in-store.md)
+.definy-home/
