@@ -3012,6 +3012,21 @@ a.account-card {
   color: #8ad8ab;
 }
 
+.badge-administrator {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  background: var(--success-bg);
+  border: 1px solid rgba(92, 199, 138, 0.32);
+  color: #8ad8ab;
+}
+
+.run-panel-relay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
 .badge-invalid-signature {
   background: var(--red-bg-strong);
   border: 1px solid var(--red-border);

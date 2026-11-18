@@ -32,7 +32,9 @@ import {
   loadSecret,
   loadWasiIoSettings,
   recordSecretUse,
+  saveWasiIoSettings,
 } from "../wasi_io_browser.ts";
+import { useIsAdministrator } from "../state/useIsAdministrator.ts";
 import { ExpressionTreeEditor } from "../tree_layout/ExpressionTreeEditor.tsx";
 import {
   hole,
@@ -67,6 +69,12 @@ export function RunPanel(): JSX.Element {
     setRunPanelOpen,
   } = useDefiny();
   const currentPath = useRouter().path;
+  const isAdministrator = useIsAdministrator(currentAccount);
+  // 「CORS エラーのときサーバーで仲介する」(設定画面と同じ値). localStorage はハイドレーションのあとで読む
+  const [relayOnCorsError, setRelayOnCorsError] = useState(false);
+  useEffect(() => {
+    setRelayOnCorsError(loadWasiIoSettings().relayOnCorsError);
+  }, [runPanelOpen]);
 
   const [input, setInput] = useState<unknown>(hole);
   const [history, setHistory] = useState<ReadonlyArray<RunHistoryEntry>>([]);
@@ -235,6 +243,28 @@ export function RunPanel(): JSX.Element {
               `Uzi ${openPart.moduleName}.${openPart.name}`,
             )}
           </button>
+        )}
+        {isAdministrator && (
+          <label className="run-panel-relay">
+            <input
+              type="checkbox"
+              checked={relayOnCorsError}
+              onChange={(e) => {
+                const next = {
+                  ...loadWasiIoSettings(),
+                  relayOnCorsError: e.target.checked,
+                };
+                setRelayOnCorsError(next.relayOnCorsError);
+                saveWasiIoSettings(next);
+              }}
+            />
+            {label(
+              language,
+              "Relay through the server on CORS errors",
+              "CORS エラーのときサーバーで仲介する",
+              "Peri la servilo ĉe CORS-eraroj",
+            )}
+          </label>
         )}
         <button
           type="button"

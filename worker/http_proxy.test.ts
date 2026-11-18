@@ -10,6 +10,7 @@ import {
 } from "./test_helpers.ts";
 import {
   browserWasiIoHandler,
+  checkIsAdministrator,
   HTTP_PROXY_PATH,
   parseUrlPrefixes,
 } from "../src/wasi_io_browser.ts";
@@ -182,5 +183,42 @@ describe("HttpProxyService/Fetch", () => {
     expect(
       parseUrlPrefixes(" https://api.cloudflare.com/ \n\nhttps://example.com/"),
     ).toEqual(["https://api.cloudflare.com/", "https://example.com/"]);
+  });
+});
+
+describe("checkIsAdministrator", () => {
+  it("管理者なら true, 他のアカウントなら false で, どちらも外には送らない", async () => {
+    const env: Env = {
+      DB: createSqliteD1Database(),
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
+    };
+    const store = new WorkerStore();
+    let sentOutside = 0;
+    const outsideFetch = (async () => {
+      sentOutside += 1;
+      return new Response("");
+    }) as typeof fetch;
+    // ブラウザの fetch (相対 URL) をサーバーの処理につなぐ
+    const browserFetch = (async (
+      input: Request | URL | string,
+      init?: RequestInit,
+    ) =>
+      handleWorkerRequest(
+        new Request(new URL(String(input), "https://definy.workers.dev"), init),
+        env,
+        store,
+        outsideFetch,
+      )) as typeof fetch;
+
+    expect(await checkIsAdministrator(adminCredentials, browserFetch)).toBe(
+      true,
+    );
+    expect(
+      await checkIsAdministrator(
+        await generateAccountCredentials("other"),
+        browserFetch,
+      ),
+    ).toBe(false);
+    expect(sentOutside).toBe(0);
   });
 });

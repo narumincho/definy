@@ -13,7 +13,9 @@ import {
 
 /**
  * シークレットリテラルのパーツのページに出す欄.
- * 名前と送ってよい宛先 (パーツの式) の編集, 値の入力 (ブラウザにだけ保存), 使用箇所, 使用履歴
+ * 名前と送ってよい宛先 (パーツの式) の編集, 値の入力 (ブラウザにだけ保存), 使用箇所, 使用履歴.
+ * 値はブラウザにだけ入るので, パーツを編集できない (他のアカウントのブランチ) ときも入れられる.
+ * そのときは `onChange` を渡さず, 名前と宛先は表示だけにする
  */
 export function SecretPanel({
   language,
@@ -24,7 +26,7 @@ export function SecretPanel({
   readonly language: LanguageCode;
   readonly secret: SecretLiteral;
   readonly usages: ReadonlyArray<PartSnapshot>;
-  readonly onChange: (secret: SecretLiteral) => void;
+  readonly onChange?: ((secret: SecretLiteral) => void) | undefined;
 }): JSX.Element {
   // localStorage はブラウザにしか無いので, ハイドレーションのあとで読む
   const [stored, setStored] = useState<ReturnType<typeof loadSecret>>();
@@ -52,40 +54,58 @@ export function SecretPanel({
         )}
       </p>
 
-      <label className="setting-row">
-        <span>{label(language, "Label", "名前", "Nomo")}</span>
-        <input
-          className="input"
-          value={secret.label}
-          onChange={(e) => {
-            onChange({ ...secret, label: e.target.value });
-          }}
-        />
-      </label>
-      <label style={{ display: "grid", gap: "0.25rem" }}>
-        <span>
-          {label(
-            language,
-            "URLs the value may be sent to (one prefix per line)",
-            "値を送ってよい URL の先頭 (1 行に 1 つ)",
-            "URL-oj, al kiuj la valoro povas esti sendita (po unu prefikso en linio)",
-          )}
-        </span>
-        <textarea
-          className="input"
-          rows={2}
-          spellCheck={false}
-          placeholder="https://api.cloudflare.com/"
-          value={prefixesText}
-          onChange={(e) => {
-            setPrefixesText(e.target.value);
-            onChange({
-              ...secret,
-              allowed_url_prefixes: parseUrlPrefixes(e.target.value),
-            });
-          }}
-        />
-      </label>
+      {onChange === undefined ? (
+        <dl className="secret-panel-readonly" style={{ margin: 0 }}>
+          <dt>{label(language, "Label", "名前", "Nomo")}</dt>
+          <dd>{secret.label}</dd>
+          <dt>
+            {label(
+              language,
+              "URLs the value may be sent to",
+              "値を送ってよい URL の先頭",
+              "URL-oj, al kiuj la valoro povas esti sendita",
+            )}
+          </dt>
+          <dd>{secret.allowed_url_prefixes.join(", ") || "-"}</dd>
+        </dl>
+      ) : (
+        <>
+          <label className="setting-row">
+            <span>{label(language, "Label", "名前", "Nomo")}</span>
+            <input
+              className="input"
+              value={secret.label}
+              onChange={(e) => {
+                onChange({ ...secret, label: e.target.value });
+              }}
+            />
+          </label>
+          <label style={{ display: "grid", gap: "0.25rem" }}>
+            <span>
+              {label(
+                language,
+                "URLs the value may be sent to (one prefix per line)",
+                "値を送ってよい URL の先頭 (1 行に 1 つ)",
+                "URL-oj, al kiuj la valoro povas esti sendita (po unu prefikso en linio)",
+              )}
+            </span>
+            <textarea
+              className="input"
+              rows={2}
+              spellCheck={false}
+              placeholder="https://api.cloudflare.com/"
+              value={prefixesText}
+              onChange={(e) => {
+                setPrefixesText(e.target.value);
+                onChange({
+                  ...secret,
+                  allowed_url_prefixes: parseUrlPrefixes(e.target.value),
+                });
+              }}
+            />
+          </label>
+        </>
+      )}
 
       <div style={{ display: "grid", gap: "0.25rem" }}>
         <span>
