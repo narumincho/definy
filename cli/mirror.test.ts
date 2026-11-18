@@ -87,7 +87,11 @@ describe("写しのサーバーの土台 (definy.cloudflare-service-runtime-scri
       request: $0
     ),
   scheduled: fn(time_ms$1) =>
-    @definy.mirror-pull(remote: ${JSON.stringify(source.origin)}, limit: 5, content_limit: 300)
+    @definy.service-io-then-respond(
+      io: @definy.mirror-pull(remote: ${JSON.stringify(source.origin)}, limit: 5, content_limit: 300),
+      respond: fn(response$2) =>
+        @definy.warm-commit-cache(limit: 2, then: fn(count$3) => #respond<@definy.service-io>($2))
+    )
 }`,
       });
       const worker = await loadRuntime(
@@ -170,6 +174,24 @@ describe("写しのサーバーの土台 (definy.cloudflare-service-runtime-scri
         true,
       );
       expect(sourceEvents.length - mirrorEvents.length).toBe(3);
+
+      // 写しはイベントの一覧を hashesOnly で読む (署名済みのバイト列を除くので応答が小さい)
+      const listed = (
+        (await (
+          await fetch(source.origin + "/definy.v1.EventService/GetEvents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ hashesOnly: true, limit: 500 }),
+          })
+        ).json()) as {
+          readonly events: ReadonlyArray<{
+            readonly eventHash: string;
+            readonly signedEventBytes: string;
+          }>;
+        }
+      ).events;
+      expect(listed.map((event) => event.eventHash)).toEqual(sourceEvents);
+      expect(listed.every((event) => event.signedEventBytes === "")).toBe(true);
     } finally {
       await source.close();
     }

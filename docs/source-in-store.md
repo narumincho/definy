@@ -150,6 +150,7 @@ npm run export:store <baseUrl> -- --account=<ID> --projects=definy,sample --out=
 
 正本は `seeds/store/` (opus5.5 の署名) なので, 変えるには opus5.5 の鍵が要る (Claude はプロジェクトのファイル
 `/mnt/project-files/html-ui/account-narumincho.json` の `accountName` を opus5.5 にしたコピーを `$DEFINY_HOME/account.json` に置く)。
+ユーザーの Mac では, リポジトリ直下の `.definy-home/` (git 管理外. `.gitignore`) を `DEFINY_HOME` にして鍵を置く (2026-11-18 ユーザーの決定)。
 
 ふつうの変更 (型検査を通るもの) は手元のサーバーの MCP でする:
 

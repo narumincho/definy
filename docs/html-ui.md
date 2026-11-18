@@ -124,10 +124,31 @@ definy.worker-step =
   読んだ形は definy のコードで変わるので, `definy.deploy-service-script` がデプロイのたびに D1 の API で表を消す
 - html-ui は `definy_get_project` の代わりに `html-ui.project-text` を使う。モジュールの一覧は定義を読まず,
   モジュールのページはそのモジュールのパーツを 100 個ずつ (`?start=`) だけ読む。検索 (`?q=`) だけは全てのパーツを読む
-- `html-ui.deploy` の Cron は取り込みのあとにコミットを読み (`definy.read-commits`), `host_cache` に入れておく
+- `html-ui.deploy` の Cron は取り込みのあとにコミットを読み (`definy.read-commits`. 2026-11-18 から `definy.warm-commit-cache` で少しずつ), `host_cache` に入れておく
 - 手元で別のプロセスから同じ SQLite を読むと (D1 のキャッシュが効く), `/p/definy/main` の CPU は 0.67 → 0.1 秒,
   `/p/definy/main/core` は 1.3 → 0.4 秒。本番ではモジュールのページが 0.5〜1.7 秒で表示できる
 - 残り: 検索 (`/p/definy/main?q=...`) は全ての定義を読むので, 上限を超えることがある
+
+### デプロイし直したら全てのページが 1102 になった (2026-11-18)
+
+履歴などを入れた html-ui を `html-ui.deploy` で入れ直したら, `/` も含めて全てのページが 503 (error 1102, CPU の上限) になった。
+手元で同じ Worker を Node.js で動かして測ると (本番は約 3 倍遅い):
+
+- **取り込むものが無い Cron でも約 1.1 秒**。`GetEvents` は全てのイベントの署名済みバイト列を返し, seed を opus5.5 のコミットにしてから
+  definy のコミットが 1 つ約 140KB になったので, 応答が 2.6MB あった。それを `definy.parse-json` で読むのが重い。本番では毎回上限を超え,
+  続く `definy.read-commits` (キャッシュを作る) まで届いていなかった
+- デプロイで `host_cache` を消したあとは, `/` がコミットを全て読み直すので約 4.2 秒。途中で止められるのでキャッシュは書かれず, ずっと 1102 のまま。
+  キャッシュがあれば, どのページも 0.1〜0.4 秒
+
+直したこと:
+
+- `GetEvents` に `hashesOnly: true` を足した (`definy.get-events`)。`signedEventBytes` を空にして返す (D1 からも読まない. `definy.store-read-events-page-of` の `bytes: false`)
+- `definy.mirror-pull` はイベントの一覧を `hashesOnly` で読み (`definy.mirror-remote-events`), 手元のハッシュ (`definy.mirror-local-hashes`) に無いものだけを
+  `GetEvent` で読んでから入れる (`definy.mirror-fetch-and-sync-event`)。相手が `hashesOnly` を知らなければバイト列が付いてくるので, そのまま入れる。
+  取り込むものが無い Cron は 1.1 秒 → 0.16 秒, 相手から読む量は 2.6MB → 12KB
+- Cron の `definy.read-commits` を `definy.warm-commit-cache(limit)` に変える: キャッシュに無いコミットを 1 回に `limit` 個だけ読んでキャッシュに入れる。
+  キャッシュが空でも 1 回の CPU が上限を超えず, 何回かの Cron で埋まる (手元では `limit: 5` で 1 回約 0.9 秒, 10 回ほど)。html-ui.deploy は `limit: 2`
+- 大きなコミット 1 つ (中身はある) を取り込み直すのは手元で約 0.34 秒
 
 ## 編集とコミット (2026-11-08)
 
