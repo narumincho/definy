@@ -65,6 +65,9 @@ core.type-checker(...)(...)                                             // 書�
 
 seed の `core.list-map` `core.list-map-inner` `core.list-fold` `core.list-fold-inner` は関数型の引数を再帰呼び出しにそのまま渡していたので,
 `(item) => f(item: item)` のようなラムダ式で包んだ.
+包むと再帰の段ごとにラムダ式が 1 つ重なり, 1 要素ずつ進む再帰では k 番目の要素が k 個のラムダ式を通る (全体で O(n²) 回の呼び出し).
+2026-11-20 に `core.list-fold-inner` / `core.list-map-inner` を範囲を半分に分ける再帰 (`start`, `end`) にして, 重なりを O(log n) にした
+([pipeline-indexing.md](pipeline-indexing.md)「ハッシュ索引による索引化」). 関数型の引数を受け取って 1 要素ずつ再帰するパーツを書くときは同じ形にする.
 
 ## 式エディタ
 

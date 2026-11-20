@@ -162,6 +162,45 @@ list-append) が節約分を上回った。支配項は探索の漸近計算量�
   入れ直さずに済む。集計の粒度・保持期間・管理者判定
   ([rpc-authorization.md](rpc-authorization.md)) の設計が要る。
 
+## ハッシュ索引による索引化 (2026-11-20)
+
+3a の並べ替えの代わりに, ランタイムの中でハッシュ索引を作る組み込み `list_hash_index` / `list_hash_index_find`
+([builtin-parts.md](builtin-parts.md)「探索の組み込み」, [wasm-performance.md](wasm-performance.md)) を使って, 表の探索を置き換えた。
+索引は O(n) で作れ, definy 側で並べ替える定数コストが掛からない。
+
+| 探索                                                     | 置き換え                                                                                                                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `definy.resolution-for`                                  | 索引 (`definy.resolution-index`) を引く。`definy.check-commit` などで提出につき 1 回作り, `resolve-*` には索引を渡す       |
+| `definy.unresolved-hashes`, `definy.closure-references`  | 中で索引を 1 回作って `core.list-fold` で回す (引数の `index` / `result` は無くした)                                       |
+| `definy.strings-unique`                                  | 逆順の索引で「同じ文字列の最初のものか」を見る (O(n log n))。引数は `items` だけ                                           |
+| `definy.closure-new-ids`                                 | `selected` の文字列の集合 (`core.string-set`)。ただし `ids` が 8 個以下なら 1 つずつ比べる (`latest-closure` の各段は少数) |
+| `definy.closure-candidate-find`                          | `definy.closure-candidate-index` (読み込み時に 1 回作り `latest-closure` に索引を渡す)。削除                               |
+| `definy.sql-find-row` / `definy.sql-missing`             | `definy.sql-row-index` / `definy.sql-row-find` (キーの列で引く)。`sql-find-row` は削除                                     |
+| `core.module-entry-lookup`                               | `core.type-checker` が前回/今回のエントリの索引を 1 回作り, 分類の 3 パスに渡す。`affected` も文字列の集合に               |
+| `core.visibility-committed-find` / `-target-find`        | `core.check-reference-visibility` で索引を 2 つ作る。両方削除                                                              |
+| `definy.resolved-content-find` (`commit-check-parts-of`) | `commit-check-parts-of` の中で索引を作る (`collect-evaluation-parts` は評価の要るパーツがあるときだけなので残した)         |
+
+- `list_hash_index_find` はバケツの中で**最後**に一致したものを返す。キーが一意でない恐れのあるもの (閉包の候補, 可視性の対象) は
+  `core.list-reverse` で逆順にしてから索引にし, 線形探索と同じく最初のものが返るようにした。
+  解決キャッシュ (同じ content hash なら同じ中身), SQL の行 (主キー), モジュールのエントリ (パーツ ID は一意) は逆順にしない
+- 最初の版は `resolve-latest-commits` と `resolve-commit-contents` の中で索引を作っていた。`latest_commits` は閉包のパーツ 1 つごとの
+  コミットなので, パーツごとに解決キャッシュ全体の索引を作り直すことになり, 前より遅くなった (870 パーツで wasm 約 0.9 秒 → 1.1 秒)。
+  索引は繰り返しの外で 1 回作って渡す
+- 測っている途中で `core.list-fold` / `core.list-map` の 2 乗を見つけて直した ([call-syntax.md](call-syntax.md)「型検査」)。
+  関数型の変数はそのまま渡せない (`function_not_called`) ので再帰のたびにラムダ式で包んでおり, k 番目の要素の呼び出しが
+  k 個のラムダ式を通っていた。範囲を半分に分ける再帰にして, 通るラムダ式を O(log n) にした (`list-map` は `list-append` のコピーも O(n log n) に)
+
+効果 (手元, Node 26, ワーカーをプロセス内で動かし同じ中身のコミットを続けて出したときの中央値, wasm の時間):
+
+| 提出                                        | 前        | 後        |
+| ------------------------------------------- | --------- | --------- |
+| 自明なパーツ 870 個のコピー                 | 約 985ms  | 約 490ms  |
+| 参照チェーン 870 個のコピー                 | 約 900ms  | 約 600ms  |
+| `definy` (約 870 パーツ) をブランチにコピー | 約 2.0 秒 | 約 1.0 秒 |
+
+残りの最大はパーツ ID の導出 (`core.module-part-ids` の `core.sha256`) で, 提出の wasm の 3 割前後。
+sha256 を definy の数値演算で計算しているため。ランタイム関数の組み込みにすれば大半が消える見込み。
+
 ## 等価性
 
 - パーツ ID はプロジェクト内で一意 (モジュール ID とパーツ名から決まる)
