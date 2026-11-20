@@ -56,7 +56,10 @@ GC にしたので要らなくなった。
   (定数式の `array.new_fixed` でグローバル変数を初期化すると, 長い文字列が `array.new_fixed` の上限を超えるため)
 - 表の先頭は `"true"` `"false"` `"none"` `"some"` (グローバル変数 2〜5)。`list_get` はグローバル変数 4・5 をタグに使う
 - 表に無い文字列 (quote したコードの組み立てなど) は, バイトを積んで `array.new_fixed` する
-- 関数の番号: 0 が `evaluate`, 1〜31 がランタイム関数, 32 が start 関数, 33 から式の中の関数 (関数表の 0 番から)
+- 関数の番号: 0 が `evaluate`, 1〜35 がランタイム関数, 36 が start 関数, 37 から式の中の関数 (関数表の 0 番から)。
+  start 関数の番号と式の中の関数の始まりは `core.wasm-runtime-function-types` の長さから求めるので,
+  ランタイム関数を足すときは `core.wasm-runtime-functions` の最後と `core.wasm-runtime-function-types` の start 関数の型 (29) の前に足す
+  (2026-11-20 に 32〜35 を足した。[builtin-parts.md](builtin-parts.md)「探索の組み込み」)
 
 ## ランタイム関数とホストとのやりとり
 

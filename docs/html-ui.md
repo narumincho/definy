@@ -102,7 +102,7 @@ definy.worker-step =
 - **原因 1: JSON の文字列を読むのが 2 乗の時間だった**。`definy.text-string-from` が 1 バイト進むごとに
   文字列の始まりからそこまでを `core.string-slice` で切り出していた (`let` は先に評価されるので, 使わない枝でも切り出す)。
   数百 KB の `signedEventBytes` で CPU の 4 割を占めていた。切り出しを使う枝の中に移して, 全体の取り込みが 12 秒から 5 秒になった。
-  プロファイルは `node --cpu-prof` で取り, `wasm-function[N]` の N はランタイム関数 (`core.wasm-runtime-functions` の順に 1〜31。
+  プロファイルは `node --cpu-prof` で取り, `wasm-function[N]` の N はランタイム関数 (`core.wasm-runtime-functions` の順に 1〜35 (2026-11-20 より前は 1〜31)。
   10 が `string-slice`) かそれ以降の関数の番号 ([wasm-gc.md](wasm-gc.md))
 - 残りの 5 秒のほとんどは seed のイベント 1 つ (中身 1000 個以上の `UploadContent`) なので, 上の「少しずつ入れる」にした。
   1 回の CPU 時間は, 手元の Node.js で中身 100 個が約 1 秒, 入れるものが無いときは約 0.2 秒

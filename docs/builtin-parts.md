@@ -32,14 +32,17 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
   `part_type` を持つ. `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
   どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない (型チェッカーは名前で検査する)
 
-| 組み込み (`#builtin`)                                                                                                                                                               | パーツ                        | 引数                    |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- | :---------------------- |
-| `plus` `minus` `multiply` `divide` `remainder` `equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal` `and` `or` `string_concat` `list_concat` | `core.plus` など (`_` は `-`) | `left`, `right`         |
-| `not` `string_length` `string_to_bytes` `list_length`                                                                                                                               | `core.not` など               | `value`                 |
-| `string_slice`                                                                                                                                                                      | `core.string-slice`           | `value`, `start`, `end` |
-| `list_get`                                                                                                                                                                          | `core.list-get`               | `list`, `index`         |
-| `list_append`                                                                                                                                                                       | `core.list-append`            | `list`, `item`          |
-| `bit_and` `bit_or` `bit_xor` `shift_left` `shift_right`                                                                                                                             | `core.bit-and` など           | `left`, `right`         |
+| 組み込み (`#builtin`)                                                                                                                                                               | パーツ                         | 引数                      |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------- | :------------------------ |
+| `plus` `minus` `multiply` `divide` `remainder` `equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal` `and` `or` `string_concat` `list_concat` | `core.plus` など (`_` は `-`)  | `left`, `right`           |
+| `not` `string_length` `string_to_bytes` `list_length`                                                                                                                               | `core.not` など                | `value`                   |
+| `string_slice`                                                                                                                                                                      | `core.string-slice`            | `value`, `start`, `end`   |
+| `list_get`                                                                                                                                                                          | `core.list-get`                | `list`, `index`           |
+| `list_append`                                                                                                                                                                       | `core.list-append`             | `list`, `item`            |
+| `list_find_last_by_field`                                                                                                                                                           | `core.list-find-last-by-field` | `list`, `field`, `value`  |
+| `list_hash_index`                                                                                                                                                                   | `core.list-hash-index`         | `list`, `field`           |
+| `list_hash_index_find`                                                                                                                                                              | `core.list-hash-index-find`    | `index`, `field`, `value` |
+| `bit_and` `bit_or` `bit_xor` `shift_left` `shift_right`                                                                                                                             | `core.bit-and` など            | `left`, `right`           |
 
 浮動小数の組み込み (`float_plus` など) は [float.md](float.md)。
 
@@ -57,6 +60,29 @@ SHA-256 を definy で書く (パーツ ID の導出. [service.md](service.md)) 
   型チェッカーは `core.builtin-function-type` の型で検査する
 - コンパイラ自身はビット演算を使わないので, ブートストラップは `npm run build:stage1 -- --bootstrap` 1 回でよかった (68248 bytes)
 - `conformance/eval_cases.json` の「bit and」「shift right is arithmetic」などで stage1 と `core.eval-value` の両方で確かめる
+
+### 探索の組み込み (2026-11-20)
+
+レコードのリストからフィールドの値で探す処理を, definy の再帰ではなくランタイムの中のループでするための組み込み。
+型検査の時間の 75% が型環境の線形探索 (`core.part-type-lookup`) だった ([wasm-performance.md](wasm-performance.md))。
+
+- `core.list-find-last-by-field(list, field, value)`: `field` (文字列のリテラル) が `value` に等しい**最後の**レコードを option で返す
+  (`some(レコード)` / `none`)。型環境は後から足したものが勝つので最後を返す。末尾から探す
+- `core.list-hash-index(list, field)`: `list_hash_index_find` のための索引 `List<List<T>>` (バケツのリスト) を作る。
+  バケツの数は長さ以上の最小の 2 の冪 (1 以上) で, 各レコードは順を保って「フィールドのハッシュ AND (バケツの数 - 1)」のバケツに入る。
+  ハッシュは UTF-8 のバイト列に `h = h * 33 + byte` (h = 0 から, 2^32 で折り返す) で, 文字列でない値は 0
+- `core.list-hash-index-find(index, field, value)`: `value` のハッシュのバケツだけを `list_find_last_by_field` で探す。
+  索引はただのリストの値なので, 手で作ったリストを渡しても実行時エラーにはならない (そのバケツを探すだけ)
+- 型チェッカー (`core.type-check-builtin-call`) は名前で検査する: `field` は文字列のリテラルで, 要素のレコードの型にそのフィールドがあり,
+  `value` がそのフィールドの型であること。結果は `union { none, some(要素の型) }` (索引は `List<List<要素の型>>`)
+- stage1 ではランタイム関数 32〜35 (`core.wasm-runtime-list-find-last-by-field`, `-string-hash`, `-list-hash-index`, `-list-hash-index-find`)。
+  値が文字列なら `string_eq`, それ以外は `values_equal` で比べる。評価器は `core.eval-find-last-by-field` などで同じ結果を作る
+  (索引のバケツの並びも同じ)
+- 使っている所: 型環境 `core.type-env` の `parts` は `core.build-type-env` が作る索引で, `core.part-type-lookup` が引く。
+  `core.compile-find-part` は `list_find_last_by_field`
+- 足した手順: 組み込みとランタイム関数を足すコミット → `npm run build:stage1 -- --bootstrap` (コンパイラの出力が変わる) と
+  `npm run build:seeds` → 手元のサーバーを起動し直して (型チェッカーが新しい組み込みを知る) から, 使う側を書き換えるコミット
+- 適合テストは `conformance.test-list-find-last-by-field` など 6 つ
 
 ## 実行時エラーにしない
 

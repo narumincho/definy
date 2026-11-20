@@ -110,3 +110,23 @@ binaryen は箱詰めや `call_indirect` を外せない (関数表の番号は�
 5. **wasm-opt**: ビルド時に作る `wasm/type_checker.wasm` などにかけると 0〜1 割速くなるが, 依存が増えるわりに効果が小さいので後回しでよい
 
 GC (5〜14%) と, ホストとの値の受け渡し (2 回目からは 10ms 以下) はボトルネックではない。
+
+## 実装した改善
+
+### 1. 探索の組み込み (2026-11-20)
+
+改善案 1 を, 辞書の型を足すのではなく, 型を変えずに済む組み込み 3 つで入れた ([builtin-parts.md](builtin-parts.md)「探索の組み込み」):
+`list_find_last_by_field` (ランタイムの中で末尾から線形探索) と, `list_hash_index` / `list_hash_index_find` (バケツのリストによるハッシュ索引)。
+型環境 `core.type-env` の `parts` を索引にし, `core.part-type-lookup` が `list_hash_index_find` で引く。
+
+| seed の全パーツの型検査 (検査の中央値)                      | 時間  |
+| ----------------------------------------------------------- | ----- |
+| 前 (definy の再帰で線形探索)                                | 618ms |
+| `list_find_last_by_field` (値は `values_equal` で比較)      | 331ms |
+| `list_find_last_by_field` (文字列は `string_eq` で直接比較) | 215ms |
+| `list_hash_index_find` (今)                                 | 94ms  |
+
+- ランタイムの中の線形探索にしても, 比べる回数 (参照ごとに型環境の半分) は変わらないので 3 倍どまりだった。
+  比較の中身は `string_eq` 1 回 (パーツ ID は先頭の数バイトで違う) まで減っていたので, 回数を減らす索引にした
+- コンパイラの自己コンパイル (93ms 前後) は変わらなかった。`core.compile-find-part` は全体の 1 割ほどで,
+  残りは改善案 2 (関数の数え直し) と `list-concat`, GC

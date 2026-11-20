@@ -142,7 +142,7 @@ TypeScript の Vitest を使わずに definy のパーツを確かめるため�
   `*-groups` で範囲を半分に分けて符号化するようにした (再帰の深さは log, コピーは n log n)。
   長いリストを 1 要素ずつ末尾でない再帰で処理するパーツは同じ問題を起こすので, 末尾再帰か分割統治にする
 - service の wasm の中で溢れた関数は, スタックトレースの `wasm-function[N]` から分かる。
-  関数の番号は 33 から式の中の関数, その後ろに `collectReferencedParts` が集めた順に各パーツの中の関数
+  関数の番号は 37 (2026-11-20 より前は 33) から式の中の関数, その後ろに `collectReferencedParts` が集めた順に各パーツの中の関数
   (`#function` の数) が並ぶ ([wasm-gc.md](wasm-gc.md), [self-hosting.md](self-hosting.md) の関数の番号の付け方) ので,
   パーツの関数の数を数えれば, どのパーツか求められる
 - 関数の型の変数をそのまま引数に渡す (`sync: $0`) と型検査が `function_not_called` にする ([call-syntax.md](call-syntax.md))。
