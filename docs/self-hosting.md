@@ -352,8 +352,8 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 - 出力するモジュールは `evaluate` 関数 (結果の値を返す. `worker.js` のために `main` としてもエクスポート), 関数表 `table`,
   文字列を渡すための `memory`, ホストが値を作って読むためのランタイム関数をエクスポートします (`core.wasm-runtime-exports`)
 - ランタイム関数 (数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作, ホスト向けの値の作成と読み取り)
-  は Wasm の関数 1〜31 として毎回モジュールに含めます。本体は関数ごとのパーツ
-  `core.wasm-runtime-box-number` 〜 `core.wasm-runtime-closure-new` (ローカル変数の宣言と命令列の `list<number>`) に,
+  は Wasm の関数 1〜35 として毎回モジュールに含めます。本体は関数ごとのパーツ
+  `core.wasm-runtime-box-number` 〜 `core.wasm-runtime-list-hash-index-find` (ローカル変数の宣言と命令列の `list<number>`) に,
   オペコードを `wasm.local-get` などの参照, 型の番号を `core.wasm-type-string` などの参照, それ以外の即値を数字で書いています。
   `core.wasm-runtime-functions` はそれぞれを `wasm.code-entry` (先頭にバイト数を付ける) で包んで並べるだけです。
   命令を書き換えたらバイト数は `wasm.code-entry` が数え直すが, 関数の番号と型は `core.wasm-runtime-function-types` と揃えること。
@@ -373,7 +373,7 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 ### 関数・呼び出し・パーツ参照
 
 - 関数は Wasm の関数 (型 `core.wasm-type-closure-function` = `(捕捉した変数の配列, 引数の配列) -> 値`) にし, 関数表 (table 0) に並べます。
-  Wasm の関数番号は 33 (ランタイム関数と start 関数の後ろ) から, 関数表の番号は 0 から
+  Wasm の関数番号は 37 (ランタイム関数と start 関数の後ろ) から, 関数表の番号は 0 から
 - 関数の値はクロージャ (タグ 5)。関数の式を評価すると, 本体の自由変数 (`core.free-variables`) を配列に詰めてクロージャを作る。
   関数の本体は, 引数の配列 (第 2 引数) からパラメーターを, 捕捉した変数の配列 (第 1 引数) から捕捉した変数をローカル変数に読み込んでから始まる
 - 呼び出しは, 関数の値の捕捉した変数・引数の配列 (引数は名前の順)・関数表の番号を積んで `call_indirect`

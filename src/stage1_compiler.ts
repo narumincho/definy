@@ -335,6 +335,9 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
   ["string_slice", ["value", "start", "end"]],
   ["list_get", ["list", "index"]],
   ["list_append", ["list", "item"]],
+  ["list_find_last_by_field", ["list", "field", "value"]],
+  ["list_hash_index", ["list", "field"]],
+  ["list_hash_index_find", ["index", "field", "value"]],
   ...[
     "float_plus",
     "float_minus",
