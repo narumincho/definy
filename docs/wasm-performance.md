@@ -130,3 +130,17 @@ GC (5〜14%) と, ホストとの値の受け渡し (2 回目からは 10ms 以�
   比較の中身は `string_eq` 1 回 (パーツ ID は先頭の数バイトで違う) まで減っていたので, 回数を減らす索引にした
 - コンパイラの自己コンパイル (93ms 前後) は変わらなかった。`core.compile-find-part` は全体の 1 割ほどで,
   残りは改善案 2 (関数の数え直し) と `list-concat`, GC
+
+### 2. コンパイラのパーツ探索を索引に (2026-11-20)
+
+`core.compile-to-wasm` が参照するパーツの一覧から `list_hash_index` で索引を 1 度作り, コンパイルの文脈 `ctx` の `part_index` に入れた。
+`core.compile-find-part` と `core.compile-builtin-name` はそれを引く (`ctx` を受け取る 20 パーツの型に `part_index` を足した)。
+stage1 で `core.compile-to-wasm` を自分自身でコンパイルする時間: 約 95ms → 68ms。
+
+残りの重いところ (`core.compile-to-wasm` の中の割合):
+
+- 関数の数え直し `core.count-functions` (約 27%)。関数の番号を決めるため, 子をコンパイルするたびに前の兄弟の部分木の関数を数え直す
+  (部分木の深さぶん重複する)。数え直さないには, コンパイルの関数が命令列と一緒に関数の数を返すように型を変える必要があり,
+  `core.compile-*` の 20 ほどのパーツに及ぶ
+- `core.expression-children` (約 11%): 子のリストを毎回作る。数え直しをやめれば大半は消える
+- GC 約 10%, `list-concat` 約 9%
