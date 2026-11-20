@@ -174,3 +174,33 @@ stage1 で `core.compile-to-wasm` を自分自身でコンパイルする時間:
 - 関数の番号の付け方は変えていない (stage1 は不動点)
 
 同じ入力 (今の `core.compile-to-wasm`, 292 パーツ) を main の stage1 と新しい stage1 でコンパイルした時間の中央値: 約 80ms → 約 65ms。
+
+### 5. コード生成の改善 (2026-11-20)
+
+「コード生成の無駄」の上 3 つを直した。値の表し方 (箱に入った値) と関数の番号の付け方は変えていない。
+
+- **既知の関数の直接呼び出し**: `core.compile-call` で, 呼ぶ式が関数の式のパーツへの参照なら (`core.compile-direct-callee` が
+  `#some(Wasm の関数番号)` を返す), クロージャを作らずに捕捉した変数の配列として `ref.null` を積み, `call` (末尾位置は `return_call`)
+  で直接呼ぶ。パーツの関数は捕捉する変数を持たないので `ref.null` でよい。opcode は `call_indirect` / `return_call_indirect` の 1 つ前
+  (`call` = 0x10, `return_call` = 0x12) なので `opcode - 1` で選んでいる。関数番号は `core.wasm-runtime-function-types` の長さ + base
+- **箱詰め → 取り出しの組を消す**: `core.compile-unbox-number` / `core.compile-unbox-bool` は, 命令列の末尾が `call box_number` (2) /
+  `call box_bool` (3) ならその 2 バイトを取り除き (`core.list-slice`), そうでなければ `call number_value` (15) / `bool_value` (17) を足す。
+  `core.compile-builtin-call` で演算の引数を取り出す箇所をこれに置き換えたので, リテラルや演算の結果を引数に渡すときは箱を作らない
+  (例: `n - 1` の `1` は `i64.const 1` のまま, `less-than` の結果は `i32` のまま `if` に渡る)
+- **`Boolean` の `match` を `if` に**: `core.compile-boolean-match` は, アームが 2 つで最初が `true` / `false`, 次がその反対か `_` の
+  `match` を `if ... else ... end` にする (対象の式は `compile-unbox-bool` で `i32` にする)。これまでは対象を箱に入れてローカル変数に置き,
+  アームごとに `bool_value` で取り出して比べていた。アームの本体の関数の番号は, 対象, 前のアームの本体の順に数えた数を足して渡す
+  (`core.compile-match-arms` と同じ順)。末尾位置 (`core.compile-tail-instructions`) でも同じ形で, 本体は末尾位置のまま
+
+`list-get` の `some` / `none` の確保と, 演算の結果を引数に渡すときの箱詰め (関数の引数は箱に入った値なので要る) は残っている。
+
+| 計測 (main → この変更)                              | 前       | 後       |
+| --------------------------------------------------- | -------- | -------- |
+| fib(27)                                             | 16.1ms   | 7.7ms    |
+| 1〜100 万の和 (末尾再帰)                            | 12.7ms   | 10.7ms   |
+| 自己コンパイル (`core.compile-to-wasm`, 299 パーツ) | 約 63ms  | 約 49ms  |
+| definy 規模のコピー提出 (Wasm の時間, `submit.ts`)  | 約 1.04s | 約 0.82s |
+| stage1.wasm の大きさ                                | 77,582 B | 61,058 B |
+
+`list-append` を 2 万回積むもの (約 0.4 秒) は配列のコピーが主なので変わらない。
+コンパイラの出力が変わるので `npm run build:stage1 -- --bootstrap` で作り直した (3 回で不動点)。

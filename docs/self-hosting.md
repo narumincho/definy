@@ -377,6 +377,8 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 - 関数の値はクロージャ (タグ 5)。関数の式を評価すると, 本体の自由変数 (`core.free-variables`) を配列に詰めてクロージャを作る。
   関数の本体は, 引数の配列 (第 2 引数) からパラメーターを, 捕捉した変数の配列 (第 1 引数) から捕捉した変数をローカル変数に読み込んでから始まる
 - 呼び出しは, 関数の値の捕捉した変数・引数の配列 (引数は名前の順)・関数表の番号を積んで `call_indirect`
+  (2026-11-20 から, 呼ぶ関数が関数の式のパーツへの参照なら, クロージャを作らず捕捉した変数に `ref.null` を積んで
+  Wasm の関数番号 37 + base を `call` / `return_call` で直接呼ぶ。`core.compile-direct-callee`。docs/wasm-performance.md の 5.)
 - **関数の番号の付け方**: definy には状態が無いので, コンパイルしながら関数を集めて番号を振ることができない。そこで
   - `core.collect-functions` で式の中の関数の式を前順 (自身が先, 次に子を `core.expression-children` の順) に並べ, その位置を番号にする
   - `core.compile-expr-instructions` は引数 `fn_base` (その式の中で最初の関数の番号) を受け取り, 子をコンパイルするときは
