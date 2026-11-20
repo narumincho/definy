@@ -92,6 +92,7 @@ JavaScript からは GC の値の中を覗けない (参照として持つこと
 - core 全体 (と wasm) のシステムアカウントのコミットの `SubmitEvent` (`worker/type_check.test.ts` の組み込みのテスト):
   2.1 秒, プロセスの RSS は 223MB → 247MB。GC にする前は 4.5 秒で RSS が 207MB → 912MB (GC 後 356MB) だった
 - stage1.wasm は 115KB → 67KB, 自分自身のコンパイルは約 0.2 秒
+- 速さとボトルネックの調査 (同じアルゴリズムの JavaScript との比較など) は [wasm-performance.md](wasm-performance.md)
 
 ## 移行のしかた (ブートストラップ)
 
