@@ -156,3 +156,21 @@ stage1 で `core.compile-to-wasm` を自分自身でコンパイルする時間:
   `wasm/*.wasm?module` を読むために `node --import ./bench-tmp/wasm-hook.mjs` で動かす。
   `named_service.ts` で `wasm/service.wasm` を name セクション付きに作り直せば `--cpu-prof` にパーツ名が出る
 - 残りの最大はパーツ ID の導出の `core.sha256` (提出の wasm の 3 割前後)
+
+### 4. コンパイラの関数の数え直しを減らす (2026-11-20)
+
+関数の番号を決める `core.count-functions` のうち, 一番重かったのは式の木の数え直しではなく,
+パーツごとの最初の関数の番号 (`base`) を決める `core.compile-assign-part-bases-range` だった。
+範囲を半分に割る再帰の段ごとに左半分のパーツの関数を数え直していて, 全パーツを O(log n) 回数えていた
+(`core.count-functions` の時間の 6 割)。
+
+- `core.compile-assign-part-bases`: パーツごとに 1 回だけ数え, `core.list-fold` で足していく形にした
+  (`compile-assign-part-bases-range` と `count-functions-in-parts-range` は削除)
+- `core.count-functions`: `core.expression-children` で子のリストを作ってから数えるのをやめ,
+  数を引数で持ち回る `core.count-functions-acc` で式を直接たどるようにした (数える子は同じ)
+- 式の木の数え直し (子をコンパイルするたびに前の兄弟の部分木を数える) は残した。なくすには `core.compile-*` が命令列と一緒に
+  関数の数を返すように型を変える必要があり, 引数ごとに `call-argument-fn-base` を使う `core.compile-builtin-call` (約 900 行) などに及ぶ。
+  残りの数える時間はコンパイルの 7% ほどなので, 見合わないと判断した
+- 関数の番号の付け方は変えていない (stage1 は不動点)
+
+同じ入力 (今の `core.compile-to-wasm`, 292 パーツ) を main の stage1 と新しい stage1 でコンパイルした時間の中央値: 約 80ms → 約 65ms。
