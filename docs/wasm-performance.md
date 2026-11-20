@@ -144,3 +144,15 @@ stage1 で `core.compile-to-wasm` を自分自身でコンパイルする時間:
   `core.compile-*` の 20 ほどのパーツに及ぶ
 - `core.expression-children` (約 11%): 子のリストを毎回作る。数え直しをやめれば大半は消える
 - GC 約 10%, `list-concat` 約 9%
+
+### 3. 提出の探索を索引に, `list-fold` の 2 乗を直す (2026-11-20)
+
+提出 (SubmitEvent) の経路の線形探索を `list_hash_index` に置き換えた。詳細と表は
+[pipeline-indexing.md](pipeline-indexing.md)「ハッシュ索引による索引化」。
+途中で `core.list-fold` / `core.list-map` が再帰のたびに関数をラムダ式で包み直していて, 呼び出しが要素数の 2 乗になっていたのも直した
+(範囲を半分に分ける再帰に。[call-syntax.md](call-syntax.md))。`definy` 規模のコピー提出の wasm の時間は約 2.0 秒 → 約 1.0 秒。
+
+- 提出の測り方: スクリプト `wasm-bench/submit.ts` (ワーカーをプロセス内で動かし, `DEFINY_PERF_TOKEN` の記録から wasm の時間を読む)。
+  `wasm/*.wasm?module` を読むために `node --import ./bench-tmp/wasm-hook.mjs` で動かす。
+  `named_service.ts` で `wasm/service.wasm` を name セクション付きに作り直せば `--cpu-prof` にパーツ名が出る
+- 残りの最大はパーツ ID の導出の `core.sha256` (提出の wasm の 3 割前後)
