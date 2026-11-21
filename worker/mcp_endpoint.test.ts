@@ -116,6 +116,12 @@ describe("definy.handle-mcp", () => {
       "definy_get_content",
       "definy_check_missing_hashes",
       "definy_perf_recent_submits",
+      "definy_list_events",
+      "definy_list_accounts",
+      "definy_describe_event",
+      "definy_find_references",
+      "definy_rename_part",
+      "definy_run_io",
     ]);
     for (const tool of json.result.tools) {
       expect(tool.inputSchema.type).toBe("object");

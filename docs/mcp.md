@@ -46,6 +46,12 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   | `definy_get_content`          | RPC `EventService/GetContent`                                                                                                                                                                                                     |
   | `definy_check_missing_hashes` | RPC `EventService/CheckMissingHashes`                                                                                                                                                                                             |
   | `definy_perf_recent_submits`  | `definy.mcp-perf-recent-submits`: ホストが記録した直近のパフォーマンス記録 (下の「パフォーマンス記録」)                                                                                                                           |
+  | `definy_list_events`          | `definy.mcp-list-events`: イベントを新しい順に要約して返す (`eventType`, `accountId` で絞れる。[html-ui.md](html-ui.md)「イベントとアカウント」)                                                                                  |
+  | `definy_list_accounts`        | `definy.mcp-list-accounts`: イベントのあるアカウントを古い順に, 名前・イベントの数・最初と最後の時刻と共に返す                                                                                                                    |
+  | `definy_describe_event`       | `definy.mcp-describe-event`: イベント 1 つをテキストで返す (コミットはプロジェクト・ブランチ・親・次のコミット・メッセージ・パーツ)                                                                                               |
+  | `definy_find_references`      | `definy.mcp-find-references`: ブランチの中でパーツを参照しているパーツ                                                                                                                                                            |
+  | `definy_rename_part`          | `definy.mcp-rename-part`: パーツの名前を変え (別のモジュールへの移動も), ブランチの中の参照も書き換えて 1 つのコミットにする                                                                                                      |
+  | `definy_run_io`               | `definy.mcp-run-io`: 型が `wasi.io` の式を手元のサーバーが最後まで動かす。手元の definy サーバーだけ ([local-server.md](local-server.md)「I/O をするプログラムの実行」)                                                           |
 
   RPC のツールは `definy.mcp-rpc-tool` が `definy.handle-rpc` のハンドラーを引数の JSON で動かし, レスポンスの本文の JSON を
   テキストにして返す (エラーの本文は Connect のエラー `{code, message}`)
