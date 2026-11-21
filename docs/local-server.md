@@ -111,6 +111,10 @@ React の UI の実行パネルはブラウザで `wasi.io` のプログラム (
 - `definy.mcp-run-io` は `definy_compile_expression` と同じく式を型検査してパーツを集め, `core.compile-to-wasm` で Wasm にして,
   ホストの能力 `run_wasi_io` (`{wasm, parts, then}`) に渡す。`parts` は集めた全てのパーツの式を CAS と同じ CBOR (Base64) にしたもの
   (`definy.expression-cbor-base64`) で, ホストは `get_parts` にこれで答える (`decodeCborItem` で JSON AST に戻す)
+- 集めるパーツは **quote の中の参照も含める** (`definy.run-io-frontier` は `core.expression-part-references`)。
+  `definy_evaluate` と同じ `definy.run-expression-frontier` (quote の中を除く) を使っていたら, `html-ui.deploy` の `handler: quote({...})` の中だけで
+  参照する `definy.mirror-pull` と `definy.warm-commit-cache` が `get_parts` で見つからず, デプロイは成功するのに definy-html の Cron が毎分例外になった (2026-11-21)。
+  `get_parts` の結果に `見つからない: ...` が出たら, このように渡すパーツが足りていない
 - ホスト (`ServiceIoHost.localIo`, `cli/local_io.ts`) は `src/wasi_io.ts` の `runWasiIo` で `done` まで動かす (ブラウザの実行パネルと同じもの)。
   HTTP は Node.js の fetch で送るので CORS の仲介は要らない。結果は `done: <メッセージ>` か `error: <理由>` と, I/O ごとの 1 行
   (`formatWasiIoStep`)。definy の Worker (公開サーバー) は `localIo` を持たないので `Running I/O programs is disabled on this server` を返す
