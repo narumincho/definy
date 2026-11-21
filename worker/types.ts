@@ -1,6 +1,8 @@
 /**
  * Cloudflare Workers Static Assets / D1 バインディングおよび環境変数の型定義
  */
+import type { LocalIoHost } from "./service_io.ts";
+
 export type Fetcher = {
   readonly fetch: (
     input: Request | URL | string,
@@ -69,6 +71,11 @@ export type Env = {
    * 公開サーバーでは式を実行しない (docs/local-server.md)
    */
   readonly DEFINY_RUN_EXPRESSIONS?: string;
+  /**
+   * 手元の definy サーバー (`npm run serve`) だけが渡す能力: `wasi.io` のプログラムの実行とシークレットの値
+   * (`definy_run_io`, docs/local-server.md). Worker の環境変数ではない
+   */
+  readonly LOCAL_IO?: LocalIoHost;
   /**
    * パフォーマンス記録の読み取りエンドポイント (`/__definy/perf/recent-submits`) の
    * Bearer トークン。未設定ならエンドポイントは無効 (docs/performance-observability.md)

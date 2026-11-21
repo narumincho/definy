@@ -14,12 +14,12 @@ import { loadStage1Compiler } from "../wasm_browser.ts";
 import { CompilerRebuild } from "./CompilerRebuild.tsx";
 import {
   formatRunValue,
-  formatWasiIoStep,
   runExpression,
   runValueExpression,
   type RunOutcome,
 } from "../run_expression.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
+import { formatWasiIoStep } from "../wasi_io.ts";
 import {
   addRunEntry,
   loadRunHistory,

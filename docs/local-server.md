@@ -17,12 +17,12 @@ npm run serve         # = node cli/definy.ts serve
 claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header "Authorization: Bearer <token>"
 ```
 
-| オプション       | 既定                          | 意味                                   |
-| ---------------- | ----------------------------- | -------------------------------------- |
-| `--port`         | `8787`                        | 待ち受けるポート (0 なら空いたもの)    |
-| `--ui-port`      | `8788`                        | HTML の UI のポート (`off` で配らない) |
-| `--data-dir`     | `$DEFINY_HOME` か `~/.definy` | ストア・鍵・トークンを置くフォルダ     |
-| `--account-name` | `local`                       | 鍵を新しく作るときのアカウントの名前   |
+| オプション       | 既定                          | 意味                                             |
+| ---------------- | ----------------------------- | ------------------------------------------------ |
+| `--port`         | `8787`                        | 待ち受けるポート (0 なら空いたもの)              |
+| `--ui-port`      | `8788`                        | HTML の UI のポート (`off` で配らない)           |
+| `--data-dir`     | `$DEFINY_HOME` か `~/.definy` | ストア・鍵・トークン・シークレットを置くフォルダ |
+| `--account-name` | `local`                       | 鍵を新しく作るときのアカウントの名前             |
 
 ## 中身
 
@@ -98,6 +98,27 @@ TypeScript の Vitest を使わずに definy のパーツを確かめるため�
 - `html-ui` がまだストアに無ければ 503 で `definy_pull` するように伝える。公開サーバーから取り込めば使える
 - 検査は `/mcp` と同じ Host と Origin に加えて, GET と HEAD 以外には Origin を求める (トークンなしで書き込めるので, 他のサイトのページからの
   フォームの送信を断る)
+
+## I/O をするプログラムの実行 (`definy_run_io`) とシークレット (2026-11-21)
+
+React の UI の実行パネルはブラウザで `wasi.io` のプログラム (`html-ui.deploy` など) を動かしていた。HTML の UI と MCP からも動かせるように,
+手元のサーバーだけの能力を足した。
+
+```json
+{ "expression": "@html-ui.deploy", "project": "html-ui" }
+```
+
+- `definy.mcp-run-io` は `definy_compile_expression` と同じく式を型検査してパーツを集め, `core.compile-to-wasm` で Wasm にして,
+  ホストの能力 `run_wasi_io` (`{wasm, parts, then}`) に渡す。`parts` は集めた全てのパーツの式を CAS と同じ CBOR (Base64) にしたもの
+  (`definy.expression-cbor-base64`) で, ホストは `get_parts` にこれで答える (`decodeCborItem` で JSON AST に戻す)
+- ホスト (`ServiceIoHost.localIo`, `cli/local_io.ts`) は `src/wasi_io.ts` の `runWasiIo` で `done` まで動かす (ブラウザの実行パネルと同じもの)。
+  HTTP は Node.js の fetch で送るので CORS の仲介は要らない。結果は `done: <メッセージ>` か `error: <理由>` と, I/O ごとの 1 行
+  (`formatWasiIoStep`)。definy の Worker (公開サーバー) は `localIo` を持たないので `Running I/O programs is disabled on this server` を返す
+- シークレットの値は `<data-dir>/secrets.json` (パーミッション 600) に `{ID: {label, value, allowedUrlPrefixes, updatedMs}}` で置く。
+  ホストの能力 `read_secrets` (値は返さない) と `write_secret` (値が空なら消す) で読み書きする。**MCP のツールにはしない** (AI のクライアントに値を渡さない)。
+  HTML の UI のシークレットのパーツのページ (`html-ui.secret-form`) と `/secrets` (`html-ui.secrets-page`) だけが使う。
+  送ってよい宛先は値を入れたときのもの (パーツの式からフォームが取る。[secret.md](secret.md) と同じ考え方)
+- テスト: `cli/serve.test.ts` (偽の fetch で, シークレットのヘッダーが値を入れて送られること)
 
 ## 公開サーバーとの同期 (`definy_pull` / `definy_push`)
 

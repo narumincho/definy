@@ -383,13 +383,3 @@ export function formatRunValue(value: DefinyValue): string {
   }
   return String(value);
 }
-
-/** I/O の記録 1 つを 1 行にする */
-export function formatWasiIoStep(step: WasiIoStep): string {
-  switch (step.kind) {
-    case "get_parts":
-      return `get_parts: ${step.found} 個${step.missing.length > 0 ? ` (見つからない: ${step.missing.join(", ")})` : ""}`;
-    case "outgoing_request":
-      return `${step.method} ${step.url} (${step.bodyBytes} bytes${step.secrets.length > 0 ? `, シークレット: ${step.secrets.join(", ")}` : ""}) → ${"error" in step.result ? `エラー: ${step.result.error}` : step.result.status}`;
-  }
-}

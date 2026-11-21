@@ -20,6 +20,7 @@ import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/sqlite_d1.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
 import { createHtmlUiHandler } from "./html_ui.ts";
+import { createLocalIoHost } from "./local_io.ts";
 import { checkLocalRequest } from "./local_security.ts";
 
 /** データを置くフォルダ. `DEFINY_HOME` が無ければ `~/.definy` */
@@ -202,7 +203,7 @@ export type LocalServer = {
 
 /**
  * 手元の definy サーバーを起動する
- * @param options.dataDir ストア (`store.sqlite`), 鍵 (`account.json`), トークン (`mcp-token`) を置くフォルダ
+ * @param options.dataDir ストア (`store.sqlite`), 鍵 (`account.json`), トークン (`mcp-token`), シークレット (`secrets.json`) を置くフォルダ
  * @param options.port 待ち受けるポート (0 なら空いているもの)
  * @param options.uiPort HTML の UI (ストアの html-ui プロジェクト) を配るポート (0 なら空いているもの, 省けば配らない)
  * @param options.accountName 鍵を新しく作るときのアカウントの名前
@@ -229,6 +230,10 @@ export async function startLocalServer(options: {
     DEFINY_MCP_ACCOUNT_SECRET_KEY: account.secretKeyBase64,
     DEFINY_MCP_ACCOUNT_NAME: account.accountName,
     DEFINY_RUN_EXPRESSIONS: "1",
+    LOCAL_IO: createLocalIoHost({
+      dataDir: options.dataDir,
+      ...(options.fetchFn === undefined ? {} : { fetchFn: options.fetchFn }),
+    }),
   };
   const fetchFn = options.fetchFn ?? fetch;
 

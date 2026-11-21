@@ -164,6 +164,7 @@ export async function handleWorkerRequest(
         readHostSettings: () => ({
           runExpressions: env.DEFINY_RUN_EXPRESSIONS === "1",
         }),
+        ...(env.LOCAL_IO === undefined ? {} : { localIo: env.LOCAL_IO }),
         ...createMcpAccountHost(env),
         readPerfRecords: async (query) => {
           const { status, body } = await readPerfRecordsResponse(env, query);

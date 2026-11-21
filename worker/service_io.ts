@@ -5,6 +5,8 @@
  * (Cloudflare Workers は実行時に Wasm をコンパイルできない). 処理は `definy.service-io` の値を返し,
  * ストアの SQL (`sql`) や読んだコミットのキャッシュ (`read_cached_commits`) などの要求をホスト (ここ) が行って結果を `then` に渡す. イベントを受け付ける規則 (`core.check-event`) も `definy.submit-event` の中で呼ぶ. 処理は決めるだけで, できることはホストが渡す能力で決まる (wasi.io と同じ考え方. docs/wasi-io.md)
  */
+import { base64ToBytes } from "../src/base64.ts";
+import { decodeCborItem } from "../src/cbor.ts";
 import { none, some, variant, variantOf } from "../src/definy_value.ts";
 import {
   instantiateCompiledFunction,
@@ -83,6 +85,11 @@ export type ServiceIoHost = {
    */
   readonly readHostSettings?: () => { readonly runExpressions: boolean };
   /**
+   * 手元の definy サーバーだけの能力: `wasi.io` のプログラムを動かす (`run_wasi_io`) とシークレットの値
+   * (`read_secrets`, `write_secret`). 省くと動かさず, シークレットも無い (docs/local-server.md)
+   */
+  readonly localIo?: LocalIoHost;
+  /**
    * MCP サーバーの専用アカウントの秘密鍵で `message` に Ed25519 で署名する (`sign_mcp_account`).
    * 何に署名するかは definy が決める. 秘密鍵が無ければ `null`
    */
@@ -130,6 +137,45 @@ export type ServiceIoHost = {
    * definy の処理には影響しない。ここで例外を投げても握り潰される
    */
   readonly recordPerf?: ((record: ServiceIoPerfRecord) => void) | undefined;
+};
+
+/** 手元の definy サーバーだけの能力 (`ServiceIoHost["localIo"]`) */
+export type LocalIoHost = {
+  /**
+   * `core.compile-to-wasm` でコンパイルした `wasi.io` の値を返す式の Wasm を `done` まで動かす (`run_wasi_io`).
+   * `parts` は `get_parts` に答えるパーツの式 (パーツ ID から JSON AST)
+   */
+  readonly runWasiIo: (
+    wasm: Uint8Array,
+    parts: ReadonlyMap<string, unknown>,
+  ) => Promise<WasiIoRunResult>;
+  /** 入れてあるシークレット (値は返さない. `read_secrets`) */
+  readonly readSecrets: () => Promise<ReadonlyArray<SecretInfo>>;
+  /** シークレットの値を入れる. 値が空なら消す (`write_secret`) */
+  readonly writeSecret: (secret: {
+    readonly id: string;
+    readonly label: string;
+    readonly value: string;
+    readonly allowedUrlPrefixes: ReadonlyArray<string>;
+  }) => Promise<boolean>;
+};
+
+/** `definy.wasi-io-run-result` */
+export type WasiIoRunResult = {
+  /** `done` まで動いたか */
+  readonly ok: boolean;
+  /** `done` のメッセージか, 止まった理由 */
+  readonly message: string;
+  /** I/O ごとの 1 行 */
+  readonly steps: ReadonlyArray<string>;
+};
+
+/** `definy.secret-info` (値は持たない) */
+export type SecretInfo = {
+  readonly id: string;
+  readonly label: string;
+  readonly allowedUrlPrefixes: ReadonlyArray<string>;
+  readonly updatedMs: number;
 };
 
 /** MCP サーバーの専用アカウント (`definy.mcp-account`) */
@@ -722,6 +768,70 @@ async function runServiceIoLoop(
         const settings = host.readHostSettings?.() ?? { runExpressions: false };
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument({ run_expressions: settings.runExpressions }),
+        ]);
+        break;
+      }
+      case "run_wasi_io": {
+        const read = (key: string) =>
+          instance.read(instance.recordField(payload, key));
+        const parts = new Map<string, unknown>();
+        const partList = read("parts");
+        for (const part of Array.isArray(partList) ? partList : []) {
+          const { id, cbor } = part as {
+            readonly id: string;
+            readonly cbor: string;
+          };
+          parts.set(id, decodeCborItem(base64ToBytes(cbor))[0]);
+        }
+        const result: WasiIoRunResult =
+          host.localIo === undefined
+            ? {
+                ok: false,
+                message: "Running I/O programs is disabled on this server",
+                steps: [],
+              }
+            : await host.localIo.runWasiIo(
+                base64ToBytes(String(read("wasm"))),
+                parts,
+              );
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument({
+            ok: result.ok,
+            message: result.message,
+            steps: result.steps,
+          }),
+        ]);
+        break;
+      }
+      case "read_secrets": {
+        const secrets = (await host.localIo?.readSecrets()) ?? [];
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(
+            secrets.map((secret) => ({
+              id: secret.id,
+              label: secret.label,
+              allowed_url_prefixes: secret.allowedUrlPrefixes,
+              updated_ms: secret.updatedMs,
+            })),
+          ),
+        ]);
+        break;
+      }
+      case "write_secret": {
+        const read = (key: string) =>
+          instance.read(instance.recordField(payload, key));
+        const prefixes = read("allowed_url_prefixes");
+        const written =
+          (await host.localIo?.writeSecret({
+            id: String(read("id")),
+            label: String(read("label")),
+            value: String(read("value")),
+            allowedUrlPrefixes: Array.isArray(prefixes)
+              ? prefixes.map(String)
+              : [],
+          })) ?? false;
+        pointer = instance.callClosure(instance.recordField(payload, "then"), [
+          instance.writeArgument(written),
         ]);
         break;
       }

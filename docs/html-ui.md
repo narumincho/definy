@@ -202,6 +202,28 @@ React の UI を消せるように, 手元のサーバーの html-ui (`editable:
 - `html-ui.tool-script` は入力の名前の `.` を入れ子として読む (`modules.0.description` → `{modules: [{description}]}`)。
   `data-keep-empty` の付いた入力は空でも送る (説明を消すため)。`then` の `{modules.0.rename}` も同じように読む
 
+### React 版とそろえた (2026-11-21)
+
+React の UI を消す準備として, React 版にあって html-ui に無かった操作を足した (definy 側のツールは [mcp.md](mcp.md) の表)。
+
+| 画面                                               | できること                                                                              | 使うもの                                                                |
+| :------------------------------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `/events?type=&offset=` (ヘッダーの「イベント」)   | イベントのタイムライン。種類で絞り, 50 件ずつ                                           | `definy_list_events`                                                    |
+| `/e/<イベントハッシュ>`                            | イベントの詳細 (親・取り込んだ・次のコミットへのリンク, メッセージ, その時点のパーツ)   | `definy_describe_event`                                                 |
+| `/accounts`, `/a/<アカウント ID>`                  | アカウントの一覧 (イベントの数・最初と最後), アカウントのイベント                       | `definy_list_accounts`, `definy_list_events`                            |
+| パーツのページ (編集できるとき)                    | 値を求める, 参照しているパーツ, 名前の変更 (参照も書き換える), 消すときに参照の数を出す | `definy_run_expression`, `definy_find_references`, `definy_rename_part` |
+| 型が `@wasi.io` のパーツのページ, ブランチのページ | I/O をするプログラムを実行 (`html-ui.deploy` など)                                      | `definy_run_io`                                                         |
+| 式が `secret(...)` のパーツのページ, `/secrets`    | シークレットの値を入れる・一覧・消す (手元のサーバーの `secrets.json`)                  | ホストの能力 `read_secrets`, `write_secret`                             |
+
+- 履歴のページのコミットと作成者は `/e/` と `/a/` へリンクする
+- イベントの一覧は definy の `definy.store-read-events-filtered` (署名済みのバイト列を読まない) と, コミットキャッシュ (`definy.read-commits`) と
+  `create_account` の名前 (`definy.read-account-names`. 最新の 500 個) で作る。ツールの返すテキストを html-ui が行ごとに HTML にする (`html-ui.event-lines-html`)
+- 名前の変更 (`definy.mcp-rename-part`) は, パーツの中身を `core.part-content-to-value` で値にし, 古いパーツ ID と同じ文字列を全て新しい ID に
+  置き換えて (`definy.value-replace-string`) 戻す。パーツ ID は SHA-256 の Base64URL なので他の文字列と重ならない。参照しているパーツは
+  型と式の参照 (`core.expression-part-references`) で探す (`definy.part-referrers`)。他のプロジェクトとブランチの参照は書き換えない。
+  編集のページで名前を変える機能 (足して消すだけで参照を書き換えなかった) はやめた
+- 表示言語の切り替えと紹介のページ (`/about`) はまだ無い (日本語だけ)
+
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 
 公開サーバーの html-ui の `main` の古いコミットは, 今の seed の型検査を通らない (`definy.handle-request` などの型が変わった)。
