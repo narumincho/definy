@@ -155,12 +155,13 @@ describe("写しのサーバーの土台 (definy.cloudflare-service-runtime-scri
 
       // 写しのイベントは公開サーバー (ここでは手元のサーバー) のイベントのうち, 署名の正しいもの全て.
       // seed には署名の検証のテストのための署名の誤ったイベントが 3 つあり (src/invalid_signature_samples.ts), 写しには入らない
+      // GetEvents は既定で 50 件までなので, 全てを読むよう limit を付ける
       const sourceEvents = (
         (await (
           await fetch(source.origin + "/definy.v1.EventService/GetEvents", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: "{}",
+            body: JSON.stringify({ limit: 500 }),
           })
         ).json()) as {
           readonly events: ReadonlyArray<{ readonly eventHash: string }>;

@@ -152,7 +152,19 @@ definy.worker-step =
 
 2026-11-21 に html-ui を入れ直したら, Cron は成功するのにページが 503 (1102) になった。`host_cache` の `commits` は 38 個で計 9.5MB
 (1 つ最大 340KB) あり, ページを開くたびに新しい isolate でこれを全部読む。コミットが増えるほど重くなるので,
-ページごとに要るコミット (各ブランチの最新など) だけを読むようにする必要がある。
+ページごとに要るコミット (各ブランチの最新など) だけを読むようにした:
+
+- `definy.read-commits` が完全 (全てのパーツ付き) に読むのは **各ブランチの最新のコミットだけ**。他はパーツを除いた軽い要約
+  (`definy.commit-cache-entry-summary`。プロジェクト・ブランチ・時刻・親・メッセージ・モジュールの名前) を返す。
+  ブランチの最新を決める (`core.project-branches`) には要約で足りる
+- 要約はコミットのキャッシュ (`read_cached_commits`) にキー `summary:<イベントハッシュ>` (`definy.commit-summary-key`) で置く。
+  ホストはキーを区別しないので, ホストのコードは変えていない。要約がキャッシュに無ければ完全なコミット (`definy.read-full-commits`) から作って書く
+- イベントの一覧はバイト列なしで読み (`definy.read-commit-events`), バイト列は完全に読むコミットの分だけ読む
+- 最新でないコミットも完全に要るところは `definy.read-commits-with(event_hashes)` か `definy.read-full-commits` で読む:
+  `definy_get_part` の `commit` 指定, `definy_describe_event` (そのコミットと親・マージ元), `definy_get_history` (たどる `limit` 個, `definy.history-chain-hashes`)
+- `definy_list_events` の各コミットの `parts:` (パーツの数) の行はやめた (要約にはパーツが無い. `definy_describe_event` には出る)
+- `definy.warm-commit-cache` は要約がまだ無いコミットを `limit` 個, 完全なものと要約の両方をキャッシュする
+- 型検査の入力 (`definy.read-commit-check-input`) も各プロジェクトの main の最新しか使わないので, 公開サーバーの `SubmitEvent` も軽くなる
 
 ## 編集とコミット (2026-11-08)
 
