@@ -248,11 +248,18 @@ async function sqlStore(
       },
       readCachedCommits: (eventHashes) => {
         log.push(`cached ${eventHashes.join(",")}`);
+        // 軽い要約 (`summary:<イベントハッシュ>`. definy.commit-summary-key) もパーツが無いので同じものを返す
         return Promise.resolve(
-          commits
-            .filter((summary) => eventHashes.includes(summary.eventHash))
-            .map((summary) => ({
-              event_hash: summary.eventHash,
+          eventHashes
+            .flatMap((key) => {
+              const summary = commits.find(
+                (item) =>
+                  item.eventHash === key || `summary:${item.eventHash}` === key,
+              );
+              return summary === undefined ? [] : [{ key, summary }];
+            })
+            .map(({ key, summary }) => ({
+              event_hash: key,
               commit: some({
                 account_id: summary.accountId,
                 project_name: summary.projectName,
@@ -399,33 +406,38 @@ async function submitCheckedCommit(
       readCachedCommits: (eventHashes) =>
         Promise.resolve(
           latestCommits.flatMap((latest, i) =>
-            eventHashes.includes(latestHash(i))
-              ? [
-                  {
-                    event_hash: latestHash(i),
-                    commit: some({
-                      account_id: "alice",
-                      project_name: latest.project_name,
-                      branch: "main",
-                      time_ms: 10 + i,
-                      modules: [
-                        {
-                          name: latest.project_name,
-                          id: `module-${latest.project_name}`,
-                          parts: latest.parts.map((part) => ({
-                            id: part.id,
-                            name: part.name,
-                            module_name: part.module_name,
-                            module_id: part.module_id,
-                            module_visibility: part.module_visibility,
-                            content_hash: part.content_hash,
-                          })),
-                        },
-                      ],
-                    }),
-                  },
-                ]
-              : [],
+            eventHashes.flatMap((key) =>
+              key === latestHash(i) || key === `summary:${latestHash(i)}`
+                ? [
+                    {
+                      event_hash: key,
+                      commit: some({
+                        account_id: "alice",
+                        project_name: latest.project_name,
+                        branch: "main",
+                        time_ms: 10 + i,
+                        modules: [
+                          {
+                            name: latest.project_name,
+                            id: `module-${latest.project_name}`,
+                            // 軽い要約 (definy.commit-summary-key) にはパーツが無い
+                            parts: key.startsWith("summary:")
+                              ? []
+                              : latest.parts.map((part) => ({
+                                  id: part.id,
+                                  name: part.name,
+                                  module_name: part.module_name,
+                                  module_id: part.module_id,
+                                  module_visibility: part.module_visibility,
+                                  content_hash: part.content_hash,
+                                })),
+                          },
+                        ],
+                      }),
+                    },
+                  ]
+                : [],
+            ),
           ),
         ),
       readCachedDefinitions: (contentHashes) =>
@@ -491,7 +503,7 @@ describe("handleRpcInDefiny", () => {
     // コミットは definy が読む (読んだものはホストが覚えている)
     expect(reads).toEqual([
       "sql SELECT events project_commit,500,0",
-      "cached m2,b1,m1",
+      "cached summary:m2,summary:b1,summary:m1",
       "sql SELECT events m2,b1",
     ]);
   });
@@ -695,7 +707,7 @@ describe("handleRpcInDefiny", () => {
     expect(reads).toEqual([
       "sql SELECT events create_account,500,0",
       "sql SELECT events project_commit,500,0",
-      "cached m1",
+      "cached summary:m1",
       "sql SELECT cas_contents hash-x,hash-x2",
     ]);
 
@@ -715,10 +727,11 @@ describe("handleRpcInDefiny", () => {
     expect(reads).toEqual([
       "sql SELECT events create_account,500,0",
       "sql SELECT events project_commit,500,0",
-      "cached m1",
+      "cached summary:m1",
       "sql SELECT cas_contents hash-x,hash-x2",
-      // 型検査の入力 (definy.read-commit-check-input): main の最新のコミットと, 定義の式を CAS から読んで覚える
+      // 型検査の入力 (definy.read-commit-check-input): コミットの軽い要約から main の最新を決めてそれだけ完全に読み, 定義の式を CAS から読んで覚える
       "sql SELECT events project_commit,500,0",
+      "cached summary:m1",
       "cached m1",
       "sql SELECT cas_contents hash-x,hash-x2",
       "cache definitions hash-x,hash-x2",
