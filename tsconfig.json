@@ -4,7 +4,6 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
@@ -17,13 +16,5 @@
     "noEmit": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": [
-    "src",
-    "pages",
-    "middleware",
-    "worker",
-    "cli",
-    "e2e",
-    "*.config.ts"
-  ]
+  "include": ["src", "worker", "cli", "*.config.ts"]
 }

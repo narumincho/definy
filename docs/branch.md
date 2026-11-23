@@ -38,7 +38,7 @@ definy には GitHub のフォークは無く, ブランチだけで編集を分
 
 ## UI
 
-- ブランチの一覧はサーバーの `GetProjectBranches` から受け取る (ブラウザは全イベントを読まない. [ui.md](ui.md)「読み込むイベント」)。
+- ブランチの一覧はサーバーの `GetProjectBranches` から受け取る (ブラウザは全イベントを読まない. ui.md (React の UI とともに 2026-11 に削除)「読み込むイベント」)。
   `GetProjectBranches` は definy 製の `definy.get-project-branches` が処理する ([service.md](service.md))。
   ブランチの集計は definy 製の `core.project-branches`。サーバーの `summarizeBranches` (`src/branches.ts`) も
   `npm run build:seeds` のコンパイルした `wasm/branch_summarizer.wasm` (コミットしない) でこれを呼ぶ。ブランチは最初に現れた順で,

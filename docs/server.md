@@ -1,8 +1,8 @@
 # サーバーの構成
 
-UI の配信 (SSR)・API (Connect-RPC)・仮想 Wasm 配信は 1 つの **Cloudflare Workers** (Void + React 19) で行い,
+API (Connect-RPC, MCP)・仮想 Wasm 配信は 1 つの **Cloudflare Workers** で行い (UI は別の Worker の definy-html. [html-ui.md](html-ui.md)),
 データベースは **Cloudflare D1 (SQLite)** を使う。詳細は [cloudflare-workers-assets.md](cloudflare-workers-assets.md),
-[typescript-react-void-architecture.md](typescript-react-void-architecture.md), [database.md](database.md) を参照。
+[database.md](database.md) を参照。
 
 ## SaaS 選定の経緯
 

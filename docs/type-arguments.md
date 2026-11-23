@@ -135,7 +135,7 @@ core.type-result        // => {"#part_reference": {part_definition_event_hash: "
 - 型パーツの選択肢には型を返すパーツも出し, 選ぶと型引数が未入力の呼び出し `core.option(T: □)` になる。
   `apply` は型の式では `call` (`part_type.ts`)
 - 値の式のエディタで期待する型が `type` の位置 (型引数) では, 型の式の選択肢 (`number`, `List` など) を先に出す (`expectsType`)
-- 未入力の型引数の推論 ([src/tree_layout/type_argument_inference.ts](../src/tree_layout/type_argument_inference.ts)):
+- 未入力の型引数の推論 (src/tree_layout/type_argument_inference.ts (React の UI とともに 2026-11 に削除)):
   呼び出しの型引数が未入力 (`□`) の枠を見つけ, その枠を probe にして型チェッカーに推論した型引数を聞き
   (`findInferredTypeArgument`. `hole_expected_type` の `inferred_type_argument`), 枠に薄く出す (`□ number`)。
   その枠の置換メニューの先頭 (最初から選んだ状態) に推論した型を出し, Enter で確定する (2026-10-30 のユーザーの指示)。

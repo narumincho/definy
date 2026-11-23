@@ -1,9 +1,8 @@
 # HTML だけのシンプル版 UI (別の Cloudflare Worker `definy-html`)
 
-HTML を返すだけの UI。React の UI (`pages/`, `src/`) とは別に並べて置く (2026-11-07 に決めた。
-[mcp-self-hosting.md](mcp-self-hosting.md) の 5 段目)。
+HTML を返すだけの UI で, definy の唯一の UI ([mcp-self-hosting.md](mcp-self-hosting.md) の 4 段目)。
+2026-11-07 に React の UI と並べて作り始め, 2026-11-24 に React の UI を削除した (下の「React の UI を削除した」)。
 
-- React の UI は今のまま GitHub でバージョン管理する
 - シンプル版の正本は definy のストアの **`html-ui` プロジェクト** で, バージョン管理も definy のブランチとコミットだけでする。
   `seeds/store/` にも GitHub にも置かない。MCP のツール (`definy_create_project`, `definy_commit_parts`) で書いてコミットし,
   `definy_push` で公開サーバーに送る
@@ -53,7 +52,7 @@ definy.worker-step =
    (`~/.definy/account.json`) になり, そのアカウントだけが `main` にコミットできる ([branch.md](branch.md))
 2. `definy_commit_parts` でパーツを書く。コミットは公開サーバーと同じ型検査を通る
 3. `definy_push` で公開サーバーに送る
-4. React の UI で `html-ui.deploy` のページを開いて評価する (`definy.cloudflare-api-token` に値を入れ, 設定で CORS の仲介を有効にしておく)
+4. デプロイは手元のサーバーの html-ui で `html-ui.deploy` のパーツのページから実行する (`definy_run_io`。`definy.cloudflare-api-token` のシークレットに値を入れておく)
 
 注意:
 
@@ -239,6 +238,26 @@ React の UI を消す準備として, React 版にあって html-ui に無か�
   型と式の参照 (`core.expression-part-references`) で探す (`definy.part-referrers`)。他のプロジェクトとブランチの参照は書き換えない。
   編集のページで名前を変える機能 (足して消すだけで参照を書き換えなかった) はやめた
 - 表示言語の切り替えと紹介のページ (`/about`) はまだ無い (日本語だけ)
+
+### React の UI を削除した (2026-11-24)
+
+React/Vite (Void) の UI (`pages/`, `src/components/`, `src/state/`, `src/story/`, `src/tree_layout/` など) を削除し,
+definy サーバーは `wrangler deploy` でデプロイする形にした ([cloudflare-workers-assets.md](cloudflare-workers-assets.md))。
+`definy.narumincho.com/` は案内のページ (`public/index.html`) だけを返す。
+
+React の UI にあって html-ui に無いもの (削除の時点。必要になったら html-ui に足す):
+
+- 表示言語の切り替え (日本語・英語・エスペラント, `?lang=`)。html-ui は日本語だけ
+- 紹介のページ `/about` と紹介スライド (音声付き。`story` モジュールのパーツは `seeds/store/` に残っている)
+- 式の木のエディタ (ブロックの選択・キーボード操作・置換メニュー・ホバーで型・定義へ移動・未入力の型引数の推論の表示)。
+  html-ui は式をテキスト ([expression-text.md](expression-text.md)) で書く
+- 複数のパーツの作業中の変更を貯めてまとめてコミットする, 元に戻す (undo)。html-ui は 1 つの編集を 1 コミットにする
+- ブラウザの中での実行 (stage1 で Wasm にコンパイルして実行する実行パネルと実行の履歴, コンパイラの作り直し)。
+  html-ui の実行は手元のサーバーでする (`definy_run_expression`, `definy_run_io`)
+- ブラウザでのアカウントの作成とログイン (鍵は localStorage)。html-ui は手元のサーバーの鍵で署名する (2026-11-08 の方針)
+- コマンドパレット (Cmd/Ctrl+P) とキーボードショートカット。html-ui はモジュールのページの検索 (`?q=`) がある
+- 設定のページ (接続元の IP バージョン, CORS の仲介)。サーバーの `HttpProxyService` (CORS の仲介) は React の UI だけが使っていたが,
+  definy のパーツ (`definy.http-proxy-send` など) なのでサーバーには残している
 
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 

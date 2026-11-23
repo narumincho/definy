@@ -1,17 +1,4 @@
-# Static assets - content hashed, safe to cache long-term
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# Wasm files - unhashed, revalidate immediately
-/wasm/*
-  Content-Type: application/wasm
-  Cache-Control: public, max-age=0, must-revalidate
-
-/*.wasm
-  Content-Type: application/wasm
-  Cache-Control: public, max-age=0, must-revalidate
-
-# General security headers
+# Security headers for static files (public/)
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN

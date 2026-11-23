@@ -1,14 +1,9 @@
 # Dependencies & build outputs
 node_modules
 dist
-.void
-test-results
-playwright-report
+.wrangler
 
 # Static assets & test seeds
 public
 seeds
 conformance
-
-# Void が自動で書き換えるため整形対象から外す
-void.lock.json

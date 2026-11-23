@@ -23,8 +23,8 @@ Cloudflare Worker (`definy`) で definy の Wasm を動かすときの仕組み�
 
 - **実行時にバイト列から Wasm をコンパイルできない** (`Wasm code generation disallowed by embedder`)。Wasm は
   `import typeCheckerModule from "../wasm/type_checker.wasm?module"` のようにバンドルに入れ, Cloudflare が事前コンパイルした
-  `WebAssembly.Module` から `new WebAssembly.Instance` する (これは許可されている)。Void (Vite) のビルドでは
-  `dist/ssr/assets/*.wasm` が `compiled-wasm` モジュールとしてアップロードされる。Vitest (Node.js) では
+  `WebAssembly.Module` から `new WebAssembly.Instance` する (これは許可されている)。`wrangler deploy` は
+  `*.wasm?module` を既定の規則で `CompiledWasm` モジュールとしてアップロードする。Vitest (Node.js) では
   `vitest.config.ts` のプラグインが同じ `?module` を `new WebAssembly.Module(readFileSync(...))` にする
 - 同じ理由で, **コンパイル結果を Worker 内で評価することはできない**
 - **スタック**: Workers ではスタックを広げられない。以前の stage1 は補助関数がリストの長さだけ再帰し, 生成する関数が

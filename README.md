@@ -10,28 +10,19 @@
 
 ## アーキテクチャとディレクトリ構成
 
-TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタック Cloudflare Workers 構成を採用しています。
+サーバーは Cloudflare Worker (`worker/`) で, 処理の中身は definy で書いたパーツ (`definy.handle-request`) をコンパイルした Wasm です。
+UI は definy のストアの `html-ui` プロジェクトが HTML を返すだけのもので, 公開の読み取り専用版は別の Worker
+([definy-html](https://definy-html.narumincho.workers.dev/)), 編集は手元のサーバー (`npm run serve`) が配ります ([docs/html-ui.md](docs/html-ui.md))。
+AI からは MCP (`/mcp`) で読み書きします ([docs/mcp.md](docs/mcp.md))。
 
-- `pages/`: React 19 ページルーティング (`@void/react`)
-  - イベントタイムライン、パーツ一覧/詳細、モジュール、コミット履歴、デプロイセンター等
-- `src/`: UI ワークベンチ実装
-  - `components/`: VS Code 風ワークベンチ、ActivityBar、ExplorerSidebar、CommandPalette、ConnectionStatus 等
-  - `stage1_compiler.ts`: definy 自己記述コンパイラ (`wasm/stage1.wasm`) の TypeScript 実行パイプライン
-  - `state.tsx`: AppState, i18n, イベント管理 Context
-  - `auth.ts` / `rpc_auth.ts`: Ed25519 アカウント・イベント署名と RPC の Authorization ヘッダー ([仕様](docs/rpc-authorization.md))
-  - `signed_event.ts`: SignedEvent のデコードと Ed25519 署名検証 (Worker と、受信イベントを表示前に検証するブラウザで共用)
-  - `invalid_signature_samples.ts`: ブラウザ側の署名チェック確認用の不正署名サンプル ([手順](docs/invalid-signature-debug.md))
-  - `tree_layout/`: 式の木構造エディタ (レイアウト計算・編集操作・期待型の推論)
-  - `main.css`: IDE ダークテーマ スタイルシート
-- `middleware/`: Void ミドルウェア (Connect-RPC, `/virtual/wasm/*`, `/healthz` のインターセプトと、SSR レスポンスへのセキュリティヘッダー付与)
-- `worker/`: Cloudflare Worker バックエンド実装
-  - `index.ts`: API ハンドラー
-  - `store.ts`: Cloudflare D1 (SQLite) イベント・CAS ストア
-  - `cbor.ts`: 決定論的 CBOR & Ed25519 署名ユーティリティ
-- `wasm/`:
-  - `stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (外部 import ゼロ)
-- `seeds/`: 組み込みモジュール (`core`, `std`, `wasi`, `sample`, `definy`) の seed 定義とバンドル JSON
-- `docs/`: 設計・アーキテクチャドキュメント ([TypeScript + React + Void アーキテクチャ](docs/typescript-react-void-architecture.md) など)
+- `worker/`: Cloudflare Worker (`worker/index.ts` が入口。D1 のストア, definy の処理を動かすホストの能力)
+- `cli/`: 手元のサーバー (`npm run serve`。MCP, html-ui の編集, 鍵での署名, 公開サーバーとの同期)
+- `src/`: Worker・CLI・テストで共用する TypeScript (`stage1_compiler.ts`: 自己記述コンパイラ `wasm/stage1.wasm` を動かす, `auth.ts`: Ed25519 の鍵と署名 など)
+- `wasm/stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (外部 import ゼロ)
+- `seeds/store/`: 組み込みモジュール (`core`, `std`, `wasi`, `sample`, `definy` など) の正本 ([docs/source-in-store.md](docs/source-in-store.md))
+- `public/`: Worker の静的なファイル (`npm run build:seeds` が作る seed の束と, `/` の案内のページ)
+- `wrangler.jsonc`: Worker のデプロイの設定 ([docs/cloudflare-workers-assets.md](docs/cloudflare-workers-assets.md))
+- `docs/`: 設計・仕様のドキュメント
 
 ## 事前に必要な環境
 
@@ -45,8 +36,8 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
 # 依存パッケージのインストール
 npm ci
 
-# 開発サーバー起動 (HMR 対応)
-npm run dev
+# 手元の definy サーバー (MCP と編集できる html-ui。docs/local-server.md)
+npm run serve
 
 # 単体・適合テスト実行 (Vitest: stage1.wasm Wasm 実行 & D1 & Conformance)
 npm test
@@ -60,12 +51,9 @@ npm run lint
 # コード整形 (Prettier)
 npm run fmt
 
-# シードバンドル生成 (seeds/store/ -> public/__definy_seed_bundle.json. dev / build / test でも自動で実行。docs/build-artifacts.md)
+# シードバンドル生成 (seeds/store/ -> public/__definy_seed_bundle.json. build / test でも自動で実行。docs/build-artifacts.md)
 npm run build:seeds
 
-# フルスタック プロダクションビルド (Worker + クライアント)
-npm run build
-
-# Cloudflare Workers へのデプロイ
+# Cloudflare Workers へのデプロイ (npm run build && wrangler deploy)
 npm run deploy
 ```

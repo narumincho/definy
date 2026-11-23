@@ -62,7 +62,7 @@ stage1 (`core.compile-to-wasm`) は次の 2 つを引数に取ります。
 
 ## 実行パネルでの実行
 
-実行パネル ([run-panel.md](run-panel.md), [src/run_expression.ts](../src/run_expression.ts)) は `collectReferencedParts` でパーツを集めてから `compile` します。
+実行パネル (run-panel.md (React の UI とともに 2026-11 に削除), src/run_expression.ts (React の UI とともに 2026-11 に削除)) は `collectReferencedParts` でパーツを集めてから `compile` します。
 参照先は `useDefiny().partsByIdHash` (全コミットのパーツをパーツ ID ごとに持つ) で引きます。
 `parts` は `module.name` ごとに最新の 1 つしか持たないため, 開発 DB に別アカウントで投稿した同名モジュール
 (`core` など) があると, seed の `part_reference` が指す ID のパーツが `parts` から消えていることがあるためです。

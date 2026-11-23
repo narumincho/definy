@@ -1,0 +1,33 @@
+// definy サーバー (Cloudflare Worker) の設定. `npm run deploy` (npm run build && wrangler deploy) でデプロイする
+// (docs/cloudflare-workers-assets.md). UI は別の Worker の definy-html (html-ui. docs/html-ui.md) で, ここには無い
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "definy",
+  "main": "worker/index.ts",
+  // CI のトークンはアカウントの一覧を読めないので, デプロイ先のアカウントを固定する
+  "account_id": "6a8354084cc02bb1c5f9ca1bb3442704",
+  "compatibility_date": "2026-02-24",
+  "compatibility_flags": ["nodejs_compat"],
+  // - definy.narumincho.com: カスタムドメイン
+  // - *-definy.narumincho.com: definy のパーツの HTTP サーバー ({sub}-definy.narumincho.com) のルート
+  "routes": [
+    { "pattern": "definy.narumincho.com", "custom_domain": true },
+    { "pattern": "*-definy.narumincho.com/*", "zone_name": "narumincho.com" },
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  // public/ の静的なファイル. seed の束 (__definy_seed_bundle.json, npm run build:seeds が作る) を
+  // Worker が env.ASSETS から読み (worker/store.ts), / は public/index.html (definy-html などへの案内) を返す.
+  // ファイルに無いパスは Worker が処理する
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "definy-db",
+      "database_id": "d4c3a982-558e-4d58-95f8-bbc3ca391818",
+    },
+  ],
+}

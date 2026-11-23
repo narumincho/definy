@@ -8,13 +8,6 @@ import {
   createSqliteD1Database,
   signedPost,
 } from "./test_helpers.ts";
-import {
-  browserWasiIoHandler,
-  checkIsAdministrator,
-  HTTP_PROXY_PATH,
-  parseUrlPrefixes,
-} from "../src/wasi_io_browser.ts";
-
 const proxyUrl = "https://definy.workers.dev/definy.v1.HttpProxyService/Fetch";
 
 const proxyRequest = {
@@ -127,98 +120,5 @@ describe("HttpProxyService/Fetch", () => {
       (async () => new Response("")) as typeof fetch,
     );
     expect(res.status).toBe(400);
-  });
-
-  it("ブラウザの fetch が CORS で失敗したら, 仲介が有効ならサーバーの仲介で送り直す", async () => {
-    const env: Env = {
-      DB: createSqliteD1Database(),
-      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
-    };
-    const upstream = (async () =>
-      new Response("relayed", { status: 200 })) as typeof fetch;
-    let relayed = 0;
-    const browserFetch = (async (
-      input: Request | URL | string,
-      init?: RequestInit,
-    ) => {
-      if (input === HTTP_PROXY_PATH) {
-        relayed++;
-        return handleWorkerRequest(
-          new Request(`https://definy.workers.dev${HTTP_PROXY_PATH}`, init),
-          env,
-          new WorkerStore(),
-          upstream,
-        );
-      }
-      throw new TypeError("Failed to fetch");
-    }) as typeof fetch;
-    const request = {
-      method: "GET",
-      url: "https://api.cloudflare.com/client/v4/user",
-      headers: [],
-      body: new Uint8Array(),
-    };
-
-    const withRelay = await browserWasiIoHandler(
-      { relayOnCorsError: true },
-      adminCredentials,
-      browserFetch,
-    )(request);
-    expect("ok" in withRelay && withRelay.ok.status).toBe(200);
-    expect(
-      "ok" in withRelay && new TextDecoder().decode(withRelay.ok.body),
-    ).toBe("relayed");
-    expect(relayed).toBe(1);
-
-    const withoutRelay = await browserWasiIoHandler(
-      { relayOnCorsError: false },
-      adminCredentials,
-      browserFetch,
-    )(request);
-    expect(withoutRelay).toEqual({ error: "Failed to fetch" });
-    expect(relayed).toBe(1);
-  });
-
-  it("シークレットを送ってよい宛先は 1 行に 1 つ書く", () => {
-    expect(
-      parseUrlPrefixes(" https://api.cloudflare.com/ \n\nhttps://example.com/"),
-    ).toEqual(["https://api.cloudflare.com/", "https://example.com/"]);
-  });
-});
-
-describe("checkIsAdministrator", () => {
-  it("管理者なら true, 他のアカウントなら false で, どちらも外には送らない", async () => {
-    const env: Env = {
-      DB: createSqliteD1Database(),
-      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
-    };
-    const store = new WorkerStore();
-    let sentOutside = 0;
-    const outsideFetch = (async () => {
-      sentOutside += 1;
-      return new Response("");
-    }) as typeof fetch;
-    // ブラウザの fetch (相対 URL) をサーバーの処理につなぐ
-    const browserFetch = (async (
-      input: Request | URL | string,
-      init?: RequestInit,
-    ) =>
-      handleWorkerRequest(
-        new Request(new URL(String(input), "https://definy.workers.dev"), init),
-        env,
-        store,
-        outsideFetch,
-      )) as typeof fetch;
-
-    expect(await checkIsAdministrator(adminCredentials, browserFetch)).toBe(
-      true,
-    );
-    expect(
-      await checkIsAdministrator(
-        await generateAccountCredentials("other"),
-        browserFetch,
-      ),
-    ).toBe(false);
-    expect(sentOutside).toBe(0);
   });
 });

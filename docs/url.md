@@ -1,20 +1,20 @@
 # URL
 
-ページは [pages/](../pages) のファイルの配置で決まる (Void のファイルベースのルーティング).
+## definy サーバー (`definy.narumincho.com`)
 
-| path                      | 説明                                                                                            |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
-| /                         | イベントタイムライン                                                                            |
-| /event/{eventHash}        | イベント詳細                                                                                    |
-| /account/{accountId}      | アカウントのページ (イベント・コミットしたモジュール)                                           |
-| /accounts                 | アカウント一覧                                                                                  |
-| /modules                  | モジュール一覧                                                                                  |
-| /project/{projectName}    | プロジェクトのページ (モジュール・ブランチ・コミット履歴)                                       |
-| /module/{moduleName}      | モジュールのページ (プロジェクト・パーツ)                                                       |
-| /parts                    | パーツ一覧 (`?changes=only` で作業中の変更とコミット)                                           |
-| /part/{moduleName}.{name} | パーツのページ (式エディタ)                                                                     |
-| /history                  | コミット履歴                                                                                    |
-| /settings                 | 設定                                                                                            |
-| /about                    | definy について (設定のページから開く). 上に紹介スライド ([story.md](story.md)). OGP 画像は表紙 |
+| path                     | 説明                                                                     |
+| ------------------------ | ------------------------------------------------------------------------ |
+| /                        | 案内のページ (`public/index.html`)                                       |
+| /mcp                     | MCP (Streamable HTTP. [mcp.md](mcp.md))                                  |
+| /definy.v1.\*            | Connect-RPC ([connect-rpc.md](connect-rpc.md))                           |
+| /healthz                 | ヘルスチェック ([healthz.md](healthz.md))                                |
+| /\_\_definy_seed_\*.json | seed の束 ([cloudflare-workers-assets.md](cloudflare-workers-assets.md)) |
 
-表示言語はクエリパラメータ `lang` で指定できる ([ui.md](ui.md) の「表示言語の決め方」).
+どのパスを処理するかは definy の `definy.handle-request` が決める。
+
+## html-ui (definy-html と手元のサーバー)
+
+パスは [html-ui.md](html-ui.md) を参照。`/` (プロジェクト一覧), `/p/<project>/<branch>` (パーツ一覧),
+`/p/<project>/<branch>/<part>` (パーツ), `/h/...` (履歴), `/events`, `/e/<イベントハッシュ>`, `/accounts`, `/a/<アカウント ID>` など。
+
+React の UI のころのパス (`/part/{module}.{name}`, `/event/{hash}`, `/about` など, `?lang=` の表示言語) は 2026-11 に UI とともに削除した。
