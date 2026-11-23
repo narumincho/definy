@@ -27,14 +27,14 @@
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@void/react": "^1.9.1",
-    "ag-psd": "^34.2.0",
-    "oxlint": "^1.93.0",
+    "@void/react": "^1.11.0",
+    "ag-psd": "^34.2.3",
+    "oxlint": "^1.94.0",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0",
-    "void": "^1.9.1"
+    "vitest": "^5.1.1",
+    "void": "^1.11.0"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
