@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "npm run build:seeds",
+    "build": "npm run build:seeds && npm run build:story",
     "build:seeds": "node scripts/generate_seed_bundle.ts",
     "export:store": "node scripts/export_store.ts",
     "build:schema": "node scripts/generate_seed_schema.ts",
@@ -14,13 +14,21 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "lint": "oxlint",
-    "fmt": "prettier --write ."
+    "fmt": "prettier --write .",
+    "build:story": "vite build --config story/vite.config.ts",
+    "dev:story": "vite --config story/vite.config.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "ag-psd": "^34.2.3",
     "oxlint": "^1.94.0",
     "prettier": "^3.10.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^7.0.2",
+    "vite": "^8.3.8",
     "vitest": "^5.1.1",
     "wrangler": "^4.161.0"
   }

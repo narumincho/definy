@@ -11,6 +11,8 @@ definy サーバーは 1 つの Cloudflare Worker (`definy`) で, 設定は [wra
   [ Cloudflare Worker `definy` ]
     ├── 静的なファイル (public/. Workers Static Assets, binding ASSETS)
     │     ├── index.html: `/` の案内 (definy-html, MCP, GitHub へのリンク)
+    │     ├── about/: 紹介スライド (npm run build:story が作る. コミットしない. story.md)
+    │     ├── story/: 紹介スライドの音声と画像
     │     ├── __definy_seed_bundle.json, __definy_seed_commit_cache.json: seed の束 (npm run build:seeds が作る. コミットしない)
     │     └── _headers: セキュリティヘッダー
     │
@@ -39,7 +41,7 @@ definy サーバーは 1 つの Cloudflare Worker (`definy`) で, 設定は [wra
 ## ビルドとデプロイ
 
 ```bash
-npm run build    # = npm run build:seeds (seed の束と wasm/*.wasm を作る)
+npm run build    # = npm run build:seeds (seed の束と wasm/*.wasm) && npm run build:story (public/about/)
 npm run deploy   # = npm run build && wrangler deploy
 npx wrangler deploy --dry-run --outdir dist   # アップロードせずにバンドルだけ確かめる
 ```

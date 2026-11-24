@@ -25,6 +25,25 @@ import type { SeedBundle, SeedEventEntry } from "../worker/types.ts";
 /** seed バンドルの指紋を書くファイル */
 export const SEED_FINGERPRINT_PATH = "seeds/seed_bundle_fingerprint.json";
 
+/**
+ * 紹介スライドの値 `story.slides` の式を書くファイル. ブラウザと音声の生成 (scripts/generate_story_voice.ts) が
+ * src/story/story_value.ts で読む。`npm run check` が `npm run build:seeds` より前に動くのでコミットする
+ */
+export const STORY_SLIDES_PATH = "src/story/story_slides.generated.json";
+
+/** {@link STORY_SLIDES_PATH} の中身 */
+export async function generateStorySlides(): Promise<string> {
+  const store = await readStoreSeed();
+  const slides = store.projects
+    .flatMap((project) => project.commit.modules)
+    .find((module) => module.name === "story")
+    ?.parts.find((part) => part.name === "slides");
+  if (slides === undefined) {
+    throw new Error("story.slides is not in seeds/store");
+  }
+  return `${JSON.stringify({ expression: slides.expression }, null, 2)}\n`;
+}
+
 /** 古い seed の時刻 (2019-01-31T04:36:01Z. 署名が不正なサンプルはここから 1 秒以内に置く) */
 const BASE_EPOCH_SECONDS = 1548909361;
 
@@ -297,7 +316,7 @@ export async function writeSeedCommitCache(bundle: SeedBundle): Promise<void> {
   );
 }
 
-// 直接実行時の処理 (`npm run build:seeds`. `npm run dev` / `npm run build` の前にも実行する)
+// 直接実行時の処理 (`npm run build:seeds`. `npm run build` の前にも実行する)
 if (
   process.argv[1] &&
   (process.argv[1].endsWith("generate_seed_bundle.ts") ||
@@ -307,6 +326,11 @@ if (
   await writeTypeCheckerWasm();
   await writeEventCheckerWasm();
   await writeSeedCommitCache(bundle);
+  await writeFile(
+    resolve(STORY_SLIDES_PATH),
+    await generateStorySlides(),
+    "utf-8",
+  );
   // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts).
   // 型検査で必要なのでこちらはコミットする
   await writeFile(
@@ -315,6 +339,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}, seeder -> ${SEEDER_WASM_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}, event checker -> ${EVENT_CHECKER_WASM_PATH}, shape checker -> ${SHAPE_CHECKER_WASM_PATH}, branch summarizer -> ${BRANCH_SUMMARIZER_WASM_PATH}, visibility checker -> ${VISIBILITY_CHECKER_WASM_PATH}, service -> ${SERVICE_WASM_PATH}, definition evaluator -> ${DEFINITION_EVALUATOR_WASM_PATH}, part ID deriver -> ${PART_ID_DERIVER_WASM_PATH}, commit decoder -> ${COMMIT_DECODER_WASM_PATH}, seeder -> ${SEEDER_WASM_PATH}, story.slides -> ${STORY_SLIDES_PATH}`,
   );
 }

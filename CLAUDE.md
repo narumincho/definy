@@ -14,4 +14,4 @@
 `npm run export:store http://127.0.0.1:8787` で書き出します (docs/source-in-store.md の「編集の流れ」。
 鍵は `$DEFINY_HOME/account.json`。opus5.5 の鍵でないとコミットできない)。
 テストやスクリプトがビルトインのパーツを読むときは `src/seed_parts.ts` の `loadSeedModule` などを使います。
-サーバーは Cloudflare Worker (`wrangler.jsonc`) + self-hosted Wasm で, UI は definy のストアの html-ui (docs/html-ui.md) です。React/Vite の UI は 2026-11 に削除しました。
+サーバーは Cloudflare Worker (`wrangler.jsonc`) + self-hosted Wasm で, UI は definy のストアの html-ui (docs/html-ui.md) です。React/Vite の UI は 2026-11 に削除し, 紹介スライド (`story/`, `/about/`) だけ React で残しています。

@@ -3,7 +3,9 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   generateSeedBundle,
+  generateStorySlides,
   SEED_FINGERPRINT_PATH,
+  STORY_SLIDES_PATH,
 } from "../scripts/generate_seed_bundle.ts";
 import { seedBundleFingerprint } from "./seed_fingerprint.ts";
 
@@ -23,4 +25,11 @@ describe("generateSeedBundle", () => {
     expect(fingerprintFile.fingerprint).toBe(generated.fingerprint);
     // デプロイするパーツの handler を stage1 で事前にコンパイルするので少し時間がかかる
   }, 30_000);
+
+  it("src/story/story_slides.generated.json は seeds/store の story.slides と同じ", async () => {
+    // seeds/store を変えたら `npm run build:seeds` で更新する
+    expect(await readFile(resolve(STORY_SLIDES_PATH), "utf-8")).toBe(
+      await generateStorySlides(),
+    );
+  });
 });

@@ -21,6 +21,7 @@ AI からは MCP (`/mcp`) で読み書きします ([docs/mcp.md](docs/mcp.md))�
 - `wasm/stage1.wasm`: definy 言語自身で記述・自己コンパイルされた固定点 Wasm コンパイラ (外部 import ゼロ)
 - `seeds/store/`: 組み込みモジュール (`core`, `std`, `wasi`, `sample`, `definy` など) の正本 ([docs/source-in-store.md](docs/source-in-store.md))
 - `public/`: Worker の静的なファイル (`npm run build:seeds` が作る seed の束と, `/` の案内のページ)
+- `story/`: 紹介スライド (`/about/`) の静的なページ。React と Vite を使うのはここだけ ([docs/story.md](docs/story.md))
 - `wrangler.jsonc`: Worker のデプロイの設定 ([docs/cloudflare-workers-assets.md](docs/cloudflare-workers-assets.md))
 - `docs/`: 設計・仕様のドキュメント
 
@@ -53,6 +54,9 @@ npm run fmt
 
 # シードバンドル生成 (seeds/store/ -> public/__definy_seed_bundle.json. build / test でも自動で実行。docs/build-artifacts.md)
 npm run build:seeds
+
+# 紹介スライドの開発サーバー (http://localhost:5173/about/)
+npm run dev:story
 
 # Cloudflare Workers へのデプロイ (npm run build && wrangler deploy)
 npm run deploy

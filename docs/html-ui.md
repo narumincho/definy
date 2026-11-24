@@ -241,14 +241,14 @@ React の UI を消す準備として, React 版にあって html-ui に無か�
 
 ### React の UI を削除した (2026-11-24)
 
-React/Vite (Void) の UI (`pages/`, `src/components/`, `src/state/`, `src/story/`, `src/tree_layout/` など) を削除し,
+React/Vite (Void) の UI (`pages/`, `src/components/`, `src/state/`, `src/tree_layout/` の編集の部分など) を削除し,
 definy サーバーは `wrangler deploy` でデプロイする形にした ([cloudflare-workers-assets.md](cloudflare-workers-assets.md))。
-`definy.narumincho.com/` は案内のページ (`public/index.html`) だけを返す。
+`definy.narumincho.com/` は案内のページ (`public/index.html`) だけを返す。紹介スライドだけは静的なページ `/about/` として切り出して残した ([story.md](story.md))。
 
 React の UI にあって html-ui に無いもの (削除の時点。必要になったら html-ui に足す):
 
 - 表示言語の切り替え (日本語・英語・エスペラント, `?lang=`)。html-ui は日本語だけ
-- 紹介のページ `/about` と紹介スライド (音声付き。`story` モジュールのパーツは `seeds/store/` に残っている)
+- 紹介のページ `/about` のスライド以外の部分 (definy の特徴の表など)。スライドは `/about/` に残した
 - 式の木のエディタ (ブロックの選択・キーボード操作・置換メニュー・ホバーで型・定義へ移動・未入力の型引数の推論の表示)。
   html-ui は式をテキスト ([expression-text.md](expression-text.md)) で書く
 - 複数のパーツの作業中の変更を貯めてまとめてコミットする, 元に戻す (undo)。html-ui は 1 つの編集を 1 コミットにする
