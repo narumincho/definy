@@ -112,7 +112,7 @@ describe("記録の失敗の分離", () => {
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
     try {
-      const sink = createPerfSink(brokenDb);
+      const sink = createPerfSink(brokenDb, () => {});
       expect(sink).toBeDefined();
       expect(() => sink?.(record(1))).not.toThrow();
       // 非同期の書き込みが失敗しても、未処理の rejection にならないこと
@@ -125,7 +125,7 @@ describe("記録の失敗の分離", () => {
   });
 
   it("D1 が無ければ受け口自体が無い", () => {
-    expect(createPerfSink(undefined)).toBeUndefined();
+    expect(createPerfSink(undefined, () => {})).toBeUndefined();
   });
 });
 
@@ -143,19 +143,6 @@ describe("waitUntil への登録", () => {
     const records = await readRecentPerfRecords(db, { limit: 20 });
     expect(records).toHaveLength(1);
     expect(records[0]?.startedAtMs).toBe(1_700_000_000_001);
-  });
-
-  it("waitUntil が無くても従来どおり記録される (投げっぱなし)", async () => {
-    const db = createSqliteD1Database();
-    const sink = createPerfSink(db);
-    sink?.(record(1));
-    // 投げっぱなしなので、届くまで少し待つ
-    let records = await readRecentPerfRecords(db, { limit: 20 });
-    for (let i = 0; i < 50 && records.length === 0; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      records = await readRecentPerfRecords(db, { limit: 20 });
-    }
-    expect(records).toHaveLength(1);
   });
 
   it("waitUntil があっても失敗は例外にならず、登録された Promise も reject しない", async () => {

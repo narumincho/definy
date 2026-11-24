@@ -8,6 +8,7 @@
 import { base64ToBytes } from "../src/base64.ts";
 import { decodeCborItem } from "../src/cbor.ts";
 import { none, some, variant, variantOf } from "../src/definy_value.ts";
+import { IoUnsupported, runIo } from "../src/io_runner.ts";
 import {
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
@@ -536,373 +537,315 @@ async function runServiceIoLoop(
   host: ServiceIoHost,
   perf?: ServiceIoPerfCollector,
 ): Promise<ServiceResult> {
-  let pointer = start;
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const { tag, payload } = instance.variant(pointer);
-    if (tag === "serve_asset") {
-      perf?.finish(null);
-      return { type: "serve_asset" };
-    }
-    perf?.beginRequest(tag);
-    if (payload === null) {
-      throw new Error(`definy.service-io の ${tag} にペイロードがありません`);
-    }
-    switch (tag) {
-      case "respond": {
-        const response = instance.read(payload) as {
-          readonly status: number;
-          readonly headers: ReadonlyArray<HttpHeader>;
-          readonly body: DefinyValue;
-        };
-        const result: ServiceResult = {
-          type: "respond",
-          status: response.status,
-          headers: response.headers,
-          body: httpBody(response.body),
-        };
-        perf?.finish(response.status);
-        return result;
-      }
-      case "read_seed_status": {
-        const status = await host.readSeedStatus();
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument({
-            seeded: status.seeded,
-            expected_fingerprint: status.expectedFingerprint,
-          }),
-        ]);
-        break;
-      }
-      case "read_seed_bundle": {
-        const bundle = await host.readSeedBundle();
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            bundle === null
-              ? none()
-              : some({
-                  fingerprint: bundle.fingerprint,
-                  events: bundle.events.map((event) => ({
-                    event_hash: event.eventHash,
-                    signed_event_bytes: event.signedEventBytes,
-                    account_id: event.accountId,
-                    event_type: event.eventType,
-                    created_at_rfc3339: event.createdAtRfc3339,
-                    time_ms: event.timeMs,
-                  })),
-                  contents: bundle.contents.map((item) => ({
-                    content_hash: item.contentHash,
-                    content_bytes: item.contentBytes,
-                  })),
-                }),
-          ),
-        ]);
-        break;
-      }
-      case "mark_seeded": {
-        host.markSeeded();
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(true),
-        ]);
-        break;
-      }
-      case "read_request_json": {
-        const body = await host.readRequestJson();
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            "invalid" in body
-              ? variant("invalid", body.invalid)
-              : variant("json", jsonToDefiny(body.json)),
-          ),
-        ]);
-        break;
-      }
-      case "sql": {
-        const statements = instance.read(
-          instance.recordField(payload, "statements"),
-        ) as ReadonlyArray<{
-          readonly sql: string;
-          readonly params: ReadonlyArray<DefinyValue>;
-        }>;
-        const results = await host.runSql(
-          statements.map((statement) => ({
-            sql: statement.sql,
-            params: statement.params.map(sqlValueFromDefiny),
-          })),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            results.map((rows) => rows.map(sqlRowLiteral)),
-          ),
-        ]);
-        break;
-      }
-      case "read_cached_commits": {
-        const entries = await host.readCachedCommits(
-          readStrings(
-            instance.read(instance.recordField(payload, "event_hashes")),
-          ),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(entries),
-        ]);
-        break;
-      }
-      case "write_cached_commits": {
-        await host.writeCachedCommits(
-          instance.read(
-            instance.recordField(payload, "entries"),
-          ) as ReadonlyArray<CommitCacheEntry>,
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(true),
-        ]);
-        break;
-      }
-      case "verify_ed25519": {
-        const bytesField = (key: string): Uint8Array => {
-          const value = instance.read(instance.recordField(payload, key));
-          return Uint8Array.from(Array.isArray(value) ? value.map(Number) : []);
-        };
-        const valid = await host.verifyEd25519(
-          bytesField("public_key"),
-          bytesField("signature"),
-          bytesField("message"),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(valid),
-        ]);
-        break;
-      }
-      case "read_time": {
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(host.now()),
-        ]);
-        break;
-      }
-      case "read_cached_definitions": {
-        const entries = await host.readCachedDefinitions(
-          readStrings(
-            instance.read(instance.recordField(payload, "content_hashes")),
-          ),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(entries),
-        ]);
-        break;
-      }
-      case "write_cached_definitions": {
-        await host.writeCachedDefinitions(
-          instance.read(
-            instance.recordField(payload, "entries"),
-          ) as ReadonlyArray<DefinitionCacheEntry>,
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(true),
-        ]);
-        break;
-      }
-      case "read_cached_resolutions": {
-        const entries = await host.readCachedResolutions(
-          readStrings(
-            instance.read(instance.recordField(payload, "content_hashes")),
-          ),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(entries),
-        ]);
-        break;
-      }
-      case "write_cached_resolutions": {
-        await host.writeCachedResolutions(
-          instance.read(
-            instance.recordField(payload, "entries"),
-          ) as ReadonlyArray<ResolutionCacheEntry>,
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(true),
-        ]);
-        break;
-      }
-      case "hash_contents": {
-        const hashes = await host.hashContents(
-          readStrings(
-            instance.read(instance.recordField(payload, "contents_bytes")),
-          ),
-        );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            hashes.map((hash) =>
-              hash === undefined ? variant("none") : variant("some", hash),
-            ),
-          ),
-        ]);
-        break;
-      }
-      case "read_request_text": {
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(await host.readRequestText()),
-        ]);
-        break;
-      }
-      case "read_admin_account_ids": {
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(host.readAdminAccountIds()),
-        ]);
-        break;
-      }
-      case "read_mcp_account": {
-        const account = (await host.readMcpAccount?.()) ?? null;
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            account === null
-              ? variant("none")
-              : variant("some", {
-                  account_id: account.accountId,
-                  account_name: account.accountName,
-                }),
-          ),
-        ]);
-        break;
-      }
-      case "read_host_settings": {
-        const settings = host.readHostSettings?.() ?? { runExpressions: false };
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument({ run_expressions: settings.runExpressions }),
-        ]);
-        break;
-      }
-      case "run_wasi_io": {
-        const read = (key: string) =>
-          instance.read(instance.recordField(payload, key));
-        const parts = new Map<string, unknown>();
-        const partList = read("parts");
-        for (const part of Array.isArray(partList) ? partList : []) {
-          const { id, cbor } = part as {
-            readonly id: string;
-            readonly cbor: string;
-          };
-          parts.set(id, decodeCborItem(base64ToBytes(cbor))[0]);
-        }
-        const result: WasiIoRunResult =
-          host.localIo === undefined
-            ? {
-                ok: false,
-                message: "Running I/O programs is disabled on this server",
-                steps: [],
-              }
-            : await host.localIo.runWasiIo(
-                base64ToBytes(String(read("wasm"))),
-                parts,
-              );
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument({
-            ok: result.ok,
-            message: result.message,
-            steps: result.steps,
-          }),
-        ]);
-        break;
-      }
-      case "read_secrets": {
-        const secrets = (await host.localIo?.readSecrets()) ?? [];
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            secrets.map((secret) => ({
-              id: secret.id,
-              label: secret.label,
-              allowed_url_prefixes: secret.allowedUrlPrefixes,
-              updated_ms: secret.updatedMs,
-            })),
-          ),
-        ]);
-        break;
-      }
-      case "write_secret": {
-        const read = (key: string) =>
-          instance.read(instance.recordField(payload, key));
-        const prefixes = read("allowed_url_prefixes");
-        const written =
-          (await host.localIo?.writeSecret({
-            id: String(read("id")),
-            label: String(read("label")),
-            value: String(read("value")),
-            allowedUrlPrefixes: Array.isArray(prefixes)
-              ? prefixes.map(String)
-              : [],
-          })) ?? false;
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(written),
-        ]);
-        break;
-      }
-      case "read_perf_records": {
-        const read = (key: string) =>
-          instance.read(instance.recordField(payload, key));
-        const result = (await host.readPerfRecords?.({
-          authorization: String(read("authorization")),
-          limit: Number(read("limit")),
-          pathContains: String(read("path_contains")),
-        })) ?? {
-          status: 404,
-          body: JSON.stringify({
-            code: "not_found",
-            message: "the perf endpoint is not enabled",
-          }),
-        };
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument({ status: result.status, body: result.body }),
-        ]);
-        break;
-      }
-      case "sign_mcp_account": {
-        const value = instance.read(instance.recordField(payload, "message"));
-        const signature =
-          (await host.signMcpAccount?.(
-            Uint8Array.from(Array.isArray(value) ? value.map(Number) : []),
-          )) ?? null;
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            signature === null
-              ? variant("none")
-              : variant("some", [...signature]),
-          ),
-        ]);
-        break;
-      }
-      case "http_fetch": {
-        const request = instance.read(
-          instance.recordField(payload, "request"),
-        ) as {
-          readonly url: string;
-          readonly method: string;
-          readonly headers: ReadonlyArray<HttpHeader>;
-          readonly body_base64: DefinyValue;
-        };
-        const body = variantOf(request.body_base64);
-        const result = await host.httpFetch({
-          url: request.url,
-          method: request.method,
-          headers: request.headers,
-          bodyBase64: body?.tag === "some" ? String(body.payload) : null,
-        });
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(
-            "failed" in result
-              ? variant("failed", result.failed)
-              : variant("response", {
-                  status: result.status,
-                  headers: result.headers,
-                  body_base64: result.bodyBase64,
-                }),
-          ),
-        ]);
-        break;
-      }
-      default:
-        throw new Error(`definy.service-io ではない値です (タグ: ${tag})`);
-    }
+  const outcome = await runIo(instance, start, {
+    maxSteps: MAX_STEPS,
+    tooManyStepsMessage: `${MAX_STEPS} 回ストアを読んでも終わりませんでした`,
+    leaf: (tag, payload, signal) => {
+      perf?.beginRequest(tag);
+      return serviceIoLeaf(instance, host, tag, payload, signal);
+    },
+  });
+  const { tag, payload } = instance.variant(outcome);
+  if (tag === "serve_asset") {
+    perf?.finish(null);
+    return { type: "serve_asset" };
   }
-  throw new Error(`${MAX_STEPS} 回ストアを読んでも終わりませんでした`);
+  if (tag !== "respond" || payload === null) {
+    throw new Error(`definy.service-outcome ではない値です (タグ: ${tag})`);
+  }
+  const response = instance.read(payload) as {
+    readonly status: number;
+    readonly headers: ReadonlyArray<HttpHeader>;
+    readonly body: DefinyValue;
+  };
+  const result: ServiceResult = {
+    type: "respond",
+    status: response.status,
+    headers: response.headers,
+    body: httpBody(response.body),
+  };
+  perf?.finish(response.status);
+  return result;
+}
+
+/** `definy.service-io` の I/O を 1 つホストで行い, `then` に渡す値を返す */
+async function serviceIoLeaf(
+  instance: CompiledFunctionInstance,
+  host: ServiceIoHost,
+  tag: string,
+  payload: ValueRef,
+  _signal: AbortSignal,
+): Promise<ValueRef> {
+  switch (tag) {
+    case "read_seed_status": {
+      const status = await host.readSeedStatus();
+      return instance.writeArgument({
+        seeded: status.seeded,
+        expected_fingerprint: status.expectedFingerprint,
+      });
+    }
+    case "read_seed_bundle": {
+      const bundle = await host.readSeedBundle();
+      return instance.writeArgument(
+        bundle === null
+          ? none()
+          : some({
+              fingerprint: bundle.fingerprint,
+              events: bundle.events.map((event) => ({
+                event_hash: event.eventHash,
+                signed_event_bytes: event.signedEventBytes,
+                account_id: event.accountId,
+                event_type: event.eventType,
+                created_at_rfc3339: event.createdAtRfc3339,
+                time_ms: event.timeMs,
+              })),
+              contents: bundle.contents.map((item) => ({
+                content_hash: item.contentHash,
+                content_bytes: item.contentBytes,
+              })),
+            }),
+      );
+    }
+    case "mark_seeded": {
+      host.markSeeded();
+      return instance.writeArgument(true);
+    }
+    case "read_request_json": {
+      const body = await host.readRequestJson();
+      return instance.writeArgument(
+        "invalid" in body
+          ? variant("invalid", body.invalid)
+          : variant("json", jsonToDefiny(body.json)),
+      );
+    }
+    case "sql": {
+      const statements = instance.read(
+        instance.recordField(payload, "statements"),
+      ) as ReadonlyArray<{
+        readonly sql: string;
+        readonly params: ReadonlyArray<DefinyValue>;
+      }>;
+      const results = await host.runSql(
+        statements.map((statement) => ({
+          sql: statement.sql,
+          params: statement.params.map(sqlValueFromDefiny),
+        })),
+      );
+      return instance.writeArgument(
+        results.map((rows) => rows.map(sqlRowLiteral)),
+      );
+    }
+    case "read_cached_commits": {
+      const entries = await host.readCachedCommits(
+        readStrings(
+          instance.read(instance.recordField(payload, "event_hashes")),
+        ),
+      );
+      return instance.writeArgument(entries);
+    }
+    case "write_cached_commits": {
+      await host.writeCachedCommits(
+        instance.read(
+          instance.recordField(payload, "entries"),
+        ) as ReadonlyArray<CommitCacheEntry>,
+      );
+      return instance.writeArgument(true);
+    }
+    case "verify_ed25519": {
+      const bytesField = (key: string): Uint8Array => {
+        const value = instance.read(instance.recordField(payload, key));
+        return Uint8Array.from(Array.isArray(value) ? value.map(Number) : []);
+      };
+      const valid = await host.verifyEd25519(
+        bytesField("public_key"),
+        bytesField("signature"),
+        bytesField("message"),
+      );
+      return instance.writeArgument(valid);
+    }
+    case "read_time": {
+      return instance.writeArgument(host.now());
+    }
+    case "read_cached_definitions": {
+      const entries = await host.readCachedDefinitions(
+        readStrings(
+          instance.read(instance.recordField(payload, "content_hashes")),
+        ),
+      );
+      return instance.writeArgument(entries);
+    }
+    case "write_cached_definitions": {
+      await host.writeCachedDefinitions(
+        instance.read(
+          instance.recordField(payload, "entries"),
+        ) as ReadonlyArray<DefinitionCacheEntry>,
+      );
+      return instance.writeArgument(true);
+    }
+    case "read_cached_resolutions": {
+      const entries = await host.readCachedResolutions(
+        readStrings(
+          instance.read(instance.recordField(payload, "content_hashes")),
+        ),
+      );
+      return instance.writeArgument(entries);
+    }
+    case "write_cached_resolutions": {
+      await host.writeCachedResolutions(
+        instance.read(
+          instance.recordField(payload, "entries"),
+        ) as ReadonlyArray<ResolutionCacheEntry>,
+      );
+      return instance.writeArgument(true);
+    }
+    case "hash_contents": {
+      const hashes = await host.hashContents(
+        readStrings(
+          instance.read(instance.recordField(payload, "contents_bytes")),
+        ),
+      );
+      return instance.writeArgument(
+        hashes.map((hash) =>
+          hash === undefined ? variant("none") : variant("some", hash),
+        ),
+      );
+    }
+    case "read_request_text": {
+      return instance.writeArgument(await host.readRequestText());
+    }
+    case "read_admin_account_ids": {
+      return instance.writeArgument(host.readAdminAccountIds());
+    }
+    case "read_mcp_account": {
+      const account = (await host.readMcpAccount?.()) ?? null;
+      return instance.writeArgument(
+        account === null
+          ? variant("none")
+          : variant("some", {
+              account_id: account.accountId,
+              account_name: account.accountName,
+            }),
+      );
+    }
+    case "read_host_settings": {
+      const settings = host.readHostSettings?.() ?? { runExpressions: false };
+      return instance.writeArgument({
+        run_expressions: settings.runExpressions,
+      });
+    }
+    case "run_wasi_io": {
+      const read = (key: string) =>
+        instance.read(instance.recordField(payload, key));
+      const parts = new Map<string, unknown>();
+      const partList = read("parts");
+      for (const part of Array.isArray(partList) ? partList : []) {
+        const { id, cbor } = part as {
+          readonly id: string;
+          readonly cbor: string;
+        };
+        parts.set(id, decodeCborItem(base64ToBytes(cbor))[0]);
+      }
+      const result: WasiIoRunResult =
+        host.localIo === undefined
+          ? {
+              ok: false,
+              message: "Running I/O programs is disabled on this server",
+              steps: [],
+            }
+          : await host.localIo.runWasiIo(
+              base64ToBytes(String(read("wasm"))),
+              parts,
+            );
+      return instance.writeArgument({
+        ok: result.ok,
+        message: result.message,
+        steps: result.steps,
+      });
+    }
+    case "read_secrets": {
+      const secrets = (await host.localIo?.readSecrets()) ?? [];
+      return instance.writeArgument(
+        secrets.map((secret) => ({
+          id: secret.id,
+          label: secret.label,
+          allowed_url_prefixes: secret.allowedUrlPrefixes,
+          updated_ms: secret.updatedMs,
+        })),
+      );
+    }
+    case "write_secret": {
+      const read = (key: string) =>
+        instance.read(instance.recordField(payload, key));
+      const prefixes = read("allowed_url_prefixes");
+      const written =
+        (await host.localIo?.writeSecret({
+          id: String(read("id")),
+          label: String(read("label")),
+          value: String(read("value")),
+          allowedUrlPrefixes: Array.isArray(prefixes)
+            ? prefixes.map(String)
+            : [],
+        })) ?? false;
+      return instance.writeArgument(written);
+    }
+    case "read_perf_records": {
+      const read = (key: string) =>
+        instance.read(instance.recordField(payload, key));
+      const result = (await host.readPerfRecords?.({
+        authorization: String(read("authorization")),
+        limit: Number(read("limit")),
+        pathContains: String(read("path_contains")),
+      })) ?? {
+        status: 404,
+        body: JSON.stringify({
+          code: "not_found",
+          message: "the perf endpoint is not enabled",
+        }),
+      };
+      return instance.writeArgument({
+        status: result.status,
+        body: result.body,
+      });
+    }
+    case "sign_mcp_account": {
+      const value = instance.read(instance.recordField(payload, "message"));
+      const signature =
+        (await host.signMcpAccount?.(
+          Uint8Array.from(Array.isArray(value) ? value.map(Number) : []),
+        )) ?? null;
+      return instance.writeArgument(
+        signature === null ? variant("none") : variant("some", [...signature]),
+      );
+    }
+    case "http_fetch": {
+      const request = instance.read(
+        instance.recordField(payload, "request"),
+      ) as {
+        readonly url: string;
+        readonly method: string;
+        readonly headers: ReadonlyArray<HttpHeader>;
+        readonly body_base64: DefinyValue;
+      };
+      const body = variantOf(request.body_base64);
+      const result = await host.httpFetch({
+        url: request.url,
+        method: request.method,
+        headers: request.headers,
+        bodyBase64: body?.tag === "some" ? String(body.payload) : null,
+      });
+      return instance.writeArgument(
+        "failed" in result
+          ? variant("failed", result.failed)
+          : variant("response", {
+              status: result.status,
+              headers: result.headers,
+              body_base64: result.bodyBase64,
+            }),
+      );
+    }
+    default:
+      throw new IoUnsupported(tag);
+  }
 }
 
 /** `definy.http-body` を読む */

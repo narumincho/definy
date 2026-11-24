@@ -96,7 +96,7 @@ function toResponse(
  * テスト用にストアと fetch を差し替えられる. `serveAsset` は静的アセットを返す
  * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す).
  * `ctx` (ExecutionContext) はパフォーマンス記録の書き込み完了を `waitUntil` で
- * 保証するために使う (無い環境では書き込みは投げっぱなしになる).
+ * 保証するために使う (無い環境ではレスポンスを返す前に書き込みを待つ. 投げっぱなしにしない).
  * `service` は処理する definy の関数 (`Fn(request: @definy.http-request) -> @definy.service-io`) をコンパイルしたもの.
  * 省くと `definy.handle-request`. 手元のサーバーは HTML の UI (`html-ui.handle`) を同じ能力で動かす (docs/local-server.md)
  */
@@ -127,6 +127,14 @@ export async function handleWorkerRequest(
   const readBody = () => (bodyText ??= request.text());
   let result: ServiceResult;
   const seed = store.seedHost(env, url.origin);
+  // ctx の無い環境 (手元のサーバー, テスト) では, レスポンスの後に続く書き込みをここで待つ (宙に浮かせない)
+  const afterResponse: Array<Promise<unknown>> = [];
+  const waitUntil =
+    ctx === undefined
+      ? (promise: Promise<unknown>) => {
+          afterResponse.push(promise);
+        }
+      : (promise: Promise<unknown>) => ctx.waitUntil(promise);
   try {
     result = await handleRequestInDefiny(
       service,
@@ -183,12 +191,7 @@ export async function handleWorkerRequest(
         // 打ち切られて記録が残らなかったことがあるため)
         recordPerf:
           pathname === "/definy.v1.EventService/SubmitEvent"
-            ? createPerfSink(
-                env.DB,
-                ctx === undefined
-                  ? undefined
-                  : (promise) => ctx.waitUntil(promise),
-              )
+            ? createPerfSink(env.DB, waitUntil)
             : undefined,
       },
     );
@@ -196,6 +199,7 @@ export async function handleWorkerRequest(
     return hostErrorResponse(e);
   } finally {
     seed.release();
+    await Promise.allSettled(afterResponse);
   }
   if (result.type === "serve_asset") {
     if (serveAsset === undefined) {

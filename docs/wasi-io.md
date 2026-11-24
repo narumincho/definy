@@ -9,11 +9,20 @@ definy の式は純粋なので, HTTP リクエストのような I/O は「次�
 
 ## 型 (モジュール `wasi`)
 
+`wasi.io` は, サーバーの処理 (`definy.service-io`, [service.md](service.md)) と同じ 1 つの I/O の型 `definy.io(A)` の
+`A` を `String` にした別名 (2026-11-25. [structured-concurrency.md](structured-concurrency.md))。
+
 ```text
-wasi.io =
-  | done(string)                                   -- 終わり. 文字列は画面に出すメッセージ
-  | outgoing_request { request: wasi.outgoing-request, then: fn(result: wasi.http-result) => wasi.io }
-  | get_parts { ids: List<string>, then: fn(parts: List<{ id, expression }>) => wasi.io }
+wasi.io = definy.io(A: String)
+
+definy.io(A) =
+  | done(A)                                        -- 終わり. wasi.io では画面に出すメッセージ
+  | all  { Child: Type, tasks: List<definy.io(Child)>, then: fn(results: List<Child>) => definy.io(A) }
+  | race { Child: Type, tasks: List<definy.io(Child)>, then: fn(result: Child) => definy.io(A) }
+  | sleep { ms: Number, then: fn(slept_ms: Number) => definy.io(A) }
+  | outgoing_request { request: wasi.outgoing-request, then: fn(result: wasi.http-result) => definy.io(A) }
+  | get_parts { ids: List<string>, then: fn(parts: List<{ id, expression }>) => definy.io(A) }
+  | ... (サーバーの I/O: sql, read_time, http_fetch など. service.md)
 
 wasi.outgoing-request = {
   method, url, headers: List<{ name, value }>,
@@ -24,6 +33,10 @@ wasi.http-result      = ok(wasi.incoming-response) | error(string)
 wasi.incoming-response = { status, headers, body: List<number>, text: string }
 ```
 
+- `all` / `race` / `sleep` で並行に動かせる。子のタスクは親より長生きしない ([structured-concurrency.md](structured-concurrency.md))。
+  例は `sample.io-all-race`
+- ホスト (ブラウザ, 手元のサーバー) ができるのは `outgoing_request` と `get_parts` (と `all` / `race` / `sleep`) だけで,
+  サーバーの I/O (`sql` など) を頼むとプログラムはエラーで終わる (`IoUnsupported`)
 - `outgoing_request` は wasi:http/outgoing-handler の `handle` に相当する。ネットワークエラー (ブラウザでは CORS で読めないときも) は `error`
 - `get_parts` は実行している definy から, パーツの最新の式を読む。quote したコード (`core.code`) の `part_ids` を渡すと
   `core.compile-to-wasm` の `parts` にそのまま渡せる形で返る ([quote.md](quote.md))。型パーツなどコンパイルできない式は除く
@@ -35,10 +48,12 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 
 ## ホスト
 
-`src/wasi_io.ts` の `runWasiIo(module, host)` がコンパイル済みの Wasm を動かし, 値のタグを見て 1 歩ずつ I/O をする。
-継続は `instantiateCompiledValue` の `callClosure` (Wasm のテーブル経由) で呼ぶ。1000 歩で打ち切る。
+`src/wasi_io.ts` の `runWasiIo(module, host)` がコンパイル済みの Wasm を動かす。木を動かすのは `src/io_runner.ts` の `runIo`
+(`done` / `all` / `race` / `sleep`) で, `runWasiIo` はそれ以外のタグ (`outgoing_request`, `get_parts`) を 1 つずつ行う。
+継続は `instantiateCompiledValue` の `callClosure` (Wasm のテーブル経由) で呼ぶ。全てのタスクで合わせて 1000 歩で打ち切る。
 
-- `fetchHandler(fetch)`: `fetch` で送る `handle`。GET / HEAD は本文を付けない
+- `fetchHandler(fetch)`: `fetch` で送る `handle`。GET / HEAD は本文を付けず, `race` で負けるなど結果が要らなくなったら止める
+  (`AbortSignal`)。それ以外のメソッドは止めずに最後まで送る
 - `getSecret(id)`: シークレットの値と, 値を入れたときに許可した宛先。無い・宛先が許可されていなければ送らずに `error` にする
 - `onSecretUse`: シークレットを使った (使おうとした) ときに呼ぶ (使用履歴)
 - `onStep`: I/O のたびに記録を渡す (シークレットは名前だけで値は渡さない)
