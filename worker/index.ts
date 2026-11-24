@@ -182,6 +182,7 @@ export async function handleWorkerRequest(
         readSeedStatus: seed.readSeedStatus,
         readSeedBundle: seed.readSeedBundle,
         markSeeded: seed.markSeeded,
+        signals: store.signals,
         readRequestJson: async () => parseJsonObject(await readBody()),
         // パフォーマンス記録 (docs/performance-observability.md)。
         // 対象は SubmitEvent だけ: 読み取りのリクエストでは D1 に一切書かない

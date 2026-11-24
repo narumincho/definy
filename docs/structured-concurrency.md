@@ -38,6 +38,8 @@ definy.io(A) =
   | all  { Child: Type, tasks: List<definy.io(Child)>, then: fn(results: List<Child>) => definy.io(A) }
   | race { Child: Type, tasks: List<definy.io(Child)>, then: fn(result: Child) => definy.io(A) }
   | sleep { ms: Number, then: fn(slept_ms: Number) => definy.io(A) }
+  | wait_signal { key: String, then: fn(payload: String) => definy.io(A) }
+  | send_signal { key: String, payload: String, then: fn(woken: Number) => definy.io(A) }
   | outgoing_request { ... } | get_parts { ... }                     -- wasi.io にあったもの (wasi-io.md)
   | sql { ... } | read_time { ... } | http_fetch { ... } | ...       -- サーバーの I/O (service.md)
 
@@ -54,6 +56,37 @@ definy.service-io = definy.io(A: definy.service-outcome)     -- サーバーの�
 - `definy.io-bind(A, B, io, f)` で, あるプログラムの結果を受けて次のプログラムを続けられる (全てのタグの `then` を包み直す)
 - 例: `sample.io-all-race` (2 つの HTTP を同時に送って待ち, 遅いリクエストに 20 ミリ秒の制限を付ける)
 
+- `wait_signal` / `send_signal`: 同じ `key` の合図を待つ / 送る。`send_signal` はそのキーを待っている全てのタスクを起こし,
+  `payload` を渡して, 起こした数を返す。待っている人がいなければ何も起きない (合図は溜めない)
+
+### タイムアウトと外からのキャンセル (ユーザーが表したいもの, 2026-11-25)
+
+5 秒でタイムアウトする処理は `race` と `sleep` で書く。`sleep` が先に終わると本体はキャンセルされる。
+
+```text
+#race({
+  Child: @definy.service-outcome,
+  tasks: [
+    本体の処理,
+    #sleep({ms: 5000, then: fn(slept_ms) => #done(#respond(504 のレスポンス))})
+  ],
+  then: fn(result) => #done(result)
+})
+```
+
+`POST /cancel` が来たら処理を止めるのは, 本体を `wait_signal` と `race` し, `/cancel` の処理が `send_signal` する。
+動いているタスクを掴む値は作らず, キー (ジョブの ID など) で合図するだけ。例は `sample.io-cancel-by-signal` (1 つのプログラムの中で送る)。
+
+```text
+本体のリクエスト:  #race({Child: ..., tasks: [本体, #wait_signal({key: "cancel:<ジョブID>", then: fn(payload) => #done(中止のレスポンス)})], ...})
+POST /cancel:      #send_signal({key: "cancel:<ジョブID>", payload: "", then: fn(woken) => #done(#respond(...))})
+```
+
+- 合図が届く範囲はホストの `IoSignals` (`src/io_runner.ts`) を共有するプログラムの間。サーバーは `WorkerStore.signals` で,
+  手元のサーバー (1 つのプロセス) ではリクエスト同士で届く。Cloudflare Workers では同じ isolate のリクエストにしか届かない
+  (別の isolate に届けるには Durable Objects などが要る。まだ無い)。実行パネル・`definy_run_io` (`runWasiIo`) はそのプログラムの中だけ
+- 待っているタスクがキャンセルされたら待ちの一覧から外す (残さない)
+
 ### 宙に浮いたタスクを作れない理由
 
 動いているタスクを指す値 (ハンドル, Promise, `TaskGroup`) が definy には無い。タスクは「ホストに渡す I/O の値」でしかなく,
@@ -67,7 +100,8 @@ definy.service-io = definy.io(A: definy.service-outcome)     -- サーバーの�
 ## キャンセル
 
 - キャンセルが起きるのは `race` で負けた子と, 失敗したタスクの兄弟 (と, プログラム全体を止めたとき) だけ。
-  definy のコードから「このタスクを止める」と言う方法 (キャンセルトークンやハンドル) は無い
+  definy のコードから「このタスクを止める」と言う方法 (キャンセルトークンやハンドル) は無く, 外から止めたいときは
+  `wait_signal` と `race` して合図を送る (上)
 - 止める単位は I/O の 1 歩。子は「次の I/O と継続」の値なので, ホストは止めた子の継続を捨てるだけでよく,
   definy の側に途中まで進んで壊れた状態は残らない。MoonBit の `defer` のような後始末の仕組みは要らない
 - 実行中の I/O: 読むだけのもの (HTTP の GET / HEAD) は `AbortSignal` で止める。書き込み (SQL, POST など) は MoonBit の

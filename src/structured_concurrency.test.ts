@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { generateAccountCredentials } from "./auth.ts";
-import { IoUnsupported, runIo } from "./io_runner.ts";
+import { IoSignals, IoUnsupported, runIo } from "./io_runner.ts";
 import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
@@ -160,6 +160,38 @@ describe("definy.io の all / race / sleep", () => {
     });
     await expect(result).rejects.toThrow("the task was cancelled");
     expect(started).toBe(2);
+  });
+});
+
+describe("wait_signal / send_signal (外からのキャンセル)", () => {
+  it("race で wait_signal に負けた長いタスクはキャンセルされる (sample.io-cancel-by-signal)", async () => {
+    const started = Date.now();
+    const message = await runWasiIo(
+      await compilePart("sample.io-cancel-by-signal"),
+      {
+        handle: () => Promise.resolve({ error: "unused" }),
+        getPart: () => undefined,
+        getSecret: () => undefined,
+      },
+    );
+    expect(message).toBe("cancelled: by request, sent");
+    // 60 秒の sleep を待たずに終わる
+    expect(Date.now() - started).toBeLessThan(10_000);
+  });
+
+  it("合図はキーを待っている全員に届き, キャンセルされた待ちは残らない", async () => {
+    const signals = new IoSignals();
+    const cancelled = new AbortController();
+    const first = signals.wait("job-1", new AbortController().signal);
+    const second = signals.wait("job-1", new AbortController().signal);
+    const gone = signals.wait("job-1", cancelled.signal);
+    cancelled.abort();
+    expect(await gone).toBeUndefined();
+    expect(signals.send("job-2", "x")).toBe(0);
+    expect(signals.send("job-1", "stop")).toBe(2);
+    expect(await first).toBe("stop");
+    expect(await second).toBe("stop");
+    expect(signals.send("job-1", "again")).toBe(0);
   });
 });
 

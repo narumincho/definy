@@ -11,7 +11,7 @@
  * 詳細は docs/wasi-io.md
  */
 import { variant, variantOf } from "./definy_value.ts";
-import { IoUnsupported, runIo } from "./io_runner.ts";
+import { IoSignals, IoUnsupported, runIo } from "./io_runner.ts";
 import {
   containsHole,
   instantiateCompiledValue,
@@ -127,6 +127,8 @@ const WASI_IO_TAGS: ReadonlySet<string> = new Set([
   "all",
   "race",
   "sleep",
+  "wait_signal",
+  "send_signal",
   "outgoing_request",
   "get_parts",
 ]);
@@ -261,6 +263,8 @@ export async function runWasiIo(
   const instance = instantiateCompiledValue(module);
   const done = await runIo(instance, instance.root, {
     maxSteps: MAX_STEPS,
+    // 合図はこのプログラムの中だけで届く
+    signals: new IoSignals(),
     leaf: async (tag, payload, signal) => {
       switch (tag) {
         case "outgoing_request": {

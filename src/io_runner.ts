@@ -8,6 +8,7 @@
  * - `all`: `tasks` を並行に動かし, 全部の結果を (渡した順に) `then` に渡す
  * - `race`: 最初に終わったタスクの結果を `then` に渡し, 他のタスクはキャンセルする
  * - `sleep`: `ms` ミリ秒待つ
+ * - `wait_signal` / `send_signal`: 同じキーの合図を待つ / 送る ({@link IoSignals}. 渡したときだけ)
  *
  * 構造化並行性: 子のタスクは親より長生きしない. `then` を呼ぶのは子が全て終わってから
  * (`race` ではキャンセルした子が止まるのを待ってから) で, ホストの Promise も投げっぱなしにしない.
@@ -52,7 +53,58 @@ export type IoRunOptions = {
   readonly signal?: AbortSignal;
   /** `sleep` の待ち方 (テスト用). 省くと `setTimeout` */
   readonly sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
+  /**
+   * `wait_signal` / `send_signal` の合図をやり取りする場所. 同じものを渡したプログラム同士 (手元のサーバーの
+   * 別々のリクエストなど) で合図が届く. 省くと, その 2 つのタグは `leaf` に渡す
+   */
+  readonly signals?: IoSignals;
 };
+
+/**
+ * `wait_signal` / `send_signal` の合図. キーごとに待っているタスクを持ち, 送ると全員を起こす.
+ * 待っているタスクがキャンセルされたら, 待ちの一覧から外す (残さない)
+ */
+export class IoSignals {
+  private readonly waiting = new Map<string, Set<(payload: string) => void>>();
+
+  /** `key` の合図が来るまで待つ. `signal` が中断されたら `undefined` */
+  wait(key: string, signal: AbortSignal): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      if (signal.aborted) {
+        resolve(undefined);
+        return;
+      }
+      const waiters = this.waiting.get(key) ?? new Set();
+      this.waiting.set(key, waiters);
+      const remove = () => {
+        waiters.delete(wake);
+        if (waiters.size === 0 && this.waiting.get(key) === waiters) {
+          this.waiting.delete(key);
+        }
+      };
+      const wake = (payload: string) => {
+        signal.removeEventListener("abort", onAbort);
+        remove();
+        resolve(payload);
+      };
+      const onAbort = () => {
+        remove();
+        resolve(undefined);
+      };
+      waiters.add(wake);
+      signal.addEventListener("abort", onAbort, { once: true });
+    });
+  }
+
+  /** `key` を待っている全てのタスクを起こし, 起こした数を返す */
+  send(key: string, payload: string): number {
+    const waiters = [...(this.waiting.get(key) ?? [])];
+    for (const wake of waiters) {
+      wake(payload);
+    }
+    return waiters.length;
+  }
+}
 
 /** `definy.io` の値を動かし, `done` の値 (参照) を返す */
 export async function runIo(
@@ -123,6 +175,33 @@ export async function runIo(
             throw new IoCancelled();
           }
           pointer = then(payload, instance.writeArgument(ms));
+          break;
+        }
+        case "wait_signal": {
+          if (options.signals === undefined) {
+            pointer = then(payload, await options.leaf(tag, payload, signal));
+            break;
+          }
+          const received = await options.signals.wait(
+            String(instance.read(instance.recordField(payload, "key"))),
+            signal,
+          );
+          if (received === undefined || signal.aborted) {
+            throw new IoCancelled();
+          }
+          pointer = then(payload, instance.writeArgument(received));
+          break;
+        }
+        case "send_signal": {
+          if (options.signals === undefined) {
+            pointer = then(payload, await options.leaf(tag, payload, signal));
+            break;
+          }
+          const woken = options.signals.send(
+            String(instance.read(instance.recordField(payload, "key"))),
+            String(instance.read(instance.recordField(payload, "payload"))),
+          );
+          pointer = then(payload, instance.writeArgument(woken));
           break;
         }
         default: {

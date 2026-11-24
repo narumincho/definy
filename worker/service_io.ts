@@ -8,7 +8,7 @@
 import { base64ToBytes } from "../src/base64.ts";
 import { decodeCborItem } from "../src/cbor.ts";
 import { none, some, variant, variantOf } from "../src/definy_value.ts";
-import { IoUnsupported, runIo } from "../src/io_runner.ts";
+import { IoSignals, IoUnsupported, runIo } from "../src/io_runner.ts";
 import {
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
@@ -138,6 +138,11 @@ export type ServiceIoHost = {
    * definy の処理には影響しない。ここで例外を投げても握り潰される
    */
   readonly recordPerf?: ((record: ServiceIoPerfRecord) => void) | undefined;
+  /**
+   * `wait_signal` / `send_signal` の合図をやり取りする場所 (docs/structured-concurrency.md).
+   * 同じものを渡したリクエスト同士で届く. 省くとそのリクエストの中だけ
+   */
+  readonly signals?: IoSignals;
 };
 
 /** 手元の definy サーバーだけの能力 (`ServiceIoHost["localIo"]`) */
@@ -539,6 +544,7 @@ async function runServiceIoLoop(
 ): Promise<ServiceResult> {
   const outcome = await runIo(instance, start, {
     maxSteps: MAX_STEPS,
+    signals: host.signals ?? new IoSignals(),
     tooManyStepsMessage: `${MAX_STEPS} 回ストアを読んでも終わりませんでした`,
     leaf: (tag, payload, signal) => {
       perf?.beginRequest(tag);
