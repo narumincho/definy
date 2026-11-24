@@ -259,6 +259,25 @@ React の UI にあって html-ui に無いもの (削除の時点。必要に�
 - 設定のページ (接続元の IP バージョン, CORS の仲介)。サーバーの `HttpProxyService` (CORS の仲介) は React の UI だけが使っていたが,
   definy のパーツ (`definy.http-proxy-send` など) なのでサーバーには残している
 
+### GitHub を使わずに definy だけで完結させるのに足りないもの (2026-11-24)
+
+ユーザーの方針: html 版は definy 経由でデプロイし, GitHub を使わず definy だけで完結させる。
+html-ui のコードとデプロイ (`html-ui.deploy` を手元のサーバーの `definy_run_io` で実行) はすでに definy だけで済む。
+GitHub が要るのは次のところ:
+
+1. **html-ui が使う definy プロジェクトのパーツの変更** (`definy.mcp-tools`, `definy.handle-rpc`, `definy.cloudflare-service-runtime-script` など)。
+   definy プロジェクトは `seeds/store/` に書き出して GitHub の PR → CI のデプロイで公開サーバーに入る
+   (#932, #933 のように html-ui の変更が definy 側の新しいパーツを待つ)。definy プロジェクトも `definy_push` で公開サーバーに入れ,
+   公開サーバーが seed ではなくストアの最新を使うようにすれば要らなくなる
+2. **公開サーバー (`definy` Worker) 自体のデプロイ**: `worker/*.ts` のホストと, ビルド時に seed から作る `wasm/service.wasm` などを
+   GitHub Actions の `wrangler deploy` で入れている。definy-html と同じく `definy.deploy-service-worker` で definy からデプロイすれば要らなくなる
+   (ホストの JS を definy のパーツの `definy.cloudflare-service-runtime-script` に寄せる。計画の 6 段目)
+3. **手元のサーバー (`npm run serve`) の入手**: `cli/` の TypeScript で, GitHub から clone して動かしている
+4. **コンパイラ・型チェッカーの作り直し**: `npm run build:seeds`, `npm run build:stage1` (計画の「ビルドを definy に」)
+5. **独自ドメイン**: definy-html は `definy-html.narumincho.workers.dev`。`definy.narumincho.com` を html 版にするなら,
+   `html-ui.deploy` (`definy.deploy-service-worker`) が Workers の独自ドメインも設定する必要がある。今は `definy.narumincho.com` は公開サーバー
+   (GitHub からデプロイ) で, `/` は案内, `/about/` は紹介スライド (React。2026-11-24 にユーザーが残すと決めた)
+
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 
 公開サーバーの html-ui の `main` の古いコミットは, 今の seed の型検査を通らない (`definy.handle-request` などの型が変わった)。
