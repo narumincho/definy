@@ -78,3 +78,40 @@ export function checkLocalRequest(
   }
   return undefined;
 }
+
+/**
+ * 公開する HTML の UI (`definy serve --public-host`) のリクエストの検査. Cloudflare Tunnel などから届く読み取り専用の入口なので,
+ * Host は公開するホスト名か手元の `127.0.0.1:port` / `localhost:port` だけ, メソッドは GET と HEAD だけを受け付ける
+ * (html-ui は `editable: false` でも, 書き込みの入口をホストの側でも閉じておく. docs/raspberry-pi.md)
+ * @param options.port 待ち受けているポート
+ * @param options.publicHosts 公開するホスト名 (`definy.example.com` など. ポートは付けない)
+ */
+export function checkPublicRequest(
+  request: Request,
+  options: {
+    readonly port: number;
+    readonly publicHosts: ReadonlyArray<string>;
+  },
+): Response | undefined {
+  const host = request.headers.get("Host") ?? "";
+  const hosts = allowedHosts(options.port);
+  if (!hosts.has(host) && !options.publicHosts.includes(host)) {
+    return reject(403, `host ${JSON.stringify(host)} is not allowed`);
+  }
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response(
+      JSON.stringify({
+        code: "method_not_allowed",
+        message: "this server is read-only",
+      }),
+      {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          Allow: "GET, HEAD",
+        },
+      },
+    );
+  }
+  return undefined;
+}

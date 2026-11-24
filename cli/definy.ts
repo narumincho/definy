@@ -24,9 +24,15 @@ export default new WebAssembly.Module(readFileSync(new URL(${JSON.stringify(file
 });
 
 const usage = `usage: definy serve [--port <port>] [--ui-port <port|off>] [--data-dir <dir>] [--account-name <name>]
+                    [--public-host <host>]... [--mirror <url>] [--mirror-interval <seconds>]
 
   serve   Start the local definy server (HTTP MCP at http://127.0.0.1:<port>/mcp,
-          the HTML UI of the html-ui project at http://127.0.0.1:<ui-port>)`;
+          the HTML UI of the html-ui project at http://127.0.0.1:<ui-port>)
+
+  --public-host <host>        Serve the HTML UI read-only (GET and HEAD only, no editing) and accept
+                              this Host, for a Cloudflare Tunnel (docs/raspberry-pi.md). Repeatable
+  --mirror <url>              Copy the events of this public server with definy.mirror-pull
+  --mirror-interval <seconds> Seconds between the copies (default 60)`;
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
@@ -35,6 +41,9 @@ const { positionals, values } = parseArgs({
     "ui-port": { type: "string", default: "8788" },
     "data-dir": { type: "string" },
     "account-name": { type: "string", default: "local" },
+    "public-host": { type: "string", multiple: true },
+    mirror: { type: "string" },
+    "mirror-interval": { type: "string", default: "60" },
     help: { type: "boolean", short: "h" },
   },
 });
@@ -51,9 +60,19 @@ const server = await startLocalServer({
   port: Number(values.port),
   ...(values["ui-port"] === "off" ? {} : { uiPort: Number(values["ui-port"]) }),
   accountName: values["account-name"],
+  ...(values["public-host"] === undefined
+    ? {}
+    : { publicHosts: values["public-host"] }),
+  ...(values.mirror === undefined
+    ? {}
+    : {
+        mirrorRemote: values.mirror.replace(/\/+$/, ""),
+        mirrorIntervalMs: Number(values["mirror-interval"]) * 1000,
+      }),
+  log: (message) => console.log(`${new Date().toISOString()} ${message}`),
 });
 console.log(`definy server: ${server.origin}${server.uiOrigin === undefined ? "" : `\nHTML UI: ${server.uiOrigin} (the html-ui project. Run definy_pull first if this server does not have it)`}
-data: ${dataDir}
+${values["public-host"] === undefined ? "" : `public (read-only) hosts: ${values["public-host"].join(", ")}\n`}${values.mirror === undefined ? "" : `mirror: ${values.mirror} every ${values["mirror-interval"]} seconds\n`}data: ${dataDir}
 account: ${server.account.accountName} (${server.account.accountId})
 
 Add it to Claude Code:

@@ -14,19 +14,56 @@ export function htmlUiHandlerExpression(editable: boolean): string {
 }
 
 /**
- * 手元の definy サーバーの HTML の UI のハンドラーを作る
- * @param options.callTool そのサーバーの MCP のツールを呼ぶ (コンパイルに使う)
- * @param options.readBranches そのサーバーの `GetProjectBranches` の応答のテキスト (main が進んだらコンパイルし直す)
- * @param options.run コンパイルした処理でリクエストを処理する (`handleWorkerRequest` の `service`)
+ * 公開サーバーの写しにする処理の式 (definy-html の Cron と同じ `definy.mirror-pull`. docs/raspberry-pi.md)
+ * @param remote 取り込む相手 (`https://definy.narumincho.com` など)
  */
-export function createHtmlUiHandler(options: {
+export function mirrorPullExpression(remote: string): string {
+  return `fn(request$0) =>
+  @definy.mirror-pull(remote: ${JSON.stringify(remote)}, limit: 1000, content_limit: 5000)`;
+}
+
+type CompiledServiceOptions = {
+  /** そのサーバーの MCP のツールを呼ぶ (コンパイルに使う) */
   readonly callTool: (name: string, args: unknown) => Promise<ToolResult>;
+  /** そのサーバーの `GetProjectBranches` の応答のテキスト (main が進んだらコンパイルし直す) */
   readonly readBranches: () => Promise<string>;
+  /** コンパイルした処理でリクエストを処理する (`handleWorkerRequest` の `service`) */
   readonly run: (
     request: Request,
     service: WebAssembly.Module,
   ) => Promise<Response>;
-}): (request: Request) => Promise<Response> {
+};
+
+/**
+ * 手元の definy サーバーの HTML の UI のハンドラーを作る
+ * @param options.editable 編集とコミットの画面を出すか (公開するとき (`--public-host`) は false)
+ */
+export function createHtmlUiHandler(
+  options: CompiledServiceOptions & { readonly editable?: boolean },
+): (request: Request) => Promise<Response> {
+  return createCompiledServiceHandler({
+    ...options,
+    expression: htmlUiHandlerExpression(options.editable ?? true),
+    project: "html-ui",
+    unavailable:
+      "Could not compile the HTML UI (the html-ui project). Pull it from the public server with the MCP tool definy_pull first.",
+  });
+}
+
+/**
+ * ストアのパーツの式 (`Fn(request: @definy.http-request) -> @definy.service-io`) をコンパイルして, サーバーの処理として動かすハンドラーを作る.
+ * コンパイルは使い回し, どれかのプロジェクトの main が進んだらコンパイルし直す
+ * @param options.expression コンパイルする式
+ * @param options.project 式を読むプロジェクト (そのプロジェクトの main のパーツを使う)
+ * @param options.unavailable コンパイルできなかったときの 503 の説明
+ */
+export function createCompiledServiceHandler(
+  options: CompiledServiceOptions & {
+    readonly expression: string;
+    readonly project: string;
+    readonly unavailable: string;
+  },
+): (request: Request) => Promise<Response> {
   let cached:
     | {
         readonly key: string;
@@ -36,8 +73,8 @@ export function createHtmlUiHandler(options: {
 
   const compile = async (): Promise<WebAssembly.Module> => {
     const compiled = await options.callTool("definy_compile_expression", {
-      expression: htmlUiHandlerExpression(true),
-      project: "html-ui",
+      expression: options.expression,
+      project: options.project,
     });
     if (compiled.isError) {
       throw new Error(compiled.text);
@@ -62,7 +99,7 @@ export function createHtmlUiHandler(options: {
       service = await cached.service;
     } catch (error) {
       return new Response(
-        `Could not compile the HTML UI (the html-ui project). Pull it from the public server with the MCP tool definy_pull first.\n\n${error instanceof Error ? error.message : String(error)}`,
+        `${options.unavailable}\n\n${error instanceof Error ? error.message : String(error)}`,
         {
           status: 503,
           headers: { "Content-Type": "text/plain; charset=utf-8" },
