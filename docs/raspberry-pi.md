@@ -198,12 +198,123 @@ html-ui のパーツの変更は要らない: 公開サーバーに push され�
 4. **ビルド (`npm run build:seeds`)**: 変わらない。ラズパイで動かす (`npm ci` は要らない)
 5. **独自ドメイン**: Workers の独自ドメインを設定する実装は要らない。`cloudflared tunnel route dns` で好きなホスト名にできる
 
+## HTTP でデプロイする運用 (案, 2026-11-25)
+
+ユーザーの要望: Workers や fly.io のように, ラズパイへのデプロイも SSH ではなく HTTP でしたい。
+
+### おすすめ: デプロイは「署名済みのイベントを HTTPS で push する」こと
+
+Workers や fly.io は, ビルドしたもの (JS や Docker イメージ) を API トークン付きの HTTP でアップロードする。
+ラズパイでは同じことをもっと definy らしくできる: **ラズパイ自身が実行時に Wasm にコンパイルできる** ので,
+送るのはビルドしたものではなく **署名済みのイベント (コミット)** でよい。
+
+```text
+手元の PC: html-ui をコミット (自分の鍵で署名)
+   └─ definy_push {"remote": "https://html.narumincho.com"}   … HTTPS (Tunnel) で /definy.v1.EventService/SubmitEvent など
+ラズパイ: 署名と型を確かめてストアに入れる → main が進んだので次のリクエストで html-ui をコンパイルし直す (= デプロイ完了)
+```
+
+- ラズパイに API トークンも SSH も要らない。誰が送ったかは署名で分かり, 送られたものは公開サーバーと同じ検査 (`SubmitEvent`) を通る
+- Workers と違い CPU の上限が無いので, `SubmitEvent` の型検査で 1102 になることも無い
+- ロールバックは「前の内容に戻すコミット」を push する (履歴は全て残る)
+- `html-ui.deploy` (Cloudflare の API でアップロードする `wasi.io` のプログラム) にあたるものは要らない。push がそのままデプロイ
+
+#### 何を配るかを決める
+
+今の `--public-host` は html-ui を決め打ちで配る。HTTP だけで配るものを変えられるように, 配る式もストアから読む:
+
+- 起動のオプションで **持ち主のアカウント ID** (`--owner <アカウント ID>`) を 1 度だけ決める
+- 持ち主が作ったプロジェクト (例 `pi`) の `main` のパーツ `pi.handler` (型は `html-ui.deploy` の handler と同じ `{fetch, scheduled}`) を配る。
+  `main` は作成者だけがコミットできる ([branch.md](branch.md)) ので, 持ち主以外は配るものを変えられない
+- 例: `quote({fetch: fn(request) => @html-ui.handle(editable: false, request: request), scheduled: fn(time_ms) => @definy.mirror-pull(...)})`。
+  これで `--mirror` も式の側に移り, Cron の間隔だけがホストのオプションに残る
+
+#### 受け付けるイベントを絞る
+
+公開のホスト名で `SubmitEvent` を出すと, 誰でもアカウントを作ってイベントを送れる (今の definy.narumincho.com と同じ)。
+ラズパイのディスクは小さいので, はじめは **決めたアカウントのイベントだけ受け付ける** (`--accept-account <ID>` 複数可。持ち主と opus5.5)。
+読む RPC (`GetEvents` など) は誰でもよい。`/mcp` はこれまでどおり出さない。
+
+#### 公開サーバー (definy.narumincho.com) との関係
+
+当面は両方に送る: 手元から `definy_push` を公開サーバーとラズパイの 2 回する (どちらもイベントのハッシュで重複を省く)。
+ラズパイは `definy.mirror-pull` で公開サーバーも写し続けてよい (同じイベントは入れ直さない)。
+ラズパイを正にしたら, 公開サーバーへの push をやめる。
+
+### ホストのコード (`cli/`, `worker/*.ts`, seed) の更新
+
+ストアに無いホストのコードは, まだ GitHub から `git pull` するしかない (計画の 5 段目で JS の土台を最小にするまで)。HTTP で済ませるなら:
+
+- **おすすめ**: systemd のタイマーで 1 日 1 回 (か 10 分ごと) `git fetch` し, 決めたブランチ (例 `pi`) が進んでいたら
+  `git merge --ff-only && npm run build:seeds && systemctl restart definy`。デプロイは「そのブランチに push する」(GitHub への HTTP) になる
+- 失敗したら前のコミットに戻して起動し直す (起動して `GET /` が 200 になるかで判断)
+- 将来: ホストの JS もストアのパーツ (`definy.cloudflare-service-runtime-script` のように) にすれば, これもイベントの push で済む
+
+seed の版は, ラズパイを正にしたあとも手元の PC とそろえる (手元のコミットの親が seed の `main` の最新なので)。
+
+## R2 へのバックアップ (案, 2026-11-25)
+
+ラズパイが push を受け付けて正になったら, ストア (`store.sqlite`) は取り込み直せないのでバックアップが要る。
+
+### R2 の料金 (2026-11-25 に公式の料金のページで確かめた)
+
+| 項目                           | 無料枠 (毎月) | 超えた分              |
+| :----------------------------- | :------------ | :-------------------- |
+| 保存 (Standard)                | 10 GB-month   | 0.015 ドル / GB-month |
+| Class A (PutObject, List など) | 100 万回      | 4.50 ドル / 100 万回  |
+| Class B (GetObject など)       | 1000 万回     | 0.36 ドル / 100 万回  |
+| 外への転送 (egress)            | 無料          | 無料                  |
+
+今のストアは約 35MB なので保存は無料枠に収まる。気をつけるのは書き込みの回数 (Class A)。
+
+### おすすめ: まず Litestream で store.sqlite を R2 に複製する
+
+[Litestream](https://litestream.io/) は SQLite の WAL を S3 互換のストレージに複製し続けるツール (arm64 の .deb がある)。コードはほとんど要らない。
+
+```yaml
+# /etc/litestream.yml (パーミッション 600)
+dbs:
+  - path: /home/pi/.definy/store.sqlite
+    replica:
+      type: s3
+      bucket: definy-backup
+      path: store
+      endpoint: <アカウント ID>.r2.cloudflarestorage.com
+      region: auto
+      access-key-id: <R2 のアクセスキー>
+      secret-access-key: <R2 のシークレット>
+      sync-interval: 1m # 既定の 1 秒だと書き込みのたびに PUT (Class A) になる
+```
+
+- Litestream は WAL のときだけ動く (WAL でなければ自分で WAL にする)。書き込みのロックと重ならないよう, アプリの側で `PRAGMA busy_timeout = 5000` を付ける
+  (`worker/sqlite_d1.ts` を直す。今は WAL も busy_timeout も設定していない)
+- `sync-interval: 1m` なら, 書き込みが毎分あっても PUT は月 4.3 万回ほどで無料枠に収まる (取り込むものが無い写しはほとんど書かない)
+- 戻すとき: `litestream restore -o store.sqlite s3://...` (definy を止めてから。古い `-wal` と `-shm` は消す)
+- R2 のトークンは R2 の「API トークンの管理」で **そのバケットだけの Object Read & Write** にする。ラズパイにだけ置き, definy のストアには入れない
+- Litestream v0.5 以降は R2 を見分けて設定を合わせる (署名付きの本文, 同時アップロード数 2)
+
+### あとで: イベントを 1 つずつ R2 に置く (definy らしいバックアップ)
+
+ストアの中身は全て署名済みのイベントと, ハッシュで名前の付いた中身 (content-addressed) なので,
+`events/<イベントハッシュ>` と `contents/<中身のハッシュ>` を R2 に 1 度ずつ置くだけで完全なバックアップになる。
+
+- 一度置いたものは変わらないので増えた分だけ送ればよい。SQLite の形に依らず, `seeds/store/` と同じように読める
+- 戻すときは新しいストアに `definy.mirror-submit` で入れ直す (今の写しの取り込みと同じ)
+- definy の `scheduled` の式で書けば, バックアップも definy の中で完結する。ただし R2 の S3 API の署名 (AWS SigV4。HMAC-SHA256) を
+  definy で書く必要があるので, Litestream で始めてから移る
+
+### バックアップしなくてよいもの・別にするもの
+
+- ラズパイの `account.json` (使わない) と `mcp-token`
+- **手元の PC の `account.json` (自分の秘密鍵) は R2 に平文で置かない**。パスワードマネージャーなどに別に保管する (将来は YubiKey. [yubikey.md](yubikey.md))。
+  鍵を失うと自分の `main` にコミットできなくなる
+- `secrets.json` (Cloudflare のトークンなど) は手元の PC にだけあり, ラズパイには無い
+
 ## 残り (次の候補)
 
-1. **ラズパイが署名済みのイベントを直接受け付ける**: 公開のホスト名で `/definy.v1.EventService/*` の RPC (`SubmitEvent`, `UploadContent`,
-   `GetEvents` など。公開サーバーの Worker が今も公開しているもの) だけを出せば, 手元の PC から `definy_push {"remote": "https://html.narumincho.com"}`
-   で送れ, ラズパイが公開サーバーの代わりになる (Cloudflare は Tunnel だけ)。CPU の上限が無いので `SubmitEvent` の型検査も気にしなくてよい。
-   そのときは写し (`--mirror`) をやめるか, 両方に push する
-2. 取り込みの間イベントループが止まる (2 回目から 0.6〜2.2 秒, ラズパイでは数倍)。気になれば取り込みを `worker_threads` に分ける
-3. seed の版のずれを見つける: 起動時に公開サーバーの seed のイベントのハッシュと自分の seed を比べて警告する
-4. 実機 (Pi 4 / Pi 5) で, Wasm GC が動くこと, 速さ, メモリを測ってこの文書に書く
+1. **ラズパイが署名済みのイベントを直接受け付ける** (上の「HTTP でデプロイする運用」): 公開のホスト名で `/definy.v1.EventService/*` の RPC を出し
+   (`--accept-account` で受け付けるアカウントを絞る), 配る式を持ち主のプロジェクトの `main` から読む (`--owner`)
+2. WAL と `busy_timeout` を `worker/sqlite_d1.ts` に入れ, Litestream で R2 に複製する (上の「R2 へのバックアップ」)
+3. 取り込みの間イベントループが止まる (2 回目から 0.6〜2.2 秒, ラズパイでは数倍)。気になれば取り込みを `worker_threads` に分ける
+4. seed の版のずれを見つける: 起動時に公開サーバーの seed のイベントのハッシュと自分の seed を比べて警告する
+5. 実機 (Pi 4 / Pi 5) で, Wasm GC が動くこと, 速さ, メモリを測ってこの文書に書く
