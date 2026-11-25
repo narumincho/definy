@@ -24,9 +24,6 @@ claude mcp add --transport http definy-local http://127.0.0.1:8787/mcp --header 
 | `--data-dir`     | `$DEFINY_HOME` か `~/.definy` | ストア・鍵・トークン・シークレットを置くフォルダ |
 | `--account-name` | `local`                       | 鍵を新しく作るときのアカウントの名前             |
 
-ラズパイなどで HTML の UI を読み取り専用で公開し, 公開サーバーの写しにするオプション (`--public-host`, `--mirror`, `--mirror-interval`) は
-[raspberry-pi.md](raspberry-pi.md)。
-
 ## 中身
 
 - `cli/definy.ts`: コマンドの入口。`*.wasm?module` を `WebAssembly.Module` として読むフック (`module.registerHooks`) を

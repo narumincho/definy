@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkLocalRequest, checkPublicRequest } from "./local_security.ts";
+import { checkLocalRequest } from "./local_security.ts";
 
 const options = { port: 8787, token: "secret" };
 const request = (path: string, headers: Record<string, string>) =>
@@ -66,35 +66,5 @@ describe("checkLocalRequest", () => {
         options,
       ),
     ).toBeUndefined();
-  });
-});
-
-describe("checkPublicRequest", () => {
-  const publicOptions = { port: 8788, publicHosts: ["definy.example.com"] };
-  const get = (host: string, method = "GET") =>
-    new Request("http://127.0.0.1:8788/", { method, headers: { Host: host } });
-
-  it("公開するホスト名と手元の Host の GET と HEAD を受け付ける", () => {
-    expect(
-      checkPublicRequest(get("definy.example.com"), publicOptions),
-    ).toBeUndefined();
-    expect(
-      checkPublicRequest(get("127.0.0.1:8788", "HEAD"), publicOptions),
-    ).toBeUndefined();
-  });
-
-  it("他の Host は 403", () => {
-    expect(checkPublicRequest(get("evil.example"), publicOptions)?.status).toBe(
-      403,
-    );
-  });
-
-  it("GET と HEAD 以外は 405 (読み取り専用)", () => {
-    for (const method of ["POST", "PUT", "DELETE"]) {
-      expect(
-        checkPublicRequest(get("definy.example.com", method), publicOptions)
-          ?.status,
-      ).toBe(405);
-    }
   });
 });

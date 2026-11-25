@@ -19,13 +19,9 @@ import { bytesToBase64 } from "../src/base64.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/sqlite_d1.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
-import {
-  createCompiledServiceHandler,
-  createHtmlUiHandler,
-  mirrorPullExpression,
-} from "./html_ui.ts";
+import { createHtmlUiHandler } from "./html_ui.ts";
 import { createLocalIoHost } from "./local_io.ts";
-import { checkLocalRequest, checkPublicRequest } from "./local_security.ts";
+import { checkLocalRequest } from "./local_security.ts";
 
 /** データを置くフォルダ. `DEFINY_HOME` が無ければ `~/.definy` */
 export function defaultDataDir(): string {
@@ -202,8 +198,6 @@ export type LocalServer = {
   /** `/mcp` の Authorization: Bearer のトークン */
   readonly token: string;
   readonly account: AccountCredentials;
-  /** `mirrorRemote` から 1 回取り込む (`mirrorRemote` を渡さなければ undefined). 返すのは `definy.mirror-pull` の応答 */
-  readonly mirrorNow: (() => Promise<Response>) | undefined;
   readonly close: () => Promise<void>;
 };
 
@@ -214,11 +208,6 @@ export type LocalServer = {
  * @param options.uiPort HTML の UI (ストアの html-ui プロジェクト) を配るポート (0 なら空いているもの, 省けば配らない)
  * @param options.accountName 鍵を新しく作るときのアカウントの名前
  * @param options.fetchFn 外への HTTP (MCP の fetch ツールなど) に使う fetch
- * @param options.publicHosts HTML の UI を公開するホスト名 (Cloudflare Tunnel など). 渡すと UI は読み取り専用
- *   (`editable: false`, GET と HEAD だけ) になり, この Host を受け付ける (docs/raspberry-pi.md)
- * @param options.mirrorRemote 定期的に `definy.mirror-pull` で取り込む公開サーバー (definy-html の Cron と同じ)
- * @param options.mirrorIntervalMs 取り込みの間隔 (既定 60 秒). 0 なら自動では取り込まない (`mirrorNow` だけ)
- * @param options.log 取り込みの結果などを書く
  */
 export async function startLocalServer(options: {
   readonly dataDir: string;
@@ -226,10 +215,6 @@ export async function startLocalServer(options: {
   readonly uiPort?: number;
   readonly accountName?: string;
   readonly fetchFn?: typeof fetch;
-  readonly publicHosts?: ReadonlyArray<string>;
-  readonly mirrorRemote?: string;
-  readonly mirrorIntervalMs?: number;
-  readonly log?: (message: string) => void;
 }): Promise<LocalServer> {
   await mkdir(options.dataDir, { recursive: true, mode: 0o700 });
   const account = await loadOrCreateAccount(
@@ -279,99 +264,50 @@ export async function startLocalServer(options: {
       )
     ).text();
 
-  const callTool = async (
-    name: string,
-    args: unknown,
-  ): Promise<{ readonly text: string; readonly isError: boolean }> => {
-    const json = JSON.parse(
-      await post("/mcp", {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/call",
-        params: { name, arguments: args },
-      }),
-    ) as {
-      readonly result: {
-        readonly content: ReadonlyArray<{ readonly text: string }>;
-        readonly isError: boolean;
-      };
-    };
-    return {
-      text: json.result.content[0]?.text ?? "",
-      isError: json.result.isError,
-    };
-  };
-  const compiled = {
-    callTool,
-    readBranches: () => post("/definy.v1.EventService/GetProjectBranches", {}),
-    run: (request: Request, service: WebAssembly.Module) =>
-      handleWorkerRequest(
-        request,
-        env,
-        store,
-        fetchFn,
-        undefined,
-        undefined,
-        service,
-      ),
-  };
-  const publicHosts = options.publicHosts ?? [];
-
   let ui: Awaited<ReturnType<typeof listen>> | undefined;
   if (options.uiPort !== undefined) {
     const handleUi = createHtmlUiHandler({
-      ...compiled,
-      editable: publicHosts.length === 0,
+      callTool: async (name, args) => {
+        const json = JSON.parse(
+          await post("/mcp", {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "tools/call",
+            params: { name, arguments: args },
+          }),
+        ) as {
+          readonly result: {
+            readonly content: ReadonlyArray<{ readonly text: string }>;
+            readonly isError: boolean;
+          };
+        };
+        return {
+          text: json.result.content[0]?.text ?? "",
+          isError: json.result.isError,
+        };
+      },
+      readBranches: () =>
+        post("/definy.v1.EventService/GetProjectBranches", {}),
+      run: (request, service) =>
+        handleWorkerRequest(
+          request,
+          env,
+          store,
+          fetchFn,
+          undefined,
+          undefined,
+          service,
+        ),
     });
     ui = await listen(
       options.uiPort,
       async (request, port) =>
-        (publicHosts.length === 0
-          ? checkLocalRequest(request, {
-              port,
-              token,
-              requireOriginForWrites: true,
-            })
-          : checkPublicRequest(request, { port, publicHosts })) ??
-        (await handleUi(request)),
+        checkLocalRequest(request, {
+          port,
+          token,
+          requireOriginForWrites: true,
+        }) ?? (await handleUi(request)),
     );
-  }
-
-  let mirrorNow: (() => Promise<Response>) | undefined;
-  let mirrorTimer: ReturnType<typeof setTimeout> | undefined;
-  let closed = false;
-  if (options.mirrorRemote !== undefined) {
-    const handleMirror = createCompiledServiceHandler({
-      ...compiled,
-      expression: mirrorPullExpression(options.mirrorRemote),
-      project: "definy",
-      unavailable: "Could not compile definy.mirror-pull.",
-    });
-    const mirror = (): Promise<Response> =>
-      handleMirror(new Request(origin + "/"));
-    mirrorNow = mirror;
-    const intervalMs = options.mirrorIntervalMs ?? 60_000;
-    const runMirror = async (): Promise<void> => {
-      try {
-        const started = performance.now();
-        const response = await mirror();
-        const text = (await response.text()).trim();
-        options.log?.(
-          `mirror ${options.mirrorRemote} (${Math.round(performance.now() - started)} ms, status ${response.status}): ${text.split("\n")[0] ?? ""}`,
-        );
-      } catch (error) {
-        options.log?.(
-          `mirror ${options.mirrorRemote} failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-      // 前の取り込みが終わってから次を待つ (重なって動かさない)
-      if (!closed && intervalMs > 0) {
-        mirrorTimer = setTimeout(() => void runMirror(), intervalMs);
-      }
-    };
-    if (intervalMs > 0) {
-      mirrorTimer = setTimeout(() => void runMirror(), 0);
-    }
   }
 
   return {
@@ -380,10 +316,7 @@ export async function startLocalServer(options: {
     uiOrigin: ui === undefined ? undefined : `http://127.0.0.1:${ui.port}`,
     token,
     account,
-    mirrorNow,
     close: async () => {
-      closed = true;
-      clearTimeout(mirrorTimer);
       await ui?.close();
       await api.close();
     },
