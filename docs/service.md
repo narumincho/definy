@@ -12,7 +12,7 @@
   3. サーバーが処理するパス (`definy.is-worker-first-path`: `/definy.v1.`, `/virtual/`, `/healthz` で始まるか `/mcp`) 以外は `serve_asset` (静的アセットが無ければ `404 Not Found`)
   4. `definy.ensure-seeded` でストアに seed を入れてから ([database.md](database.md)), `/mcp` は `definy.handle-mcp` ([mcp.md](mcp.md)), `/virtual/wasm/` は `definy.serve-virtual-wasm` ([wasm-virtual-deployment.md](wasm-virtual-deployment.md)),
      `/definy.v1.` は `definy.handle-rpc`。無いメソッドは `unimplemented` (`Endpoint <パス> is not implemented`)
-- RPC は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `HttpProxyService/Fetch` など)。
+- RPC は `definy.handle-rpc(method)`。`method` は `/definy.v1.` の後のパス (`EventService/GetProjectBranches`, `RunService/RunIo` など)。
   definy で処理するメソッドなら `#some(リクエストの本文 → definy.service-io)`, 無いメソッドは `#none` (`unimplemented`)。
 - `npm run build:seeds` が stage1 で `wasm/service.wasm` (コミットしない) にコンパイルし, Worker が `?module` で取り込む
   (Workers は実行時に Wasm をコンパイルできない)。
@@ -100,21 +100,11 @@
 - `/virtual/wasm/` の Wasm も definy の値 (Base64) を通る。ストアの読み出しの失敗は以前は Worker の例外だったのを `internal` にした
 - ページへのリクエストも毎回 service.wasm のインスタンスを作る (ルーティングを決めるため)
 
-## `HttpProxyService/Fetch` (`definy.http-proxy-fetch`, 2026-11-01)
+## `RunService` (`definy.get-run-options`, `definy.run-io-on-server`, 2026-11-28)
 
-CORS の仲介 ([wasi-io.md](wasi-io.md)) も definy で処理する。以前は TypeScript の `proxyFetch` / `requireAccount` / `isAdminAccount`。
-
-1. `definy.read-rpc-authorization` で署名を確かめる (`definy.handle-rpc` が HTTP リクエストを渡す)。無ければ `unauthenticated` (`HttpProxyService/Fetch requires an Authorization header`),
-   署名が違えばその理由で `unauthenticated`
-2. `read_admin_account_ids` を `definy.split-account-ids` でカンマ・セミコロン・空白で区切り, アカウント ID が無ければ `permission_denied`
-   (大文字小文字を区別する)
-3. `definy.http-proxy-send`: URL の両端の空白を除き, `:` の前 (スキームを `std.ascii-lowercase` したもの) が `http` / `https` でなければ
-   `invalid_argument`。`method` は大文字にし (`std.ascii-uppercase`) 空なら `GET`。ヘッダーは `name` と `value` が文字列のものだけで,
-   `host` / `content-length` / `connection` / `transfer-encoding` (大文字小文字を区別しない) は除く。`GET` / `HEAD` と空の `bodyBase64` は本文なし
-4. `http_fetch` で送り, レスポンス (`status`, `headers`, `bodyBase64`) をそのまま返す。送れなければ `internal`
-
-- 以前と違うところ: 本文の JSON はメソッドを処理する前に読むので, JSON でない本文は署名が無くても `invalid_argument` になる。
-  URL の検査は `new URL()` ではなく `:` の前を見るだけなので, `https://` のような不正な URL は送るときに失敗して `internal` になる
+プログラム全体をサーバーで動かす RPC。管理者だけ, Node.js の definy サーバーだけ ([run-location.md](run-location.md))。
+2026-11-01〜11-28 は CORS の仲介 `HttpProxyService/Fetch` (`definy.http-proxy-fetch` / `definy.http-proxy-send`) があったが,
+一部の HTTP リクエストだけをサーバーに送る形をやめて消した。
 
 ## 型検査 (`definy.check-commit`, 2026-10-31)
 

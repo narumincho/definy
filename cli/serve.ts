@@ -241,6 +241,11 @@ export async function startLocalServer(options: {
     DEFINY_MCP_ACCOUNT_SECRET_KEY: account.secretKeyBase64,
     DEFINY_MCP_ACCOUNT_NAME: account.accountName,
     DEFINY_RUN_EXPRESSIONS: "1",
+    // 手元の鍵のアカウントはこのサーバーの管理者 (サーバーでプログラムを実行できる. docs/run-location.md)
+    DEFINY_ADMIN_ACCOUNT_IDS: [
+      account.accountId,
+      process.env["DEFINY_ADMIN_ACCOUNT_IDS"] ?? "",
+    ].join(","),
     LOCAL_IO: createLocalIoHost({
       dataDir: options.dataDir,
       ...(options.fetchFn === undefined ? {} : { fetchFn: options.fetchFn }),

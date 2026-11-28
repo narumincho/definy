@@ -212,8 +212,8 @@ export async function handleWorkerRequest(
 }
 
 /**
- * definy の `http_fetch` の HTTP リクエストを送る. どのリクエストを送るか (URL の検査, 送らないヘッダー) は
- * definy (`definy.http-proxy-send`) が決める. 送れなかったときは理由を返す
+ * definy の `http_fetch` の HTTP リクエストを送る (`definy_pull` / `definy_push` が相手のサーバーを呼ぶ).
+ * どのリクエストを送るかは definy が決める. 送れなかったときは理由を返す
  */
 async function httpFetch(
   request: HttpFetchRequest,

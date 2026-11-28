@@ -1215,91 +1215,68 @@ describe("handleRpcInDefiny", () => {
     ).toEqual({ status: 200, body: { missingContentHashes: ["b", "c"] } });
   });
 
-  it("HttpProxyService/Fetch は管理者の署名があるときだけ, 送らないヘッダーを除いて送る", async () => {
-    const sent: Array<unknown> = [];
-    const proxyHost = host({
-      // 署名は正しいとする (署名を確かめるのは下の Authorization のテスト)
-      verifyEd25519: () => Promise.resolve(true),
-      now: () => 1_800_000_000_000,
-      readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
-      httpFetch: (request) => {
-        sent.push(request);
-        return Promise.resolve({
-          status: 201,
-          headers: [{ name: "x-test", value: "1" }],
-          bodyBase64: "AGFzbQ",
-        });
-      },
-    });
-    const fetchWith = (
+  it("RunService/RunIo は管理者の署名があり, サーバーが実行できるときだけ run_wasi_io で動かす", async () => {
+    const ran: Array<{
+      readonly wasm: ReadonlyArray<number>;
+      readonly parts: ReadonlyArray<readonly [string, unknown]>;
+    }> = [];
+    const runHost = (runExpressions: boolean) =>
+      host({
+        // 署名は正しいとする (署名を確かめるのは下の Authorization のテスト)
+        verifyEd25519: () => Promise.resolve(true),
+        now: () => 1_800_000_000_000,
+        readAdminAccountIds: () => " 0123456789abcdef,FEEDBEEF-cafe_babe;\nzz ",
+        readHostSettings: () => ({ runExpressions }),
+        localIo: {
+          runWasiIo: (wasm, parts) => {
+            ran.push({ wasm: [...wasm], parts: [...parts] });
+            return Promise.resolve({
+              ok: true,
+              message: "deployed",
+              steps: ["outgoing_request: PUT https://example.com/ → 200"],
+            });
+          },
+          readSecrets: () => Promise.reject(new Error("not read")),
+          writeSecret: () => Promise.reject(new Error("not written")),
+        },
+      });
+    const call = (
+      method: string,
       request: unknown,
       authorization:
         string | null = "Definy-Ed25519 FEEDBEEF-cafe_babe.1800000000.AAAA",
+      runExpressions = true,
     ) =>
       handleRpcInDefiny(
         service,
-        "HttpProxyService/Fetch",
+        method,
         () => request,
-        proxyHost,
+        runHost(runExpressions),
         authorization === null
           ? []
           : [{ name: "authorization", value: authorization }],
       );
     const request = {
-      method: " put ",
-      url: " https://api.cloudflare.com/client/v4/x ",
-      headers: [
-        { name: "Authorization", value: "Bearer cf-token" },
-        { name: "Content-Length", value: "4" },
-        { name: "HOST", value: "example.com" },
-        { name: "broken" },
-      ],
-      bodyBase64: "AGFzbQ",
+      wasmBase64: bytesToBase64(new Uint8Array([0, 97, 115, 109])),
+      parts: [{ id: "part-1", cbor: bytesToBase64(encodeCborItem({ a: 1 })) }],
     };
-    expect(await fetchWith(request)).toEqual({
+    expect(await call("RunService/RunIo", request)).toEqual({
       status: 200,
       body: {
-        status: 201,
-        headers: [{ name: "x-test", value: "1" }],
-        bodyBase64: "AGFzbQ",
+        ok: true,
+        message: "deployed",
+        steps: ["outgoing_request: PUT https://example.com/ → 200"],
       },
     });
-    expect(sent).toEqual([
-      {
-        url: "https://api.cloudflare.com/client/v4/x",
-        method: "PUT",
-        headers: [{ name: "Authorization", value: "Bearer cf-token" }],
-        bodyBase64: "AGFzbQ",
-      },
+    expect(ran).toEqual([
+      { wasm: [0, 97, 115, 109], parts: [["part-1", { a: 1 }]] },
     ]);
 
-    // GET は本文を送らない. method が無ければ GET
-    sent.length = 0;
-    await fetchWith({ url: "http://example.com", bodyBase64: "AGFzbQ" });
-    expect(sent).toEqual([
-      {
-        url: "http://example.com",
-        method: "GET",
-        headers: [],
-        bodyBase64: null,
-      },
-    ]);
-
-    sent.length = 0;
-    expect(await fetchWith({ url: "file:///etc/passwd" })).toEqual({
-      status: 400,
-      body: {
-        code: "invalid_argument",
-        message: "only http and https urls can be fetched",
-      },
-    });
-    expect(await fetchWith({ url: "not a url" })).toEqual({
-      status: 400,
-      body: { code: "invalid_argument", message: "invalid url 'not a url'" },
-    });
+    ran.length = 0;
     // アカウント ID は大文字小文字を区別する
     expect(
-      await fetchWith(
+      await call(
+        "RunService/RunIo",
         request,
         "Definy-Ed25519 feedbeef-cafe_babe.1800000000.AAAA",
       ),
@@ -1307,17 +1284,18 @@ describe("handleRpcInDefiny", () => {
       status: 403,
       body: {
         code: "permission_denied",
-        message: "HttpProxyService/Fetch is not allowed for this account",
+        message:
+          "Only the administrators of this server (DEFINY_ADMIN_ACCOUNT_IDS) can run programs on it",
       },
     });
-    expect(await fetchWith(request, null)).toEqual({
+    expect(await call("RunService/RunIo", request, null)).toEqual({
       status: 401,
       body: {
         code: "unauthenticated",
-        message: "HttpProxyService/Fetch requires an Authorization header",
+        message: "RunService/RunIo requires an Authorization header",
       },
     });
-    expect(await fetchWith(request, "Bearer x")).toEqual({
+    expect(await call("RunService/RunIo", request, "Bearer x")).toEqual({
       status: 401,
       body: {
         code: "unauthenticated",
@@ -1325,16 +1303,44 @@ describe("handleRpcInDefiny", () => {
           "Authorization must be 'Definy-Ed25519 <account>.<time>.<sig>'",
       },
     });
-    expect(sent).toEqual([]);
+    // Cloudflare Workers のように実行できないサーバー
+    expect(
+      await call("RunService/RunIo", request, undefined, false),
+    ).toMatchObject({
+      status: 400,
+      body: { code: "failed_precondition" },
+    });
+    expect(ran).toEqual([]);
+
+    // GetRunOptions は署名が無くてもよい
+    expect(await call("RunService/GetRunOptions", {})).toEqual({
+      status: 200,
+      body: { administrator: true, serverRun: true },
+    });
+    expect(
+      await call(
+        "RunService/GetRunOptions",
+        {},
+        "Definy-Ed25519 feedbeef-cafe_babe.1800000000.AAAA",
+        false,
+      ),
+    ).toEqual({
+      status: 200,
+      body: { administrator: false, serverRun: false },
+    });
+    expect(await call("RunService/GetRunOptions", {}, null)).toEqual({
+      status: 200,
+      body: { administrator: false, serverRun: true },
+    });
   });
 
   it("Authorization の署名は definy (definy.read-rpc-authorization) が確かめる", async () => {
     const admin = await generateAccountCredentials("admin");
     const other = await generateAccountCredentials("other");
-    const path = "/definy.v1.HttpProxyService/Fetch";
+    const path = "/definy.v1.RunService/GetRunOptions";
     const body = { url: "file:///x" };
     const now = 1_800_000_000;
-    /** 署名が正しければ url を検査して invalid_argument, 違えば unauthenticated (理由) */
+    /** 署名が正しければ管理者かどうか, 違えば unauthenticated (理由) */
     const fetchWith = async (
       authorization: string,
       nowSeconds = now,
@@ -1343,7 +1349,7 @@ describe("handleRpcInDefiny", () => {
       (
         await handleRpcInDefiny(
           service,
-          "HttpProxyService/Fetch",
+          "RunService/GetRunOptions",
           () => requestBody,
           host({
             verifyEd25519,
@@ -1369,18 +1375,14 @@ describe("handleRpcInDefiny", () => {
       );
     const invalid = (message: string) => ({ code: "unauthenticated", message });
 
-    expect(await fetchWith(await sign())).toEqual({
-      code: "invalid_argument",
-      message: "only http and https urls can be fetched",
-    });
+    const administrator = { administrator: true, serverRun: false };
+    expect(await fetchWith(await sign())).toEqual(administrator);
     expect(await fetchWith(await sign(other))).toEqual({
-      code: "permission_denied",
-      message: "HttpProxyService/Fetch is not allowed for this account",
+      administrator: false,
+      serverRun: false,
     });
     // 時刻のずれは 300 秒まで
-    expect(await fetchWith(await sign(), now + 300)).toMatchObject({
-      code: "invalid_argument",
-    });
+    expect(await fetchWith(await sign(), now + 300)).toEqual(administrator);
     expect(await fetchWith(await sign(), now + 301)).toEqual(
       invalid("Authorization time is out of the allowed range"),
     );

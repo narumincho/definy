@@ -11,6 +11,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { startLocalServer } from "./serve.ts";
+import { generateAccountCredentials } from "../src/auth.ts";
+import { base64ToBytes } from "../src/base64.ts";
+import { fetchRunOptions, runIoOnServer } from "../src/wasi_io_browser.ts";
 
 const dataDir = await mkdtemp(join(tmpdir(), "definy-serve-test-"));
 afterAll(() => rm(dataDir, { recursive: true, force: true }));
@@ -255,6 +258,40 @@ describe("definy serve (手元の definy サーバー)", () => {
       expect(ran).toContain("done: got Bearer s3cret");
       expect(ran).toContain("GET https://example.com/x");
       expect(requests).toEqual(["https://example.com/x Bearer s3cret"]);
+
+      // ブラウザでコンパイルしたプログラムを RunService/RunIo でサーバーで動かす (手元の鍵のアカウントは管理者)
+      const wasm = base64ToBytes(
+        await tool("definy_compile_expression", {
+          expression: `#outgoing_request<@wasi.io>({
+  request: {method: "GET", url: "https://example.com/y", headers: [], secret_headers: [], body: []},
+  then: fn(result$0) =>
+    #done<@wasi.io>("sent")
+})`,
+        }),
+      );
+      const serverFetch = ((
+        input: string | URL | Request,
+        init?: RequestInit,
+      ) => fetch(new URL(String(input), server.origin), init)) as typeof fetch;
+      expect(await fetchRunOptions(server.account, serverFetch)).toEqual({
+        administrator: true,
+        serverRun: true,
+      });
+      expect(
+        await runIoOnServer({ wasm, parts: [] }, server.account, serverFetch),
+      ).toEqual({
+        ok: true,
+        message: "sent",
+        steps: ["GET https://example.com/y (0 bytes) → 200"],
+      });
+      const other = await generateAccountCredentials("other");
+      expect(
+        (await runIoOnServer({ wasm, parts: [] }, other, serverFetch)).ok,
+      ).toBe(false);
+      expect(requests).toEqual([
+        "https://example.com/x Bearer s3cret",
+        "https://example.com/y null",
+      ]);
     } finally {
       await server.close();
     }

@@ -23,7 +23,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
     └── Worker スクリプト (dist/ssr/index.js) ── SSR & エッジ API 処理
           ├── SSR HTML レスポンス（セキュリティヘッダー付与）
           ├── EventService (/definy.v1.EventService/*)
-          ├── HttpProxyService (/definy.v1.HttpProxyService/Fetch) ── 許可されたアカウントの HTTP リクエストを仲介 (CORS 回避)
+          ├── RunService (/definy.v1.RunService/*) ── 管理者がプログラムをサーバーで動かす (Worker は実行できないと返す. run-location.md)
           ├── 仮想 Wasm バイナリ (/virtual/wasm/*)
           └── ヘルスチェック (/healthz)
 ```

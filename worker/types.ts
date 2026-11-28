@@ -148,27 +148,3 @@ export type GetContentResponse = {
   readonly item?: ContentItem;
   readonly items?: ReadonlyArray<ContentItem>;
 };
-
-/**
- * Connect-RPC: HttpProxyService メッセージ型 (`proto/definy/v1/http_proxy.proto`).
- * ブラウザから CORS で直接送れない HTTP リクエストを, 許可されたアカウントのためにサーバーが仲介する
- */
-export type HttpProxyHeader = {
-  readonly name: string;
-  readonly value: string;
-};
-
-export type HttpProxyFetchRequest = {
-  readonly method?: string | null;
-  readonly url?: string | null;
-  readonly headers?: ReadonlyArray<HttpProxyHeader> | null;
-  /** 本文 (標準 Base64) */
-  readonly bodyBase64?: string | null;
-};
-
-export type HttpProxyFetchResponse = {
-  readonly status: number;
-  readonly headers: ReadonlyArray<HttpProxyHeader>;
-  /** 本文 (標準 Base64) */
-  readonly bodyBase64: string;
-};

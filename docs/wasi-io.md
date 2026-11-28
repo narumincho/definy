@@ -65,26 +65,18 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 
 - `get_parts` は評価と同じく, 作業中の変更があればそちらの式を返す
 - シークレットの値はシークレットのパーツのページで入れる ([secret.md](secret.md))
-- 「CORS エラーのときサーバーで仲介する」を有効にすると, ブラウザの `fetch` が失敗したときに
-  `HttpProxyService/Fetch` で送り直す (下記)
+- ブラウザで動かすか, 全体をサーバーで動かすか (`RunService/RunIo`. Node.js のサーバーの管理者だけ) を選ぶ
+  ([run-location.md](run-location.md))。ブラウザでは CORS を許可しない相手には届かない
 
-### CORS の仲介 (`definy.v1.HttpProxyService/Fetch`)
+### CORS の仲介は消した (2026-11-28)
 
-Cloudflare の API などはブラウザからの CORS を許可していないので, サーバー (Worker) がリクエストを代わりに送る
-(`proto/definy/v1/http_proxy.proto`。処理は definy の `definy.http-proxy-fetch`, 送るのはホストの `http_fetch`. [service.md](service.md))。
-
-- 誰でも使えるとオープンプロキシになるので, 署名付き `Authorization` ([rpc-authorization.md](rpc-authorization.md)) が要り,
-  管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) だけが使える (他は 403, 署名無しは 401)
-- 送り先は http / https だけ。`host` / `content-length` / `connection` / `transfer-encoding` は付け直さない。リダイレクトは追わない
-- 本文は JSON の中で標準 Base64 (`bodyBase64`)
-- 管理者かどうかを尋ねる専用の RPC は無い。React の UI (`checkIsAdministrator`, `src/state/useIsAdministrator.ts`) は
-  空の URL を署名付きで送り, 400 (URL の誤り. 署名と管理者の確認を通った) なら管理者, 403 なら管理者でないとみなす。外には何も送らない (2026-11-18)。
-  管理者なら実行パネルに「CORS エラーのときサーバーで仲介する」のチェック (設定画面と同じ値) を出し, アカウントのダイアログに「管理者」のバッジを出す
-- 仲介するリクエストの `Authorization` (Cloudflare の API トークンなど) はそのまま送り先に送る。サーバーは保存もログもしない
+以前は, ブラウザの `fetch` が CORS で失敗した HTTP リクエストだけを Worker が代わりに送る `definy.v1.HttpProxyService/Fetch` (管理者だけ) があった。
+これをやめ, プログラム全体をブラウザかサーバーのどちらかで動かすようにした ([run-location.md](run-location.md))。
+管理者かどうかは専用の `RunService/GetRunOptions` で聞く (以前は空の URL を仲介に送って 400 かどうかで見分けていた)。
 
 ## テスト
 
 - `src/wasi_io.test.ts`: `sample.deploy-hello-worker` をモックの Cloudflare API で動かし, I/O の順番, URL, ヘッダー,
   アップロードした Wasm がハンドラとして動くことを確かめる。シークレットの値が無いとき, 許可していない宛先のとき,
   アップロードに失敗したときも
-- `worker/http_proxy.test.ts`: 仲介の認可, URL の制限, ブラウザの fetch が失敗したときの送り直し
+- `worker/run_service.test.ts`: サーバーで動かす `RunService` (認可, Node.js のサーバーと Cloudflare の違い)

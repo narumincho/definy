@@ -40,13 +40,15 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 例外として、シード中の `stage1` は名前付きのキーで、コンテンツアドレスではない。
 `/virtual/wasm/:hash` は内容のハッシュが URL と一致するときだけ `immutable` でキャッシュし、`stage1` は毎回再検証させる。
 
-## HttpProxyService: アカウントの認可
+## RunService: アカウントの認可
 
-`HttpProxyService/Fetch` (CORS の仲介, [wasi-io.md](wasi-io.md)) は署名付きのリクエストで,
-管理者に限る。誰でも使えるとオープンプロキシになるため。署名が無ければ 401, 管理者でなければ 403。
+`RunService/RunIo` (プログラムをサーバーで動かす, [run-location.md](run-location.md)) は署名付きのリクエストで,
+管理者に限る。誰でも使えるとサーバーの HTTP とシークレットを誰でも使えてしまうため。署名が無ければ 401, 管理者でなければ 403。
+`RunService/GetRunOptions` は署名が無くてもよい (管理者かどうかを返す)。
 
-管理者は Worker の環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウント ID。
+管理者は環境変数 `DEFINY_ADMIN_ACCOUNT_IDS` (カンマ・空白区切り) に列挙したアカウント ID。手元のサーバーは自分の鍵のアカウントを足す。
 アカウント ID は Base64URL なので大文字小文字を区別する。未設定なら誰も管理者ではない。
+(2026-11-28 までは CORS の仲介 `HttpProxyService/Fetch` も同じ認可だった)
 
 ### Authorization ヘッダー
 
@@ -64,7 +66,7 @@ Authorization: Definy-Ed25519 <accountId>.<unix 秒>.<署名 (URL-safe Base64)>
 ```
 definy-rpc-v1
 <HTTP メソッド (大文字)>
-<パス (例: /definy.v1.HttpProxyService/Fetch)>
+<パス (例: /definy.v1.RunService/RunIo)>
 <unix 秒>
 <リクエストボディの SHA-256 (URL-safe Base64)>
 ```

@@ -35,7 +35,7 @@ describe("definy.handle-request のルーティング", () => {
     }
     for (const path of [
       "/definy.v1.EventService/GetEvents",
-      "/definy.v1.HttpProxyService/Fetch",
+      "/definy.v1.RunService/GetRunOptions",
       "/virtual/wasm/abc123.wasm",
       "/healthz",
     ]) {

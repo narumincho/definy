@@ -1,8 +1,10 @@
 /**
  * 実行パネルで入力した式を stage1 で Wasm にコンパイルして実行する (docs/run-panel.md).
- * 結果が `wasi.io` の値なら, I/O をしながら最後 (`done`) まで動かす
+ * 結果が `wasi.io` の値なら, I/O をしながら最後 (`done`) まで動かす. 動かすのはブラウザか,
+ * `runOnServer` を渡せばサーバー (管理者だけ. docs/run-location.md)
  */
 import {
+  collectPartReferenceIds,
   collectReferencedParts,
   containsHole,
   evaluateCompiledWasm,
@@ -36,9 +38,12 @@ export type RunOutcome =
   | {
       readonly kind: "value";
       readonly value: DefinyValue;
-      /** 値が `wasi.io` だったときに動かした I/O の記録と, `done` のメッセージ */
+      /**
+       * 値が `wasi.io` だったときに動かした I/O の記録と, `done` のメッセージ.
+       * サーバーで動かしたときの記録はサーバーが書いた 1 行 (`formatWasiIoStep` と同じ形) の文字列
+       */
       readonly wasiIo: {
-        readonly steps: ReadonlyArray<WasiIoStep>;
+        readonly steps: ReadonlyArray<WasiIoStep | string>;
         readonly message: string | null;
       } | null;
       /** 入力した式の型 (`core.type-ast` の値). 結果の表示に使う. 分からなければ無いか `null` */
@@ -64,7 +69,57 @@ type RunExpressionOptions = {
    * 推論できない未入力があれば `null`. 無ければ未入力のある式はコンパイルできない
    */
   readonly fillTypeArguments?: TypeArgumentFiller;
+  /**
+   * 渡すと `wasi.io` のプログラムをブラウザではなくサーバーで最後まで動かす (`RunService/RunIo`).
+   * `parts` はサーバーが `get_parts` に答えるためのパーツ (参照をたどった全て)
+   */
+  readonly runOnServer?: (
+    program: ServerRunProgram,
+  ) => Promise<ServerRunResult>;
 };
+
+/** サーバーで動かす `wasi.io` のプログラム */
+export type ServerRunProgram = {
+  readonly wasm: Uint8Array;
+  readonly parts: ReadonlyArray<{
+    readonly id: string;
+    readonly expression: unknown;
+  }>;
+};
+
+/** サーバーで動かした結果 (`definy.wasi-io-run-result`) */
+export type ServerRunResult = {
+  readonly ok: boolean;
+  readonly message: string;
+  readonly steps: ReadonlyArray<string>;
+};
+
+/**
+ * サーバーの `get_parts` に答えるためのパーツ. 式から参照をたどれる全てのパーツ
+ * (quote の中や型パーツの宣言の中の参照もたどる). 式の無いもの・未入力のあるものは除く
+ */
+export function collectServerRunParts(
+  expression: unknown,
+  resolvePart: (partId: string) => unknown,
+): ServerRunProgram["parts"] {
+  const seen = new Set<string>();
+  const parts: Array<{ readonly id: string; readonly expression: unknown }> =
+    [];
+  const queue = [...collectPartReferenceIds(expression)];
+  for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
+    if (seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const partExpression = resolvePart(id);
+    if (partExpression == null || containsHole(partExpression)) {
+      continue;
+    }
+    parts.push({ id, expression: partExpression });
+    queue.push(...collectPartReferenceIds(partExpression));
+  }
+  return parts;
+}
 
 /** {@link RunExpressionOptions.fillTypeArguments} */
 type TypeArgumentFiller = {
@@ -134,6 +189,7 @@ export async function runExpression(
     wasiIoHost,
     onProgress,
     fillTypeArguments,
+    runOnServer,
   }: RunExpressionOptions,
 ): Promise<RunOutcome> {
   const steps: WasiIoStep[] = [];
@@ -158,6 +214,20 @@ export async function runExpression(
     value = await evaluateCompiledWasm(wasm);
     if (!isWasiIoValue(value)) {
       return { kind: "value", value, wasiIo: null };
+    }
+    if (runOnServer !== undefined) {
+      const result = await runOnServer({
+        wasm,
+        parts: collectServerRunParts(expression, resolvePart),
+      });
+      return {
+        kind: "value",
+        value,
+        wasiIo: {
+          steps: result.steps,
+          message: result.ok ? result.message : `error: ${result.message}`,
+        },
+      };
     }
     const message = await runWasiIo(
       await WebAssembly.compile(wasm as unknown as BufferSource),

@@ -52,8 +52,9 @@ definy.deploy-to-cloudflare-workers(
   4. `POST .../subdomain` に `{"enabled":true}` を送って workers.dev を有効にする
   5. `GET /accounts/{account}/workers/subdomain` でサブドメインを読み, `デプロイしました: https://<worker>.<subdomain>.workers.dev` を返す
 
-- Cloudflare の API はブラウザからの CORS を許可していないので, 実際にブラウザから送るには設定画面で
-  「CORS エラーのときサーバーで仲介する」を有効にする (許可されたアカウントのみ。[wasi-io.md](wasi-io.md) の「CORS の仲介」)
+- Cloudflare の API はブラウザからの CORS を許可していないので, ブラウザでは動かせない。手元のサーバー (`npm run serve`) で
+  動かす (html-ui の「I/O を実行」か MCP の `definy_run_io`, 管理者だけ。[run-location.md](run-location.md))。
+  2026-11-28 までは「CORS エラーのときサーバーで仲介する」(`HttpProxyService/Fetch`) があったが消した
 
 ### 例 (モジュール `sample`)
 
@@ -117,5 +118,5 @@ D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた
    - `api.cloudflare.com` のレスポンスは `"subdomain": "narumincho"` のように `:` の後に空白が入る。
      `definy.json-string-field` は `"key":"value"` と `"key": "value"` のどちらも読む
      (以前は空白なしだけを探していたので, 本番で「サブドメインは分かりませんでした」になった)。
-   - 2026-10-24 に本番 (definy.narumincho.workers.dev) から CORS の仲介を使って `sample.deploy-hello-worker` をデプロイし,
+   - 2026-10-24 に本番 (definy.narumincho.workers.dev) から CORS の仲介 (今は無い) を使って `sample.deploy-hello-worker` をデプロイし,
      `https://definy-hello.narumincho.workers.dev/` が応答することを確かめた。

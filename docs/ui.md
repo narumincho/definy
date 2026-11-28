@@ -479,7 +479,7 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる.
 
 実行パネル ([run-panel.md](run-panel.md)) で実行した結果が `wasi.io` の値なら, そのまま I/O をしながら最後まで動かし,
 I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッセージを実行履歴に出す.
-「CORS エラーのときサーバーで仲介する」は設定画面で決める ([wasi-io.md](wasi-io.md)).
+ブラウザで動かすかサーバーで動かすか (サーバーは Node.js のサーバーの管理者だけ) は実行パネルと設定画面で決める ([run-location.md](run-location.md)).
 式がシークレットリテラルのパーツのページには, 名前と送ってよい宛先の編集, 値の入力, 使用箇所, 使用履歴の欄を出す ([secret.md](secret.md)).
 
 ### 履歴
@@ -602,7 +602,7 @@ Void はページを SSR してからクライアントでハイドレーショ�
 
 - `localStorage` / `navigator` / `window.location` を `useState` の初期化やレンダー中に読まない.
   初回は SSR と同じ既定値でレンダーし, マウント後の `useEffect` で保存値を反映する
-  (`src/state.tsx` の作業中の変更, `src/wasi_io_browser.ts` のシークレットの値・使用履歴と CORS 仲介の設定, `ExplorerSidebar` の幅)
+  (`src/state.tsx` の作業中の変更, `src/wasi_io_browser.ts` のシークレットの値・使用履歴と実行する場所の設定, `ExplorerSidebar` の幅)
 - URL は SSR でも `useRouter()` (`@void/react`) で読める. SSR では `createSsrRouter(リクエストの URL)` が使われ,
   `path` や `query` はクエリ文字列も含めてクライアントと一致する. 現在のパスは `window.location.pathname` ではなく
   `useRouter().path` を使う (`ActivityBar`)

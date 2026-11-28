@@ -382,13 +382,13 @@ export const RPC_METHODS: ReadonlyArray<RpcMethodItem> = [
     },
   },
   {
-    service: "HttpProxyService",
-    name: "Fetch",
-    request: "HttpProxyFetchRequest",
+    service: "RunService",
+    name: "RunIo",
+    request: "RunIoRequest",
     desc: {
-      en: "Send an HTTP request the browser cannot send because of CORS on behalf of an allowed account (used by wasi.io programs).",
-      ja: "CORS でブラウザから送れない HTTP リクエストを, 許可されたアカウントのためにサーバーが仲介します (wasi.io のプログラムが使う)。",
-      eo: "Sendi HTTP-peton anstataŭ la retumilo, kiam CORS malhelpas ĝin.",
+      en: "Run a whole wasi.io program on the server with its secrets. Only for administrators of a definy server on Node.js.",
+      ja: "wasi.io のプログラム全体を, サーバーのシークレットでサーバーで動かします。Node.js の definy サーバーの管理者だけ。",
+      eo: "Ruli tutan wasi.io-programon en la servilo. Nur por administrantoj de Node.js-servilo.",
     },
   },
 ];

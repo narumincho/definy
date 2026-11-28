@@ -116,7 +116,8 @@ React の UI の実行パネルはブラウザで `wasi.io` のプログラム (
   参照する `definy.mirror-pull` と `definy.warm-commit-cache` が `get_parts` で見つからず, デプロイは成功するのに definy-html の Cron が毎分例外になった (2026-11-21)。
   `get_parts` の結果に `見つからない: ...` が出たら, このように渡すパーツが足りていない
 - ホスト (`ServiceIoHost.localIo`, `cli/local_io.ts`) は `src/wasi_io.ts` の `runWasiIo` で `done` まで動かす (ブラウザの実行パネルと同じもの)。
-  HTTP は Node.js の fetch で送るので CORS の仲介は要らない。結果は `done: <メッセージ>` か `error: <理由>` と, I/O ごとの 1 行
+  HTTP は Node.js の fetch で送るので CORS の制約は無い。MCP のアカウントが管理者 (手元のサーバーは自分の鍵のアカウントを管理者に足す) のときだけ動かす
+  ([run-location.md](run-location.md))。ブラウザからは署名付きの `RunService/RunIo` でも動かせる。結果は `done: <メッセージ>` か `error: <理由>` と, I/O ごとの 1 行
   (`formatWasiIoStep`)。definy の Worker (公開サーバー) は `localIo` を持たないので `Running I/O programs is disabled on this server` を返す
 - シークレットの値は `<data-dir>/secrets.json` (パーミッション 600) に `{ID: {label, value, allowedUrlPrefixes, updatedMs}}` で置く。
   ホストの能力 `read_secrets` (値は返さない) と `write_secret` (値が空なら消す) で読み書きする。**MCP のツールにはしない** (AI のクライアントに値を渡さない)。

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package definy.v1;
+
+// RunService runs a whole wasi.io program on the server (docs/run-location.md).
+// Programs run either in the browser (HTTP requests by the browser's fetch, so CORS applies)
+// or on the server (HTTP requests and secrets of the server).
+// Only administrators (DEFINY_ADMIN_ACCOUNT_IDS) can run programs on the server, and only a
+// definy server on Node.js (npm run serve) can run them: Cloudflare Workers cannot compile Wasm at runtime.
+// Requests are signed with the Authorization header (docs/rpc-authorization.md).
+service RunService {
+  // Where the signed account can run programs. The Authorization header is optional.
+  rpc GetRunOptions(GetRunOptionsRequest) returns (GetRunOptionsResponse);
+  // Run a compiled wasi.io program on the server to done. Administrators only.
+  rpc RunIo(RunIoRequest) returns (RunIoResponse);
+}
+
+message GetRunOptionsRequest {}
+
+message GetRunOptionsResponse {
+  // Whether the account is an administrator of this server (DEFINY_ADMIN_ACCOUNT_IDS)
+  bool administrator = 1;
+  // Whether this server can run programs (a definy server on Node.js)
+  bool server_run = 2;
+}
+
+message RunIoPart {
+  // Part ID (URL-safe Base64)
+  string id = 1;
+  // The expression of the part as CBOR (the same as a definition in the CAS), standard Base64
+  string cbor = 2;
+}
+
+message RunIoRequest {
+  // The program compiled with core.compile-to-wasm (standard Base64)
+  string wasm_base64 = 1;
+  // The parts that get_parts answers with
+  repeated RunIoPart parts = 2;
+}
+
+message RunIoResponse {
+  // Whether the program reached done
+  bool ok = 1;
+  // The message of done, or why it stopped
+  string message = 2;
+  // A line for each I/O
+  repeated string steps = 3;
+}

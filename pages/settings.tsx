@@ -126,26 +126,63 @@ export default function SettingsPage(): JSX.Element {
             "Listo de sekretoj →",
           )}
         </Link>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <input
-            type="checkbox"
-            checked={wasiIoSettings.relayOnCorsError}
-            onChange={(e) => {
-              const next = {
-                ...wasiIoSettings,
-                relayOnCorsError: e.target.checked,
-              };
-              setWasiIoSettings(next);
-              saveWasiIoSettings(next);
-            }}
-          />
-          {label(
-            language,
-            "Relay through the server when the browser hits a CORS error (administrators only)",
-            "CORS エラーのときサーバーで仲介する (管理者のみ)",
-            "Peri la servilo, kiam la retumilo renkontas CORS-eraron (nur por administrantoj)",
-          )}
-        </label>
+        <fieldset
+          style={{
+            border: "none",
+            margin: 0,
+            padding: 0,
+            display: "grid",
+            gap: "0.3rem",
+          }}
+        >
+          <legend style={{ padding: 0, marginBottom: "0.3rem" }}>
+            {label(
+              language,
+              "Where to run the programs",
+              "プログラムを実行する場所",
+              "Kie ruli la programojn",
+            )}
+          </legend>
+          {(
+            [
+              [
+                "browser",
+                label(
+                  language,
+                  "Browser: HTTP requests are sent by this browser (servers that do not allow CORS cannot be reached) and the secrets of this browser are used",
+                  "ブラウザ: HTTP リクエストはこのブラウザが送ります (CORS を許可しないサーバーには届きません). シークレットはこのブラウザの値を使います",
+                  "Retumilo: HTTP-petojn sendas ĉi tiu retumilo (serviloj, kiuj ne permesas CORS, ne estas atingeblaj), kaj la sekretoj de ĉi tiu retumilo estas uzataj",
+                ),
+              ],
+              [
+                "server",
+                label(
+                  language,
+                  "Server: the whole program runs on the server with its secrets (only administrators of a definy server on Node.js, such as npm run serve)",
+                  "サーバー: プログラム全体をサーバーで動かし, シークレットもサーバーの値を使います (npm run serve など Node.js の definy サーバーの管理者だけ)",
+                  "Servilo: la tuta programo ruliĝas en la servilo kun ĝiaj sekretoj (nur administrantoj de definy-servilo en Node.js, kiel npm run serve)",
+                ),
+              ],
+            ] as const
+          ).map(([location, text]) => (
+            <label
+              key={location}
+              style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}
+            >
+              <input
+                type="radio"
+                name="run-location"
+                checked={wasiIoSettings.runLocation === location}
+                onChange={() => {
+                  const next = { ...wasiIoSettings, runLocation: location };
+                  setWasiIoSettings(next);
+                  saveWasiIoSettings(next);
+                }}
+              />
+              {text}
+            </label>
+          ))}
+        </fieldset>
       </div>
     </div>
   );

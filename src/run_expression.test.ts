@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as fs from "node:fs";
 import { createStage1Compiler } from "./stage1_compiler.ts";
 import {
+  collectServerRunParts,
   formatRunValue,
   runExpression,
   runValueExpression,
@@ -109,6 +110,63 @@ describe("runExpression", () => {
       kind: "value",
       wasiIo: { steps: [], message: "ok" },
     });
+  });
+
+  it("runOnServer を渡すと wasi.io のプログラムはブラウザでは動かさずサーバーに送る", async () => {
+    const sent: Array<unknown> = [];
+    const outcome = await runExpression(
+      {
+        "#variant": {
+          tag: "done",
+          payload: { "#some": { "#string": "ok" } },
+          type_part: { "#none": null },
+        },
+      },
+      {
+        compiler,
+        resolvePart: () => undefined,
+        wasiIoHost: {
+          ...wasiIoHost,
+          handle: () => {
+            throw new Error("the browser must not send requests");
+          },
+        },
+        runOnServer: (program) => {
+          sent.push(program);
+          return Promise.resolve({
+            ok: false,
+            message: "no secret",
+            steps: ["outgoing_request: GET https://example.com/ → error"],
+          });
+        },
+      },
+    );
+    expect(sent).toHaveLength(1);
+    expect(outcome).toMatchObject({
+      kind: "value",
+      wasiIo: {
+        steps: ["outgoing_request: GET https://example.com/ → error"],
+        message: "error: no secret",
+      },
+    });
+  });
+
+  it("サーバーの get_parts に渡すパーツは quote と型パーツの中の参照もたどる", () => {
+    const reference = (id: string) => ({
+      "#part_reference": { part_definition_event_hash: id },
+    });
+    const parts: Readonly<Record<string, unknown>> = {
+      a: { "#quote": reference("b") },
+      b: { "#type_declaration": reference("c") },
+      c: { "#builtin": "plus" },
+      d: { "#hole": { probe: false } },
+    };
+    expect(
+      collectServerRunParts(
+        { "#list": [reference("a"), reference("d"), reference("missing")] },
+        (id) => parts[id],
+      ).map((part) => part.id),
+    ).toEqual(["a", "b", "c"]);
   });
 
   it("未入力があればエラーにする", async () => {
