@@ -6,6 +6,7 @@ html 版 (ストアの `html-ui` プロジェクト. [html-ui.md](html-ui.md)) �
 
 ユーザーの決定:
 
+- 2026-11-28: **ラズパイは電気代がかかるのでやめ, 同じホストを fly.io の無料枠で動かす** ([fly-io.md](fly-io.md))。この文書のホスト (`host.mjs`) の説明と調べたことはそのまま使う
 - 2026-11-24: ラズパイで常駐させ, Cloudflare Tunnel で公開する。`definy.narumincho.com` (公開サーバーの Worker) は当面そのまま残す
 - 2026-11-25: デプロイも Workers や fly.io のように HTTP でしたい。git にも頼らないよう, **ホストの JavaScript も definy の文字列として持ち, HTTP で置き換えられるようにする**
 

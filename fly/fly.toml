@@ -1,0 +1,63 @@
+# fly.io で html 版を動かす設定 (docs/fly-io.md)。
+# Docker のイメージは作らず, 公式の node:26-slim をそのまま使う。
+# 最初の起動のときだけ, 公開サーバーの /mcp から definy.node-host-script (host.mjs) を取ってきてボリュームに置く。
+# そのあとのデプロイ (PUT /__definy/deploy) とホストの置き換え (PUT /__definy/host) は HTTP でするので, fly deploy は最初の 1 回だけ。
+
+app = "definy-html"          # 自分のアプリ名に変える
+primary_region = "nrt"       # 東京
+kill_signal = "SIGTERM"
+kill_timeout = 30
+
+[build]
+  image = "node:26-slim"
+
+[env]
+  DEFINY_HOST_SOURCE = "https://definy.narumincho.com/mcp"
+  # host.mjs を definy の /mcp の definy_get_part から取ってくる
+  DEFINY_FETCH_HOST = '''
+const response = await fetch(process.env.DEFINY_HOST_SOURCE, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+    params: { name: "definy_get_part", arguments: { project: "definy", part: "definy.node-host-script" } } }),
+});
+const text = (await response.json()).result.content[0].text;
+const at = text.indexOf("\nexpression:\n");
+if (at < 0) throw new Error("definy.node-host-script was not found: " + text.slice(0, 200));
+process.stdout.write(JSON.parse(text.slice(at + 13)));
+'''
+
+[experimental]
+  cmd = ["sh", "-c", '''
+set -e
+if [ ! -f /data/host.mjs ]; then
+  node --input-type=module -e "$DEFINY_FETCH_HOST" > /data/host.mjs.download
+  mv /data/host.mjs.download /data/host.mjs
+fi
+exec node /data/host.mjs --listen 0.0.0.0 --port 8080 --data-dir /data/host
+''']
+
+[[mounts]]
+  source = "definy_data"
+  destination = "/data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # 使っていないときは止める。suspend はメモリごと止めるので, 再開は数百ミリ秒でメモリのキャッシュも残る
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+
+# PUT /__definy/host はホストを置き換えて exit 0 で終わる。起動し直すように always にする
+[[restart]]
+  policy = "always"
+  retries = 10
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
