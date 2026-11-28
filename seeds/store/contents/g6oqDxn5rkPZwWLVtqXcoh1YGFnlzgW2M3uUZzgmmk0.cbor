@@ -1,0 +1,350 @@
+�e#call�hfunction�o#part_reference�xpart_definition_event_hashx+EfSI42pS9I-j565952QsV2vAH3nxB4Yttfbd0eA0fFwiarguments��dnamekdescriptionevalue�e#list��g#record��ckeyhlanguageevalue�g#stringben�ckeydtextevalue�g#stringy�The definy host for Node.js 26 (a Raspberry Pi and so on, docs/raspberry-pi.md) as a JavaScript module. Save it as host.mjs and run node host.mjs. It runs what definy.deploy-node-host uploads over HTTP (the Workers-shaped definy.cloudflare-service-runtime-script and app.wasm) with node:sqlite as the D1 binding DB and its Cron, and definy.replace-node-host replaces this file itself, so the host needs no git checkout�dnamejvisibilityevalue�h#variant�ctagfpublicgpayload�e#none�itype_part�e#none��dnameipart_typeevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�l#type_string�ckeyjexpressionitype_part�e#none��dnamejexpressionevalue�h#variant�ctagdsomegpayload�e#some�k#record_get�frecord�f#quote�g#stringy;a// definy のホスト (Node.js 版). ラズパイなどで常駐させ, HTTP でデプロイを受け取って動かす (docs/raspberry-pi.md)。
+// このファイルの正本は definy のパーツ definy.node-host-script (文字列) で, git には置かない。
+// デプロイ (definy.deploy-node-host) は Cloudflare Workers と同じ形の土台の JS (definy.cloudflare-service-runtime-script) と
+// app.wasm を送ってくる。ここは Workers の代わりに, その default export の fetch と scheduled を動かし,
+// D1 の代わりに node:sqlite を env.DB として渡すだけ。このファイル自体も PUT /__definy/host で置き換えられる。
+// Node.js 26 以上の組み込みだけを使う。
+//
+//   node host.mjs [--port 8788] [--listen 127.0.0.1] [--data-dir ~/.definy-host]
+//
+// 管理の API (Authorization: Bearer <data-dir/deploy-token>):
+//   GET  /__definy/status    今のデプロイとホストの版
+//   PUT  /__definy/deploy    multipart: metadata (JSON {main_module, cron}), main_module の JS, ほかのファイル (*.wasm)
+//   POST /__definy/rollback  1 つ前のデプロイに戻す
+//   PUT  /__definy/host      本文の JS でこのファイルを置き換え, 確かめてから終了する (systemd の Restart=always で新しい版が起動する)
+import { createServer } from "node:http";
+import { DatabaseSync } from "node:sqlite";
+import { registerHooks } from "node:module";
+import { parseArgs } from "node:util";
+import { homedir } from "node:os";
+import { join, resolve, basename } from "node:path";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+
+const HOST_PATH = fileURLToPath(import.meta.url);
+const HOST_VERSION = createHash("sha256").update(readFileSync(HOST_PATH)).digest("base64url");
+const KEEP_DEPLOYMENTS = 5;
+
+const { values } = parseArgs({
+  options: {
+    port: { type: "string", default: "8788" },
+    listen: { type: "string", default: "127.0.0.1" },
+    "data-dir": { type: "string", default: join(homedir(), ".definy-host") },
+    "self-test": { type: "boolean", default: false },
+  },
+});
+const dataDir = resolve(values["data-dir"]);
+const deploymentsDir = join(dataDir, "deployments");
+mkdirSync(deploymentsDir, { recursive: true, mode: 0o700 });
+
+const log = (...items) => console.log(new Date().toISOString(), ...items);
+
+// Workers と同じく `import wasmModule from "./app.wasm"` で WebAssembly.Module を読めるようにする
+registerHooks({
+  load(url, context, nextLoad) {
+    if (!url.startsWith("file:") || !url.endsWith(".wasm")) return nextLoad(url, context);
+    return {
+      format: "module",
+      shortCircuit: true,
+      source: `import { readFileSync } from "node:fs";
+export default new WebAssembly.Module(readFileSync(new URL(${JSON.stringify(url)})));`,
+    };
+  },
+});
+
+// ---- 管理のトークン ----
+
+function loadOrCreateToken() {
+  const path = join(dataDir, "deploy-token");
+  if (existsSync(path)) {
+    const text = readFileSync(path, "utf8").trim();
+    if (text !== "") return text;
+  }
+  const token = randomBytes(32).toString("base64url");
+  writeFileSync(path, token + "\n", { mode: 0o600 });
+  chmodSync(path, 0o600);
+  log(`created the deploy token in ${path}`);
+  return token;
+}
+const tokenDigest = createHash("sha256").update("Bearer " + loadOrCreateToken()).digest();
+const authorized = (request) =>
+  timingSafeEqual(createHash("sha256").update(request.headers.get("Authorization") ?? "").digest(), tokenDigest);
+
+// ---- D1 の代わり (node:sqlite) ----
+
+const sqlite = new DatabaseSync(join(dataDir, "store.sqlite"));
+// Litestream などで複製できるよう WAL にし, ロックが重なっても少し待つ
+sqlite.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA synchronous = NORMAL;");
+
+const param = (value) => (value === undefined ? null : typeof value === "boolean" ? (value ? 1 : 0) : value);
+const normalizeRow = (row) => {
+  const result = {};
+  for (const key of Object.keys(row)) {
+    const value = row[key];
+    result[key] = typeof value === "bigint" ? Number(value) : value instanceof Uint8Array ? [...value] : value;
+  }
+  return result;
+};
+function statement(sql, params = []) {
+  const prepared = () => sqlite.prepare(sql);
+  const meta = (info) => ({ changes: Number(info.changes), last_row_id: Number(info.lastInsertRowid) });
+  return {
+    sql,
+    params,
+    bind: (...values) => statement(sql, values.map(param)),
+    async all() {
+      const stmt = prepared();
+      if (stmt.columns().length === 0) return { results: [], success: true, meta: meta(stmt.run(...params)) };
+      return { results: stmt.all(...params).map(normalizeRow), success: true, meta: {} };
+    },
+    async first(column) {
+      const row = prepared().get(...params);
+      if (row === undefined) return null;
+      return column === undefined ? normalizeRow(row) : (normalizeRow(row)[column] ?? null);
+    },
+    async run() {
+      return { results: [], success: true, meta: meta(prepared().run(...params)) };
+    },
+    async raw() {
+      const stmt = prepared();
+      stmt.setReturnArrays?.(true);
+      return stmt.all(...params);
+    },
+  };
+}
+const db = {
+  prepare: (sql) => statement(sql),
+  async batch(statements) {
+    sqlite.exec("BEGIN");
+    try {
+      const results = [];
+      for (const stmt of statements) results.push(await stmt.all());
+      sqlite.exec("COMMIT");
+      return results;
+    } catch (error) {
+      sqlite.exec("ROLLBACK");
+      throw error;
+    }
+  },
+  async exec(sql) {
+    sqlite.exec(sql);
+    return { count: 1, duration: 0 };
+  },
+};
+const env = { DB: db };
+
+// ---- デプロイ ----
+
+const listDeployments = () =>
+  readdirSync(deploymentsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+const currentPath = join(dataDir, "current");
+const readCurrent = () => (existsSync(currentPath) ? readFileSync(currentPath, "utf8").trim() : "");
+
+/** デプロイ id のフォルダの main_module を読み込む */
+async function loadDeployment(id) {
+  const dir = join(deploymentsDir, id);
+  const metadata = JSON.parse(readFileSync(join(dir, "metadata.json"), "utf8"));
+  const worker = (await import(pathToFileURL(join(dir, metadata.main_module)).href)).default;
+  if (typeof worker?.fetch !== "function") throw new Error("the main module has no default export with fetch");
+  return { id, metadata, worker };
+}
+
+let active;
+async function activate(id) {
+  active = await loadDeployment(id);
+  writeFileSync(currentPath, id + "\n");
+  log(`deployment ${id} is active (cron: ${active.metadata.cron ?? "none"})`);
+}
+
+async function deploy(request) {
+  const form = await request.formData();
+  const metadataFile = form.get("metadata");
+  if (metadataFile === null) return json(400, { code: "invalid_argument", message: "the metadata part is missing" });
+  const metadata = JSON.parse(typeof metadataFile === "string" ? metadataFile : await metadataFile.text());
+  if (typeof metadata.main_module !== "string" || form.get(metadata.main_module) === null) {
+    return json(400, { code: "invalid_argument", message: "metadata.main_module must name an uploaded file" });
+  }
+  const id = new Date().toISOString().replace(/[:.]/g, "-") + "-" + randomBytes(3).toString("hex");
+  const dir = join(deploymentsDir, id);
+  mkdirSync(dir, { recursive: true });
+  for (const [name, value] of form.entries()) {
+    if (name === "metadata") continue;
+    if (basename(name) !== name || name.startsWith(".")) {
+      return json(400, { code: "invalid_argument", message: `bad file name ${JSON.stringify(name)}` });
+    }
+    writeFileSync(join(dir, name), typeof value === "string" ? value : Buffer.from(await value.arrayBuffer()));
+  }
+  writeFileSync(join(dir, "metadata.json"), JSON.stringify(metadata, null, 2) + "\n");
+  try {
+    await activate(id);
+  } catch (error) {
+    rmSync(dir, { recursive: true, force: true });
+    return json(400, { code: "invalid_argument", message: `could not load the deployment: ${String(error)}` });
+  }
+  // 読んだ結果のキャッシュの形は definy のコードで変わるので, デプロイのたびに消す (definy.deploy-service-script と同じ)
+  sqlite.exec("DROP TABLE IF EXISTS host_cache");
+  for (const old of listDeployments().slice(0, -KEEP_DEPLOYMENTS)) rmSync(join(deploymentsDir, old), { recursive: true, force: true });
+  return json(200, { deployment: id });
+}
+
+async function rollback() {
+  const ids = listDeployments();
+  const index = ids.indexOf(readCurrent());
+  if (index <= 0) return json(409, { code: "failed_precondition", message: "there is no older deployment" });
+  await activate(ids[index - 1]);
+  sqlite.exec("DROP TABLE IF EXISTS host_cache");
+  return json(200, { deployment: ids[index - 1] });
+}
+
+/** 新しいホストの JS を --self-test で動かし, 通ればこのファイルと置き換える */
+async function replaceHost(request) {
+  const source = await request.text();
+  const stem = HOST_PATH.replace(/\.m?js$/, "");
+  const next = stem + ".next.mjs";
+  writeFileSync(next, source);
+  const code = await new Promise((done) => {
+    const child = spawn(process.execPath, [next, "--self-test", "--data-dir", dataDir], { stdio: ["ignore", "inherit", "inherit"] });
+    child.on("exit", (status) => done(status));
+    child.on("error", () => done(-1));
+  });
+  if (code !== 0) {
+    rmSync(next, { force: true });
+    return json(400, { code: "invalid_argument", message: `the new host failed its self test (exit ${code})` });
+  }
+  copyFileSync(HOST_PATH, stem + ".prev.mjs");
+  renameSync(next, HOST_PATH);
+  log("replaced the host. Exiting so that the service manager starts the new one");
+  setTimeout(() => process.exit(0), 200);
+  return json(200, { replaced: true, previous: HOST_VERSION });
+}
+
+// ---- Cron (分 時 日 月 曜日. *, */n, a-b, a,b) ----
+
+function cronFieldMatches(field, value) {
+  return field.split(",").some((part) => {
+    const [range, stepText] = part.split("/");
+    const step = stepText === undefined ? 1 : Number(stepText);
+    const [low, high] = range === "*" ? [0, 59] : range.includes("-") ? range.split("-").map(Number) : [Number(range), stepText === undefined ? Number(range) : 59];
+    return value >= low && value <= high && (value - low) % step === 0;
+  });
+}
+function cronMatches(cron, date) {
+  const fields = cron.trim().split(/\s+/);
+  if (fields.length !== 5) return false;
+  const values = [date.getMinutes(), date.getHours(), date.getDate(), date.getMonth() + 1, date.getDay()];
+  return fields.every((field, i) => cronFieldMatches(field, values[i]));
+}
+
+let scheduledRunning = false;
+async function runScheduled(scheduledTime) {
+  if (active?.worker.scheduled === undefined || scheduledRunning) return;
+  scheduledRunning = true;
+  const waits = [];
+  const started = performance.now();
+  try {
+    await active.worker.scheduled({ cron: active.metadata.cron, scheduledTime }, env, {
+      waitUntil: (promise) => waits.push(promise),
+      passThroughOnException: () => {},
+    });
+    await Promise.all(waits);
+  } catch (error) {
+    log("scheduled failed:", String(error));
+  } finally {
+    scheduledRunning = false;
+    log(`scheduled done in ${Math.round(performance.now() - started)} ms`);
+  }
+}
+function scheduleNextMinute() {
+  const now = Date.now();
+  setTimeout(() => {
+    const date = new Date();
+    date.setSeconds(0, 0);
+    if (active?.metadata.cron && cronMatches(active.metadata.cron, date)) void runScheduled(date.getTime());
+    scheduleNextMinute();
+  }, 60_000 - (now % 60_000) + 50).unref();
+}
+
+// ---- HTTP ----
+
+function json(status, value) {
+  return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json; charset=utf-8" } });
+}
+
+async function handle(request) {
+  const { pathname } = new URL(request.url);
+  if (pathname.startsWith("/__definy/")) {
+    if (!authorized(request)) return json(401, { code: "unauthenticated", message: "Authorization: Bearer <deploy-token> is required" });
+    if (pathname === "/__definy/status" && request.method === "GET") {
+      return json(200, { host_version: HOST_VERSION, deployment: active?.id ?? null, cron: active?.metadata.cron ?? null, deployments: listDeployments() });
+    }
+    if (pathname === "/__definy/deploy" && request.method === "PUT") return await deploy(request);
+    if (pathname === "/__definy/rollback" && request.method === "POST") return await rollback();
+    if (pathname === "/__definy/host" && request.method === "PUT") return await replaceHost(request);
+    return json(404, { code: "not_found", message: "unknown admin path" });
+  }
+  if (active === undefined) {
+    return new Response("Nothing is deployed yet. Deploy with definy.deploy-node-host.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  return await active.worker.fetch(request, env, { waitUntil: (promise) => promise.catch((error) => log("waitUntil failed:", String(error))), passThroughOnException: () => {} });
+}
+
+async function toRequest(incoming) {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(incoming.headers)) {
+    if (Array.isArray(value)) for (const v of value) headers.append(name, v);
+    else if (value !== undefined) headers.set(name, value);
+  }
+  const method = incoming.method ?? "GET";
+  let body;
+  if (method !== "GET" && method !== "HEAD") {
+    const chunks = [];
+    for await (const chunk of incoming) chunks.push(chunk);
+    body = Buffer.concat(chunks);
+  }
+  const protocol = headers.get("X-Forwarded-Proto") === "https" ? "https" : "http";
+  return new Request(`${protocol}://${headers.get("Host") ?? "localhost"}${incoming.url ?? "/"}`, { method, headers, body });
+}
+
+const current = readCurrent();
+if (current !== "") {
+  try {
+    await activate(current);
+  } catch (error) {
+    log(`could not load the deployment ${current}: ${String(error)}`);
+    if (values["self-test"]) process.exit(1);
+  }
+}
+if (values["self-test"]) {
+  log(`self test passed (host ${HOST_VERSION})`);
+  process.exit(0);
+}
+
+const server = createServer((incoming, outgoing) => {
+  void (async () => {
+    try {
+      const response = await handle(await toRequest(incoming));
+      const headers = {};
+      response.headers.forEach((value, name) => (headers[name] ??= []).push(value));
+      outgoing.writeHead(response.status, headers);
+      outgoing.end(Buffer.from(await response.arrayBuffer()));
+    } catch (error) {
+      log("request failed:", String(error));
+      outgoing.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      outgoing.end(String(error));
+    }
+  })();
+});
+server.keepAliveTimeout = 60_000;
+server.listen(Number(values.port), values.listen, () => {
+  log(`definy host ${HOST_VERSION} on http://${values.listen}:${server.address().port} (data: ${dataDir})`);
+  scheduleNextMinute();
+});
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.once(signal, () => server.close(() => process.exit(0)));
+}
+ckeyjexpressionitype_part�e#none�
