@@ -22,7 +22,7 @@ jobs:
         run: npm run check
       - name: Run Vitest tests
         run: npm test
-      - name: Build with Void (Vite 8)
+      - name: Build seeds and Wasm
         run: npm run build
-      - name: Run Playwright E2E tests (using pre-installed Google Chrome)
-        run: npm run test:e2e
+      - name: Bundle the Worker (wrangler deploy --dry-run)
+        run: npx wrangler deploy --dry-run --outdir dist

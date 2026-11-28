@@ -57,8 +57,7 @@
   保証する。Workers では `waitUntil` に登録されていない非同期処理は
   レスポンス後に打ち切られ得る。当初は登録しておらず、ローカルでは
   記録が残るのに本番では有効化後の提出が 1 件も記録されなかったため、
-  この形に改めた。ExecutionContext は `worker/index.ts` の fetch と
-  Void の middleware (`middleware/01.definy.ts`) の両方の経路から
+  この形に改めた。ExecutionContext は `worker/index.ts` の fetch から
   `handleWorkerRequest` へ渡している。`waitUntil` が無い環境
   (テストなど) では投げっぱなしになる
 - 記録の失敗 (D1 の障害など) が本体のリクエストを失敗させることは

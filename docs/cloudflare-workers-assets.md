@@ -1,129 +1,62 @@
-# Cloudflare Workers Static Assets 構成とデプロイ仕様
+# Cloudflare Workers の構成とデプロイ
 
-> [!NOTE]
-> **Void (Vite 8) + React 19** のフルスタック構成。Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括ビルドされます。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
-
-definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Workers Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS コンテンツ配信等のバックエンド API もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
-
----
-
-## 1. アーキテクチャ概要
-
-Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。デプロイは GitHub Actions からの `void deploy --platform cloudflare` による Cloudflare Workers へのデプロイに一本化されています。
+definy サーバーは 1 つの Cloudflare Worker (`definy`) で, 設定は [wrangler.jsonc](../wrangler.jsonc)。
+2026-11 に React/Vite の UI と Void をやめ, `wrangler deploy` で Worker と静的なファイルを直接デプロイする形にした
+(UI は別の Worker の definy-html。[html-ui.md](html-ui.md))。
 
 ```
-[ ブラウザ / クライアント ]
+[ ブラウザ / MCP クライアント / 他の definy サーバー ]
          │
          ▼
-  [ Cloudflare Workers with Static Assets ]
-    ├── Static Assets エンジン (dist/client/) ── エッジから直接キャッシュ配信
-    │     ├── _headers: Wasm/JS/CSS キャッシュ & セキュリティヘッダー
-    │     └── __definy_seed_bundle.json: 署名済み組み込みシードデータ
+  [ Cloudflare Worker `definy` ]
+    ├── 静的なファイル (public/. Workers Static Assets, binding ASSETS)
+    │     ├── index.html: `/` の案内 (definy-html, MCP, GitHub へのリンク)
+    │     ├── about/: 紹介スライド (npm run build:story が作る. コミットしない. story.md)
+    │     ├── story/: 紹介スライドの音声と画像
+    │     ├── __definy_seed_bundle.json, __definy_seed_commit_cache.json: seed の束 (npm run build:seeds が作る. コミットしない)
+    │     └── _headers: セキュリティヘッダー
     │
-    └── Worker スクリプト (dist/ssr/index.js) ── SSR & エッジ API 処理
-          ├── SSR HTML レスポンス（セキュリティヘッダー付与）
-          ├── EventService (/definy.v1.EventService/*)
-          ├── HttpProxyService (/definy.v1.HttpProxyService/Fetch) ── 許可されたアカウントの HTTP リクエストを仲介 (CORS 回避)
-          ├── 仮想 Wasm バイナリ (/virtual/wasm/*)
-          └── ヘルスチェック (/healthz)
+    └── Worker (worker/index.ts の default export)
+          └── definy.handle-request (wasm/service.wasm) が全てのパスを決める
+                ├── /definy.v1.* (Connect-RPC), /mcp, /healthz, /virtual/wasm/* など
+                └── それ以外は serve_asset → env.ASSETS (無ければ 404)
 ```
 
-### 特徴
+- 静的なファイルにあるパスは Worker を通らずに返る (Workers Static Assets の既定)。それ以外は Worker が処理する
+- Worker は seed の束を `env.ASSETS` から読み, D1 が空なら入れる (`worker/store.ts`)
+- `*.wasm?module` の import は wrangler の既定の規則で `WebAssembly.Module` になる (Workers は実行時に Wasm をコンパイルできない。
+  テストでは `vitest.config.ts` のプラグインが同じことをする)
 
-- **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS が完結します。デプロイは definy のパーツがブラウザから行います ([cloudflare-workers.md](cloudflare-workers.md))。
-- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build` の最初に `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で `seeds/store/` から作られ、`dist/client/` にコピーされて D1 データベースの初期化時に自動同期されます。コミットはしません ([build-artifacts.md](build-artifacts.md))。
-- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci` の後に `void deploy --platform cloudflare` を実行します。ビルド (`npm run build`) は `void deploy` が走らせます。
+## 設定 (`wrangler.jsonc`)
 
----
+- `account_id`: デプロイ先のアカウントを固定する。CI のトークンはアカウントの一覧を読めない
+- `routes`:
+  - `definy.narumincho.com`: カスタムドメイン (`custom_domain: true`)
+  - `*-definy.narumincho.com/*`: パーツの HTTP サーバー (`{sub}-definy.narumincho.com`) のルート (ゾーンの共通の証明書 `*.narumincho.com`)
+  - ダッシュボードでドメインやルートを変えたら `wrangler.jsonc` も合わせる。合わせないと次のデプロイで上書きされる
+- `workers_dev: false`, `preview_urls: false`
+- `assets`: `public/` を binding `ASSETS` で
+- `d1_databases`: `DB` (`definy-db`)
 
-## 2. ディレクトリ構成
-
-- `void.config.ts`: Void の設定。`cloudflare` セクションが Workers および D1 バインディングのベース設定（Void が Cloudflare Build Output `.cloudflare/output/v0` を生成する際に参照）。D1 の `database_id` はここに固定で書く。`inference.build` は `void deploy` が走らせるビルドのコマンド
-- `public/`
-  - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
-  - `__definy_seed_bundle.json`: ビルトインシードデータ (`npm run build:seeds` が生成。コミットしない)
-- `wasm/stage1.wasm`: 自己記述コンパイラ Wasm バイナリ (クライアントにはハッシュ付きアセットとして出力される)
-- `middleware/`
-  - `01.definy.ts`: API パス（Connect-RPC, `/virtual/wasm/*`, `/healthz` 等）の Worker ディスパッチおよび SSR レスポンスへのセキュリティヘッダー付与
-- `worker/`
-  - `index.ts`: Worker リクエストハンドラー
-  - `store.ts`: シードバンドルロード、D1 (SQLite) ストア
-  - `commit_store.ts`: 受け付けたコミットの読み出しとブランチの最新のコミット
-  - `types.ts`: 型定義
-
----
-
-## 3. 設定 (`void.config.ts` の `cloudflare` セクション)
-
-```ts
-// Void (Vite 8) が Cloudflare Build Output を生成する際のベース設定。
-// main, assets 等は Void 側で自動設定される。
-// 以前は wrangler.toml に書いていたが、Void / @cloudflare/vite-plugin が
-// TOML を読まなくなったため、void migrate で void.config.ts へ移行した。
-cloudflare: {
-  name: "definy",
-  account_id: "6a8354084cc02bb1c5f9ca1bb3442704",
-  compatibility_date: "2026-02-24",
-  compatibility_flags: ["nodejs_compat"],
-  d1_databases: [
-    {
-      binding: "DB",
-      database_name: "definy-db",
-      database_id: "d4c3a982-558e-4d58-95f8-bbc3ca391818",
-    },
-  ],
-}
-```
-
-ビルド時、Void (1.6 以降) は Cloudflare Build Output を `.cloudflare/output/v0` に出します (gitignore 済み)。`workers/default/worker.config.json` に Worker 名・D1 のバインディング・アセットが入り、`bundle/` に Worker のモジュールが入ります。以前の `dist/ssr/wrangler.json` は出なくなりました。
-
-`void deploy` は既定では `vite build` だけを走らせるので、seed の束 (`npm run build:seeds`) も作るよう `inference.build` を `npm run build` にしています。
-
-```ts
-inference: {
-  build: "npm run build",
-},
-```
-
----
-
-## 4. ビルドとデプロイ
-
-### フルスタックビルド
+## ビルドとデプロイ
 
 ```bash
-npm run build
+npm run build    # = npm run build:seeds (seed の束と wasm/*.wasm) && npm run build:story (public/about/)
+npm run deploy   # = npm run build && wrangler deploy
+npx wrangler deploy --dry-run --outdir dist   # アップロードせずにバンドルだけ確かめる
 ```
 
-### テスト
+- CI (`.github/workflows/deploy.yaml`): `main` への push で `npm ci` → `npm run build` → `npx wrangler deploy`。
+  GitHub Actions の Secret `CLOUDFLARE_API_TOKEN` (Workers の編集と D1 の権限) が要る
+- PR (`.github/workflows/pull_request.yaml`) では `wrangler deploy --dry-run` でバンドルできることまで確かめる
+- ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新する。
+  使わなくなったアクションの行が残ると, PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちる
 
-```bash
-npm test
-```
+## 経緯
 
-### デプロイ
-
-```bash
-npm run deploy
-```
-
-### CI/CD (`.github/workflows/deploy.yaml`)
-
-`main` ブランチへの push 時に GitHub Actions で自動デプロイされます。必要な GitHub Actions Secrets:
-
-- `CLOUDFLARE_API_TOKEN`: Cloudflare Workers の編集権限を持つアカウントトークン（アカウント ID は API から自動解決されます）
-
-`deploy.yaml` は `npm ci` の後に `npx void deploy --platform cloudflare` を実行します。`void deploy` がビルド・アップロード・準備完了の確認・トラフィックの切り替えまで行います。
-
-- definy は `preview_urls: false` なので Worker のバージョンにプレビュー URL がありません。このとき Void は新しいバージョンを 0% で載せ, 準備完了を確かめてから切り替えます。確認先は `@void/deploy-cloudflare` が決めます: `workers_dev` が有効なら `https://definy.<サブドメイン>.workers.dev/__void/ready` (サブドメインを環境変数 `CLOUDFLARE_WORKERS_SUBDOMAIN` で渡す必要がありました) ですが, definy は `workers_dev: false` なので `routes` の `custom_domain` から `https://definy.narumincho.com/__void/ready` が選ばれます。かつては workers.dev 経由で, サブドメインが無いと「the uploaded Worker Version has no preview URL, so Void cannot verify readiness」で止まり (2026-11-06 のデプロイがこれで失敗), その後 workers.dev 自体がエッジ側で無効 (error 1042) になって確認が永遠に通らなくなりデプロイが 2 回失敗したため, カスタムドメイン経由に切り替えました
-- デプロイ先のアカウントは `void.config.ts` の `cloudflare.account_id` で固定しています。無いと Void はトークンで見えるアカウントの一覧から選ぼうとしますが、CI のトークンは一覧を読めないので「Cloudflare authentication is required」で止まります (2026-11-05 のデプロイがこれで失敗)
-- Worker のトラフィックの設定 (`routes`, `workers_dev`, `preview_urls`) は `void.config.ts` の `cloudflare` に必ず書きます。書かないと Void は「ダッシュボードで付けた設定を引き継ぐ」扱いにしますが, まだ Void でデプロイしたことのない Worker では前の設定を読めないので「the existing Worker has dashboard-managed routes or visibility that Void cannot safely republish」で止まります (2026-11-06 のデプロイがこれで失敗。コードは `@void/deploy-cloudflare` の `resolvePreservedTraffic`)。今の本番の設定は次のとおりです
-  - `definy.narumincho.com`: カスタムドメイン (`custom_domain: true`)。このホストだけ専用の証明書 (`definy.narumincho.com`, `*.definy.narumincho.com`) が出ていることから判断しました
-  - `*-definy.narumincho.com/*`: パーツの HTTP サーバー (`{sub}-definy.narumincho.com`) 用のルート。こちらはゾーンの共通の証明書 (`*.narumincho.com`) です
-  - `workers_dev: false` (workers.dev は無効。準備完了の確認はカスタムドメイン経由), `preview_urls: false`
-  - ダッシュボードでドメインやルートを変えたら `void.config.ts` も合わせます。合わせないと次のデプロイで設定が上書きされます
-- ワークフローの `uses:` を変えたら `gh actions-lock` で `.github/workflows/actions.lock` も更新します。使わなくなったアクションの行が残ると、PR の `workflow lockfile` (`gh actions-lock --verify`) が落ちます
-
-### `wrangler deploy` を使わない理由
-
-Void 1.6 からビルドが `.cloudflare/output` (Cloudflare Build Output) を出すようになりました。wrangler 4.158 はこの出力があると「Cloudflare CLI (`cf`) 向けのプロジェクトだ」として `wrangler deploy` を止めます (2026-11-05 に main のデプロイがこれで失敗)。`cf` はまだベータ版なので、Void の案内どおり `void deploy --platform cloudflare` を使います。
+- 2026-10-18 (#699) から 2026-11 までは TypeScript + React 19 + Void (Vite 8) で, Void が UI の SSR と静的なファイル,
+  Worker をまとめてビルドし `void deploy --platform cloudflare` でデプロイしていた。Void 1.6 のビルドは
+  `.cloudflare/output` を出し, wrangler 4.158 はそれがあると `wrangler deploy` を止めたので `void deploy` を使っていた。
+  Void をやめたので, その出力は無く `wrangler deploy` で動く
+- `void deploy` のころは, 準備完了の確認 (`/__void/ready`) の行き先やトラフィックの設定の引き継ぎでデプロイが何度か止まった
+  (2026-11-05, 11-06。workers.dev が無効で確認が通らない, `routes` を書かないと止まる)。wrangler にはこの確認は無い

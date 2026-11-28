@@ -94,7 +94,7 @@ function toResponse(
  * Worker のリクエストハンドラー. どう処理するか (ルーティング, `/healthz`, RPC, `/virtual/wasm/`) は definy の
  * `definy.handle-request` (`wasm/service.wasm`) が決め, ここはストア・署名・HTTP などの能力を渡すだけ (docs/service.md).
  * テスト用にストアと fetch を差し替えられる. `serveAsset` は静的アセットを返す
- * (省くと `env.ASSETS`. Void の middleware はページの処理を渡す).
+ * (省くと `env.ASSETS`).
  * `ctx` (ExecutionContext) はパフォーマンス記録の書き込み完了を `waitUntil` で
  * 保証するために使う (無い環境ではレスポンスを返す前に書き込みを待つ. 投げっぱなしにしない).
  * `service` は処理する definy の関数 (`Fn(request: @definy.http-request) -> @definy.service-io`) をコンパイルしたもの.

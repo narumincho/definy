@@ -67,7 +67,7 @@ async function fetchStaticJson(
     }
   }
 
-  // 2. Local dev server / Void HTTP fetch
+  // 2. Local dev server / HTTP fetch
   if (requestOrigin && typeof fetch !== "undefined") {
     try {
       const res = await fetch(new URL(`/${name}`, requestOrigin).toString());

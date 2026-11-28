@@ -3,20 +3,18 @@
 definy の処理を TypeScript から definy に移すと, TypeScript 側に使われなくなった関数や export が残りやすい。
 [knip](https://knip.dev) で探せる (依存には入れていないので `npx` で動かす)。
 
-knip は Void の `pages/` などを入口と分からないので, 入口を指定する設定を一時的に置いて動かす:
+knip は Worker や CLI の入口を分からないので, 入口を指定する設定を一時的に置いて動かす:
 
 ```sh
 cat > knip.json <<'JSON'
 {
   "entry": [
-    "pages/**/*.{ts,tsx}",
-    "middleware/**/*.ts",
     "worker/index.ts",
+    "cli/definy.ts",
     "scripts/*.ts",
-    "e2e/**/*.ts",
     "**/*.test.ts"
   ],
-  "project": ["**/*.{ts,tsx}"]
+  "project": ["**/*.ts"]
 }
 JSON
 npx -y knip@5 --no-progress --reporter compact --no-exit-code

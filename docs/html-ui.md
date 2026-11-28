@@ -1,9 +1,8 @@
 # HTML だけのシンプル版 UI (別の Cloudflare Worker `definy-html`)
 
-HTML を返すだけの UI。React の UI (`pages/`, `src/`) とは別に並べて置く (2026-11-07 に決めた。
-[mcp-self-hosting.md](mcp-self-hosting.md) の 5 段目)。
+HTML を返すだけの UI で, definy の唯一の UI ([mcp-self-hosting.md](mcp-self-hosting.md) の 4 段目)。
+2026-11-07 に React の UI と並べて作り始め, 2026-11-24 に React の UI を削除した (下の「React の UI を削除した」)。
 
-- React の UI は今のまま GitHub でバージョン管理する
 - シンプル版の正本は definy のストアの **`html-ui` プロジェクト** で, バージョン管理も definy のブランチとコミットだけでする。
   `seeds/store/` にも GitHub にも置かない。MCP のツール (`definy_create_project`, `definy_commit_parts`) で書いてコミットし,
   `definy_push` で公開サーバーに送る
@@ -53,7 +52,7 @@ definy.worker-step =
    (`~/.definy/account.json`) になり, そのアカウントだけが `main` にコミットできる ([branch.md](branch.md))
 2. `definy_commit_parts` でパーツを書く。コミットは公開サーバーと同じ型検査を通る
 3. `definy_push` で公開サーバーに送る
-4. React の UI で `html-ui.deploy` のページを開いて評価する (`definy.cloudflare-api-token` に値を入れ, 設定で CORS の仲介を有効にしておく)
+4. デプロイは手元のサーバーの html-ui で `html-ui.deploy` のパーツのページから実行する (`definy_run_io`。`definy.cloudflare-api-token` のシークレットに値を入れておく)
 
 注意:
 
@@ -275,6 +274,44 @@ React の UI にあって html-ui に無かったもののうち, definy 側を�
 
 まだ無いもの: プロジェクトの説明の表示と編集 (`definy.stored-commit` に説明が無いので, 今の説明を読めない), ブランチの削除・名前の変更,
 アカウント名の変更 (どれも definy 側の変更が要る)。式の木のエディタ・ブラウザでの実行・コマンドパレットは作らない (テキストで書き, 手元のサーバーで実行する)。
+
+### React の UI を削除した (2026-11-24)
+
+React/Vite (Void) の UI (`pages/`, `src/components/`, `src/state/`, `src/tree_layout/` の編集の部分など) を削除し,
+definy サーバーは `wrangler deploy` でデプロイする形にした ([cloudflare-workers-assets.md](cloudflare-workers-assets.md))。
+`definy.narumincho.com/` は案内のページ (`public/index.html`) だけを返す。紹介スライドだけは静的なページ `/about/` として切り出して残した ([story.md](story.md))。
+
+React の UI にあって html-ui に無いもの (削除の時点。必要になったら html-ui に足す):
+
+- 紹介スライド (音声付き)。React で `definy.narumincho.com/about/` に残した。表示言語の切り替えと html-ui の `/about` は上の「表示言語と追加の機能」で足した
+- 式の木のエディタ (ブロックの選択・キーボード操作・置換メニュー・ホバーで型・定義へ移動・未入力の型引数の推論の表示)。
+  html-ui は式をテキスト ([expression-text.md](expression-text.md)) で書く
+- 複数のパーツの作業中の変更を貯めてまとめてコミットする, 元に戻す (undo)。html-ui は 1 つの編集を 1 コミットにする
+- ブラウザの中での実行 (stage1 で Wasm にコンパイルして実行する実行パネルと実行の履歴, コンパイラの作り直し)。
+  html-ui の実行は手元のサーバーでする (`definy_run_expression`, `definy_run_io`)
+- ブラウザでのアカウントの作成とログイン (鍵は localStorage)。html-ui は手元のサーバーの鍵で署名する (2026-11-08 の方針)
+- コマンドパレット (Cmd/Ctrl+P) とキーボードショートカット。html-ui はモジュールのページの検索 (`?q=`) がある
+- 設定のページ (接続元の IP バージョン, CORS の仲介)。サーバーの `HttpProxyService` (CORS の仲介) は React の UI だけが使っていたが,
+  definy のパーツ (`definy.http-proxy-send` など) なのでサーバーには残している
+
+### GitHub を使わずに definy だけで完結させるのに足りないもの (2026-11-24)
+
+ユーザーの方針: html 版は definy 経由でデプロイし, GitHub を使わず definy だけで完結させる。
+html-ui のコードとデプロイ (`html-ui.deploy` を手元のサーバーの `definy_run_io` で実行) はすでに definy だけで済む。
+GitHub が要るのは次のところ:
+
+1. **html-ui が使う definy プロジェクトのパーツの変更** (`definy.mcp-tools`, `definy.handle-rpc`, `definy.cloudflare-service-runtime-script` など)。
+   definy プロジェクトは `seeds/store/` に書き出して GitHub の PR → CI のデプロイで公開サーバーに入る
+   (#932, #933 のように html-ui の変更が definy 側の新しいパーツを待つ)。definy プロジェクトも `definy_push` で公開サーバーに入れ,
+   公開サーバーが seed ではなくストアの最新を使うようにすれば要らなくなる
+2. **公開サーバー (`definy` Worker) 自体のデプロイ**: `worker/*.ts` のホストと, ビルド時に seed から作る `wasm/service.wasm` などを
+   GitHub Actions の `wrangler deploy` で入れている。definy-html と同じく `definy.deploy-service-worker` で definy からデプロイすれば要らなくなる
+   (ホストの JS を definy のパーツの `definy.cloudflare-service-runtime-script` に寄せる。計画の 6 段目)
+3. **手元のサーバー (`npm run serve`) の入手**: `cli/` の TypeScript で, GitHub から clone して動かしている
+4. **コンパイラ・型チェッカーの作り直し**: `npm run build:seeds`, `npm run build:stage1` (計画の「ビルドを definy に」)
+5. **独自ドメイン**: definy-html は `definy-html.narumincho.workers.dev`。`definy.narumincho.com` を html 版にするなら,
+   `html-ui.deploy` (`definy.deploy-service-worker`) が Workers の独自ドメインも設定する必要がある。今は `definy.narumincho.com` は公開サーバー
+   (GitHub からデプロイ) で, `/` は案内, `/about/` は紹介スライド (React。2026-11-24 にユーザーが残すと決めた)
 
 ### 新しいストアに html-ui を pull できなかった (2026-11-10)
 

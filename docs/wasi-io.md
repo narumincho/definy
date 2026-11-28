@@ -60,7 +60,7 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 
 ### ブラウザ (実行パネル)
 
-実行パネル ([run-panel.md](run-panel.md)) で実行した結果が `wasi.io` の値なら, そのまま `runWasiIo` で動かし, I/O の記録と `done` のメッセージを出す
+実行パネル (run-panel.md (React の UI とともに 2026-11 に削除)) で実行した結果が `wasi.io` の値なら, そのまま `runWasiIo` で動かし, I/O の記録と `done` のメッセージを出す
 (`src/run_expression.ts`)。シークレットの使用履歴の「使った場所」は `run-panel` になる。
 
 - `get_parts` は評価と同じく, 作業中の変更があればそちらの式を返す

@@ -132,7 +132,7 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    データの形の変換 (`PartType` → `core.type-ast`) だけです。
 3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
-   （[ui.md](ui.md) の「型エラー表示」を参照）。
+   （ui.md (React の UI とともに 2026-11 に削除) の「型エラー表示」を参照）。
 4. **[済] bootstrap の固定**: core definitions を `seeds/*.json` として固定し、
    seed から作るバンドルの指紋 (`seeds/seed_bundle_fingerprint.json`) をテストで確かめます。
 5. **[済] compiler bootstrap**: definy 製コンパイラは評価器の適合テストを全て通り, 自分自身をコンパイルした結果が
@@ -288,7 +288,7 @@ stage3 と一致しない。`npm run build:stage1 -- --bootstrap` は不動点�
 
 対策 (モジュール core):
 
-1. 2 の対策も兼ねて, 補助関数 `H(items, index, ...)` を, 範囲 `[lo, hi)` を半分に割って `H-range(lo, mid) +++ H-range(mid, hi)`
+1. 2 の対策も兼ねて, 補助関数 `H(items, index, ...)` を, 範囲 `lo, hi)` を半分に割って `H-range(lo, mid) +++ H-range(mid, hi)`
    とする `H-range` に任せる (分割統治)。深さは O(log n), 連結のコピー量は O(n log n) になる。右半分に渡す `fn_base`
    (それまでの関数の数) は `count-functions-in-range` などで左半分の分を数えて進める。出力は変わらない。
    `repeat-number` / `uleb-range` も count を半分に割る
@@ -322,7 +322,7 @@ Firefox 121 以降, Safari 18.2 以降が対応している。
 
 `npm run build:stage1` (`scripts/regenerate_stage1.ts`) と実行パネルの「コンパイラを作り直す」は, どちらも
 `src/compiler_rebuild.ts` の `selfCompile` で `core.compile-to-wasm` を自分自身でコンパイルし直し, 不動点を確かめる。
-前者は seed のパーツ, 後者は表示中のパーツ (作業中の変更を含む) を使う ([run-panel.md](run-panel.md))。
+前者は seed のパーツ, 後者は表示中のパーツ (作業中の変更を含む) を使う ([run-panel.md (React の UI とともに 2026-11 に削除))。
 
 ### 本番での stage1 の使い方
 
@@ -464,7 +464,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型と型パ�
 ### 未入力 (`hole`) と期待する型 (2026-10-23)
 
 `core.expression` に `hole({ probe: boolean })` を足した。UI の式エディタが選んだ位置の期待する型を
-型チェッカーに聞くためのもので ([dynamic-layout.md](dynamic-layout.md)), サーバーや評価には渡さない。
+型チェッカーに聞くためのもので (dynamic-layout.md (React の UI とともに 2026-11 に削除)), サーバーや評価には渡さない。
 
 - `core.type-check-against-unlocated`: `probe` なら `error(hole_expected_type { expected: some(期待する型) })`,
   そうでなければ `ok(期待する型)` (未入力はどの型にもなれる)

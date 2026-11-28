@@ -18,7 +18,7 @@ const ROOT = resolve(import.meta.dirname, "..");
 const OUTPUT_PATH = join(ROOT, "src", "story", "self_hosting_stats.ts");
 
 /** TypeScript を数えるディレクトリ */
-const TYPESCRIPT_DIRS = ["src", "worker", "middleware", "pages"];
+const TYPESCRIPT_DIRS = ["src", "worker", "cli", "story"];
 /** 数えないファイル (スクリプトが作るもの) */
 const GENERATED_FILES = new Set([
   "src/story/voice_manifest.ts",
@@ -29,10 +29,9 @@ const GENERATED_FILES = new Set([
 function isUiFile(path: string): boolean {
   return (
     path.endsWith(".tsx") ||
-    path.startsWith("src/components/") ||
     path.startsWith("src/story/") ||
     path.startsWith("src/tree_layout/") ||
-    path.startsWith("pages/")
+    path.startsWith("story/")
   );
 }
 

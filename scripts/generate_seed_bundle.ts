@@ -316,7 +316,7 @@ export async function writeSeedCommitCache(bundle: SeedBundle): Promise<void> {
   );
 }
 
-// 直接実行時の処理 (`npm run build:seeds`. `npm run dev` / `npm run build` の前にも実行する)
+// 直接実行時の処理 (`npm run build:seeds`. `npm run build` の前にも実行する)
 if (
   process.argv[1] &&
   (process.argv[1].endsWith("generate_seed_bundle.ts") ||

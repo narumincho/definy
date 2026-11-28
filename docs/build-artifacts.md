@@ -1,6 +1,6 @@
 # コミットするファイルと生成するファイル
 
-seed やコンパイラから作れるものはコミットせず、`npm run dev` / `npm run build` / `npm test` のたびに作る。
+seed やコンパイラから作れるものはコミットせず、`npm run build` / `npm test` のたびに作る。
 
 | ファイル                                | コミット | 作り方・理由                                                                                                                                                                                                                                                                 |
 | --------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -13,8 +13,7 @@ seed やコンパイラから作れるものはコミットせず、`npm run dev
 
 ## stage1.wasm の配信
 
-- ブラウザ: `src/wasm_browser.ts` が `new URL("../wasm/stage1.wasm", import.meta.url)` で参照し、Vite がハッシュ付きの静的アセット (`/assets/stage1-<hash>.wasm`) として出力する。
-  `import url from "../wasm/stage1.wasm?url"` は Void の dev サーバーがその JS モジュールを `Content-Type: application/wasm` で返し、ブラウザが読み込めないので使わない
+- ブラウザ: 使わない (React の UI がブラウザで読み込んでいたが, 2026-11 に UI とともに削除した)
 - Worker: 使わない (以前は `DeployService` のために `?module` でバンドルに入れていた。デプロイはブラウザで動かすようにした, [cloudflare-workers.md](cloudflare-workers.md))
 
 以前は `public/stage1.wasm` (コピー)、`seeds/seed_bundle.json` と `public/__definy_seed_bundle.json` (同じ内容の 2 つ)、seed バンドルの CAS の `stage1` キー (base64) と、同じものを何重にもコミットしていた。

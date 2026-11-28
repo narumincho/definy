@@ -294,7 +294,7 @@ export function StoryPlayer(props: {
   readonly lang: LanguageCode;
 }): JSX.Element {
   const { lang } = props;
-  // 表示言語が変わったら作り直す (pages/about.tsx の key) ので, 1 つのプレイヤーの中では時間軸は変わらない
+  // 表示言語が変わったら作り直す (story/main.tsx の key) ので, 1 つのプレイヤーの中では時間軸は変わらない
   const timeline = TIMELINES[lang];
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);

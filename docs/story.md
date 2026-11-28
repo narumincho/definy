@@ -1,6 +1,12 @@
-# 紹介スライド (/about の上)
+# 紹介スライド (/about/)
 
-definy の紹介とこれからの計画を見せるスライド。[/about](../pages/about.tsx) の一番上に出す。LT などの発表でもそのまま使う (F で全画面)。
+definy の紹介とこれからの計画を見せるスライド。`https://definy.narumincho.com/about/` に出す。
+
+2026-11-24 に React の UI を削除したとき, 紹介スライドだけは静的なページとして切り出して残した (2026-11-10 のユーザーの決定)。
+入口は [story/main.tsx](../story/main.tsx) と [story/index.html](../story/index.html) で, `npm run build:story` (`npm run build` にも入っている) が
+`public/about/` (コミットしない) に出し, Worker が静的なファイルとして配る ([cloudflare-workers-assets.md](cloudflare-workers-assets.md))。
+React と Vite を使うのはこのページだけ。手元で見るには `npm run dev:story` (http://localhost:5173/about/)。
+表示言語は `?lang=ja|en|eo`, 無ければブラウザの言語で決め, 上のボタンで切り替える。LT などの発表でもそのまま使う (F で全画面)。
 キー操作はスライドが画面に 4 割以上見えているとき (と全画面のとき) だけ受け付ける。
 
 ## ファイル
@@ -23,8 +29,7 @@ definy の紹介とこれからの計画を見せるスライド。[/about](../p
 | [public/story/zundamon/](../public/story/zundamon)                    | 立ち絵のパーツ (PNG)                                                                                                                                                                         |
 | [src/story/story.css](../src/story/story.css)                         | 見た目                                                                                                                                                                                       |
 | [public/story/logos/](../public/story/logos)                          | 言語などのロゴ. [simple-icons](https://simpleicons.org/) 16.36.0 の SVG (CC0). nostr だけは [nostr-logo](https://github.com/mbarulli/nostr-logo) の `nostr-icon-black-transparent.svg` (CC0) |
-| [scripts/capture_story_ogp.ts](../scripts/capture_story_ogp.ts)       | 表紙のスライドを撮って OGP 画像 (`public/story/ogp-*.png`) を作る                                                                                                                            |
-| [pages/about.server.ts](../pages/about.server.ts)                     | /about のタイトルと OGP                                                                                                                                                                      |
+| [story/index.html](../story/index.html)                               | /about/ のタイトルと OGP                                                                                                                                                                     |
 
 ## 操作
 
@@ -137,7 +142,7 @@ VOICEVOX の音声をあらかじめ作って `public/story/voice/` に置き, �
 
 `lang=eo` では, 台詞に `eo_speech` (エスペラントで読ませる文。`eo` と同じ数) を書いたものだけエスペラントの音声にし, 無いものは日本語の音声のまま (字幕はエスペラント)。今は全ての台詞にある。
 音声は日本語と同じく `node scripts/generate_story_voice.ts` で作り, `voice_manifest.ts` のキーは `eo/スライドの id/ステップ`。
-音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (pages/about.tsx の `key`)。2026-11-06 時点で全体は日本語 4:59, 英語 5:48, エスペラント 5:16。
+音声の長さが言語で変わるので, 時間軸は表示言語ごとに作る (`TIMELINES`)。表示言語が変わるとプレイヤーを作り直す (story/main.tsx の `key`)。2026-11-06 時点で全体は日本語 4:59, 英語 5:48, エスペラント 5:16。
 
 読ませ方は [scripts/esperanto_voice.ts](../scripts/esperanto_voice.ts)。1 文だけ試すには:
 
@@ -198,9 +203,9 @@ node scripts/export_zundamon.ts <PSD> --preview <出力先>
 
 ## OGP
 
-/about の head ([pages/about.server.ts](../pages/about.server.ts)) で og:image を `public/story/ogp-{en,ja,eo}.png` (1200×675, 表紙のスライド) にし, `twitter:card` を `summary_large_image` にする。
+/about/ の head ([story/index.html](../story/index.html)) で og:image を `public/story/ogp-ja.png` (1200×675, 表紙のスライド) にし, `twitter:card` を `summary_large_image` にする。
 og:image は絶対 URL でないと読まない SNS があるので, 要求の URL のオリジンを付ける。
-画像は dev サーバーを動かして `node scripts/capture_story_ogp.ts` で撮る (Playwright の chromium でステージを 1200×675 に置き, 字幕とずんだもんを消して撮る)。表紙を変えたら撮り直す。
+静的なページなので og:image は日本語の 1 枚だけ (en, eo の画像も `public/story/` に残っている)。画像は `scripts/capture_story_ogp.ts` (Playwright の chromium でステージを 1200×675 に置き, 字幕とずんだもんを消して撮る) で撮っていたが, React の UI の削除と一緒に消した。表紙を変えたら git の履歴から戻して `npm run dev:story` の URL に向けて撮り直す。
 
 ## スライドの切り替え
 

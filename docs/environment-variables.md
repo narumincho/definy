@@ -1,6 +1,6 @@
 # 環境変数
 
-definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 設定に `vars` は無く, Worker には D1 の `DB` と静的アセットの `ASSETS` が binding として渡ります。
+definy が読む環境変数の一覧です。`wrangler.jsonc` に `vars` は無く, Worker には D1 の `DB` と静的アセットの `ASSETS` が binding として渡ります。
 
 ## Worker (実行時, `worker/types.ts` の `Env`)
 
@@ -12,7 +12,7 @@ definy が読む環境変数の一覧です。`void.config.ts` の `cloudflare` 
 | `DEFINY_MCP_ACCOUNT_NAME`       | `/mcp` の専用アカウントの名前 (アカウントを作るときに使う)                                                                                                                                                            |
 | `DEFINY_RUN_EXPRESSIONS`        | `"1"` なら MCP の `definy_run_expression` で式を実行する。手元の definy サーバー (`npm run serve`) が設定する。公開サーバーでは設定しない ([local-server.md](local-server.md))                                        |
 
-本番では Cloudflare のダッシュボードか `wrangler secret put` で設定する。ローカルではリポジトリ直下の `.env` (gitignore 済み) に書けば Void (Vite) の dev サーバーが読み込む。
+本番では Cloudflare のダッシュボードか `wrangler secret put` で設定する。手元のサーバー (`npm run serve`) は自分で設定する ([local-server.md](local-server.md))。
 
 ## Node スクリプト (`process.env`)
 
