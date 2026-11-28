@@ -19,7 +19,7 @@ import {
   type RunOutcome,
 } from "../run_expression.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
-import { formatWasiIoStep } from "../wasi_io.ts";
+import { fetchHandler, formatWasiIoStep } from "../wasi_io.ts";
 import {
   addRunEntry,
   loadRunHistory,
@@ -28,13 +28,14 @@ import {
   type RunHistoryEntry,
 } from "../run_history.ts";
 import {
-  browserWasiIoHandler,
   loadSecret,
   loadWasiIoSettings,
   recordSecretUse,
+  runIoOnServer,
   saveWasiIoSettings,
+  type RunLocation,
 } from "../wasi_io_browser.ts";
-import { useIsAdministrator } from "../state/useIsAdministrator.ts";
+import { useRunOptions } from "../state/useRunOptions.ts";
 import { ExpressionTreeEditor } from "../tree_layout/ExpressionTreeEditor.tsx";
 import {
   hole,
@@ -69,12 +70,18 @@ export function RunPanel(): JSX.Element {
     setRunPanelOpen,
   } = useDefiny();
   const currentPath = useRouter().path;
-  const isAdministrator = useIsAdministrator(currentAccount);
-  // 「CORS エラーのときサーバーで仲介する」(設定画面と同じ値). localStorage はハイドレーションのあとで読む
-  const [relayOnCorsError, setRelayOnCorsError] = useState(false);
+  const runOptions = useRunOptions(currentAccount);
+  // サーバーで実行できるのは, サーバーが実行でき (Node.js の definy サーバー) 管理者のときだけ (docs/run-location.md)
+  const canRunOnServer = runOptions.administrator && runOptions.serverRun;
+  // I/O をするプログラムを動かす場所 (設定画面と同じ値). localStorage はハイドレーションのあとで読む
+  const [savedRunLocation, setSavedRunLocation] =
+    useState<RunLocation>("browser");
   useEffect(() => {
-    setRelayOnCorsError(loadWasiIoSettings().relayOnCorsError);
+    setSavedRunLocation(loadWasiIoSettings().runLocation);
   }, [runPanelOpen]);
+  const runLocation: RunLocation = canRunOnServer
+    ? savedRunLocation
+    : "browser";
 
   const [input, setInput] = useState<unknown>(hole);
   const [history, setHistory] = useState<ReadonlyArray<RunHistoryEntry>>([]);
@@ -132,17 +139,21 @@ export function RunPanel(): JSX.Element {
         partType: hole(),
         expression: probeInferredTypeAt(expression, []),
       }).catch((): null => null);
+      const credentials =
+        currentAccount !== null && secretKeyBase64 !== undefined
+          ? { ...currentAccount, secretKeyBase64 }
+          : null;
       const outcome = await runExpression(expression, {
         compiler,
         resolvePart,
         fillTypeArguments: { fill: fillTypeArguments, resolvePartType },
+        ...(runLocation === "server" && credentials !== null
+          ? {
+              runOnServer: (program) => runIoOnServer(program, credentials),
+            }
+          : {}),
         wasiIoHost: {
-          handle: browserWasiIoHandler(
-            loadWasiIoSettings(),
-            currentAccount !== null && secretKeyBase64 !== undefined
-              ? { ...currentAccount, secretKeyBase64 }
-              : null,
-          ),
+          handle: fetchHandler(fetch),
           getSecret: loadSecret,
           onSecretUse: (use) => {
             recordSecretUse(use, RUN_PANEL_SOURCE);
@@ -164,6 +175,7 @@ export function RunPanel(): JSX.Element {
     },
     [
       currentAccount,
+      runLocation,
       resolvePart,
       resolvePartType,
       findExpectedType,
@@ -244,28 +256,35 @@ export function RunPanel(): JSX.Element {
             )}
           </button>
         )}
-        {isAdministrator && (
-          <label className="run-panel-relay">
-            <input
-              type="checkbox"
-              checked={relayOnCorsError}
-              onChange={(e) => {
-                const next = {
-                  ...loadWasiIoSettings(),
-                  relayOnCorsError: e.target.checked,
-                };
-                setRelayOnCorsError(next.relayOnCorsError);
-                saveWasiIoSettings(next);
-              }}
-            />
-            {label(
-              language,
-              "Relay through the server on CORS errors",
-              "CORS エラーのときサーバーで仲介する",
-              "Peri la servilo ĉe CORS-eraroj",
-            )}
-          </label>
-        )}
+        <label className="run-panel-location">
+          {label(language, "Run I/O in", "I/O の実行", "Ruli I/O en")}
+          <select
+            value={runLocation}
+            onChange={(e) => {
+              const next: RunLocation =
+                e.target.value === "server" ? "server" : "browser";
+              setSavedRunLocation(next);
+              saveWasiIoSettings({
+                ...loadWasiIoSettings(),
+                runLocation: next,
+              });
+            }}
+          >
+            <option value="browser">
+              {label(language, "Browser", "ブラウザ", "Retumilo")}
+            </option>
+            <option value="server" disabled={!canRunOnServer}>
+              {canRunOnServer
+                ? label(language, "Server", "サーバー", "Servilo")
+                : label(
+                    language,
+                    "Server (administrators of a Node.js server only)",
+                    "サーバー (Node.js のサーバーの管理者だけ)",
+                    "Servilo (nur administrantoj de Node.js-servilo)",
+                  )}
+            </option>
+          </select>
+        </label>
         <button
           type="button"
           className="btn btn-secondary btn-sm"
@@ -427,7 +446,9 @@ function RunOutcomeView({
         return (
           <pre className="run-history-output">
             {[
-              ...outcome.wasiIo.steps.map(formatWasiIoStep),
+              ...outcome.wasiIo.steps.map((step) =>
+                typeof step === "string" ? step : formatWasiIoStep(step),
+              ),
               outcome.wasiIo.message ?? "...",
             ].join("\n")}
           </pre>

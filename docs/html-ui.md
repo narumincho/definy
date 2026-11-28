@@ -53,7 +53,8 @@ definy.worker-step =
    (`~/.definy/account.json`) になり, そのアカウントだけが `main` にコミットできる ([branch.md](branch.md))
 2. `definy_commit_parts` でパーツを書く。コミットは公開サーバーと同じ型検査を通る
 3. `definy_push` で公開サーバーに送る
-4. React の UI で `html-ui.deploy` のページを開いて評価する (`definy.cloudflare-api-token` に値を入れ, 設定で CORS の仲介を有効にしておく)
+4. 手元のサーバーの html-ui の `html-ui.deploy` のページで「I/O を実行」する (MCP の `definy_run_io`。シークレットは手元のサーバーの値。
+   CORS の仲介は 2026-11-28 に消したので, React の UI のブラウザでは Cloudflare の API に届かない. [run-location.md](run-location.md))
 
 注意:
 

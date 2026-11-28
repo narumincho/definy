@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import type { AccountState } from "../types.ts";
-import { checkIsAdministrator } from "../wasi_io_browser.ts";
+import { fetchRunOptions, type RunOptions } from "../wasi_io_browser.ts";
 
 /** アカウント ID → サーバーに確かめた結果. ページを開いている間は聞き直さない */
-const cache = new Map<string, Promise<boolean>>();
+const cache = new Map<string, Promise<RunOptions>>();
+
+const NONE: RunOptions = { administrator: false, serverRun: false };
 
 /**
- * ログインしているアカウントがサーバーの管理者か. 確かめるまでと, 秘密鍵が無い (署名できない) ときは false.
- * 管理者だけが使える CORS の仲介のチェックや, アカウントのダイアログのバッジに使う
+ * ログインしているアカウントがサーバーの管理者か, サーバーでプログラムを実行できるか (`RunService/GetRunOptions`).
+ * 確かめるまでと, 秘密鍵が無い (署名できない) ときはどちらも false.
+ * 実行パネルの「サーバーで実行」と, アカウントのダイアログの「管理者」のバッジに使う (docs/run-location.md)
  */
-export function useIsAdministrator(account: AccountState | null): boolean {
+export function useRunOptions(account: AccountState | null): RunOptions {
   const [result, setResult] = useState<{
     readonly accountId: string;
-    readonly isAdministrator: boolean;
+    readonly options: RunOptions;
   } | null>(null);
   const accountId = account?.accountId;
   const accountName = account?.accountName;
@@ -28,17 +31,13 @@ export function useIsAdministrator(account: AccountState | null): boolean {
     }
     let promise = cache.get(accountId);
     if (promise === undefined) {
-      promise = checkIsAdministrator({
-        accountId,
-        accountName,
-        secretKeyBase64,
-      }).catch((): boolean => false);
+      promise = fetchRunOptions({ accountId, accountName, secretKeyBase64 });
       cache.set(accountId, promise);
     }
     let cancelled = false;
-    void promise.then((isAdministrator) => {
+    void promise.then((options) => {
       if (!cancelled) {
-        setResult({ accountId, isAdministrator });
+        setResult({ accountId, options });
       }
     });
     return () => {
@@ -47,6 +46,6 @@ export function useIsAdministrator(account: AccountState | null): boolean {
   }, [accountId, accountName, secretKeyBase64]);
 
   return result !== null && result.accountId === accountId
-    ? result.isAdministrator
-    : false;
+    ? result.options
+    : NONE;
 }

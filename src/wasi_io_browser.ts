@@ -1,28 +1,27 @@
 /**
- * ブラウザで `wasi.io` のプログラムを動かすときの設定, シークレットの値と使用履歴, HTTP の送り方.
+ * ブラウザで `wasi.io` のプログラムを動かすときの設定, シークレットの値と使用履歴, サーバーでの実行.
  *
  * - シークレット (`Secret` 型) の値は, そのシークレットのパーツのページで利用者が入れ, localStorage にだけ保存する.
  *   入れたときの「送ってよい URL の先頭」も一緒に保存し, 送るときはパーツの式ではなく保存したほうで確かめる
  *   (他人が同じ ID で宛先を変えたシークレットを書いても, 値はその宛先に送られない)
- * - 「CORS エラーのときサーバーで仲介する」は設定画面で決める
- * - HTTP リクエストはまずブラウザの `fetch` で送り, 失敗したとき (CORS で読めないときも `TypeError` になる) に
- *   仲介が有効ならサーバーの `HttpProxyService/Fetch` に署名付きで送り直す. 仲介は許可されたアカウントだけが使える
+ * - プログラムはブラウザ (HTTP はブラウザの `fetch`. CORS で読めなければ `error`) か, サーバー (`RunService/RunIo`.
+ *   HTTP もシークレットもサーバーのもの) で最後まで動かす. サーバーで動かせるのはサーバーの管理者だけ.
+ *   どちらで動かすかは実行パネルと設定画面で決める
  *
- * 詳細は docs/wasi-io.md, docs/secret.md
+ * 詳細は docs/run-location.md, docs/wasi-io.md, docs/secret.md
  */
 import type { AccountCredentials } from "./auth.ts";
-import { base64ToBytes, bytesToBase64 } from "./base64.ts";
+import { bytesToBase64 } from "./base64.ts";
+import { encodeCborItem } from "./cbor.ts";
 import { createRpcAuthorization } from "./rpc_auth.ts";
-import {
-  fetchHandler,
-  type WasiHttpHeader,
-  type WasiIoHost,
-  type WasiSecretUse,
-  type WasiSecretValue,
-} from "./wasi_io.ts";
+import type { ServerRunProgram, ServerRunResult } from "./run_expression.ts";
+import type { WasiSecretUse, WasiSecretValue } from "./wasi_io.ts";
+
+/** `wasi.io` のプログラムを動かす場所 */
+export type RunLocation = "browser" | "server";
 
 type WasiIoSettings = {
-  readonly relayOnCorsError: boolean;
+  readonly runLocation: RunLocation;
 };
 
 const SETTINGS_KEY = "definy.wasi-io-settings";
@@ -31,7 +30,8 @@ const SECRET_USAGE_KEY = "definy.secret-usage";
 /** 使用履歴はこれより古いものから消す */
 const MAX_SECRET_USAGE = 500;
 
-export const HTTP_PROXY_PATH = "/definy.v1.HttpProxyService/Fetch";
+export const RUN_OPTIONS_PATH = "/definy.v1.RunService/GetRunOptions";
+export const RUN_IO_PATH = "/definy.v1.RunService/RunIo";
 
 function readJson(key: string): unknown {
   try {
@@ -52,9 +52,9 @@ function writeJson(key: string, value: unknown): void {
 
 export function loadWasiIoSettings(): WasiIoSettings {
   const json = readJson(SETTINGS_KEY) as {
-    readonly relayOnCorsError?: unknown;
+    readonly runLocation?: unknown;
   } | null;
-  return { relayOnCorsError: json?.relayOnCorsError === true };
+  return { runLocation: json?.runLocation === "server" ? "server" : "browser" };
 }
 
 export function saveWasiIoSettings(settings: WasiIoSettings): void {
@@ -165,100 +165,113 @@ export function parseUrlPrefixes(text: string): ReadonlyArray<string> {
     .filter((line) => line !== "");
 }
 
-/** サーバーの `HttpProxyService/Fetch` で HTTP リクエストを送る `WasiIoHost["handle"]` */
-function relayHandler(
-  credentials: AccountCredentials,
-  fetchFn: typeof fetch = fetch,
-): WasiIoHost["handle"] {
-  return async (request) => {
-    try {
-      const body = JSON.stringify({
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        bodyBase64: bytesToBase64(request.body),
-      });
-      const response = await fetchFn(HTTP_PROXY_PATH, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: await createRpcAuthorization(
-            credentials,
-            "POST",
-            HTTP_PROXY_PATH,
-            body,
-          ),
-        },
-        body,
-      });
-      if (!response.ok) {
-        return {
-          error: `サーバーの仲介に失敗しました (${response.status}): ${await response.text()}`,
-        };
-      }
-      const json = (await response.json()) as {
-        readonly status: number;
-        readonly headers: ReadonlyArray<WasiHttpHeader>;
-        readonly bodyBase64: string;
-      };
-      return {
-        ok: {
-          status: json.status,
-          headers: json.headers,
-          body: base64ToBytes(json.bodyBase64),
-        },
-      };
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : String(e) };
-    }
-  };
-}
-
-/**
- * ブラウザの `fetch` で送り, 失敗したら (仲介が有効で署名できるアカウントがあれば) サーバーの仲介で送り直す
- */
-export function browserWasiIoHandler(
-  settings: WasiIoSettings,
+/** 署名付きで JSON の RPC を送る */
+async function signedRpc(
+  path: string,
+  request: unknown,
   credentials: AccountCredentials | null,
-  fetchFn: typeof fetch = fetch,
-): WasiIoHost["handle"] {
-  const direct = fetchHandler(fetchFn);
-  const relay =
-    settings.relayOnCorsError && credentials !== null
-      ? relayHandler(credentials, fetchFn)
-      : null;
-  return async (request) => {
-    const result = await direct(request);
-    if (!("error" in result) || relay === null) {
-      return result;
-    }
-    return relay(request);
-  };
-}
-
-/**
- * サーバーがこのアカウントを管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) として扱うか.
- * 専用の RPC は無いので, `HttpProxyService/Fetch` に空の URL を署名付きで送って確かめる.
- * サーバー (`definy.http-proxy-fetch`) は署名 (401) → 管理者 (403) → URL (400) の順に確かめるので,
- * 管理者なら URL の誤りの 400 になり, 外には何も送らない
- */
-export async function checkIsAdministrator(
-  credentials: AccountCredentials,
-  fetchFn: typeof fetch = fetch,
-): Promise<boolean> {
-  const body = JSON.stringify({ method: "GET", url: "", headers: [] });
-  const response = await fetchFn(HTTP_PROXY_PATH, {
+  fetchFn: typeof fetch,
+): Promise<Response> {
+  const body = JSON.stringify(request);
+  return await fetchFn(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: await createRpcAuthorization(
-        credentials,
-        "POST",
-        HTTP_PROXY_PATH,
-        body,
-      ),
+      ...(credentials === null
+        ? {}
+        : {
+            Authorization: await createRpcAuthorization(
+              credentials,
+              "POST",
+              path,
+              body,
+            ),
+          }),
     },
     body,
   });
-  return response.status === 400;
+}
+
+/** `RunService/GetRunOptions` の応答 */
+export type RunOptions = {
+  /** このアカウントがサーバーの管理者 (`DEFINY_ADMIN_ACCOUNT_IDS`) か */
+  readonly administrator: boolean;
+  /** サーバーがプログラムを実行できるか (Node.js の definy サーバーだけ. Cloudflare Workers はできない) */
+  readonly serverRun: boolean;
+};
+
+/**
+ * このアカウントがどこでプログラムを動かせるか (`RunService/GetRunOptions`). `credentials` が `null` なら署名しない.
+ * 聞けなければどちらも false
+ */
+export async function fetchRunOptions(
+  credentials: AccountCredentials | null,
+  fetchFn: typeof fetch = fetch,
+): Promise<RunOptions> {
+  try {
+    const response = await signedRpc(
+      RUN_OPTIONS_PATH,
+      {},
+      credentials,
+      fetchFn,
+    );
+    if (!response.ok) {
+      return { administrator: false, serverRun: false };
+    }
+    const json = (await response.json()) as Partial<RunOptions>;
+    return {
+      administrator: json.administrator === true,
+      serverRun: json.serverRun === true,
+    };
+  } catch {
+    return { administrator: false, serverRun: false };
+  }
+}
+
+/**
+ * コンパイルした `wasi.io` のプログラムをサーバーで最後まで動かす (`RunService/RunIo`. 管理者だけ).
+ * パーツの式はストアの中身と同じ CBOR (Base64) で送る. サーバーに断られたときも `ok: false` の結果にする
+ */
+export async function runIoOnServer(
+  program: ServerRunProgram,
+  credentials: AccountCredentials,
+  fetchFn: typeof fetch = fetch,
+): Promise<ServerRunResult> {
+  try {
+    const response = await signedRpc(
+      RUN_IO_PATH,
+      {
+        wasmBase64: bytesToBase64(program.wasm),
+        parts: program.parts.map((part) => ({
+          id: part.id,
+          cbor: bytesToBase64(encodeCborItem(part.expression)),
+        })),
+      },
+      credentials,
+      fetchFn,
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      let message = text;
+      try {
+        message =
+          (JSON.parse(text) as { readonly message?: string }).message ?? text;
+      } catch {
+        // JSON でなければ本文のまま
+      }
+      return {
+        ok: false,
+        message: `サーバーで実行できませんでした (${response.status}): ${message}`,
+        steps: [],
+      };
+    }
+    const json = (await response.json()) as ServerRunResult;
+    return { ok: json.ok, message: json.message, steps: json.steps };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : String(e),
+      steps: [],
+    };
+  }
 }

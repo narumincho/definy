@@ -9,7 +9,7 @@ import {
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import { AccountsIcon } from "../icons.tsx";
-import { useIsAdministrator } from "../state/useIsAdministrator.ts";
+import { useRunOptions } from "../state/useRunOptions.ts";
 
 type AccountModalProps = {
   readonly open: boolean;
@@ -28,7 +28,7 @@ export function AccountModal({
     logout,
   } = useDefiny();
 
-  const isAdministrator = useIsAdministrator(currentAccount);
+  const isAdministrator = useRunOptions(currentAccount).administrator;
   const dialogRef = useRef<HTMLDialogElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<"create" | "login">("create");
