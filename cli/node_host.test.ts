@@ -111,13 +111,13 @@ describe("Node.js 版のホスト (definy.node-host-script)", () => {
   cron: "* * * * *",
   handler: quote({
     fetch: fn(request$0) =>
-      #respond<@definy.service-io>({
+      #done<@definy.service-io>(#respond({
         status: 200,
         headers: [{name: "content-type", value: "text/plain; charset=utf-8"}],
         body: #text<@definy.http-body>(@core.string-concat(left: ${JSON.stringify(text)}, right: $0.path))
-      }),
+      })),
     scheduled: fn(time_ms$1) =>
-      #respond<@definy.service-io>({status: 200, headers: [], body: #text<@definy.http-body>("")})
+      #done<@definy.service-io>(#respond({status: 200, headers: [], body: #text<@definy.http-body>("")}))
   })
 )`);
 

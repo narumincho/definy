@@ -62,9 +62,9 @@ claude mcp add --transport http definy https://definy.narumincho.com/mcp
   パーツの参照はそのコミットと各プロジェクトの `main` の最新のコミットのパーツの名前にする (`definy.commit-part-names`)。
   コミットのパーツの `name` は既に `モジュール.名前` の形 (`definy.stored-commit-part`)。
   テストの D1 で `sample` は 20ms ほど, `definy` (core などを含む約 900 パーツ) は 1 秒ほど
-- RPC のハンドラーは最後に `respond` を返す `definy.service-io` なので, `definy.service-io-then-respond(io, respond)` で
-  最後の `respond` だけを差し替える。`definy.service-io` の全てのタグの `then` を包み直す式で, 型の宣言から機械的に作った
-  (タグを足したらこのパーツにも足す。全てのタグがあるかは `worker/mcp_endpoint.test.ts` が確かめる)
+- RPC のハンドラーは最後に `done(respond(...))` を返す `definy.service-io` なので, `definy.service-io-then-respond(io, respond)` で
+  最後の `respond` だけを差し替える。中身は `definy.io-bind` (`definy.io` の全てのタグの `then` を包み直す式で, 型の宣言から機械的に作った。
+  タグを足したらこのパーツにも足す。全てのタグがあるかは `worker/mcp_endpoint.test.ts` が確かめる)
 - JSON をテキストにするのも definy (`definy.json-to-string`。空白なし)。文字列は UTF-8 のバイトを見て
   `"` `\` と制御文字 (`\n` `\r` `\t` 以外は `\u00XX`) をエスケープし, それ以外のバイトはそのまま (`definy.json-escape-range`。
   再帰が深くならないように半分ずつ)。HTTP の本文の JSON は今までどおりホストが `JSON.stringify` する。

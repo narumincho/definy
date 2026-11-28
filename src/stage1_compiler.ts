@@ -502,6 +502,10 @@ export type CompiledValueInstance = {
   };
   /** 値を JavaScript の値として読む */
   readonly read: (value: ValueRef) => DefinyValue;
+  /** リストの値の要素 (参照のまま). リストでなければ例外を投げる */
+  readonly listItems: (list: ValueRef) => ReadonlyArray<ValueRef>;
+  /** 値 (参照) を並べたリストの値を作る */
+  readonly listOf: (items: ReadonlyArray<ValueRef>) => ValueRef;
 };
 
 /**
@@ -562,6 +566,20 @@ export function instantiateCompiledValue(
       };
     },
     read: (value) => readDefinyValue(exports, value),
+    listItems: (list) => {
+      const tag = exports.value_tag(list);
+      if (tag !== TAG.list) {
+        throw new Error(`the value is not a list (tag: ${tag})`);
+      }
+      return valuesOf(exports, list) as ReadonlyArray<ValueRef>;
+    },
+    listOf: (items) => {
+      const array = exports.values_new(items.length);
+      items.forEach((item, i) => {
+        exports.values_set(array, i, item);
+      });
+      return exports.list_new(array);
+    },
   };
 }
 

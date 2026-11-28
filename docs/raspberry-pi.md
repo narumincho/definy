@@ -211,7 +211,7 @@ html-ui.deploy-pi : @wasi.io
           @definy.service-io-then-respond(
             io: @definy.mirror-pull(remote: "https://definy.narumincho.com", limit: 20, content_limit: 300),
             respond: fn(response$2) =>
-              @definy.warm-commit-cache(limit: 20, then: fn(count$3) => #respond<@definy.service-io>($2))
+              @definy.warm-commit-cache(limit: 20, then: fn(count$3) => #done<@definy.service-io>(#respond($2)))
           )
       })
     )

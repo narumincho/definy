@@ -61,6 +61,13 @@ Add it to Claude Code:
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
-    void server.close().then(() => process.exit(0));
+    // 処理中のリクエストが終わるのを待ってから終える
+    server.close().then(
+      () => process.exit(0),
+      (error: unknown) => {
+        console.error(error);
+        process.exit(1);
+      },
+    );
   });
 }

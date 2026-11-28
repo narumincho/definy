@@ -1,5 +1,5 @@
 /**
- * `wasi.io` の値を返す式 (I/O をするプログラム) を, ホスト (ブラウザ / Node.js) の上で 1 歩ずつ動かす.
+ * `wasi.io` (= `definy.io(A: String)`) の値を返す式 (I/O をするプログラム) を, ホスト (ブラウザ / Node.js) の上で動かす.
  * プログラムは純粋なままで, I/O の要求 (`outgoing_request` / `get_parts`) を値として返し,
  * ホストがその I/O をして結果を `then` の関数に渡す. `done(message)` を返したら終わり.
  *
@@ -11,6 +11,7 @@
  * 詳細は docs/wasi-io.md
  */
 import { variant, variantOf } from "./definy_value.ts";
+import { IoSignals, IoUnsupported, runIo } from "./io_runner.ts";
 import {
   containsHole,
   instantiateCompiledValue,
@@ -64,8 +65,14 @@ export type WasiHttpResult =
   { readonly ok: WasiIncomingResponse } | { readonly error: string };
 
 export type WasiIoHost = {
-  /** HTTP リクエストを送る. 失敗 (ネットワークエラー, CORS エラーなど) は `{ error }` で返す */
-  readonly handle: (request: WasiOutgoingRequest) => Promise<WasiHttpResult>;
+  /**
+   * HTTP リクエストを送る. 失敗 (ネットワークエラー, CORS エラーなど) は `{ error }` で返す.
+   * `signal` は `race` で負けたなど, 結果が要らなくなったときに中断される (GET / HEAD は止めてよい)
+   */
+  readonly handle: (
+    request: WasiOutgoingRequest,
+    signal?: AbortSignal,
+  ) => Promise<WasiHttpResult>;
   /**
    * `get_parts` で, パーツ ID (URL-safe Base64) からパーツの最新の式 (definy の JSON AST) を返す.
    * 見つからない・式を持たないパーツは `undefined`
@@ -109,11 +116,22 @@ export function formatWasiIoStep(step: WasiIoStep): string {
 /** これだけ I/O をしても終わらなければ止める */
 const MAX_STEPS = 1000;
 
-/** `wasi.io` の値か (タグが `done` / `outgoing_request` / `get_parts` の Variant か) */
+/** `wasi.io` (`definy.io`) の値か (タグが `done` か, 実行パネルで動かせる I/O の Variant か) */
 export function isWasiIoValue(value: DefinyValue): boolean {
   const tag = variantOf(value)?.tag;
-  return tag === "done" || tag === "outgoing_request" || tag === "get_parts";
+  return tag !== undefined && WASI_IO_TAGS.has(tag);
 }
+
+const WASI_IO_TAGS: ReadonlySet<string> = new Set([
+  "done",
+  "all",
+  "race",
+  "sleep",
+  "wait_signal",
+  "send_signal",
+  "outgoing_request",
+  "get_parts",
+]);
 
 /** `wasi.http-result` の値 */
 function httpResultLiteral(result: WasiHttpResult): unknown {
@@ -235,71 +253,63 @@ function isCompilable(expression: unknown): boolean {
 
 /**
  * `wasi.io` の値を返す式をコンパイルした Wasm を動かし, `done` のメッセージを返す.
- * プログラムが `wasi.io` 以外の値を返したら例外を投げる
+ * `all` / `race` / `sleep` は `runIo` (src/io_runner.ts) が受け持つ.
+ * プログラムがこのホストでできない I/O を頼んだら例外を投げる
  */
 export async function runWasiIo(
   module: WebAssembly.Module,
   host: WasiIoHost,
 ): Promise<string> {
   const instance = instantiateCompiledValue(module);
-  let pointer = instance.root;
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const { tag, payload } = instance.variant(pointer);
-    if (payload === null) {
-      throw new Error(`wasi.io の ${tag} にペイロードがありません`);
-    }
-    switch (tag) {
-      case "done": {
-        return String(instance.read(payload));
-      }
-      case "outgoing_request": {
-        const { request, secretHeaders } = readOutgoingRequest(
-          instance.read(instance.recordField(payload, "request")),
-        );
-        const prepared = withSecretHeaders(request, secretHeaders, host);
-        const result: WasiHttpResult =
-          "error" in prepared
-            ? { error: prepared.error }
-            : await host.handle(prepared.request);
-        host.onStep?.({
-          kind: "outgoing_request",
-          method: request.method,
-          url: request.url,
-          bodyBytes: request.body.byteLength,
-          secrets: secretHeaders.map((header) => header.secret.label),
-          result:
-            "error" in result
-              ? { error: result.error }
-              : { status: result.ok.status },
-        });
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(httpResultLiteral(result)),
-        ]);
-        break;
-      }
-      case "get_parts": {
-        const ids = instance.read(instance.recordField(payload, "ids"));
-        const parts: Stage1ReferencedPart[] = [];
-        const missing: string[] = [];
-        for (const id of Array.isArray(ids) ? ids : []) {
-          const expression = host.getPart(String(id));
-          if (expression == null || !isCompilable(expression)) {
-            missing.push(String(id));
-          } else {
-            parts.push({ id: String(id), expression });
-          }
+  const done = await runIo(instance, instance.root, {
+    maxSteps: MAX_STEPS,
+    // 合図はこのプログラムの中だけで届く
+    signals: new IoSignals(),
+    leaf: async (tag, payload, signal) => {
+      switch (tag) {
+        case "outgoing_request": {
+          const { request, secretHeaders } = readOutgoingRequest(
+            instance.read(instance.recordField(payload, "request")),
+          );
+          const prepared = withSecretHeaders(request, secretHeaders, host);
+          const result: WasiHttpResult =
+            "error" in prepared
+              ? { error: prepared.error }
+              : await host.handle(prepared.request, signal);
+          host.onStep?.({
+            kind: "outgoing_request",
+            method: request.method,
+            url: request.url,
+            bodyBytes: request.body.byteLength,
+            secrets: secretHeaders.map((header) => header.secret.label),
+            result:
+              "error" in result
+                ? { error: result.error }
+                : { status: result.ok.status },
+          });
+          return instance.writeArgument(httpResultLiteral(result));
         }
-        host.onStep?.({ kind: "get_parts", found: parts.length, missing });
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(stage1PartsValue(parts)),
-        ]);
-        break;
+        case "get_parts": {
+          const ids = instance.read(instance.recordField(payload, "ids"));
+          const parts: Stage1ReferencedPart[] = [];
+          const missing: string[] = [];
+          for (const id of Array.isArray(ids) ? ids : []) {
+            const expression = host.getPart(String(id));
+            if (expression == null || !isCompilable(expression)) {
+              missing.push(String(id));
+            } else {
+              parts.push({ id: String(id), expression });
+            }
+          }
+          host.onStep?.({ kind: "get_parts", found: parts.length, missing });
+          return instance.writeArgument(stage1PartsValue(parts));
+        }
+        default:
+          throw new IoUnsupported(tag);
       }
-      default:
-        throw new Error(`wasi.io ではない値です (タグ: ${tag})`);
-    }
-  }
-  throw new Error(`${MAX_STEPS} 回 I/O をしても終わりませんでした`);
+    },
+  });
+  return String(instance.read(done));
 }
 
 /**
@@ -309,10 +319,15 @@ export async function runWasiIo(
 export function fetchHandler(
   fetchFn: typeof fetch = fetch,
 ): WasiIoHost["handle"] {
-  return async (request) => {
+  return async (request, signal) => {
     try {
       const response = await fetchFn(request.url, {
         method: request.method,
+        // 読むだけのリクエストは結果が要らなくなったら止める. 書き込みは最後まで送る
+        signal:
+          request.method === "GET" || request.method === "HEAD"
+            ? (signal ?? null)
+            : null,
         headers: request.headers.map((header): [string, string] => [
           header.name,
           header.value,

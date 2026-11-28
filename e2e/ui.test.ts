@@ -1128,9 +1128,10 @@ test.describe("definy UI E2E", () => {
     const count = await partCards.count();
     expect(count).toBeGreaterThanOrEqual(5);
 
-    // 検索入力欄で "triangle" を絞り込み
+    // 検索入力欄で "sample.triangle" を絞り込み (モジュール名.パーツ名で探す。
+    // "triangle" だけだと適合テストの conformance.test-sample-triangle-area も当たり, 並びによってはそちらが先になる)
     const searchInput = page.locator(".search-input");
-    await searchInput.fill("triangle");
+    await searchInput.fill("sample.triangle");
     await page.waitForTimeout(300);
 
     const filteredCards = page.locator(".part-card");
