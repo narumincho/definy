@@ -151,18 +151,25 @@ async function listen(
   handler: (request: Request, port: number) => Promise<Response>,
 ): Promise<{ readonly port: number; readonly close: () => Promise<void> }> {
   let listening = port;
+  // 処理中のリクエスト. Node.js の HTTP サーバーはハンドラの Promise を待たないので, ここで持っておき,
+  // close では全て終わるまで待つ (誰にも待たれない処理を残さない. docs/structured-concurrency.md)
+  const inFlight = new Set<Promise<void>>();
   const server = createServer((incoming, outgoing) => {
-    void (async () => {
+    const handling = (async () => {
       try {
         const request = await toRequest(incoming, `127.0.0.1:${listening}`);
         await writeResponse(await handler(request, listening), outgoing);
       } catch (error) {
-        outgoing.writeHead(500, {
-          "Content-Type": "text/plain; charset=utf-8",
-        });
+        if (!outgoing.headersSent) {
+          outgoing.writeHead(500, {
+            "Content-Type": "text/plain; charset=utf-8",
+          });
+        }
         outgoing.end(error instanceof Error ? error.message : String(error));
       }
     })();
+    inFlight.add(handling);
+    void handling.finally(() => inFlight.delete(handling));
   });
   // Node.js の既定 (5 秒) だと, wasm の処理でイベントループが止まっている間に, クライアント (fetch) が
   // 使い回そうとした keep-alive の接続をサーバーが閉じて ECONNRESET になることがある。
@@ -181,11 +188,15 @@ async function listen(
   }
   return {
     port: listening,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.closeAllConnections();
+    close: async () => {
+      // 新しい接続を受け付けるのをやめ, 処理中のリクエストが終わるのを待ってから接続を閉じる
+      const closed = new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
-      }),
+      });
+      await Promise.allSettled(inFlight);
+      server.closeAllConnections();
+      await closed;
+    },
   };
 }
 

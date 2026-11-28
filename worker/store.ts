@@ -1,3 +1,4 @@
+import { IoSignals } from "../src/io_runner.ts";
 import type {
   ContentItem,
   D1Database,
@@ -131,6 +132,11 @@ export class WorkerStore {
     Promise<ReadonlyArray<CommitCacheEntry>> | undefined;
   private seedEvents: ReadonlyArray<SeedEventEntry> = [];
   private seedContents: ReadonlyMap<string, string> = new Map<string, string>();
+  /**
+   * `wait_signal` / `send_signal` の合図 (docs/structured-concurrency.md). この isolate (手元のサーバーではプロセス) の
+   * リクエスト同士で届く. Workers の別の isolate には届かない
+   */
+  readonly signals = new IoSignals();
 
   constructor(options: { readonly expectedSeedFingerprint?: string } = {}) {
     this.expectedSeedFingerprint =

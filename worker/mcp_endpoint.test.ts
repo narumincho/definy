@@ -842,21 +842,26 @@ describe("definy.json-to-string", () => {
   });
 });
 
-describe("definy.service-io-then-respond", () => {
-  it("definy.service-io の全てのタグを扱う", async () => {
+describe("definy.io-bind", () => {
+  it("definy.io の全てのタグを扱う", async () => {
     const seed = await loadSeedModule("definy");
     const expressionOf = (name: string) =>
       seed.parts.find((p) => p.name === name)!.expression as Record<
         string,
         unknown
       >;
+    // definy.io は fn(A) => Union{...}
     const tags = (
-      expressionOf("service-io")["#type_union"] as ReadonlyArray<{
+      (
+        expressionOf("io")["#function"] as {
+          readonly body: Record<string, unknown>;
+        }
+      ).body["#type_union"] as ReadonlyArray<{
         readonly tag: string;
       }>
     ).map((v) => v.tag);
     const arms = (
-      expressionOf("service-io-then-respond")["#function"] as {
+      expressionOf("io-bind")["#function"] as {
         readonly body: {
           readonly "#match": {
             readonly arms: ReadonlyArray<{

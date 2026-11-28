@@ -109,6 +109,33 @@ stream = { next: stream }           // 有限の値は作れないが, 型とし
 - 型を `A = B`, `B = A` のように参照だけで回すものは型ではない (中身が決まらない) ので, 引き続き `invalid_type_declaration`
 - `src/self_hosted_type_check.test.ts` の「値を作れない型や, 構築子を通って自分を参照する型も書ける」で確かめている
 
+### 型の別名 (2026-11-25)
+
+型パーツの定義を, 型を返すパーツの呼び出しにすると, その呼び出しの別名になる。
+
+```text
+definy.service-io: Type = definy.io(A: definy.service-outcome)
+wasi.io: Type = definy.io(A: String)
+```
+
+- `core.type-resolve-from` は参照の先が呼び出し (`apply`) でも展開する。`#tag<@definy.service-io>(...)` も書ける
+- 別名とその呼び出しは同じ型として代入できる (`core.type-assignable` が `core.type-expand-alias` で展開して比べる)
+
+### 型を持つレコード (2026-11-25)
+
+レコードの型に型が `Type` のフィールドがあると, 他のフィールドの型の `Param("フィールド名")` は, リテラルでそのフィールドに書いた型になる
+(`core.record-type-field-arguments`)。`definy.io` の `all` / `race` の `Child` (子のタスクの結果の型. 存在型) に使う
+([structured-concurrency.md](structured-concurrency.md))。
+
+```text
+#all({Child: Number, tasks: [#done(1)], then: fn(results) => ...})   // tasks は List<definy.io(Number)>, results は List<Number>
+#all({Child: Number, tasks: [#done("x")], ...})                      // 型エラー (expected: number, actual: string)
+```
+
+- フィールドの値が型の式でないとき (`payload.Child` のように受け取った値を渡すとき) は置き換えず, `Param("Child")` は中身の分からない型のまま。
+  `definy.io-bind` はこれで子のタスクをそのまま渡し直す
+- まだ名前で区別しているだけなので, 同じ名前の型引数 (`Child`) を持つ関数の中で使うと区別できない (捕獲を避ける置き換えは無い)
+
 ### 型検査で見つかった seed の誤り (修正済み)
 
 - `core.eval-value`: `less_than` の結果を `number` バリアントに入れていた (`number(true)` になる). `boolean` に修正

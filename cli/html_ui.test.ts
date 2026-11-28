@@ -18,7 +18,7 @@ const handleType =
 const handleExpression = (version: string) => `fn(editable$0, request$1) =>
   #read_request_text<@definy.service-io>({
     then: fn(body$2) =>
-      #respond<@definy.service-io>({
+      #done<@definy.service-io>(#respond({
         status: 200,
         headers: [{name: "content-type", value: "text/plain; charset=utf-8"}],
         body: #text<@definy.http-body>(
@@ -27,7 +27,7 @@ const handleExpression = (version: string) => `fn(editable$0, request$1) =>
             separator: " "
           )
         )
-      })
+      }))
   })`;
 
 describe("definy serve の HTML の UI", () => {
