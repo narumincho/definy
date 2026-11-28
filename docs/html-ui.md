@@ -237,7 +237,43 @@ React の UI を消す準備として, React 版にあって html-ui に無か�
   置き換えて (`definy.value-replace-string`) 戻す。パーツ ID は SHA-256 の Base64URL なので他の文字列と重ならない。参照しているパーツは
   型と式の参照 (`core.expression-part-references`) で探す (`definy.part-referrers`)。他のプロジェクトとブランチの参照は書き換えない。
   編集のページで名前を変える機能 (足して消すだけで参照を書き換えなかった) はやめた
-- 表示言語の切り替えと紹介のページ (`/about`) はまだ無い (日本語だけ)
+- 表示言語の切り替えと紹介のページ (`/about`) は 2026-11-24 に足した (下の「表示言語と追加の機能」)
+
+### 表示言語と追加の機能 (2026-11-24)
+
+React の UI にあって html-ui に無かったもののうち, definy 側を変えずに html-ui だけで足せるものを足した。
+
+**表示言語** (English / 日本語 / Esperanto。React の UI と同じ 3 つ):
+
+- 入口の `html-ui.handle` が `html-ui.request-language(request)` で言語を決め, 文字を出す全てのパーツに `language: String` を最初の引数として渡す
+  (約 40 パーツ)。文は `html-ui.text(language, en, ja, eo)` で選ぶ (en, ja, eo 以外は en)
+- 決め方は `?lang=` → cookie `lang` → `Accept-Language` (q は見ず, 並び順で最初の対応言語) → `en`。
+  React の UI は `?lang=` だけで決め, 無ければリダイレクトしていたが, html-ui は全てのリンクに `?lang=` を付けずに済むよう cookie を使う。
+  `?lang=` は共有用の URL のために残した (cookie より強い)
+- ヘッダーの切り替えは `/lang/<code>` (`html-ui.set-language`) へのリンク。cookie を 1 年で入れ, 同じオリジンの `Referer`
+  (`?lang=` があれば書き換える) か `/` に 303 で戻る。他のオリジンの `Referer` には戻らない
+- `<html lang>`, `Content-Language`, `Vary: Cookie, Accept-Language` も言語に合わせる。
+  小さな JS (`html-ui.tool-script` など) の「実行しています…」は `<html data-busy>` から読み, 時刻は `toLocaleString(<html lang>)` で書く
+- パーツの説明は `(en) ... (ja) ...` (`definy.localized-texts-text`) から表示言語のものを選ぶ (`html-ui.localize-line`。無ければ英語)。
+  モジュールのページの `// ` の後と, パーツのページの `description: ` の行
+- 作り方: 日本語の文字列リテラル 127 個を訳の表で `html-ui.text` に置き換え, `language` が要るパーツを呼び出しの不動点で求めて
+  型・引数・呼び出しに足すスクリプトで書き換えた (`$990` を `language` の変数にした)。パーツの写しと道具は project-files の `html-ui-i18n-2026-11-24/`
+
+**追加の機能**:
+
+| 画面                                     | できること                                                                                                  | 使うもの                                 |
+| :--------------------------------------- | :---------------------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| `/` (プロジェクト一覧)                   | ブランチごとのコミット数と作成者の名前。編集できるときは署名するアカウントと, 自分のブランチの印            | `definy_list_accounts`, `definy_whoami`  |
+| ブランチのページ (main 以外, 編集できる) | main の変更をこのブランチに取り込む (`branch: main`, `into: このブランチ`)                                  | `definy_merge_branch`                    |
+| `/batch/<プロジェクト>/<ブランチ>`       | いくつものパーツを 1 つのコミットで変える・足す・消す (互いに参照する新しいパーツも書ける)。`?part=` で開く | `definy_get_part`, `definy_commit_parts` |
+| `/about`                                 | definy の紹介 (構文木, コンテンツアドレス, 署名したイベント, 編集のしかた)                                  | なし                                     |
+
+- `/batch` は `html-ui.batch-script` が「読み込む」で `POST /api/definy_get_part` (`html-ui.api-tool` に足した) の結果から型と式を取り出す。
+  読み込んでいないパーツの空の型・式は送らない (今のままにする)。成功したら履歴のページへ
+- 名前が日本語の「アカウント作成」などのイベントの種類も表示言語にした (`html-ui.event-type-label`)
+
+まだ無いもの: プロジェクトの説明の表示と編集 (`definy.stored-commit` に説明が無いので, 今の説明を読めない), ブランチの削除・名前の変更,
+アカウント名の変更 (どれも definy 側の変更が要る)。式の木のエディタ・ブラウザでの実行・コマンドパレットは作らない (テキストで書き, 手元のサーバーで実行する)。
 
 ### React の UI を削除した (2026-11-24)
 
@@ -247,8 +283,7 @@ definy サーバーは `wrangler deploy` でデプロイする形にした ([clo
 
 React の UI にあって html-ui に無いもの (削除の時点。必要になったら html-ui に足す):
 
-- 表示言語の切り替え (日本語・英語・エスペラント, `?lang=`)。html-ui は日本語だけ
-- 紹介のページ `/about` のスライド以外の部分 (definy の特徴の表など)。スライドは `/about/` に残した
+- 紹介スライド (音声付き)。React で `definy.narumincho.com/about/` に残した。表示言語の切り替えと html-ui の `/about` は上の「表示言語と追加の機能」で足した
 - 式の木のエディタ (ブロックの選択・キーボード操作・置換メニュー・ホバーで型・定義へ移動・未入力の型引数の推論の表示)。
   html-ui は式をテキスト ([expression-text.md](expression-text.md)) で書く
 - 複数のパーツの作業中の変更を貯めてまとめてコミットする, 元に戻す (undo)。html-ui は 1 つの編集を 1 コミットにする
